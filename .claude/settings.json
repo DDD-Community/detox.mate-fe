@@ -1,0 +1,6 @@
+{
+  "enabledPlugins": {
+    "oh-my-claudecode@omc": true,
+    "codex@openai-codex": true
+  }
+}
