@@ -37,6 +37,9 @@ yarn-error.*
 .omc/
 omc/
 
+# Secrets
+.claude/skills/shared/config/discord-webhook-url.txt
+
 # typescript
 *.tsbuildinfo
 
