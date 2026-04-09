@@ -21,5 +21,40 @@
   },
   "[markdown]": {
     "editor.defaultFormatter": "esbenp.prettier-vscode"
-  }
+  },
+  "folder-color.pathColors": [
+    {
+      "folderPath": "deployables/apps/storefront/",
+      "color": "foldercolorizer.color_aaaaaa",
+      "badge": "🔴"
+    },
+    {
+      "folderPath": "deployables/apps/backoffice/",
+      "badge": "🔵"
+    },
+    {
+      "folderPath": "deployables/apps/storefront/web/app/",
+      "badge": "⚪️"
+    },
+    {
+      "folderPath": "deployables/apps/storefront/web/app/domains/browse/",
+      "badge": "🩷"
+    },
+    {
+      "folderPath": "deployables/apps/storefront/web/app/domains/user/",
+      "badge": "🌕"
+    },
+    {
+      "folderPath": "deployables/apps/storefront/web/app/domains/product/",
+      "badge": "🍔"
+    },
+    {
+      "folderPath": "deployables/apps/storefront/web/app/domains/catalog/",
+      "badge": "🍀"
+    },
+    {
+      "folderPath": "deployables/apps/storefront/web/app/domains/cart/",
+      "badge": "🚨"
+    }
+  ]
 }
