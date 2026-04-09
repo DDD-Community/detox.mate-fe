@@ -68,7 +68,7 @@ gh pr list --head <current-branch> --json number,title,body,url
    - `github_actions`: CI/CD changes
 4. PR 제목: conventional commit 형식, 커밋이 한국어면 한국어로
 5. 리뷰어 결정:
-   a. `.claude/skills/shared/config/slack-members.json` 읽기
+   a. `.claude/skills/shared/config/discord-members.json` 읽기 (key = GitHub username)
    b. `gh api user --jq '.login'`으로 현재 사용자 확인
    c. **본인 제외한 멤버 목록**을 보여주고 리뷰어 선택 요청 (AskUserQuestion)
    d. 리뷰어가 결정되지 않으면 반드시 질문
