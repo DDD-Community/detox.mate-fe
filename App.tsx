@@ -7,7 +7,8 @@ export default function App() {
       const result = await signInWithKakao();
       console.log('서비스 로그인 성공', result);
     } catch (error) {
-      Alert.alert('로그인 실패', '카카오 로그인 처리 중 오류가 발생했습니다.');
+      console.error('카카오 로그인 에러:', error);
+      Alert.alert('로그인 실패', String(error));
     }
   };
 
