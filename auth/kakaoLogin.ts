@@ -1,24 +1,63 @@
 import { KakaoOAuthToken, login } from '@react-native-seoul/kakao-login';
 import axios from 'axios';
+import * as SecureStore from 'expo-secure-store';
 
-export type ServiceLoginResponse = {
+export type OAuthLoginResponse = {
   id: number;
   displayName: string;
+  profileImageUrl: string | null;
   accessToken: string;
-  accessTokenExpiresIn: number;
-  isNewMember: boolean;
+  refreshToken: string;
+  isNewUser: boolean;
 };
 
-export async function signInWithKakao(): Promise<ServiceLoginResponse> {
+export type ServerResponseTokens = {
+  refreshToken: string;
+  accessToken: string;
+};
+
+export type ServerResponseStatus = {
+  status: number;
+};
+
+export async function loginWithKakao(): Promise<OAuthLoginResponse> {
   const kakaoToken: KakaoOAuthToken = await login();
 
-  const { data } = await axios.post<ServiceLoginResponse>(
-    'https://api-dev.detoxmate.co.kr/auth/social/kakao', // API URL
+  const { data } = await axios.post<OAuthLoginResponse>(
+    'https://api-dev.detoxmate.co.kr/auth/social/kakao',
     {
       providerAccessToken: kakaoToken.accessToken,
-      // idToken: kakaoToken.idToken ?? null,
+    }
+  );
+
+  const accessToken = data.accessToken;
+  const refreshToken = data.refreshToken;
+  await SecureStore.setItemAsync('accessTokenKey', accessToken);
+  await SecureStore.setItemAsync('refreshTokenKey', refreshToken);
+
+  return data;
+}
+
+export async function refreshAccessToken(): Promise<ServerResponseTokens> {
+  const refreshToken = await SecureStore.getItemAsync('refreshTokenKey');
+
+  const { data } = await axios.post<ServerResponseTokens>(
+    'https://api-dev.detoxmate.co.kr/auth/refresh',
+    {
+      refreshToken: refreshToken,
     }
   );
 
   return data;
+}
+
+export async function logout(): Promise<void> {
+  const refreshToken = await SecureStore.getItemAsync('refreshTokenKey');
+
+  const { status } = await axios.post('https://api-dev.detoxmate.co.kr/auth/logout', {
+    refreshToken,
+  });
+
+  await SecureStore.deleteItemAsync('refreshTokenKey');
+  await SecureStore.deleteItemAsync('accessTokenKey');
 }

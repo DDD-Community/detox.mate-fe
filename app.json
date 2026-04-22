@@ -32,13 +32,15 @@
     },
     "plugins": [
       "expo-secure-store",
+      {
+        "faceIDPermission": "Allow $(PRODUCT_NAME) to access your Face ID biometric data."
+      },
       [
         "@react-native-seoul/kakao-login",
         {
           "kakaoAppKey": "9fee24e132d201aa33e5fdd08f435726"
         }
-      ],
-      "expo-secure-store"
+      ]
     ]
   }
 }
