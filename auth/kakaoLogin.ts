@@ -41,14 +41,19 @@ export async function loginWithKakao(): Promise<OAuthLoginResponse> {
 export async function refreshAccessToken(): Promise<ServerResponseTokens> {
   const refreshToken = await SecureStore.getItemAsync('refreshTokenKey');
 
-  const { data } = await axios.post<ServerResponseTokens>(
-    'https://api-dev.detoxmate.co.kr/auth/refresh',
-    {
-      refreshToken: refreshToken,
-    }
-  );
-
-  return data;
+  try {
+    const { data } = await axios.post<ServerResponseTokens>(
+      'https://api-dev.detoxmate.co.kr/auth/refresh',
+      {
+        refreshToken: refreshToken,
+      }
+    );
+    return data;
+  } catch (error) {
+    await logout();
+    throw new Error('다시 로그인해 주세요.');
+    // 이 부분은 추후에 코드를 추가하여, 로그인 화면으로 redirect 한다.
+  }
 }
 
 export async function logout(): Promise<void> {
