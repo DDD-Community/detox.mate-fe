@@ -21,14 +21,9 @@ apiClient.interceptors.request.use(async (config) => {
 apiClient.interceptors.response.use(
   (response) => response,
   async (error) => {
-    if (error.response?.status == 401 && error.config.url != '/auth/refresh') {
+    if (error.response?.status == 401) {
       try {
-        const data = await refreshAccessToken();
-        const accessToken = data.accessToken;
-        const refreshToken = data.refreshToken;
-        await SecureStore.setItemAsync('accessTokenKey', accessToken);
-        await SecureStore.setItemAsync('refreshTokenKey', refreshToken);
-
+        await refreshAccessToken();
         return apiClient(error.config);
       } catch (error) {
         logout();
