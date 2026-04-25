@@ -56,27 +56,27 @@ const gray = {
   900: '#2b2f38',
 } as const;
 
-/** System colors — base hex + opacity variants (100/40/10) */
+/** System colors — base hex + opacity variants (100/40/10, 8-digit hex with alpha) */
 const system = {
   blue: {
     100: '#508EBF',
-    40: 'rgba(80, 142, 191, 0.4)',
-    10: 'rgba(80, 142, 191, 0.1)',
+    40: '#508EBF66',
+    10: '#508EBF1A',
   },
   green: {
     100: '#3A8F46',
-    40: 'rgba(58, 143, 70, 0.4)',
-    10: 'rgba(58, 143, 70, 0.1)',
+    40: '#3A8F4666',
+    10: '#3A8F461A',
   },
   orange: {
     100: '#E39433',
-    40: 'rgba(227, 148, 51, 0.4)',
-    10: 'rgba(227, 148, 51, 0.1)',
+    40: '#E3943366',
+    10: '#E394331A',
   },
   red: {
     100: '#D5441B',
-    40: 'rgba(213, 68, 27, 0.4)',
-    10: 'rgba(213, 68, 27, 0.1)',
+    40: '#D5441B66',
+    10: '#D5441B1A',
   },
 } as const;
 
