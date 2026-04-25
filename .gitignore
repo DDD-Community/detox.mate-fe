@@ -46,3 +46,6 @@ omc/
 # generated native folders
 /ios
 /android
+
+
+.agents

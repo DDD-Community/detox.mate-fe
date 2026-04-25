@@ -2,6 +2,7 @@
   "expo": {
     "name": "detox-mate-fe",
     "slug": "detox-mate-fe",
+    "scheme": "com.euijinkim.detoxmatefe.dev",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
@@ -13,7 +14,8 @@
       "backgroundColor": "#ffffff"
     },
     "ios": {
-      "supportsTablet": true
+      "supportsTablet": true,
+      "bundleIdentifier": "com.euijinkim.detoxmatefe.dev"
     },
     "android": {
       "adaptiveIcon": {
@@ -26,6 +28,9 @@
     "web": {
       "favicon": "./assets/favicon.png"
     },
-    "plugins": ["expo-secure-store"]
+    "plugins": [
+      "expo-secure-store",
+      "expo-asset"
+    ]
   }
 }
