@@ -4,4 +4,9 @@ coverage
 .expo
 .idea
 .vscode
+.claude
+.husky
+.github/ISSUE_TEMPLATE
+ios
+android
 pnpm-lock.yaml
