@@ -68,14 +68,20 @@ if (result.ok) {
 4. 성공이면 `result.value`를 서버나 다음 단계로 넘긴다.
 5. 실패면 `reason`을 기준으로 재업로드 안내를 한다.
 
-## Included Demo
+## Internal Test UI
 
-현재 [App.tsx](/Users/euijinkk/Desktop/projects/side-project/detox.mate-fe/App.tsx) 에는 아래 데모가 포함되어 있다.
+기본 `App` 엔트리는 비워 두고, 분석 테스트 UI는 별도 내부 테스트 화면으로 분리해서 유지한다.
 
-- `이미지 선택`
-- `분석하기`
-- 결과 `hh:mm` 표시
-- 실패 reason 표시
+- 루트 엔트리: `RootEntry.tsx`
+- 테스트 화면: `src/features/screen-time-analyze/ScreenTimeAnalyzeTestScreen.tsx`
+- deep link path: `screen-time-analyze-test`
+
+즉 앱은 `RootEntry`에서 진입 URL을 읽고:
+
+- 기본 경로면 `App`
+- `...://screen-time-analyze-test` 면 실제 업로드/분석 흐름을 가진 테스트 화면
+
+으로 분기한다.
 
 ## Architecture
 
