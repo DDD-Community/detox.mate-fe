@@ -1,11 +1,9 @@
+import { loginWithKakao, logout, refreshAccessToken } from './auth/kakaoLogin';
 import { useFonts } from 'expo-font';
+import * as SplashScreen from 'expo-splash-screen';
 import { StatusBar } from 'expo-status-bar';
 import { useEffect } from 'react';
 import { Button, StyleSheet, View } from 'react-native';
-
-import * as SplashScreen from 'expo-splash-screen';
-
-import { loginWithKakao, logout, refreshAccessToken } from './auth/kakaoLogin';
 
 SplashScreen.preventAutoHideAsync();
 
@@ -27,7 +25,6 @@ export default function App() {
 
   return (
     <View style={styles.container}>
-      <StatusBar style="auto" />
       <Button title="카카오 로그인" onPress={loginWithKakao} />
       <Button title="토큰 리프레시!" onPress={refreshAccessToken} />
       <Button title="로그아웃!!" onPress={logout} />
