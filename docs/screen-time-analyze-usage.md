@@ -70,18 +70,18 @@ if (result.ok) {
 
 ## Internal Test UI
 
-기본 `App` 엔트리는 비워 두고, 분석 테스트 UI는 별도 내부 테스트 화면으로 분리해서 유지한다.
+루트는 다시 `App`을 직접 렌더하고, 분석 테스트 UI는 앱 안에서만 직접 여는 내부 화면으로 유지한다.
 
-- 루트 엔트리: `RootEntry.tsx`
+- 앱 엔트리: `App.tsx`
 - 테스트 화면: `src/features/screen-time-analyze/ScreenTimeAnalyzeTestScreen.tsx`
-- deep link path: `screen-time-analyze-test`
 
-즉 앱은 `RootEntry`에서 진입 URL을 읽고:
+접근 방식:
 
-- 기본 경로면 `App`
-- `...://screen-time-analyze-test` 면 실제 업로드/분석 흐름을 가진 테스트 화면
+- 개발 빌드에서 앱을 연다.
+- 첫 화면의 `스크린타임 분석 테스트 열기` 버튼을 누른다.
+- 그러면 실제 업로드/분석 흐름을 가진 테스트 화면으로 들어간다.
 
-으로 분기한다.
+즉 deep link나 별도 루트 분기 없이, 앱 내부에서 직접 접근할 때만 테스트 화면을 연다.
 
 ## Architecture
 

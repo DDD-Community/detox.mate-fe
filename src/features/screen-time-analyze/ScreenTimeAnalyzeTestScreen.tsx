@@ -11,6 +11,10 @@ import {
 
 import { useScreenTimeImageAnalyze } from './useScreenTimeImageAnalyze';
 
+type ScreenTimeAnalyzeTestScreenProps = {
+  onClose?: () => void;
+};
+
 function formatRejectReason(reason: string): string {
   switch (reason) {
     case 'screen_not_matched':
@@ -30,7 +34,9 @@ function formatRejectReason(reason: string): string {
   }
 }
 
-export function ScreenTimeAnalyzeTestScreen() {
+export function ScreenTimeAnalyzeTestScreen({
+  onClose,
+}: ScreenTimeAnalyzeTestScreenProps) {
   const {
     analysisResult,
     analyzeImage,
@@ -46,6 +52,11 @@ export function ScreenTimeAnalyzeTestScreen() {
       <View style={styles.header}>
         <Text style={styles.title}>Screen Time Analyze</Text>
         <Text style={styles.subtitle}>Apple Vision native OCR + TS parser + hh:mm response</Text>
+        {onClose ? (
+          <Pressable style={styles.secondaryButton} onPress={onClose}>
+            <Text style={styles.buttonText}>닫기</Text>
+          </Pressable>
+        ) : null}
       </View>
 
       <ScrollView contentContainerStyle={styles.container}>
@@ -174,6 +185,13 @@ const styles = StyleSheet.create({
     paddingVertical: 10,
     borderRadius: 999,
     backgroundColor: '#2563eb',
+  },
+  secondaryButton: {
+    alignSelf: 'flex-start',
+    paddingHorizontal: 14,
+    paddingVertical: 10,
+    borderRadius: 999,
+    backgroundColor: '#374151',
   },
   buttonDisabled: {
     backgroundColor: '#4b5563',
