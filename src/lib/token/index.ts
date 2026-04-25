@@ -1,10 +1,5 @@
 /**
- * Design Token System
- *
- * 토큰 사용 규칙:
- * - 컴포넌트에서는 semantic 토큰 우선 사용
- * - primitive는 semantic 정의 시에만 참조
- * - 모든 토큰은 `as const`로 정의되어 TypeScript 리터럴 타입 자동완성 지원
+ * 토큰 사용 규칙: 컴포넌트에서는 semantic 토큰 우선, primitive는 semantic 정의 시에만 참조.
  *
  * @example
  * import { semanticColors, typography, spacing, radius } from 'src/lib/token';
@@ -15,9 +10,7 @@
  *     padding: spacing[16],
  *     borderRadius: radius[12],
  *   },
- *   title: {
- *     ...typography.primary.h1,
- *   },
+ *   title: { ...typography.primary.h1 },
  * });
  */
 

@@ -1,18 +1,7 @@
 /**
- * Primitive Color Tokens
- *
- * 피그마 Color Palette의 raw 값을 정의합니다.
- * 컴포넌트에서 직접 사용하지 말고, semantic 토큰을 통해 사용하세요.
- *
- * @example
- * // ❌ 직접 사용 금지
- * import { primitiveColors } from 'src/lib/token';
- *
- * // ✅ semantic 토큰 사용
- * import { semanticColors } from 'src/lib/token';
+ * 피그마 Color Palette의 raw 값. 컴포넌트에서 직접 사용하지 말고 semantic 토큰을 통해 사용하세요.
  */
 
-/** Primary green scale (green-50 ~ green-500) */
 const green = {
   50: '#eff3f1',
   75: '#bbcfc6',
@@ -23,7 +12,6 @@ const green = {
   500: '#375447',
 } as const;
 
-/** Secondary brown scale (brown-50 ~ brown-900) */
 const brown = {
   50: '#f9f8f4',
   100: '#f1eacf',
@@ -32,7 +20,7 @@ const brown = {
   900: '#56524a',
 } as const;
 
-/** Level scale — 디톡스 레벨 표현용 (level-100 ~ level-600) */
+/** 디톡스 레벨 표현용 */
 const level = {
   100: '#c1ff1c',
   200: '#6EE429',
@@ -42,7 +30,6 @@ const level = {
   600: '#007542',
 } as const;
 
-/** Gray scale — cool-tone gray (gray-50 ~ gray-900) */
 const gray = {
   50: '#f0f1f3',
   100: '#d0d3d9',
@@ -56,7 +43,7 @@ const gray = {
   900: '#2b2f38',
 } as const;
 
-/** System colors — base hex + opacity variants (opacity100=불투명, opacity40=40%, opacity10=10%) */
+/** opacity100=불투명, opacity40=40%, opacity10=10% */
 const system = {
   blue: {
     opacity100: '#508EBF',

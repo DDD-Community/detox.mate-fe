@@ -1,30 +1,12 @@
 import type { TextStyle } from 'react-native';
 
 /**
- * Typography Tokens
+ * NanumSquareRound는 Medium 웨이트가 없어 디자이너 스펙과 다르게 매핑:
+ *   400(Regular) → NanumSquareRoundR
+ *   500(Medium)  → NanumSquareRoundB   (Bold를 Medium 슬롯에 사용)
+ *   700(Bold)    → NanumSquareRoundEB  (ExtraBold를 Bold 슬롯에 사용)
  *
- * 두 종류의 폰트 세트를 제공합니다.
- *
- * 1) primary — NanumSquareRound (메인 UI 타이포그래피)
- *    - line-height: 150%
- *    - 디자이너 weight 매핑:
- *      400(Regular)  → NanumSquareRoundR
- *      500(Medium)   → NanumSquareRoundB   (Bold가 시각적으로 Medium 역할)
- *      700(Bold)     → NanumSquareRoundEB  (ExtraBold가 시각적으로 Bold 역할)
- *
- * 2) accent — Omyu pretty (보조/데코 타이포그래피, Regular 단일)
- *    - line-height: 130%
- *    - letter-spacing: 0
- *    - TTF 미준비 상태이므로 사용 시점에 폰트 fallback 발생 가능
- *
- * @example
- * import { typography } from 'src/lib/token';
- *
- * const styles = StyleSheet.create({
- *   title: { ...typography.primary.h1 },
- *   body:  { ...typography.primary.body1R },
- *   deco:  { ...typography.accent.h1 },
- * });
+ * accent(OmyuPretty)는 TTF 미준비 상태 — 등록 전까지 시스템 폰트로 fallback.
  */
 
 const PRIMARY_FAMILY = {
@@ -35,7 +17,6 @@ const PRIMARY_FAMILY = {
 
 const ACCENT_FAMILY = 'OmyuPretty';
 
-/** Font size scale (primary + accent 통합) */
 export const fontSize = {
   9: 9,
   11: 11,
@@ -54,7 +35,6 @@ export const fontSize = {
   34: 34,
 } as const;
 
-/** Font weight 매핑 — 디자인 스펙 weight 기준 */
 export const fontWeight = {
   regular: '400' as const,
   medium: '500' as const,
@@ -83,70 +63,70 @@ const accentStyle = (size: number): TextStyle => ({
 });
 
 const primary = {
-  /** Headline 1 — 32/Bold */
+  /** 32/Bold */
   h1: primaryStyle(32, PRIMARY_FAMILY.bold, '700'),
-  /** Headline 2 — 28/Bold */
+  /** 28/Bold */
   h2: primaryStyle(28, PRIMARY_FAMILY.bold, '700'),
-  /** Headline 3 — 24/Bold */
+  /** 24/Bold */
   h3: primaryStyle(24, PRIMARY_FAMILY.bold, '700'),
 
-  /** Title 1 Bold — 20/Bold */
+  /** 20/Bold */
   title1B: primaryStyle(20, PRIMARY_FAMILY.bold, '700'),
-  /** Title 1 Medium — 20/Medium */
+  /** 20/Medium */
   title1M: primaryStyle(20, PRIMARY_FAMILY.medium, '500'),
-  /** Title 2 Bold — 18/Bold */
+  /** 18/Bold */
   title2B: primaryStyle(18, PRIMARY_FAMILY.bold, '700'),
-  /** Title 2 Medium — 18/Medium */
+  /** 18/Medium */
   title2M: primaryStyle(18, PRIMARY_FAMILY.medium, '500'),
 
-  /** Body 1 Bold — 16/Bold */
+  /** 16/Bold */
   body1B: primaryStyle(16, PRIMARY_FAMILY.bold, '700'),
-  /** Body 1 Medium — 16/Medium */
+  /** 16/Medium */
   body1M: primaryStyle(16, PRIMARY_FAMILY.medium, '500'),
-  /** Body 1 Regular — 16/Regular */
+  /** 16/Regular */
   body1R: primaryStyle(16, PRIMARY_FAMILY.regular, '400'),
 
-  /** Body 2 Bold — 14/Bold */
+  /** 14/Bold */
   body2B: primaryStyle(14, PRIMARY_FAMILY.bold, '700'),
-  /** Body 2 Medium — 14/Medium */
+  /** 14/Medium */
   body2M: primaryStyle(14, PRIMARY_FAMILY.medium, '500'),
-  /** Body 2 Regular — 14/Regular */
+  /** 14/Regular */
   body2R: primaryStyle(14, PRIMARY_FAMILY.regular, '400'),
 
-  /** Body 3 Bold — 12/Bold */
+  /** 12/Bold */
   body3B: primaryStyle(12, PRIMARY_FAMILY.bold, '700'),
-  /** Body 3 Medium — 12/Medium */
+  /** 12/Medium */
   body3M: primaryStyle(12, PRIMARY_FAMILY.medium, '500'),
-  /** Body 3 Regular — 12/Regular */
+  /** 12/Regular */
   body3R: primaryStyle(12, PRIMARY_FAMILY.regular, '400'),
 
-  /** Caption — 11/Regular */
+  /** 11/Regular */
   caption: primaryStyle(11, PRIMARY_FAMILY.regular, '400'),
-  /** Caption2 — 9/Regular */
+  /** 9/Regular */
   caption2: primaryStyle(9, PRIMARY_FAMILY.regular, '400'),
 } as const;
 
 const accent = {
-  /** Headline 1 — 34/Regular (Omyu) */
+  /** 34/Regular */
   h1: accentStyle(34),
-  /** Headline 2 — 30/Regular (Omyu) */
+  /** 30/Regular */
   h2: accentStyle(30),
-  /** Headline 3 — 26/Regular (Omyu) */
+  /** 26/Regular */
   h3: accentStyle(26),
 
-  /** Title 1 — 22/Regular (Omyu) */
+  /** 22/Regular */
   title1: accentStyle(22),
-  /** Title 2 — 20/Regular (Omyu) */
+  /** 20/Regular */
   title2: accentStyle(20),
 
-  /** Body 1 — 18/Regular (Omyu) */
+  /** 18/Regular */
   body1: accentStyle(18),
-  /** Body 2 — 16/Regular (Omyu) */
+  /** 16/Regular */
   body2: accentStyle(16),
-  /** Body 3 — 14/Regular (Omyu) */
+  /** 14/Regular */
   body3: accentStyle(14),
 
-  /** Caption — 13/Regular (Omyu) */
+  /** 13/Regular */
   caption: accentStyle(13),
 } as const;
 
