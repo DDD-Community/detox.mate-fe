@@ -23,13 +23,13 @@
 
 // Primitive tokens
 export { primitiveColors } from './primitive/colors';
-export { typography } from './primitive/typography';
-export { spacing } from './primitive/spacing';
 export { radius } from './primitive/radius';
+export { spacing } from './primitive/spacing';
+export { typography } from './primitive/typography';
 
 // Semantic tokens
 export { semanticColors } from './semantic/colors';
 
 // Icons
-export { iconNames } from './icons';
 export type { IconName } from './icons';
+export { iconNames } from './icons';
