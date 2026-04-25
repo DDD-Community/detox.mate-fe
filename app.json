@@ -2,7 +2,6 @@
   "expo": {
     "name": "detox-mate-fe",
     "slug": "detox-mate-fe",
-    "scheme": "com.euijinkim.detoxmatefe.dev",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
@@ -14,8 +13,10 @@
       "backgroundColor": "#ffffff"
     },
     "ios": {
-      "supportsTablet": true,
-      "bundleIdentifier": "com.euijinkim.detoxmatefe.dev"
+      "bundleIdentifier": "com.detoxmate.app.dev",
+      "infoPlist": {
+        "LSApplicationQueriesSchemes": ["kakaokompassauth", "storykompassauth", "kakaolink"]
+      }
     },
     "android": {
       "adaptiveIcon": {
@@ -23,14 +24,25 @@
         "backgroundColor": "#ffffff"
       },
       "edgeToEdgeEnabled": true,
-      "predictiveBackGestureEnabled": false
+      "predictiveBackGestureEnabled": false,
+      "package": "com.detoxmate.fe"
     },
     "web": {
       "favicon": "./assets/favicon.png"
     },
     "plugins": [
-      "expo-secure-store",
-      "expo-asset"
+      [
+        "expo-secure-store",
+        {
+          "faceIDPermission": "Allow $(PRODUCT_NAME) to access your Face ID biometric data."
+        }
+      ],
+      [
+        "@react-native-seoul/kakao-login",
+        {
+          "kakaoAppKey": "9fee24e132d201aa33e5fdd08f435726"
+        }
+      ]
     ]
   }
 }
