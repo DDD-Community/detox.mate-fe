@@ -22,8 +22,3 @@ export type NativeOCRResult = {
   elapsedMs: number;
   observations: NativeOCRObservation[];
 };
-
-export type AppleVisionOcrViewProps = {
-  url: string;
-  onLoad?: (event: { nativeEvent: { url: string } }) => void;
-};
