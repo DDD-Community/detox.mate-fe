@@ -1,24 +1,6 @@
 /**
- * Semantic Color Tokens
- *
- * primitive color를 기반으로 UI 의미(역할)에 따라 매핑한 색상 토큰입니다.
- * 컴포넌트에서는 항상 semantic 토큰을 사용하세요.
- *
- * 다크모드 확장 시 이 파일만 교체/분기하면 테마 전환이 가능합니다.
+ * 다크모드 확장 시 이 파일만 교체/분기하면 테마 전환 가능.
  * (예: semantic/colors.dark.ts를 추가하여 import level에서 swap)
- *
- * @example
- * import { semanticColors } from 'src/lib/token';
- *
- * const styles = StyleSheet.create({
- *   container: {
- *     backgroundColor: semanticColors.bg.primary,
- *     borderColor: semanticColors.border.primary,
- *   },
- *   title: {
- *     color: semanticColors.text.primary,
- *   },
- * });
  */
 import { primitiveColors } from '../primitive/colors';
 
@@ -65,19 +47,19 @@ const icon = {
 
 /** 상태/피드백 색상 */
 const status = {
-  info: system.blue[100],
-  infoSubtle: system.blue[10],
-  success: system.green[100],
-  successSubtle: system.green[10],
-  warning: system.orange[100],
-  warningSubtle: system.orange[10],
-  error: system.red[100],
-  errorSubtle: system.red[10],
+  info: system.blue.opacity100,
+  infoSubtle: system.blue.opacity10,
+  success: system.green.opacity100,
+  successSubtle: system.green.opacity10,
+  warning: system.orange.opacity100,
+  warningSubtle: system.orange.opacity10,
+  error: system.red.opacity100,
+  errorSubtle: system.red.opacity10,
 } as const;
 
 /** 인터랙션 색상 */
 const interaction = {
-  pressed: green[600],
+  pressed: green[500],
   hovered: green[400],
   focused: green[300],
   disabled: gray[200],
