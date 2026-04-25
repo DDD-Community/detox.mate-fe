@@ -65,14 +65,14 @@ const icon = {
 
 /** 상태/피드백 색상 */
 const status = {
-  info: system.blue[100],
-  infoSubtle: system.blue[10],
-  success: system.green[100],
-  successSubtle: system.green[10],
-  warning: system.orange[100],
-  warningSubtle: system.orange[10],
-  error: system.red[100],
-  errorSubtle: system.red[10],
+  info: system.blue.opacity100,
+  infoSubtle: system.blue.opacity10,
+  success: system.green.opacity100,
+  successSubtle: system.green.opacity10,
+  warning: system.orange.opacity100,
+  warningSubtle: system.orange.opacity10,
+  error: system.red.opacity100,
+  errorSubtle: system.red.opacity10,
 } as const;
 
 /** 인터랙션 색상 */

@@ -56,27 +56,27 @@ const gray = {
   900: '#2b2f38',
 } as const;
 
-/** System colors — base hex + opacity variants (100/40/10, 8-digit hex with alpha) */
+/** System colors — base hex + opacity variants (opacity100=불투명, opacity40=40%, opacity10=10%) */
 const system = {
   blue: {
-    100: '#508EBF',
-    40: '#508EBF66',
-    10: '#508EBF1A',
+    opacity100: '#508EBF',
+    opacity40: '#508EBF66',
+    opacity10: '#508EBF1A',
   },
   green: {
-    100: '#3A8F46',
-    40: '#3A8F4666',
-    10: '#3A8F461A',
+    opacity100: '#3A8F46',
+    opacity40: '#3A8F4666',
+    opacity10: '#3A8F461A',
   },
   orange: {
-    100: '#E39433',
-    40: '#E3943366',
-    10: '#E394331A',
+    opacity100: '#E39433',
+    opacity40: '#E3943366',
+    opacity10: '#E394331A',
   },
   red: {
-    100: '#D5441B',
-    40: '#D5441B66',
-    10: '#D5441B1A',
+    opacity100: '#D5441B',
+    opacity40: '#D5441B66',
+    opacity10: '#D5441B1A',
   },
 } as const;
 
