@@ -47,5 +47,6 @@
     "prettier": "^3.8.1",
     "typescript": "~5.9.2"
   },
+  "packageManager": "pnpm@10.10.0",
   "private": true
 }
