@@ -13,7 +13,10 @@
       "backgroundColor": "#ffffff"
     },
     "ios": {
-      "supportsTablet": true
+      "bundleIdentifier": "com.detoxmate.app.dev",
+      "infoPlist": {
+        "LSApplicationQueriesSchemes": ["kakaokompassauth", "storykompassauth", "kakaolink"]
+      }
     },
     "android": {
       "adaptiveIcon": {
@@ -21,14 +24,25 @@
         "backgroundColor": "#ffffff"
       },
       "edgeToEdgeEnabled": true,
-      "predictiveBackGestureEnabled": false
+      "predictiveBackGestureEnabled": false,
+      "package": "com.detoxmate.fe"
     },
     "web": {
       "favicon": "./assets/favicon.png"
     },
     "plugins": [
-      "expo-secure-store",
-      "expo-font"
+      [
+        "expo-secure-store",
+        {
+          "faceIDPermission": "Allow $(PRODUCT_NAME) to access your Face ID biometric data."
+        }
+      ],
+      [
+        "@react-native-seoul/kakao-login",
+        {
+          "kakaoAppKey": "9fee24e132d201aa33e5fdd08f435726"
+        }
+      ]
     ]
   }
 }
