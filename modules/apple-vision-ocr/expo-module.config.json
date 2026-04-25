@@ -1,0 +1,9 @@
+{
+  "platforms": ["apple", "android", "web"],
+  "apple": {
+    "modules": ["AppleVisionOcrModule"]
+  },
+  "android": {
+    "modules": ["expo.modules.applevisionocr.AppleVisionOcrModule"]
+  }
+}
