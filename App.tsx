@@ -1,38 +1,34 @@
-import { useState } from 'react';
-import { Pressable, SafeAreaView, StyleSheet, Text, View } from 'react-native';
+import { Button, StyleSheet, View } from 'react-native';
+import { loginWithKakao, logout, refreshAccessToken } from './auth/kakaoLogin';
+import { useFonts } from 'expo-font';
+import * as SplashScreen from 'expo-splash-screen';
+import { StatusBar } from 'expo-status-bar';
+import { useEffect } from 'react';
 
-import { ScreenTimeAnalyzeTestScreen } from './src/features/screen-time-analyze/ScreenTimeAnalyzeTestScreen';
-
-type InternalScreen = 'menu' | 'screen-time-analyze-test';
+SplashScreen.preventAutoHideAsync();
 
 export default function App() {
-  const [currentScreen, setCurrentScreen] = useState<InternalScreen>('menu');
+  const [fontsLoaded, fontError] = useFonts({
+    NanumSquareRoundL: require('./assets/fonts/nanum-square-round/NanumSquareRoundL.ttf'),
+    NanumSquareRoundR: require('./assets/fonts/nanum-square-round/NanumSquareRoundR.ttf'),
+    NanumSquareRoundB: require('./assets/fonts/nanum-square-round/NanumSquareRoundB.ttf'),
+    NanumSquareRoundEB: require('./assets/fonts/nanum-square-round/NanumSquareRoundEB.ttf'),
+  });
 
-  if (!__DEV__) {
-    return null;
-  }
+  useEffect(() => {
+    if (fontsLoaded || fontError) {
+      SplashScreen.hideAsync();
+    }
+  }, [fontsLoaded, fontError]);
 
-  if (currentScreen === 'screen-time-analyze-test') {
-    return <ScreenTimeAnalyzeTestScreen onClose={() => setCurrentScreen('menu')} />;
-  }
+  if (!fontsLoaded && !fontError) return null;
 
   return (
-    <SafeAreaView style={styles.safeArea}>
-      <View style={styles.container}>
-        <View style={styles.card}>
-          <Text style={styles.title}>Internal Test Entry</Text>
-          <Text style={styles.helper}>
-            실제 업로드와 OCR 분석 흐름을 확인해야 할 때만 내부 테스트 화면으로 직접 들어갑니다.
-          </Text>
-          <Pressable
-            style={styles.button}
-            onPress={() => setCurrentScreen('screen-time-analyze-test')}
-          >
-            <Text style={styles.buttonText}>스크린타임 분석 테스트 열기</Text>
-          </Pressable>
-        </View>
-      </View>
-    </SafeAreaView>
+    <View style={styles.container}>
+      <Button title="카카오 로그인" onPress={loginWithKakao} />
+      <Button title="토큰 리프레시!" onPress={refreshAccessToken} />
+      <Button title="로그아웃!!" onPress={logout} />
+    </View>
   );
 }
 
