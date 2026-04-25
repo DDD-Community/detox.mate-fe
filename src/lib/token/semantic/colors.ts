@@ -77,7 +77,7 @@ const status = {
 
 /** 인터랙션 색상 */
 const interaction = {
-  pressed: green[600],
+  pressed: green[500],
   hovered: green[400],
   focused: green[300],
   disabled: gray[200],
