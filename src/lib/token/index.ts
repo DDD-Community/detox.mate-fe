@@ -16,7 +16,7 @@
  *     borderRadius: radius[12],
  *   },
  *   title: {
- *     ...typography.h1,
+ *     ...typography.primary.h1,
  *   },
  * });
  */
