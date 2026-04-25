@@ -11,8 +11,7 @@ const apiClient = axios.create({
 apiClient.interceptors.request.use(async (config) => {
   const accessToken = await SecureStore.getItemAsync('accessTokenKey');
   if (accessToken) {
-    // config.headers['Authorization'] = `Bearer ${accessToken}`;
-    config.headers['Authorization'] = `Bearer ${accessToken}aadssa`;
+    config.headers['Authorization'] = `Bearer ${accessToken}`;
   }
   return config;
 });
@@ -27,7 +26,7 @@ apiClient.interceptors.response.use(
         return apiClient(error.config);
       } catch (error) {
         logout();
-        // 로그인 화면으로 redirect
+        // TODO: 로그인 화면으로 redirect
       }
     }
   }
