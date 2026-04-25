@@ -27,8 +27,7 @@ export async function loginWithKakao(): Promise<OAuthLoginResponse> {
     providerAccessToken: kakaoToken.accessToken,
   });
 
-  const accessToken = data.accessToken;
-  const refreshToken = data.refreshToken;
+  const {accessToken, refreshToken} = data
   await SecureStore.setItemAsync('accessTokenKey', accessToken);
   await SecureStore.setItemAsync('refreshTokenKey', refreshToken);
 
