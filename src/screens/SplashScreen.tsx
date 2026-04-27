@@ -1,5 +1,4 @@
 import { useRouter } from 'expo-router';
-import * as SecureStore from 'expo-secure-store';
 import { useEffect } from 'react';
 import { Image, StyleSheet, View } from 'react-native';
 
@@ -8,11 +7,10 @@ export default function SplashScreen() {
 
   useEffect(() => {
     const redirect = async () => {
-      const [accessToken] = await Promise.all([
-        SecureStore.getItemAsync('accessTokenKey'),
-        new Promise((resolve) => setTimeout(resolve, 1000)),
-      ]);
-      router.replace(accessToken ? '/home' : '/login');
+      // 온보딩 플로우: 저장된 토큰 유무와 관계없이 항상 로그인 화면으로 이동.
+      // 약관 동의 및 신규 회원 플로우 완성 후 토큰 체크를 복원한다.
+      await new Promise((resolve) => setTimeout(resolve, 1000));
+      router.replace('/login');
     };
     redirect();
   }, []);
