@@ -1,13 +1,6 @@
-import React, { useEffect, useRef, useState } from 'react';
-import {
-  AppState,
-  Linking,
-  StyleSheet,
-  Text,
-  TouchableOpacity,
-  View,
-} from 'react-native';
 import { useRouter } from 'expo-router';
+import React, { useEffect, useRef, useState } from 'react';
+import { AppState, Linking, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { loginWithKakao } from '../auth/kakaoLogin';
 import { primitiveColors } from '../src/lib/token/primitive/colors';
 import { typography } from '../src/lib/token/primitive/typography';
@@ -20,14 +13,11 @@ export default function AgreeScreen() {
   const [privacyAgreed, setPrivacyAgreed] = useState(false);
   const [termsAgreed, setTermsAgreed] = useState(false);
 
-  // ref로 추적 — AppState 콜백은 한 번만 등록되므로 useState 클로저가 stale해짐.
-  // ref는 항상 최신값을 참조하므로 deps 없이 안전하게 사용 가능.
+  // AppState 콜백은 mount 시 한 번만 등록되므로 useState 대신 ref로 추적 (stale closure 방지)
   const privacyLinkOpenedRef = useRef(false);
   const termsLinkOpenedRef = useRef(false);
 
-  // 앱이 background → active로 전환될 때, 직전에 해당 URL을 열었으면 자동 체크.
-  // 정확히 www.a.com을 방문했는지는 브라우저에서 감지 불가하나,
-  // "링크 탭 후 앱 복귀"를 충분한 의사 표현으로 간주하는 UX 패턴.
+  // 브라우저 방문 여부는 감지 불가 — "링크 탭 후 앱 복귀"를 동의 의사 표현으로 간주
   useEffect(() => {
     const subscription = AppState.addEventListener('change', (nextState) => {
       if (nextState === 'active') {
@@ -54,17 +44,16 @@ export default function AgreeScreen() {
 
   const openPrivacyUrl = () => {
     privacyLinkOpenedRef.current = true;
-    Linking.openURL('https://www.a.com');
+    Linking.openURL('https://www.a.com'); // TODO: 관련 노션 웹뷰 URL 넣기
   };
 
   const openTermsUrl = () => {
     termsLinkOpenedRef.current = true;
-    Linking.openURL('https://www.b.com');
+    Linking.openURL('https://www.b.com'); // TODO: 관련 노션 웹뷰 URL 넣기
   };
 
   return (
     <View style={styles.root}>
-      {/* 바텀시트 뒤 배경을 연출하는 회색 영역 */}
       <View style={styles.backdrop} />
 
       <View style={styles.sheet}>
@@ -78,25 +67,17 @@ export default function AgreeScreen() {
 
           <View style={styles.gap28} />
 
-          {/* 전체 동의 행 */}
-          <TouchableOpacity
-            style={styles.allAgreeRow}
-            onPress={handleAllAgree}
-            activeOpacity={0.7}
-          >
+          <TouchableOpacity style={styles.allAgreeRow} onPress={handleAllAgree} activeOpacity={0.7}>
             <Text style={[styles.allCheckmark, allAgreed && styles.allCheckmarkActive]}>✓</Text>
             <Text style={styles.allAgreeText}>전체 동의</Text>
           </TouchableOpacity>
 
           <View style={styles.gap16} />
 
-          {/* 개인정보처리 방침 동의
-              - 체크박스만 단독 TouchableOpacity → 토글
-              - 텍스트 + 화살표는 묶어서 TouchableOpacity → URL 이동 & 자동 체크 */}
           <View style={styles.agreeRow}>
             <TouchableOpacity
               style={[styles.checkbox, privacyAgreed && styles.checkboxChecked]}
-              onPress={() => setPrivacyAgreed(v => !v)}
+              onPress={() => setPrivacyAgreed((v) => !v)}
               activeOpacity={0.7}
             >
               {privacyAgreed && <Text style={styles.checkIcon}>✓</Text>}
@@ -113,11 +94,10 @@ export default function AgreeScreen() {
 
           <View style={styles.gap12} />
 
-          {/* 서비스 이용 약관 동의 — 구조 동일 */}
           <View style={styles.agreeRow}>
             <TouchableOpacity
               style={[styles.checkbox, termsAgreed && styles.checkboxChecked]}
-              onPress={() => setTermsAgreed(v => !v)}
+              onPress={() => setTermsAgreed((v) => !v)}
               activeOpacity={0.7}
             >
               {termsAgreed && <Text style={styles.checkIcon}>✓</Text>}
@@ -134,12 +114,11 @@ export default function AgreeScreen() {
 
           <View style={styles.gap32} />
 
-          {/* 확인 버튼: 약관 동의 완료 후 OAuth 실행 */}
           <TouchableOpacity
             style={[styles.confirmButton, allAgreed && styles.confirmButtonEnabled]}
             onPress={async () => {
               await loginWithKakao();
-              router.replace('/home');
+              router.replace('/onboarding');
             }}
             disabled={!allAgreed}
             activeOpacity={0.85}
