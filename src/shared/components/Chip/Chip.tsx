@@ -1,15 +1,25 @@
-import React from 'react';
-import { Pressable, StyleSheet, Text, View } from 'react-native';
+import React, { type ReactNode } from 'react';
+import { Pressable, type PressableProps, StyleSheet, Text, View } from 'react-native';
 
-import { primitiveColors, radius, semanticColors, spacing, typography } from 'src/lib/token';
+import {
+  PRIMARY_GREEN_COLOR_MAP,
+  primitiveColors,
+  radius,
+  spacing,
+  typography,
+  type GreenColorScheme,
+} from 'src/lib/token';
 
-import type { ChipColorScheme, ChipProps } from './Chip.types';
+export type ChipColorScheme = GreenColorScheme;
 
-const COLOR_MAP: Record<ChipColorScheme, string> = {
-  green300: primitiveColors.green[300],
-  green400: primitiveColors.green[400],
-  green500: primitiveColors.green[500],
-};
+export interface ChipProps extends Omit<PressableProps, 'children' | 'style'> {
+  label: string;
+  colorScheme?: ChipColorScheme;
+  isSelected?: boolean;
+  disabled?: boolean;
+  leftIcon?: ReactNode;
+  onClose?: () => void;
+}
 
 export function Chip({
   label,
@@ -21,7 +31,7 @@ export function Chip({
   onPress,
   ...rest
 }: ChipProps) {
-  const color = COLOR_MAP[colorScheme];
+  const color = PRIMARY_GREEN_COLOR_MAP[colorScheme];
 
   return (
     <Pressable
@@ -57,6 +67,7 @@ function getContainerStyle(
   color: string,
   pressed: boolean,
 ): object {
+  const { gray } = primitiveColors;
   if (disabled) {
     if (isSelected) {
       return {
@@ -67,7 +78,7 @@ function getContainerStyle(
     return {
       backgroundColor: 'transparent',
       borderWidth: 1,
-      borderColor: semanticColors.border.secondary,
+      borderColor: gray[100],
     };
   }
 
@@ -80,16 +91,16 @@ function getContainerStyle(
 
   if (pressed) {
     return {
-      backgroundColor: primitiveColors.gray[50],
+      backgroundColor: gray[50],
       borderWidth: 1,
-      borderColor: semanticColors.border.strong,
+      borderColor: gray[400],
     };
   }
 
   return {
     backgroundColor: 'transparent',
     borderWidth: 1,
-    borderColor: semanticColors.border.primary,
+    borderColor: gray[200],
   };
 }
 
@@ -98,12 +109,12 @@ function getTextStyle(isSelected: boolean, disabled: boolean, color: string): ob
     if (isSelected) {
       return { color: 'rgba(255,255,255,0.5)' };
     }
-    return { color: semanticColors.text.disabled };
+    return { color: primitiveColors.gray[300] };
   }
   if (isSelected) {
     return { color: '#FFFFFF' };
   }
-  return { color: semanticColors.text.primary };
+  return { color: primitiveColors.gray[900] };
 }
 
 const styles = StyleSheet.create({

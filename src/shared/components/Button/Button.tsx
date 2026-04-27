@@ -1,137 +1,157 @@
-import React from 'react';
-import { Pressable, StyleSheet, Text, View } from 'react-native';
+import React, { type ReactNode } from 'react';
+import { Pressable, type PressableProps, StyleSheet, Text, View } from 'react-native';
 
 import { primitiveColors, radius, spacing, typography } from 'src/lib/token';
 
-import type { ButtonColorScheme, ButtonProps, ButtonSize, ButtonVariant } from './Button.types';
+export type ButtonVariant = 'solid' | 'outlined' | 'text';
+export type ButtonColor = 'primary' | 'assistive';
+export type ButtonSize = 'sm' | 'md' | 'lg';
+export type ButtonIconOption = 'icon' | 'iconOnly' | 'iconOnlyCircle';
+export type ButtonState = 'normal' | 'hover' | 'press' | 'disabled';
 
-const COLOR_MAP: Record<ButtonColorScheme, string> = {
-  green300: primitiveColors.green[300],
-  green400: primitiveColors.green[400],
-  green500: primitiveColors.green[500],
+export interface ButtonProps extends Omit<PressableProps, 'children' | 'style'> {
+  variant?: ButtonVariant;
+  color?: ButtonColor;
+  size?: ButtonSize;
+  iconOption?: ButtonIconOption;
+  state?: ButtonState;
+  icon?: ReactNode;
+  children?: string;
+  fullWidth?: boolean;
+}
+
+const { green, gray, brown } = primitiveColors;
+
+function alpha(hex: string, pct: number): string {
+  return hex + Math.round((pct / 100) * 255).toString(16).padStart(2, '0').toUpperCase();
+}
+
+type StateStyle = {
+  bg: string;
+  text: string;
+  border?: { color: string; width: number };
+};
+
+const ROW_COLORS: Record<`${ButtonVariant}-${ButtonColor}`, Record<ButtonState, StateStyle>> = {
+  'solid-primary': {
+    normal:   { bg: green[300], text: '#FFFFFF' },
+    hover:    { bg: green[400], text: '#FFFFFF' },
+    press:    { bg: green[500], text: '#FFFFFF' },
+    disabled: { bg: alpha(green[400], 30), text: '#FFFFFF' },
+  },
+  'outlined-primary': {
+    normal:   { bg: green[50],  text: green[300], border: { color: gray[100], width: 1 } },
+    hover:    { bg: green[50],  text: green[300], border: { color: gray[100], width: 1 } },
+    press:    { bg: green[75],  text: green[300], border: { color: gray[100], width: 1 } },
+    disabled: { bg: green[50],  text: alpha(green[300], 30), border: { color: gray[100], width: 1 } },
+  },
+  'solid-assistive': {
+    normal:   { bg: brown[900], text: '#FFFFFF' },
+    hover:    { bg: brown[900], text: '#FFFFFF' },
+    press:    { bg: brown[900], text: '#FFFFFF' },
+    disabled: { bg: alpha(brown[900], 30), text: '#FFFFFF' },
+  },
+  'outlined-assistive': {
+    normal:   { bg: gray[50],  text: gray[800] },
+    hover:    { bg: gray[50],  text: gray[800] },
+    press:    { bg: gray[100], text: gray[800] },
+    disabled: { bg: alpha(gray[50], 30), text: gray[800] },
+  },
+  'text-primary': {
+    normal:   { bg: 'transparent', text: green[300] },
+    hover:    { bg: green[50],     text: green[300] },
+    press:    { bg: green[75],     text: green[300] },
+    disabled: { bg: 'transparent', text: alpha(green[300], 30) },
+  },
+  'text-assistive': {
+    normal:   { bg: 'transparent', text: gray[800] },
+    hover:    { bg: gray[50],      text: gray[800] },
+    press:    { bg: gray[100],     text: gray[800] },
+    disabled: { bg: 'transparent', text: alpha(gray[800], 30) },
+  },
 };
 
 const SIZE_CONFIG: Record<
   ButtonSize,
-  {
-    width: number;
-    height: number;
-    paddingH: number;
-    iconSize: number;
-    iconOnlySize: number;
-  }
+  { width: number; height: number; paddingH: number; iconOnlySize: number }
 > = {
-  sm: { width: 80, height: 36, paddingH: spacing[12], iconSize: 16, iconOnlySize: 36 },
-  md: { width: 109, height: 44, paddingH: spacing[16], iconSize: 18, iconOnlySize: 44 },
-  lg: { width: 148, height: 52, paddingH: spacing[20], iconSize: 20, iconOnlySize: 52 },
+  sm: { width: 109, height: 44, paddingH: spacing[16], iconOnlySize: 44 },
+  md: { width: 123, height: 50, paddingH: spacing[20], iconOnlySize: 50 },
+  lg: { width: 123, height: 56, paddingH: spacing[20], iconOnlySize: 56 },
 };
 
+const BUTTON_ICON_SIZE = 16;
+
+function resolveState(state: ButtonState, isDisabled: boolean, pressed: boolean): ButtonState {
+  if (isDisabled) return 'disabled';
+  if (pressed || state === 'press') return 'press';
+  if (state === 'hover') return 'hover';
+  return 'normal';
+}
+
 export function Button({
-  variant = 'filled',
-  colorScheme = 'green500',
+  variant = 'solid',
+  color = 'primary',
   size = 'md',
-  leftIcon,
-  rightIcon,
+  iconOption = 'icon',
+  state = 'normal',
+  icon,
   children,
-  disabled = false,
   fullWidth = false,
   onPress,
   ...rest
 }: ButtonProps) {
-  const color = COLOR_MAP[colorScheme];
+  const isDisabled = state === 'disabled';
+  const isIconOnly = iconOption === 'iconOnly' || iconOption === 'iconOnlyCircle';
+  const rowKey = `${variant}-${color}` as `${ButtonVariant}-${ButtonColor}`;
   const sizeConfig = SIZE_CONFIG[size];
-  const isIconOnly = !children;
 
-  const containerStyle = [
-    styles.base,
-    isIconOnly
-      ? {
-          width: sizeConfig.iconOnlySize,
-          height: sizeConfig.iconOnlySize,
-          borderRadius: radius.full,
-          paddingHorizontal: 0,
-        }
-      : {
-          width: fullWidth ? undefined : sizeConfig.width,
-          height: sizeConfig.height,
-          paddingHorizontal: sizeConfig.paddingH,
-          borderRadius: radius.full,
-          flex: fullWidth ? 1 : undefined,
-        },
-    getContainerStyle(variant, color, disabled),
-  ];
-
-  const textStyle = [styles.label, getTextStyle(variant, color, disabled)];
+  const shapeStyle = isIconOnly
+    ? {
+        width: sizeConfig.iconOnlySize,
+        height: sizeConfig.iconOnlySize,
+        borderRadius: iconOption === 'iconOnlyCircle' ? radius.full : 18,
+        paddingHorizontal: 0,
+      }
+    : {
+        width: fullWidth ? undefined : sizeConfig.width,
+        height: sizeConfig.height,
+        paddingHorizontal: sizeConfig.paddingH,
+        borderRadius: 18,
+        flex: fullWidth ? 1 : undefined,
+      };
 
   return (
     <Pressable
-      style={({ pressed }) => [
-        ...containerStyle,
-        pressed && !disabled && getPressedOverlay(variant, color),
-      ]}
-      disabled={disabled}
+      style={({ pressed }) => {
+        const { bg, border } = ROW_COLORS[rowKey][resolveState(state, isDisabled, pressed)];
+        return [
+          styles.base,
+          shapeStyle,
+          {
+            backgroundColor: bg,
+            borderWidth: border?.width ?? 0,
+            borderColor: border?.color,
+          },
+        ];
+      }}
+      disabled={isDisabled}
       onPress={onPress}
       {...rest}
     >
-      {leftIcon && <View style={styles.iconSlot}>{leftIcon}</View>}
-      {children ? <Text style={textStyle}>{children}</Text> : null}
-      {rightIcon && <View style={styles.iconSlot}>{rightIcon}</View>}
+      {({ pressed }) => {
+        const { text } = ROW_COLORS[rowKey][resolveState(state, isDisabled, pressed)];
+        return (
+          <>
+            {icon ? <View style={styles.iconSlot}>{icon}</View> : null}
+            {!isIconOnly && children ? (
+              <Text style={[styles.label, { color: text }]}>{children}</Text>
+            ) : null}
+          </>
+        );
+      }}
     </Pressable>
   );
-}
-
-function getContainerStyle(
-  variant: ButtonVariant,
-  color: string,
-  disabled: boolean,
-): object {
-  if (disabled) {
-    if (variant === 'filled') {
-      return {
-        backgroundColor: primitiveColors.green[400] + '4D',
-        borderWidth: 0,
-      };
-    }
-    if (variant === 'outlined') {
-      return {
-        backgroundColor: 'transparent',
-        borderWidth: 1.5,
-        borderColor: primitiveColors.gray[200],
-      };
-    }
-    return { backgroundColor: 'transparent', borderWidth: 0 };
-  }
-
-  if (variant === 'filled') {
-    return { backgroundColor: color, borderWidth: 0 };
-  }
-  if (variant === 'outlined') {
-    return { backgroundColor: 'transparent', borderWidth: 1.5, borderColor: color };
-  }
-  return { backgroundColor: 'transparent', borderWidth: 0 };
-}
-
-function getTextStyle(variant: ButtonVariant, color: string, disabled: boolean): object {
-  if (disabled) {
-    if (variant === 'filled') {
-      return { color: 'rgba(255,255,255,0.5)' };
-    }
-    return { color: primitiveColors.gray[300] };
-  }
-  if (variant === 'filled') {
-    return { color: '#FFFFFF' };
-  }
-  return { color };
-}
-
-function getPressedOverlay(variant: ButtonVariant, color: string): object {
-  if (variant === 'filled') {
-    return { opacity: 0.85 };
-  }
-  if (variant === 'outlined' || variant === 'ghost') {
-    return { backgroundColor: color + '14' };
-  }
-  return {};
 }
 
 const styles = StyleSheet.create({
@@ -145,6 +165,8 @@ const styles = StyleSheet.create({
     ...typography.primary.body2M,
   },
   iconSlot: {
+    width: BUTTON_ICON_SIZE,
+    height: BUTTON_ICON_SIZE,
     alignItems: 'center',
     justifyContent: 'center',
   },

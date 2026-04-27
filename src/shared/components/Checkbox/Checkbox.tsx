@@ -1,9 +1,15 @@
-import React from 'react';
-import { Pressable, StyleSheet, Text, View } from 'react-native';
+import React, { type ReactNode } from 'react';
+import { Pressable, type PressableProps, StyleSheet, Text, View } from 'react-native';
 
-import { primitiveColors, radius, semanticColors, spacing, typography } from 'src/lib/token';
+import { primitiveColors, radius, spacing, typography } from 'src/lib/token';
 
-import type { CheckboxProps } from './Checkbox.types';
+export interface CheckboxProps extends Omit<PressableProps, 'children' | 'style' | 'onPress'> {
+  checked: boolean;
+  onChange: (checked: boolean) => void;
+  label?: string;
+  disabled?: boolean;
+  checkIcon?: ReactNode;
+}
 
 export function Checkbox({
   checked,
@@ -36,17 +42,18 @@ export function Checkbox({
 }
 
 function getBoxStyle(checked: boolean, disabled: boolean): object {
+  const { gray } = primitiveColors;
   if (disabled) {
     if (checked) {
       return {
-        backgroundColor: semanticColors.bg.tertiary,
+        backgroundColor: gray[100],
         borderWidth: 0,
       };
     }
     return {
-      backgroundColor: semanticColors.bg.secondary,
+      backgroundColor: gray[50],
       borderWidth: 1.5,
-      borderColor: semanticColors.border.secondary,
+      borderColor: gray[100],
     };
   }
 
@@ -58,24 +65,24 @@ function getBoxStyle(checked: boolean, disabled: boolean): object {
   }
 
   return {
-    backgroundColor: semanticColors.bg.primary,
+    backgroundColor: '#FFFFFF',
     borderWidth: 1.5,
-    borderColor: semanticColors.border.primary,
+    borderColor: gray[200],
   };
 }
 
 function getCheckmarkStyle(disabled: boolean): object {
   if (disabled) {
-    return { color: semanticColors.text.disabled };
+    return { color: primitiveColors.gray[300] };
   }
   return { color: '#FFFFFF' };
 }
 
 function getLabelStyle(disabled: boolean): object {
   if (disabled) {
-    return { color: semanticColors.text.disabled };
+    return { color: primitiveColors.gray[300] };
   }
-  return { color: semanticColors.text.primary };
+  return { color: primitiveColors.gray[900] };
 }
 
 const styles = StyleSheet.create({

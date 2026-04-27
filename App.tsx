@@ -3,8 +3,11 @@ import * as SplashScreen from 'expo-splash-screen';
 import { StatusBar } from 'expo-status-bar';
 import { useEffect } from 'react';
 import { StyleSheet, Text, View } from 'react-native';
+import StorybookUI from './.rnstorybook/index';
 
 SplashScreen.preventAutoHideAsync();
+
+const isStorybookEnabled = process.env.EXPO_PUBLIC_STORYBOOK_ENABLED === 'true';
 
 export default function App() {
   const [fontsLoaded, fontError] = useFonts({
@@ -21,6 +24,10 @@ export default function App() {
   }, [fontsLoaded, fontError]);
 
   if (!fontsLoaded && !fontError) return null;
+
+  if (isStorybookEnabled) {
+    return <StorybookUI />;
+  }
 
   return (
     <View style={styles.container}>

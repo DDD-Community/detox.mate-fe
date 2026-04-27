@@ -1,6 +1,8 @@
-/**
- * 피그마 Color Palette의 raw 값. 컴포넌트에서 직접 사용하지 말고 semantic 토큰을 통해 사용하세요.
- */
+type ColorScale = Readonly<Record<string | number, string>>;
+
+type FlatKey<Prefix extends string, Scale extends ColorScale> = {
+  [K in keyof Scale]: `${Prefix}${K & (string | number)}`;
+}[keyof Scale];
 
 const green = {
   50: '#eff3f1',
@@ -20,7 +22,6 @@ const brown = {
   900: '#56524a',
 } as const;
 
-/** 디톡스 레벨 표현용 */
 const level = {
   100: '#c1ff1c',
   200: '#6EE429',
@@ -43,7 +44,51 @@ const gray = {
   900: '#2b2f38',
 } as const;
 
-/** opacity100=불투명, opacity40=40%, opacity10=10% */
+export type GreenShade = keyof typeof green;
+
+export const PRIMARY_GREEN_SHADES = [300, 400, 500] as const satisfies ReadonlyArray<GreenShade>;
+
+export type PrimaryGreenShade = (typeof PRIMARY_GREEN_SHADES)[number];
+
+export type GreenColorScheme = {
+  [K in PrimaryGreenShade]: `green${K}`;
+}[PrimaryGreenShade];
+
+export const PRIMARY_GREEN_COLOR_MAP: Record<GreenColorScheme, string> = Object.fromEntries(
+  PRIMARY_GREEN_SHADES.map((shade) => [`green${shade}` as const, green[shade]]),
+) as Record<GreenColorScheme, string>;
+
+export type GreenSchemeKey = FlatKey<'green', typeof green>;
+export type BrownSchemeKey = FlatKey<'brown', typeof brown>;
+export type LevelSchemeKey = FlatKey<'level', typeof level>;
+export type GraySchemeKey = FlatKey<'gray', typeof gray>;
+
+export type FlatPrimitiveColorScheme = GreenSchemeKey | BrownSchemeKey | LevelSchemeKey | GraySchemeKey;
+
+const FLAT_RESOLVER = [
+  { prefix: 'gray', scale: gray },
+  { prefix: 'green', scale: green },
+  { prefix: 'brown', scale: brown },
+  { prefix: 'level', scale: level },
+] as const;
+
+export function getFlatPrimitiveColor(scheme: FlatPrimitiveColorScheme): string {
+  for (const { prefix, scale } of FLAT_RESOLVER) {
+    if (scheme.startsWith(prefix)) {
+      const k = Number(scheme.slice(prefix.length)) as keyof typeof scale;
+      const value = (scale as ColorScale)[k];
+      if (value === undefined) {
+        throw new Error(
+          `getFlatPrimitiveColor: no shade "${k}" in "${prefix}" (scheme: ${scheme})`,
+        );
+      }
+      return value;
+    }
+  }
+  const invalid: string = scheme;
+  throw new Error(`getFlatPrimitiveColor: invalid scheme ${invalid}`);
+}
+
 const system = {
   blue: {
     opacity100: '#508EBF',
