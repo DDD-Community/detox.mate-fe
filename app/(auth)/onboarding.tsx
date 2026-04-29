@@ -1,27 +1,28 @@
+import * as SecureStore from 'expo-secure-store';
 import { useRouter } from 'expo-router';
 import React, { useState } from 'react';
 import { Image, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
-import { primitiveColors } from '../src/lib/token/primitive/colors';
-import { typography } from '../src/lib/token/primitive/typography';
-import { semanticColors } from '../src/lib/token/semantic/colors';
+import { primitiveColors } from '../../src/lib/token/primitive/colors';
+import { typography } from '../../src/lib/token/primitive/typography';
+import { semanticColors } from '../../src/lib/token/semantic/colors';
 
 const { green, gray, brown } = primitiveColors;
 
 const PAGES = [
   {
-    image: require('../assets/tuttle-hollow.png'),
+    image: require('../../assets/turtle-hollow.png'),
     title: '스크린타임,\n혼자선 못 줄여요',
     subtitle: '디톡스 메이트는 친구들과 함께\n매일 디지털 디톡스를 인증하는 앱이에요',
     info: '디지털 디톡스란? 디지털 기기 사용을 중단하고 휴식을 취하는 것',
   },
   {
-    image: require('../assets/turtle-with-ai.png'),
+    image: require('../../assets/turtle-with-ai.png'),
     title: '매일 어제의\n스크린타임을 인증해요',
     subtitle: '스크린샷을 올리면 AI가 분석해요\n실패하면 한 줄 반성문을 남겨야 해요',
     info: null,
   },
   {
-    image: require('../assets/tuttle-fire.png'),
+    image: require('../../assets/turtle-fire.png'),
     title: '모두 인증에 성공하면\n그룹 스트릭이 올라가요',
     subtitle: '스크린샷을 올리면 AI가 분석해요\n실패하면 한 줄 반성문을 남겨야 해요',
     info: null,
@@ -36,6 +37,15 @@ export default function OnboardingScreen() {
   const isFirst = step === 0;
   const isLast = step === PAGES.length - 1;
 
+  const handleNext = async () => {
+    if (isLast) {
+      await SecureStore.setItemAsync('isNewUser', 'true');
+      router.replace('/home');
+    } else {
+      setStep((s) => s + 1);
+    }
+  };
+
   return (
     <View style={styles.root}>
       <View style={styles.stepIndicator}>
@@ -48,11 +58,11 @@ export default function OnboardingScreen() {
               source={
                 isStar
                   ? isActive
-                    ? require('../assets/onboarding-star-green.png')
-                    : require('../assets/onboarding-star-gray.png')
+                    ? require('../../assets/onboarding-star-green.png')
+                    : require('../../assets/onboarding-star-gray.png')
                   : isActive
-                    ? require('../assets/onboarding-step-green.png')
-                    : require('../assets/onboarding-step-gray.png')
+                    ? require('../../assets/onboarding-step-green.png')
+                    : require('../../assets/onboarding-step-gray.png')
               }
               style={isStar ? styles.stepDotStar : styles.stepDot}
               resizeMode="contain"
@@ -70,13 +80,6 @@ export default function OnboardingScreen() {
         <Text style={styles.subtitle}>{page.subtitle}</Text>
       </View>
 
-      {/* {page.info && (
-        <View style={styles.infoBox}>
-          <Text style={styles.infoIcon}>ⓘ</Text>
-          <Text style={styles.infoText}>{page.info}</Text>
-        </View>
-      )} */}
-
       <View style={[styles.buttonSection, !isFirst && styles.buttonRow]}>
         {!isFirst && (
           <TouchableOpacity
@@ -89,7 +92,7 @@ export default function OnboardingScreen() {
         )}
         <TouchableOpacity
           style={[styles.nextButton, !isFirst && styles.nextButtonFlex]}
-          onPress={() => (isLast ? router.replace('/home') : setStep((s) => s + 1))}
+          onPress={handleNext}
           activeOpacity={0.85}
         >
           <Text style={styles.nextText}>{isLast ? '시작하기' : '다음'}</Text>

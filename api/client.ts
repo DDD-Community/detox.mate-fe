@@ -24,11 +24,13 @@ apiClient.interceptors.response.use(
       try {
         await refreshAccessToken();
         return apiClient(error.config);
-      } catch (error) {
+      } catch (refreshError) {
         logout();
         // TODO: 로그인 화면으로 redirect
+        return Promise.reject(refreshError);
       }
     }
+    return Promise.reject(error);
   }
 );
 

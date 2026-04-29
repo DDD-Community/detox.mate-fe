@@ -1,10 +1,10 @@
 import { useRouter } from 'expo-router';
 import React, { useEffect, useRef, useState } from 'react';
 import { AppState, Linking, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
-import { loginWithKakao } from '../auth/kakaoLogin';
-import { primitiveColors } from '../src/lib/token/primitive/colors';
-import { typography } from '../src/lib/token/primitive/typography';
-import { semanticColors } from '../src/lib/token/semantic/colors';
+import { loginWithKakao } from '../../auth/kakaoLogin';
+import { primitiveColors } from '../../src/lib/token/primitive/colors';
+import { typography } from '../../src/lib/token/primitive/typography';
+import { semanticColors } from '../../src/lib/token/semantic/colors';
 
 const { green, gray } = primitiveColors;
 
@@ -44,12 +44,12 @@ export default function AgreeScreen() {
 
   const openPrivacyUrl = () => {
     privacyLinkOpenedRef.current = true;
-    Linking.openURL('https://www.a.com'); // TODO: 관련 노션 웹뷰 URL 넣기
+    Linking.openURL('https://happysisyphe.notion.site/342ad7a38ce580e1ba8ac09e06c96dca?pvs=73');
   };
 
   const openTermsUrl = () => {
     termsLinkOpenedRef.current = true;
-    Linking.openURL('https://www.b.com'); // TODO: 관련 노션 웹뷰 URL 넣기
+    Linking.openURL('https://happysisyphe.notion.site/342ad7a38ce58022b466ffec4ca39482');
   };
 
   return (
