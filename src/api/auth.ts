@@ -1,6 +1,6 @@
 import { KakaoOAuthToken, login } from '@react-native-seoul/kakao-login';
 import * as SecureStore from 'expo-secure-store';
-import apiClient from '../api/client';
+import apiClient from './client';
 
 export type OAuthLoginResponse = {
   id: number;
@@ -50,7 +50,6 @@ export async function refreshAccessToken(): Promise<ServerResponseTokens> {
   } catch (error) {
     await logout();
     throw new Error('다시 로그인해 주세요.');
-    // TODO: 로그인 화면으로 redirect
   }
 }
 

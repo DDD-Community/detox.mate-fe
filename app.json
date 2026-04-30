@@ -2,6 +2,7 @@
   "expo": {
     "name": "detox-mate-fe",
     "slug": "detox-mate-fe",
+    "scheme": "detoxmate",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
@@ -15,7 +16,11 @@
     "ios": {
       "bundleIdentifier": "com.detoxmate.app.dev",
       "infoPlist": {
-        "LSApplicationQueriesSchemes": ["kakaokompassauth", "storykompassauth", "kakaolink"]
+        "LSApplicationQueriesSchemes": [
+          "kakaokompassauth",
+          "storykompassauth",
+          "kakaolink"
+        ]
       }
     },
     "android": {
@@ -42,7 +47,8 @@
         {
           "kakaoAppKey": "9fee24e132d201aa33e5fdd08f435726"
         }
-      ]
+      ],
+      "expo-router"
     ]
   }
 }

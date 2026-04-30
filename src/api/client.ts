@@ -1,13 +1,12 @@
 import axios from 'axios';
+import { router } from 'expo-router';
 import * as SecureStore from 'expo-secure-store';
-import { logout, refreshAccessToken } from '../auth/kakaoLogin';
+import { logout, refreshAccessToken } from './auth';
 
-// axios instance
 const apiClient = axios.create({
   baseURL: 'https://api-dev.detoxmate.co.kr',
 });
 
-// request interceptor
 apiClient.interceptors.request.use(async (config) => {
   const accessToken = await SecureStore.getItemAsync('accessTokenKey');
   if (accessToken) {
@@ -16,7 +15,6 @@ apiClient.interceptors.request.use(async (config) => {
   return config;
 });
 
-// response interceptor
 apiClient.interceptors.response.use(
   (response) => response,
   async (error) => {
@@ -24,11 +22,13 @@ apiClient.interceptors.response.use(
       try {
         await refreshAccessToken();
         return apiClient(error.config);
-      } catch (error) {
-        logout();
-        // TODO: 로그인 화면으로 redirect
+      } catch (refreshError) {
+        await logout();
+        router.replace('/login');
+        return Promise.reject(refreshError);
       }
     }
+    return Promise.reject(error);
   }
 );
 
