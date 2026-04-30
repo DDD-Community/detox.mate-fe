@@ -2,7 +2,7 @@ import * as SecureStore from 'expo-secure-store';
 import { useRouter } from 'expo-router';
 import { useEffect } from 'react';
 import { Image, StyleSheet, View } from 'react-native';
-import apiClient from '../../api/client';
+import apiClient from '../api/client';
 
 export default function SplashScreen() {
   const router = useRouter();
