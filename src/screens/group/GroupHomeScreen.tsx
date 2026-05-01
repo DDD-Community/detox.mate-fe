@@ -3,7 +3,6 @@ import { Alert, Image, StyleSheet, Text, TouchableOpacity, View } from 'react-na
 import apiClient from '../../api/client';
 import { primitiveColors } from '../../lib/token/primitive/colors';
 import { typography } from '../../lib/token/primitive/typography';
-import { semanticColors } from '../../lib/token/semantic/colors';
 
 const { brown, gray } = primitiveColors;
 
@@ -129,7 +128,7 @@ const styles = StyleSheet.create({
   },
   headerTitle: {
     ...typography.primary.title2B,
-    color: semanticColors.text.primary,
+    color: gray[900],
   },
   headerIcons: {
     flexDirection: 'row',
@@ -162,11 +161,11 @@ const styles = StyleSheet.create({
   },
   title: {
     ...typography.primary.title1B,
-    color: semanticColors.text.primary,
+    color: gray[900],
   },
   subtitle: {
     ...typography.primary.body2R,
-    color: semanticColors.text.secondary,
+    color: gray[600],
     textAlign: 'center',
   },
   cardRow: {
@@ -190,7 +189,7 @@ const styles = StyleSheet.create({
   },
   cardLabel: {
     ...typography.primary.body2M,
-    color: semanticColors.text.primary,
+    color: gray[900],
   },
   debugButton: {
     marginHorizontal: 24,

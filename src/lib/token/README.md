@@ -11,8 +11,6 @@ src/lib/token/
 │   ├── typography.ts   # 폰트 프리셋 (Pretendard)
 │   ├── spacing.ts      # 간격 (2~192, 짝수만)
 │   └── radius.ts       # 보더 라디어스 (4, 8, 12, 16, full)
-├── semantic/           # UI 역할 기반 매핑
-│   └── colors.ts       # text, bg, border, icon, status, interaction
 ├── icons/              # 아이콘 레지스트리
 │   └── index.ts        # 아이콘 이름 → 파일명 매핑
 └── index.ts            # barrel export
@@ -24,45 +22,37 @@ src/lib/token/
 
 ```typescript
 import {
-  semanticColors,
+  primitiveColors,
   typography,
   spacing,
   radius,
-  primitiveColors,
 } from 'src/lib/token';
 ```
 
 ### Colors
 
-컴포넌트에서는 **semantic 토큰**을 우선 사용합니다. primitive는 semantic 정의 시에만 참조합니다.
+컴포넌트에서는 `primitiveColors`를 직접 참조합니다.
 
 ```typescript
-import { semanticColors } from 'src/lib/token';
+import { primitiveColors } from 'src/lib/token';
+
+const { gray, green } = primitiveColors;
 
 const styles = StyleSheet.create({
   container: {
-    backgroundColor: semanticColors.bg.primary,      // '#FFFFFF'
-    borderColor: semanticColors.border.primary,       // gray[200]
+    backgroundColor: '#FFFFFF',
+    borderColor: gray[200],
   },
   text: {
-    color: semanticColors.text.primary,               // gray[900]
+    color: gray[900],
   },
   errorText: {
-    color: semanticColors.status.error,               // system.red[100]
+    color: '#E53935',
   },
 });
 ```
 
-**Semantic color 카테고리:**
-
-| 카테고리 | 용도 | 예시 |
-|---------|------|------|
-| `text` | 텍스트 색상 | `text.primary`, `text.secondary`, `text.brand` |
-| `bg` | 배경 색상 | `bg.primary`, `bg.secondary`, `bg.brandSubtle` |
-| `border` | 보더 색상 | `border.primary`, `border.brand`, `border.focus` |
-| `icon` | 아이콘 색상 | `icon.primary`, `icon.brand`, `icon.disabled` |
-| `status` | 상태/피드백 | `status.info`, `status.error`, `status.successSubtle` |
-| `interaction` | 인터랙션 | `interaction.pressed`, `interaction.hovered` |
+**Primitive color 팔레트:** `green`, `brown`, `level`, `gray`, `system`. 각 팔레트의 키는 `src/lib/token/primitive/colors.ts` 참고.
 
 ### Typography
 
@@ -150,23 +140,7 @@ const myIcon: IconName = 'home'; // 타입 안전
 
 ## 핵심 규칙
 
-1. **semantic 우선**: 컴포넌트에서는 `semanticColors`를 사용. `primitiveColors` 직접 참조 금지.
+1. **primitive 직접 사용**: 컴포넌트에서는 `primitiveColors`를 사용.
 2. **as const**: 모든 토큰은 `as const`로 정의되어 TypeScript 자동완성 지원.
 3. **짝수만**: spacing과 radius는 짝수 값만 사용.
 4. **letter-spacing**: typography 프리셋에 -2% letter-spacing 포함.
-
-## 다크모드 확장 (향후)
-
-현재는 라이트 모드 전용입니다. 다크모드 확장 시:
-
-1. `semantic/colors.dark.ts` 파일 생성
-2. `primitiveColors`를 참조하여 다크모드용 semantic 값 정의
-3. import level에서 라이트/다크 swap (런타임 테마 전환은 별도 구현)
-
-```typescript
-// 향후 다크모드 구조 예시
-// semantic/colors.ts       → 라이트 모드 (현재)
-// semantic/colors.dark.ts  → 다크 모드 (향후 추가)
-```
-
-primitive 토큰은 변경하지 않고, semantic layer만 교체하면 됩니다.

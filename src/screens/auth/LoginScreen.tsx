@@ -2,7 +2,6 @@ import { useRouter } from 'expo-router';
 import { Image, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { primitiveColors } from '../../lib/token/primitive/colors';
 import { typography } from '../../lib/token/primitive/typography';
-import { semanticColors } from '../../lib/token/semantic/colors';
 
 const { brown, gray } = primitiveColors;
 
@@ -72,7 +71,7 @@ const styles = StyleSheet.create({
   },
   tagline: {
     ...typography.primary.body1R,
-    color: semanticColors.text.secondary,
+    color: gray[600],
     textAlign: 'center',
   },
   imageSection: {

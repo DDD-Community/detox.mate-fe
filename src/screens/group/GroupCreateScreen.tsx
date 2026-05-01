@@ -5,7 +5,6 @@ import { Image, Share, StyleSheet, Text, TextInput, TouchableOpacity, View } fro
 import apiClient from '../../api/client';
 import { primitiveColors } from '../../lib/token/primitive/colors';
 import { typography } from '../../lib/token/primitive/typography';
-import { semanticColors } from '../../lib/token/semantic/colors';
 
 const { green, gray, brown } = primitiveColors;
 
@@ -200,7 +199,7 @@ const styles = StyleSheet.create({
   },
   stepLabel: {
     ...typography.primary.caption,
-    color: semanticColors.text.tertiary,
+    color: gray[400],
     paddingHorizontal: 24,
     marginTop: 8,
   },
@@ -212,12 +211,12 @@ const styles = StyleSheet.create({
   gap24: { height: 24 },
   title: {
     ...typography.primary.h2,
-    color: semanticColors.text.primary,
+    color: gray[900],
     marginBottom: 8,
   },
   subtitle: {
     ...typography.primary.body2R,
-    color: semanticColors.text.secondary,
+    color: gray[600],
   },
   inputWrapper: {
     backgroundColor: '#FFFFFF',
@@ -227,7 +226,7 @@ const styles = StyleSheet.create({
   },
   input: {
     ...typography.primary.body1R,
-    color: semanticColors.text.primary,
+    color: gray[900],
     padding: 0,
   },
   hintRow: {
@@ -243,11 +242,11 @@ const styles = StyleSheet.create({
   },
   hint: {
     ...typography.primary.caption,
-    color: semanticColors.text.tertiary,
+    color: gray[400],
   },
   errorText: {
     ...typography.primary.caption,
-    color: semanticColors.text.danger ?? '#E53935',
+    color: '#E53935',
     paddingHorizontal: 4,
     marginTop: 4,
   },
@@ -260,13 +259,13 @@ const styles = StyleSheet.create({
   },
   completeTitle: {
     ...typography.primary.h2,
-    color: semanticColors.text.primary,
+    color: gray[900],
     textAlign: 'center',
     marginBottom: 8,
   },
   completeSubtitle: {
     ...typography.primary.body2R,
-    color: semanticColors.text.secondary,
+    color: gray[600],
     textAlign: 'center',
   },
   inviteCard: {
@@ -283,11 +282,11 @@ const styles = StyleSheet.create({
   },
   codeLabel: {
     ...typography.primary.body2R,
-    color: semanticColors.text.secondary,
+    color: gray[600],
   },
   codeText: {
     ...typography.primary.title1B,
-    color: semanticColors.text.primary,
+    color: gray[900],
     letterSpacing: 2,
   },
   copyIcon: {
@@ -309,7 +308,7 @@ const styles = StyleSheet.create({
   },
   shareText: {
     ...typography.primary.body2M,
-    color: semanticColors.text.primary,
+    color: gray[900],
   },
   memberHintRow: {
     flexDirection: 'row',
