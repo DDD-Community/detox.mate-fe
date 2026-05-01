@@ -68,7 +68,7 @@ importers:
     devDependencies:
       '@storybook/addon-ondevice-actions':
         specifier: ^8
-        version: 8.6.4(prettier@3.8.1)(react-native@0.81.5(@babel/core@7.29.0)(@react-native/metro-config@0.85.2(@babel/core@7.29.0))(@types/react@19.1.17)(react@19.1.0))(react@19.1.0)(storybook@8.6.18(prettier@2.8.8))
+        version: 8.6.4(prettier@3.8.1)(react-native@0.81.5(@babel/core@7.29.0)(@react-native/metro-config@0.85.2(@babel/core@7.29.0))(@types/react@19.1.17)(react@19.1.0))(react@19.1.0)(storybook@8.6.18(prettier@3.8.1))
       '@storybook/addon-ondevice-controls':
         specifier: ^8
         version: 8.6.4(6yxwu5o56d3pkzejbchhy6o35a)
@@ -5602,7 +5602,7 @@ snapshots:
     dependencies:
       '@sinonjs/commons': 3.0.1
 
-  '@storybook/addon-actions@8.6.18(storybook@8.6.18(prettier@2.8.8))':
+  '@storybook/addon-actions@8.6.18(storybook@8.6.18(prettier@3.8.1))':
     dependencies:
       '@storybook/global': 5.0.0
       '@types/uuid': 9.0.8
@@ -5618,9 +5618,9 @@ snapshots:
       storybook: 8.6.18(prettier@2.8.8)
       ts-dedent: 2.2.0
 
-  '@storybook/addon-ondevice-actions@8.6.4(prettier@3.8.1)(react-native@0.81.5(@babel/core@7.29.0)(@react-native/metro-config@0.85.2(@babel/core@7.29.0))(@types/react@19.1.17)(react@19.1.0))(react@19.1.0)(storybook@8.6.18(prettier@2.8.8))':
+  '@storybook/addon-ondevice-actions@8.6.4(prettier@3.8.1)(react-native@0.81.5(@babel/core@7.29.0)(@react-native/metro-config@0.85.2(@babel/core@7.29.0))(@types/react@19.1.17)(react@19.1.0))(react@19.1.0)(storybook@8.6.18(prettier@3.8.1))':
     dependencies:
-      '@storybook/addon-actions': 8.6.18(storybook@8.6.18(prettier@2.8.8))
+      '@storybook/addon-actions': 8.6.18(storybook@8.6.18(prettier@3.8.1))
       '@storybook/core': 8.6.14(prettier@3.8.1)(storybook@8.6.18(prettier@3.8.1))
       '@storybook/global': 5.0.0
       fast-deep-equal: 2.0.1
