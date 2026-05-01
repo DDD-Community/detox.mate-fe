@@ -4,6 +4,8 @@
   "main": "expo-router/entry",
   "scripts": {
     "start": "expo start",
+    "storybook": "EXPO_PUBLIC_STORYBOOK=true expo start",
+    "storybook:generate": "sb-rn-get-stories --config-path .storybook",
     "android": "expo run:android",
     "ios": "expo run:ios",
     "web": "expo start --web",
@@ -32,8 +34,13 @@
     "zustand": "^5.0.12"
   },
   "devDependencies": {
+    "@storybook/addon-ondevice-actions": "^8",
+    "@storybook/addon-ondevice-controls": "^8",
+    "@storybook/react-native": "^8",
+    "@types/node": "^25.6.0",
     "@types/react": "~19.1.0",
     "prettier": "^3.8.1",
+    "react-native-reanimated": "^4.3.0",
     "typescript": "~5.9.2"
   },
   "private": true
