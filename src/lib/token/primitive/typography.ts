@@ -1,21 +1,20 @@
 import type { TextStyle } from 'react-native';
+import { fontFamily } from './fonts';
 
 /**
  * NanumSquareRound는 Medium 웨이트가 없어 디자이너 스펙과 다르게 매핑:
  *   400(Regular) → NanumSquareRoundR
  *   500(Medium)  → NanumSquareRoundB   (Bold를 Medium 슬롯에 사용)
  *   700(Bold)    → NanumSquareRoundEB  (ExtraBold를 Bold 슬롯에 사용)
- *
- * accent(OmyuPretty)는 TTF 미준비 상태 — 등록 전까지 시스템 폰트로 fallback.
  */
 
 const PRIMARY_FAMILY = {
-  regular: 'NanumSquareRoundR',
-  medium: 'NanumSquareRoundB',
-  bold: 'NanumSquareRoundEB',
+  regular: fontFamily.primary.regular,
+  medium: fontFamily.primary.medium,
+  bold: fontFamily.primary.bold,
 } as const;
 
-const ACCENT_FAMILY = 'OmyuPretty';
+const ACCENT_FAMILY = fontFamily.accent.regular;
 
 export const fontSize = {
   9: 9,
@@ -47,7 +46,7 @@ const lhAccent = (size: number) => size * 1.3;
 const primaryStyle = (
   size: number,
   family: (typeof PRIMARY_FAMILY)[keyof typeof PRIMARY_FAMILY],
-  weight: '400' | '500' | '700',
+  weight: '400' | '500' | '700'
 ): TextStyle => ({
   fontFamily: family,
   fontSize: size,

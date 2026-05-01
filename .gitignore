@@ -41,7 +41,9 @@ omc/
 .local/
 
 # Secrets
+.agents/skills/shared/config/discord-webhook-url.txt
 .claude/skills/shared/config/discord-webhook-url.txt
+.claude/settings.local.json
 
 # typescript
 *.tsbuildinfo
@@ -49,3 +51,13 @@ omc/
 # generated native folders
 /ios
 /android
+
+# ralph loop state
+.ucw/
+
+# editor
+.vscode/
+
+
+# ralph loop state
+.ucw/
