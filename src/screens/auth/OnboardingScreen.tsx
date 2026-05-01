@@ -4,7 +4,6 @@ import React, { useState } from 'react';
 import { Image, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { primitiveColors } from '../../lib/token/primitive/colors';
 import { typography } from '../../lib/token/primitive/typography';
-import { semanticColors } from '../../lib/token/semantic/colors';
 
 const { green, gray, brown } = primitiveColors;
 
@@ -140,12 +139,12 @@ const styles = StyleSheet.create({
   },
   title: {
     ...typography.primary.h2,
-    color: semanticColors.text.primary,
+    color: gray[900],
     textAlign: 'center',
   },
   subtitle: {
     ...typography.primary.body2R,
-    color: semanticColors.text.secondary,
+    color: gray[600],
     textAlign: 'center',
   },
   infoBox: {

@@ -4,7 +4,6 @@ import { AppState, Linking, StyleSheet, Text, TouchableOpacity, View } from 'rea
 import { loginWithKakao } from '../../api/auth';
 import { primitiveColors } from '../../lib/token/primitive/colors';
 import { typography } from '../../lib/token/primitive/typography';
-import { semanticColors } from '../../lib/token/semantic/colors';
 
 const { green, gray } = primitiveColors;
 
@@ -160,12 +159,12 @@ const styles = StyleSheet.create({
   },
   title: {
     ...typography.primary.h2,
-    color: semanticColors.text.primary,
+    color: gray[900],
     marginBottom: 12,
   },
   subtitle: {
     ...typography.primary.body2R,
-    color: semanticColors.text.tertiary,
+    color: gray[400],
   },
   gap28: { height: 28 },
   gap16: { height: 16 },
@@ -191,7 +190,7 @@ const styles = StyleSheet.create({
   },
   allAgreeText: {
     ...typography.primary.body1M,
-    color: semanticColors.text.primary,
+    color: gray[900],
   },
   agreeRow: {
     flexDirection: 'row',
@@ -228,7 +227,7 @@ const styles = StyleSheet.create({
   agreeText: {
     flex: 1,
     ...typography.primary.body2M,
-    color: semanticColors.text.primary,
+    color: gray[900],
   },
   chevron: {
     fontSize: 22,
