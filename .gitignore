@@ -41,6 +41,7 @@ omc/
 .local/
 
 # Secrets
+.agents/skills/shared/config/discord-webhook-url.txt
 .claude/skills/shared/config/discord-webhook-url.txt
 .claude/settings.local.json
 
