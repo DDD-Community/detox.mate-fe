@@ -57,3 +57,6 @@ omc/
 # editor
 .vscode/
 
+
+# ralph loop state
+.ucw/
