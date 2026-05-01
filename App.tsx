@@ -4,16 +4,12 @@ import * as SplashScreen from 'expo-splash-screen';
 import { StatusBar } from 'expo-status-bar';
 import { useEffect } from 'react';
 import { Button, StyleSheet, View } from 'react-native';
+import { fontSources } from './src/lib/token/primitive/fonts';
 
 SplashScreen.preventAutoHideAsync();
 
 export default function App() {
-  const [fontsLoaded, fontError] = useFonts({
-    NanumSquareRoundL: require('./assets/fonts/nanum-square-round/NanumSquareRoundL.ttf'),
-    NanumSquareRoundR: require('./assets/fonts/nanum-square-round/NanumSquareRoundR.ttf'),
-    NanumSquareRoundB: require('./assets/fonts/nanum-square-round/NanumSquareRoundB.ttf'),
-    NanumSquareRoundEB: require('./assets/fonts/nanum-square-round/NanumSquareRoundEB.ttf'),
-  });
+  const [fontsLoaded, fontError] = useFonts(fontSources);
 
   useEffect(() => {
     if (fontsLoaded || fontError) {

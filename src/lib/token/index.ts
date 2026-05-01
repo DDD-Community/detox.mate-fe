@@ -16,6 +16,7 @@
 
 // Primitive tokens
 export { primitiveColors } from './primitive/colors';
+export { fontFamily } from './primitive/fonts';
 export { typography } from './primitive/typography';
 export { spacing } from './primitive/spacing';
 export { radius } from './primitive/radius';
