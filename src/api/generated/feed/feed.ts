@@ -8,35 +8,35 @@ import type {
   FeedDetailResponse,
   GetHomeFeedParams,
   GetStampDetailParams,
-  HomeFeedResponse
+  HomeFeedResponse,
 } from '../model';
 
 import { customAxios } from '../../mutator';
 
-
-
-  export const getFeed = () => {
-const getStampDetail = (
+export const getFeed = () => {
+  const getStampDetail = (
     groupChallengeId: number,
     stampId: number,
-    params: GetStampDetailParams,
- ) => {
-      return customAxios<FeedDetailResponse>(
-      {url: `/group-challenges/${groupChallengeId}/stamps/${stampId}`, method: 'GET',
-        params
-    },
-      );
-    }
-  const getHomeFeed = (
-    groupChallengeId: number,
-    params: GetHomeFeedParams,
- ) => {
-      return customAxios<HomeFeedResponse>(
-      {url: `/group-challenges/${groupChallengeId}/home`, method: 'GET',
-        params
-    },
-      );
-    }
-  return {getStampDetail,getHomeFeed}};
-export type GetStampDetailResult = NonNullable<Awaited<ReturnType<ReturnType<typeof getFeed>['getStampDetail']>>>
-export type GetHomeFeedResult = NonNullable<Awaited<ReturnType<ReturnType<typeof getFeed>['getHomeFeed']>>>
+    params: GetStampDetailParams
+  ) => {
+    return customAxios<FeedDetailResponse>({
+      url: `/group-challenges/${groupChallengeId}/stamps/${stampId}`,
+      method: 'GET',
+      params,
+    });
+  };
+  const getHomeFeed = (groupChallengeId: number, params: GetHomeFeedParams) => {
+    return customAxios<HomeFeedResponse>({
+      url: `/group-challenges/${groupChallengeId}/home`,
+      method: 'GET',
+      params,
+    });
+  };
+  return { getStampDetail, getHomeFeed };
+};
+export type GetStampDetailResult = NonNullable<
+  Awaited<ReturnType<ReturnType<typeof getFeed>['getStampDetail']>>
+>;
+export type GetHomeFeedResult = NonNullable<
+  Awaited<ReturnType<ReturnType<typeof getFeed>['getHomeFeed']>>
+>;

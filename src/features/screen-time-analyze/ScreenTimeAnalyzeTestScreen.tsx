@@ -1,13 +1,5 @@
 import { StatusBar } from 'expo-status-bar';
-import {
-  Image,
-  Pressable,
-  SafeAreaView,
-  ScrollView,
-  StyleSheet,
-  Text,
-  View,
-} from 'react-native';
+import { Image, Pressable, SafeAreaView, ScrollView, StyleSheet, Text, View } from 'react-native';
 
 import { useScreenTimeImageAnalyze } from './useScreenTimeImageAnalyze';
 
@@ -34,9 +26,7 @@ function formatRejectReason(reason: string): string {
   }
 }
 
-export function ScreenTimeAnalyzeTestScreen({
-  onClose,
-}: ScreenTimeAnalyzeTestScreenProps) {
+export function ScreenTimeAnalyzeTestScreen({ onClose }: ScreenTimeAnalyzeTestScreenProps) {
   const {
     analysisResult,
     analyzeImage,
@@ -63,8 +53,8 @@ export function ScreenTimeAnalyzeTestScreen({
         <View style={styles.card}>
           <Text style={styles.cardTitle}>실사용 테스트 화면</Text>
           <Text style={styles.helper}>
-            유저가 업로드한 스크린타임 이미지를 분석하고, `어제` 단어만이 아니라 실제 어제
-            날짜까지 맞을 때만 성공으로 처리합니다.
+            유저가 업로드한 스크린타임 이미지를 분석하고, `어제` 단어만이 아니라 실제 어제 날짜까지
+            맞을 때만 성공으로 처리합니다.
           </Text>
           <View style={styles.controls}>
             <Pressable style={styles.button} onPress={() => void pickImage()}>

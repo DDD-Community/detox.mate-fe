@@ -5,7 +5,7 @@ import AppleVisionOcrModule, {
 
 export async function recognizeText(
   imageUri: string,
-  options?: RecognizeTextOptions,
+  options?: RecognizeTextOptions
 ): Promise<NativeOCRResult> {
   return AppleVisionOcrModule.recognizeText(imageUri, options);
 }

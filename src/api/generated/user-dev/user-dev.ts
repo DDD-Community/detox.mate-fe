@@ -6,16 +6,12 @@
  */
 import { customAxios } from '../../mutator';
 
-
-
-  export const getUserDev = () => {
-const withdraw = (
-
- ) => {
-      return customAxios<void>(
-      {url: `/users/me`, method: 'DELETE'
-    },
-      );
-    }
-  return {withdraw}};
-export type WithdrawResult = NonNullable<Awaited<ReturnType<ReturnType<typeof getUserDev>['withdraw']>>>
+export const getUserDev = () => {
+  const withdraw = () => {
+    return customAxios<void>({ url: `/users/me`, method: 'DELETE' });
+  };
+  return { withdraw };
+};
+export type WithdrawResult = NonNullable<
+  Awaited<ReturnType<ReturnType<typeof getUserDev>['withdraw']>>
+>;

@@ -44,8 +44,7 @@ export default function VerifyDoneScreen() {
   const goalMinutes = parseHHMMToMinutes(goal);
   const hasGoal = goalMinutes !== null && valueMinutes !== null;
   const goalAchieved = hasGoal ? valueMinutes! <= goalMinutes! : true;
-  const diffText =
-    hasGoal && goalAchieved ? formatMinutesDiff(goalMinutes! - valueMinutes!) : '';
+  const diffText = hasGoal && goalAchieved ? formatMinutesDiff(goalMinutes! - valueMinutes!) : '';
 
   const handleSetGoal = () => {
     router.replace({
@@ -148,9 +147,7 @@ export default function VerifyDoneScreen() {
                 style={goalAchieved ? styles.goalCompareIcon : styles.goalCompareIconMissed}
                 resizeMode="contain"
               />
-              <Text
-                style={goalAchieved ? styles.goalCompareText : styles.goalCompareTextMissed}
-              >
+              <Text style={goalAchieved ? styles.goalCompareText : styles.goalCompareTextMissed}>
                 {goalAchieved
                   ? diffText
                     ? `좋아요, 목표보다 ${diffText} 덜 썼어요!`

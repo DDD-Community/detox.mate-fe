@@ -8,39 +8,42 @@ import type {
   CreateReactionParams,
   CreateReactionRequest,
   DeleteReactionParams,
-  ReactionResponse
+  ReactionResponse,
 } from '../model';
 
 import { customAxios } from '../../mutator';
 
-
-
-  export const getReaction = () => {
-const createReaction = (
+export const getReaction = () => {
+  const createReaction = (
     groupChallengeId: number,
     stampId: number,
     createReactionRequest: CreateReactionRequest,
-    params: CreateReactionParams,
- ) => {
-      return customAxios<ReactionResponse>(
-      {url: `/group-challenges/${groupChallengeId}/stamps/${stampId}/reactions`, method: 'POST',
-      headers: {'Content-Type': 'application/json', },
+    params: CreateReactionParams
+  ) => {
+    return customAxios<ReactionResponse>({
+      url: `/group-challenges/${groupChallengeId}/stamps/${stampId}/reactions`,
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
       data: createReactionRequest,
-        params
-    },
-      );
-    }
+      params,
+    });
+  };
   const deleteReaction = (
     groupChallengeId: number,
     reactionId: number,
-    params: DeleteReactionParams,
- ) => {
-      return customAxios<void>(
-      {url: `/group-challenges/${groupChallengeId}/reactions/${reactionId}`, method: 'DELETE',
-        params
-    },
-      );
-    }
-  return {createReaction,deleteReaction}};
-export type CreateReactionResult = NonNullable<Awaited<ReturnType<ReturnType<typeof getReaction>['createReaction']>>>
-export type DeleteReactionResult = NonNullable<Awaited<ReturnType<ReturnType<typeof getReaction>['deleteReaction']>>>
+    params: DeleteReactionParams
+  ) => {
+    return customAxios<void>({
+      url: `/group-challenges/${groupChallengeId}/reactions/${reactionId}`,
+      method: 'DELETE',
+      params,
+    });
+  };
+  return { createReaction, deleteReaction };
+};
+export type CreateReactionResult = NonNullable<
+  Awaited<ReturnType<ReturnType<typeof getReaction>['createReaction']>>
+>;
+export type DeleteReactionResult = NonNullable<
+  Awaited<ReturnType<ReturnType<typeof getReaction>['deleteReaction']>>
+>;

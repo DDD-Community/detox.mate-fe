@@ -108,7 +108,7 @@ export function parseSummaryDateLabelMonthDay(dateLabel: string): MonthDay | nul
 
 export function isSummaryDateLabelActualYesterday(
   dateLabel: string,
-  { now = new Date(), timeZone }: ActualYesterdayOptions = {},
+  { now = new Date(), timeZone }: ActualYesterdayOptions = {}
 ): boolean {
   const monthDay = parseSummaryDateLabelMonthDay(dateLabel);
   if (!monthDay) {
@@ -124,6 +124,6 @@ export function isSummaryDateLabelActualYesterday(
     (year) =>
       year === actualYesterday.year &&
       monthDay.month === actualYesterday.month &&
-      monthDay.day === actualYesterday.day,
+      monthDay.day === actualYesterday.day
   );
 }

@@ -7,5 +7,5 @@
 import type { CurrentUser } from './currentUser';
 
 export type DeleteGroupParams = {
-currentUser: CurrentUser;
+  currentUser: CurrentUser;
 };

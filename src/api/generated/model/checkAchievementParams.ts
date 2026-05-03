@@ -7,5 +7,5 @@
 import type { CurrentUser } from './currentUser';
 
 export type CheckAchievementParams = {
-currentUser: CurrentUser;
+  currentUser: CurrentUser;
 };

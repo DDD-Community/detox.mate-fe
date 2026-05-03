@@ -21,7 +21,7 @@ async function defaultRecognizeText(imageUri: string): Promise<OCRResult> {
 
 export async function analyzeScreenTimeImage(
   imageUri: string,
-  deps: AnalyzeScreenTimeImageDeps = {},
+  deps: AnalyzeScreenTimeImageDeps = {}
 ): Promise<ScreenTimeImageAnalysisResult> {
   const runRecognizeText = deps.recognizeText ?? defaultRecognizeText;
   const now = deps.now ?? new Date();

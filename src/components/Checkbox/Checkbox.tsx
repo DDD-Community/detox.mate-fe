@@ -21,8 +21,7 @@ interface BoxColors {
 }
 
 const getBoxColors = (checked: boolean, disabled: boolean): BoxColors => {
-  if (disabled && checked)
-    return { bg: gray[50], border: gray[100], showCheck: true };
+  if (disabled && checked) return { bg: gray[50], border: gray[100], showCheck: true };
   if (disabled) return { bg: gray[50], border: gray[100], showCheck: false };
   if (checked) return { bg: green[400], border: green[400], showCheck: true };
   return { bg: '#FFFFFF', border: gray[100], showCheck: false };
@@ -52,9 +51,7 @@ export function Checkbox({
     >
       <View style={[styles.box, { backgroundColor: box.bg, borderColor: box.border }]}>
         {box.showCheck
-          ? checkIcon ?? (
-              <Text style={[styles.check, { color: getCheckColor(disabled) }]}>✓</Text>
-            )
+          ? (checkIcon ?? <Text style={[styles.check, { color: getCheckColor(disabled) }]}>✓</Text>)
           : null}
       </View>
       {label ? (

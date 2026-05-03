@@ -21,12 +21,7 @@ src/lib/token/
 ### Import
 
 ```typescript
-import {
-  primitiveColors,
-  typography,
-  spacing,
-  radius,
-} from 'src/lib/token';
+import { primitiveColors, typography, spacing, radius } from 'src/lib/token';
 ```
 
 ### Colors
@@ -62,26 +57,26 @@ Pretendard 폰트 기반, 모든 프리셋은 `...spread`로 사용합니다.
 import { typography } from 'src/lib/token';
 
 const styles = StyleSheet.create({
-  heading: { ...typography.h1 },        // 32/bold/150%
-  title: { ...typography.title1B },     // 20/bold/150%
-  body: { ...typography.body1R },       // 16/regular/150%
-  caption: { ...typography.caption2 },  // 11/regular/150%
+  heading: { ...typography.h1 }, // 32/bold/150%
+  title: { ...typography.title1B }, // 20/bold/150%
+  body: { ...typography.body1R }, // 16/regular/150%
+  caption: { ...typography.caption2 }, // 11/regular/150%
 });
 ```
 
 **프리셋 목록:**
 
-| 프리셋 | Size | Weight | 용도 |
-|--------|------|--------|------|
-| `h1` | 32 | bold | 대제목 |
-| `h2` | 28 | bold | 중제목 |
-| `h3` | 24 | bold | 소제목 |
-| `title1B` / `title1M` | 20 | bold / medium | 타이틀 |
-| `title2B` / `title2M` | 18 | bold / medium | 서브타이틀 |
-| `body1B` / `body1M` / `body1R` | 16 | bold / medium / regular | 본문 |
-| `body2B` / `body2M` / `body2R` | 14 | bold / medium / regular | 보조 본문 |
-| `body3B` / `body3M` / `body3R` | 12 | bold / medium / regular | 작은 본문 |
-| `caption2` | 11 | regular | 캡션 |
+| 프리셋                         | Size | Weight                  | 용도       |
+| ------------------------------ | ---- | ----------------------- | ---------- |
+| `h1`                           | 32   | bold                    | 대제목     |
+| `h2`                           | 28   | bold                    | 중제목     |
+| `h3`                           | 24   | bold                    | 소제목     |
+| `title1B` / `title1M`          | 20   | bold / medium           | 타이틀     |
+| `title2B` / `title2M`          | 18   | bold / medium           | 서브타이틀 |
+| `body1B` / `body1M` / `body1R` | 16   | bold / medium / regular | 본문       |
+| `body2B` / `body2M` / `body2R` | 14   | bold / medium / regular | 보조 본문  |
+| `body3B` / `body3M` / `body3R` | 12   | bold / medium / regular | 작은 본문  |
+| `caption2`                     | 11   | regular                 | 캡션       |
 
 ### Spacing
 
@@ -111,7 +106,7 @@ import { radius } from 'src/lib/token';
 const styles = StyleSheet.create({
   card: { borderRadius: radius[12] },
   input: { borderRadius: radius[8] },
-  chip: { borderRadius: radius.full },  // 999
+  chip: { borderRadius: radius.full }, // 999
 });
 ```
 
@@ -134,6 +129,7 @@ const myIcon: IconName = 'home'; // 타입 안전
 ```
 
 **새 아이콘 추가 절차:**
+
 1. SVG 파일을 `src/assets/icons/`에 저장 (kebab-case: `ic-arrow-left.svg`)
 2. `src/lib/token/icons/index.ts`의 `iconNames`에 등록
 3. 컴포넌트에서 import하여 사용

@@ -7,5 +7,5 @@
 import type { CurrentUser } from './currentUser';
 
 export type GetCurrentGoalTimesParams = {
-currentUser: CurrentUser;
+  currentUser: CurrentUser;
 };

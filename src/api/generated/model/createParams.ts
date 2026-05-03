@@ -7,5 +7,5 @@
 import type { CurrentUser } from './currentUser';
 
 export type CreateParams = {
-currentUser: CurrentUser;
+  currentUser: CurrentUser;
 };

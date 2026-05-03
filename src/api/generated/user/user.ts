@@ -4,24 +4,14 @@
  * OpenAPI definition
  * OpenAPI spec version: v0
  */
-import type {
-  GetMeParams,
-  MyProfileResponse
-} from '../model';
+import type { GetMeParams, MyProfileResponse } from '../model';
 
 import { customAxios } from '../../mutator';
 
-
-
-  export const getUser = () => {
-const getMe = (
-    params: GetMeParams,
- ) => {
-      return customAxios<MyProfileResponse>(
-      {url: `/users/me`, method: 'GET',
-        params
-    },
-      );
-    }
-  return {getMe}};
-export type GetMeResult = NonNullable<Awaited<ReturnType<ReturnType<typeof getUser>['getMe']>>>
+export const getUser = () => {
+  const getMe = (params: GetMeParams) => {
+    return customAxios<MyProfileResponse>({ url: `/users/me`, method: 'GET', params });
+  };
+  return { getMe };
+};
+export type GetMeResult = NonNullable<Awaited<ReturnType<ReturnType<typeof getUser>['getMe']>>>;

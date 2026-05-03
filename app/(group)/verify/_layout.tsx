@@ -9,22 +9,10 @@ export default function VerifyLayout() {
         animation: 'fade',
       }}
     >
-      <Stack.Screen
-        name="wrong-time"
-        options={{ presentation: 'card', animation: 'default' }}
-      />
-      <Stack.Screen
-        name="complete"
-        options={{ presentation: 'card', animation: 'default' }}
-      />
-      <Stack.Screen
-        name="retro"
-        options={{ presentation: 'card', animation: 'default' }}
-      />
-      <Stack.Screen
-        name="error"
-        options={{ presentation: 'card', animation: 'default' }}
-      />
+      <Stack.Screen name="wrong-time" options={{ presentation: 'card', animation: 'default' }} />
+      <Stack.Screen name="complete" options={{ presentation: 'card', animation: 'default' }} />
+      <Stack.Screen name="retro" options={{ presentation: 'card', animation: 'default' }} />
+      <Stack.Screen name="error" options={{ presentation: 'card', animation: 'default' }} />
     </Stack>
   );
 }

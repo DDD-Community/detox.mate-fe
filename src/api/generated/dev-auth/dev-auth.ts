@@ -4,25 +4,21 @@
  * OpenAPI definition
  * OpenAPI spec version: v0
  */
-import type {
-  AuthLoginResponse,
-  DevTestLoginRequest
-} from '../model';
+import type { AuthLoginResponse, DevTestLoginRequest } from '../model';
 
 import { customAxios } from '../../mutator';
 
-
-
-  export const getDevAuth = () => {
-const testLogin = (
-    devTestLoginRequest: DevTestLoginRequest,
- ) => {
-      return customAxios<AuthLoginResponse>(
-      {url: `/dev/auth/test-login`, method: 'POST',
-      headers: {'Content-Type': 'application/json', },
-      data: devTestLoginRequest
-    },
-      );
-    }
-  return {testLogin}};
-export type TestLoginResult = NonNullable<Awaited<ReturnType<ReturnType<typeof getDevAuth>['testLogin']>>>
+export const getDevAuth = () => {
+  const testLogin = (devTestLoginRequest: DevTestLoginRequest) => {
+    return customAxios<AuthLoginResponse>({
+      url: `/dev/auth/test-login`,
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      data: devTestLoginRequest,
+    });
+  };
+  return { testLogin };
+};
+export type TestLoginResult = NonNullable<
+  Awaited<ReturnType<ReturnType<typeof getDevAuth>['testLogin']>>
+>;

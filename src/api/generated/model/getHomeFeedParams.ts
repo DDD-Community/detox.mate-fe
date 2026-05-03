@@ -7,5 +7,5 @@
 import type { CurrentUser } from './currentUser';
 
 export type GetHomeFeedParams = {
-currentUser: CurrentUser;
+  currentUser: CurrentUser;
 };

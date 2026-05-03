@@ -9,39 +9,38 @@ import type {
   CommentResponse,
   CreateCommentParams,
   CreateCommentRequest,
-  GetCommentsParams
+  GetCommentsParams,
 } from '../model';
 
 import { customAxios } from '../../mutator';
 
-
-
-  export const getComment = () => {
-const getComments = (
-    groupChallengeId: number,
-    stampId: number,
-    params?: GetCommentsParams,
- ) => {
-      return customAxios<CommentListResponse>(
-      {url: `/group-challenges/${groupChallengeId}/stamps/${stampId}/comments`, method: 'GET',
-        params
-    },
-      );
-    }
+export const getComment = () => {
+  const getComments = (groupChallengeId: number, stampId: number, params?: GetCommentsParams) => {
+    return customAxios<CommentListResponse>({
+      url: `/group-challenges/${groupChallengeId}/stamps/${stampId}/comments`,
+      method: 'GET',
+      params,
+    });
+  };
   const createComment = (
     groupChallengeId: number,
     stampId: number,
     createCommentRequest: CreateCommentRequest,
-    params: CreateCommentParams,
- ) => {
-      return customAxios<CommentResponse>(
-      {url: `/group-challenges/${groupChallengeId}/stamps/${stampId}/comments`, method: 'POST',
-      headers: {'Content-Type': 'application/json', },
+    params: CreateCommentParams
+  ) => {
+    return customAxios<CommentResponse>({
+      url: `/group-challenges/${groupChallengeId}/stamps/${stampId}/comments`,
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
       data: createCommentRequest,
-        params
-    },
-      );
-    }
-  return {getComments,createComment}};
-export type GetCommentsResult = NonNullable<Awaited<ReturnType<ReturnType<typeof getComment>['getComments']>>>
-export type CreateCommentResult = NonNullable<Awaited<ReturnType<ReturnType<typeof getComment>['createComment']>>>
+      params,
+    });
+  };
+  return { getComments, createComment };
+};
+export type GetCommentsResult = NonNullable<
+  Awaited<ReturnType<ReturnType<typeof getComment>['getComments']>>
+>;
+export type CreateCommentResult = NonNullable<
+  Awaited<ReturnType<ReturnType<typeof getComment>['createComment']>>
+>;

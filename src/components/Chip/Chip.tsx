@@ -1,12 +1,5 @@
 import type { ReactNode } from 'react';
-import {
-  Pressable,
-  StyleSheet,
-  Text,
-  View,
-  type StyleProp,
-  type ViewStyle,
-} from 'react-native';
+import { Pressable, StyleSheet, Text, View, type StyleProp, type ViewStyle } from 'react-native';
 
 import { primitiveColors, radius, spacing, typography } from '../../lib/token';
 
@@ -141,9 +134,7 @@ export function Chip({
               {label}
             </Text>
             {trailingIcon ? (
-              <View
-                style={{ width: sizes.trailingIconSize, height: sizes.trailingIconSize }}
-              >
+              <View style={{ width: sizes.trailingIconSize, height: sizes.trailingIconSize }}>
                 {trailingIcon}
               </View>
             ) : null}

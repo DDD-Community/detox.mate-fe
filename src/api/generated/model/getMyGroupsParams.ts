@@ -7,5 +7,5 @@
 import type { CurrentUser } from './currentUser';
 
 export type GetMyGroupsParams = {
-currentUser: CurrentUser;
+  currentUser: CurrentUser;
 };

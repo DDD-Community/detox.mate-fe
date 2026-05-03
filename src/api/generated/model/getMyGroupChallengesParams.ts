@@ -7,6 +7,6 @@
 import type { CurrentUser } from './currentUser';
 
 export type GetMyGroupChallengesParams = {
-currentUser: CurrentUser;
-status?: string;
+  currentUser: CurrentUser;
+  status?: string;
 };

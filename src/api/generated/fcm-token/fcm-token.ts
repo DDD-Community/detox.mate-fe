@@ -8,38 +8,35 @@ import type {
   RegisterFcmTokenRequest,
   RegisterParams,
   RemoveFcmTokenRequest,
-  RemoveParams
+  RemoveParams,
 } from '../model';
 
 import { customAxios } from '../../mutator';
 
-
-
-  export const getFcmToken = () => {
-const register = (
-    registerFcmTokenRequest: RegisterFcmTokenRequest,
-    params: RegisterParams,
- ) => {
-      return customAxios<void>(
-      {url: `/notifications/tokens`, method: 'POST',
-      headers: {'Content-Type': 'application/json', },
+export const getFcmToken = () => {
+  const register = (registerFcmTokenRequest: RegisterFcmTokenRequest, params: RegisterParams) => {
+    return customAxios<void>({
+      url: `/notifications/tokens`,
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
       data: registerFcmTokenRequest,
-        params
-    },
-      );
-    }
-  const remove = (
-    removeFcmTokenRequest: RemoveFcmTokenRequest,
-    params: RemoveParams,
- ) => {
-      return customAxios<void>(
-      {url: `/notifications/tokens`, method: 'DELETE',
-      headers: {'Content-Type': 'application/json', },
+      params,
+    });
+  };
+  const remove = (removeFcmTokenRequest: RemoveFcmTokenRequest, params: RemoveParams) => {
+    return customAxios<void>({
+      url: `/notifications/tokens`,
+      method: 'DELETE',
+      headers: { 'Content-Type': 'application/json' },
       data: removeFcmTokenRequest,
-        params
-    },
-      );
-    }
-  return {register,remove}};
-export type RegisterResult = NonNullable<Awaited<ReturnType<ReturnType<typeof getFcmToken>['register']>>>
-export type RemoveResult = NonNullable<Awaited<ReturnType<ReturnType<typeof getFcmToken>['remove']>>>
+      params,
+    });
+  };
+  return { register, remove };
+};
+export type RegisterResult = NonNullable<
+  Awaited<ReturnType<ReturnType<typeof getFcmToken>['register']>>
+>;
+export type RemoveResult = NonNullable<
+  Awaited<ReturnType<ReturnType<typeof getFcmToken>['remove']>>
+>;

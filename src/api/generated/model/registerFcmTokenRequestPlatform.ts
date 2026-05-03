@@ -5,8 +5,8 @@
  * OpenAPI spec version: v0
  */
 
-export type RegisterFcmTokenRequestPlatform = typeof RegisterFcmTokenRequestPlatform[keyof typeof RegisterFcmTokenRequestPlatform];
-
+export type RegisterFcmTokenRequestPlatform =
+  (typeof RegisterFcmTokenRequestPlatform)[keyof typeof RegisterFcmTokenRequestPlatform];
 
 export const RegisterFcmTokenRequestPlatform = {
   ANDROID: 'ANDROID',
