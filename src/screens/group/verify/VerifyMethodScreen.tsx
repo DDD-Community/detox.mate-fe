@@ -1,6 +1,6 @@
 import * as ImagePicker from 'expo-image-picker';
 import * as Linking from 'expo-linking';
-import { router } from 'expo-router';
+import { router, useLocalSearchParams } from 'expo-router';
 import { useRef } from 'react';
 import { AppState, Image, Pressable, StyleSheet, Text, View } from 'react-native';
 import { Button } from '../../../components/Button';
@@ -10,7 +10,16 @@ import { typography } from '../../../lib/token/primitive/typography';
 const { gray, brown } = primitiveColors;
 
 export default function VerifyMethodScreen() {
+  const { mode, goal } = useLocalSearchParams<{
+    mode?: 'initial' | 'verify';
+    goal?: string;
+  }>();
   const awaitingReturnRef = useRef(false);
+
+  const forwardParams = {
+    ...(mode ? { mode } : {}),
+    ...(goal ? { goal } : {}),
+  };
 
   const handleGallery = async () => {
     const result = await ImagePicker.launchImageLibraryAsync({
@@ -20,7 +29,7 @@ export default function VerifyMethodScreen() {
     if (result.canceled || !result.assets[0]) return;
     router.replace({
       pathname: '/(group)/verify/upload',
-      params: { imageUri: result.assets[0].uri },
+      params: { imageUri: result.assets[0].uri, ...forwardParams },
     });
   };
 
@@ -30,7 +39,10 @@ export default function VerifyMethodScreen() {
       if (state !== 'active' || !awaitingReturnRef.current) return;
       awaitingReturnRef.current = false;
       subscription.remove();
-      router.replace('/(group)/verify/upload');
+      router.replace({
+        pathname: '/(group)/verify/upload',
+        params: forwardParams,
+      });
     });
     await Linking.openSettings();
   };

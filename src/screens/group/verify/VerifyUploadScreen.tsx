@@ -7,14 +7,25 @@ import { analyzeScreenTimeImage } from '../../../features/screen-time-analyze';
 import { primitiveColors } from '../../../lib/token/primitive/colors';
 import { typography } from '../../../lib/token/primitive/typography';
 
-const { gray, brown, green } = primitiveColors;
+const { gray, brown } = primitiveColors;
 
 export default function VerifyUploadScreen() {
-  const { imageUri: paramImageUri } = useLocalSearchParams<{ imageUri?: string }>();
+  const {
+    imageUri: paramImageUri,
+    mode,
+    goal,
+  } = useLocalSearchParams<{
+    imageUri?: string;
+    mode?: 'initial' | 'verify';
+    goal?: string;
+  }>();
   const [imageUri, setImageUri] = useState<string | undefined>(paramImageUri);
+  const forwardParams = {
+    ...(mode ? { mode } : {}),
+    ...(goal ? { goal } : {}),
+  };
   const hasImage = Boolean(imageUri);
   const [isAnalyzing, setIsAnalyzing] = useState(false);
-  const [showErrorAlert, setShowErrorAlert] = useState(false);
 
   const handlePickImage = async () => {
     const result = await ImagePicker.launchImageLibraryAsync({
@@ -28,21 +39,29 @@ export default function VerifyUploadScreen() {
   const handleAnalyze = async () => {
     if (!imageUri) return;
     setIsAnalyzing(true);
-    const result = await analyzeScreenTimeImage(imageUri);
+    let result = await analyzeScreenTimeImage(imageUri);
     setIsAnalyzing(false);
+
+    // TODO: 임시 — 분석 결과 무관하게 항상 성공 처리. 실제 OCR 연동 시 이 블록 삭제.
+    result = {
+      ok: true,
+      value: '4:32',
+      dateLabel: '어제',
+      rawUsageText: '4시간 32분',
+      elapsedMs: 0,
+    };
+
     if (!result.ok) {
-      setShowErrorAlert(true);
+      router.replace({
+        pathname: '/(group)/verify/error',
+        params: forwardParams,
+      });
       return;
     }
     router.replace({
       pathname: '/(group)/verify/done',
-      params: { value: result.value },
+      params: { value: result.value, ...forwardParams },
     });
-  };
-
-  const handleRetake = () => {
-    setShowErrorAlert(false);
-    router.replace('/(group)/verify/method');
   };
 
   const buttonLabel = isAnalyzing ? '분석중이에요...' : '분석하기';
@@ -58,7 +77,11 @@ export default function VerifyUploadScreen() {
         <View style={styles.content}>
           <View style={styles.section}>
             <View style={styles.textGroup}>
-              <Text style={styles.title}>{'내 스크린 타임을\n인증해주세요'}</Text>
+              <Text style={styles.title}>
+                {mode === 'verify'
+                  ? '어제의 스크린 타임을\n인증해주세요'
+                  : '내 스크린 타임을\n인증해주세요'}
+              </Text>
               <Text style={styles.description}>
                 {'스크린 타임 캡쳐를 업로드해주세요.\n목표 기반 데이터로 이용돼요.'}
               </Text>
@@ -97,19 +120,6 @@ export default function VerifyUploadScreen() {
           />
         </View>
       </Pressable>
-      {showErrorAlert && (
-        <View style={styles.alertOverlay} pointerEvents="box-none">
-          <View style={styles.alert}>
-            <View style={styles.alertTextGroup}>
-              <Text style={styles.alertTitle}>날짜를 인식할 수 없습니다.</Text>
-              <Text style={styles.alertDescription}>날짜가 포함되게 캡쳐해주세요.</Text>
-            </View>
-            <Pressable style={styles.alertButton} onPress={handleRetake}>
-              <Text style={styles.alertButtonLabel}>다시 캡쳐하러 가기</Text>
-            </Pressable>
-          </View>
-        </View>
-      )}
     </Pressable>
   );
 }
@@ -208,57 +218,5 @@ const styles = StyleSheet.create({
   },
   button: {
     alignSelf: 'stretch',
-  },
-  alertOverlay: {
-    position: 'absolute',
-    top: 0,
-    left: 0,
-    right: 0,
-    bottom: 0,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  alert: {
-    width: 270,
-    borderRadius: 14,
-    backgroundColor: 'rgba(242, 242, 242, 0.96)',
-    overflow: 'hidden',
-  },
-  alertTextGroup: {
-    paddingTop: 19,
-    paddingBottom: 15,
-    paddingHorizontal: 16,
-    alignItems: 'center',
-    gap: 2,
-  },
-  alertTitle: {
-    fontSize: 17,
-    lineHeight: 22,
-    fontWeight: '600',
-    letterSpacing: -0.43,
-    color: '#000000',
-    textAlign: 'center',
-  },
-  alertDescription: {
-    fontSize: 13,
-    lineHeight: 18,
-    fontWeight: '400',
-    letterSpacing: -0.08,
-    color: '#000000',
-    textAlign: 'center',
-  },
-  alertButton: {
-    height: 44,
-    borderTopWidth: StyleSheet.hairlineWidth,
-    borderTopColor: 'rgba(128, 128, 128, 0.55)',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  alertButtonLabel: {
-    fontSize: 17,
-    lineHeight: 22,
-    fontWeight: '600',
-    letterSpacing: -0.43,
-    color: green[300],
   },
 });
