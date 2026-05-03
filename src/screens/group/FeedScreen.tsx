@@ -1,16 +1,20 @@
 import * as Clipboard from 'expo-clipboard';
-import { useLocalSearchParams } from 'expo-router';
+import { router, useLocalSearchParams } from 'expo-router';
 import { Image, Share, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { Button } from '../../components/Button';
 import { primitiveColors } from '../../lib/token/primitive/colors';
 import { typography } from '../../lib/token/primitive/typography';
 
 const { green, gray, brown } = primitiveColors;
 
 export default function FeedScreen() {
-  const { groupName, inviteCode } = useLocalSearchParams<{
+  let { groupName, inviteCode } = useLocalSearchParams<{
     groupName?: string;
     inviteCode?: string;
   }>();
+
+  // TODO: inviteCOde 기본값 삭제
+  inviteCode = undefined;
 
   const handleInvite = async () => {
     await Share.share({
@@ -77,7 +81,14 @@ export default function FeedScreen() {
 
   return (
     <View style={styles.root}>
-      <Text style={styles.feedPlaceholder}>피드</Text>
+      <View style={styles.feedBody}>
+        <Text style={styles.feedPlaceholder}>피드</Text>
+        <Button
+          label="목표 설정하기 (임시)"
+          color="assistive"
+          onPress={() => router.push('/(group)/verify')}
+        />
+      </View>
     </View>
   );
 }
@@ -175,6 +186,13 @@ const styles = StyleSheet.create({
   inviteText: {
     ...typography.primary.body1B,
     color: '#FFFFFF',
+  },
+  feedBody: {
+    flex: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 16,
+    paddingHorizontal: 24,
   },
   feedPlaceholder: {
     ...typography.primary.title1B,
