@@ -10,7 +10,8 @@
     "ios": "expo run:ios",
     "web": "expo start --web",
     "format": "prettier . --write",
-    "format:check": "prettier . --check"
+    "format:check": "prettier . --check",
+    "api:gen": "orval"
   },
   "dependencies": {
     "@react-native-seoul/kakao-login": "^5.4.2",
@@ -34,11 +35,14 @@
     "zustand": "^5.0.12"
   },
   "devDependencies": {
+    "@orval/core": "^8.9.0",
     "@storybook/addon-ondevice-actions": "^8",
     "@storybook/addon-ondevice-controls": "^8",
     "@storybook/react-native": "^8",
     "@types/node": "^25.6.0",
     "@types/react": "~19.1.0",
+    "openapi3-ts": "^4.5.0",
+    "orval": "^8.9.0",
     "prettier": "^3.8.1",
     "react-native-reanimated": "^4.3.0",
     "typescript": "~5.9.2"
