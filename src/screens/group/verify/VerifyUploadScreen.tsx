@@ -1,20 +1,20 @@
 import * as ImagePicker from 'expo-image-picker';
 import { router, useLocalSearchParams } from 'expo-router';
-import { useRef, useState } from 'react';
-import { Animated, ActivityIndicator, Image, Pressable, StyleSheet, Text, View } from 'react-native';
+import { useState } from 'react';
+import { ActivityIndicator, Image, Pressable, StyleSheet, Text, View } from 'react-native';
 import { Button } from '../../../components/Button';
 import { analyzeScreenTimeImage } from '../../../features/screen-time-analyze';
 import { primitiveColors } from '../../../lib/token/primitive/colors';
 import { typography } from '../../../lib/token/primitive/typography';
 
-const { gray, brown } = primitiveColors;
+const { gray, brown, green } = primitiveColors;
 
 export default function VerifyUploadScreen() {
   const { imageUri: paramImageUri } = useLocalSearchParams<{ imageUri?: string }>();
   const [imageUri, setImageUri] = useState<string | undefined>(paramImageUri);
   const hasImage = Boolean(imageUri);
   const [isAnalyzing, setIsAnalyzing] = useState(false);
-  const toastOpacity = useRef(new Animated.Value(0)).current;
+  const [showErrorAlert, setShowErrorAlert] = useState(false);
 
   const handlePickImage = async () => {
     const result = await ImagePicker.launchImageLibraryAsync({
@@ -25,20 +25,24 @@ export default function VerifyUploadScreen() {
     setImageUri(result.assets[0].uri);
   };
 
-  const showToast = () => {
-    Animated.sequence([
-      Animated.timing(toastOpacity, { toValue: 1, duration: 200, useNativeDriver: true }),
-      Animated.delay(2500),
-      Animated.timing(toastOpacity, { toValue: 0, duration: 300, useNativeDriver: true }),
-    ]).start(() => setImageUri(undefined));
-  };
-
   const handleAnalyze = async () => {
     if (!imageUri) return;
+    setIsAnalyzing(true);
+    const result = await analyzeScreenTimeImage(imageUri);
+    setIsAnalyzing(false);
+    if (!result.ok) {
+      setShowErrorAlert(true);
+      return;
+    }
     router.replace({
       pathname: '/(group)/verify/done',
-      params: { value: '4:32' },
+      params: { value: result.value },
     });
+  };
+
+  const handleRetake = () => {
+    setShowErrorAlert(false);
+    router.replace('/(group)/verify/method');
   };
 
   const buttonLabel = isAnalyzing ? '분석중이에요...' : '분석하기';
@@ -93,9 +97,19 @@ export default function VerifyUploadScreen() {
           />
         </View>
       </Pressable>
-      <Animated.View style={[styles.toast, { opacity: toastOpacity }]} pointerEvents="none">
-        <Text style={styles.toastText}>{'스크린타임 분석에 실패했어요\n이미지를 재업로드해주세요.'}</Text>
-      </Animated.View>
+      {showErrorAlert && (
+        <View style={styles.alertOverlay} pointerEvents="box-none">
+          <View style={styles.alert}>
+            <View style={styles.alertTextGroup}>
+              <Text style={styles.alertTitle}>날짜를 인식할 수 없습니다.</Text>
+              <Text style={styles.alertDescription}>날짜가 포함되게 캡쳐해주세요.</Text>
+            </View>
+            <Pressable style={styles.alertButton} onPress={handleRetake}>
+              <Text style={styles.alertButtonLabel}>다시 캡쳐하러 가기</Text>
+            </Pressable>
+          </View>
+        </View>
+      )}
     </Pressable>
   );
 }
@@ -195,20 +209,56 @@ const styles = StyleSheet.create({
   button: {
     alignSelf: 'stretch',
   },
-  toast: {
+  alertOverlay: {
     position: 'absolute',
-    bottom: 60,
-    alignSelf: 'center',
-    zIndex: 10,
-    backgroundColor: 'rgba(10, 10, 10, 0.85)',
-    borderRadius: 12,
-    paddingVertical: 12,
-    paddingHorizontal: 20,
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
-  toastText: {
-    ...typography.primary.body2R,
-    color: '#FFFFFF',
+  alert: {
+    width: 270,
+    borderRadius: 14,
+    backgroundColor: 'rgba(242, 242, 242, 0.96)',
+    overflow: 'hidden',
+  },
+  alertTextGroup: {
+    paddingTop: 19,
+    paddingBottom: 15,
+    paddingHorizontal: 16,
+    alignItems: 'center',
+    gap: 2,
+  },
+  alertTitle: {
+    fontSize: 17,
+    lineHeight: 22,
+    fontWeight: '600',
+    letterSpacing: -0.43,
+    color: '#000000',
     textAlign: 'center',
-    letterSpacing: -0.28,
+  },
+  alertDescription: {
+    fontSize: 13,
+    lineHeight: 18,
+    fontWeight: '400',
+    letterSpacing: -0.08,
+    color: '#000000',
+    textAlign: 'center',
+  },
+  alertButton: {
+    height: 44,
+    borderTopWidth: StyleSheet.hairlineWidth,
+    borderTopColor: 'rgba(128, 128, 128, 0.55)',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  alertButtonLabel: {
+    fontSize: 17,
+    lineHeight: 22,
+    fontWeight: '600',
+    letterSpacing: -0.43,
+    color: green[300],
   },
 });
