@@ -81,7 +81,7 @@ export default function GoalSetupScreen() {
 
   const handleSave = () => {
     // TODO: API 연결 — 개인 목표 시간 저장
-    router.replace('/(group)/feed');
+    router.replace('/(group)/home');
   };
 
   const screenTimeDisplay = formatHHMMToDisplay(value);
