@@ -30,6 +30,7 @@ export async function loginWithKakao(): Promise<OAuthLoginResponse> {
   const { accessToken, refreshToken } = data;
   await SecureStore.setItemAsync('accessTokenKey', accessToken);
   await SecureStore.setItemAsync('refreshTokenKey', refreshToken);
+  await SecureStore.setItemAsync('currentUserId', String(data.id));
 
   return data;
 }
@@ -62,4 +63,5 @@ export async function logout(): Promise<void> {
 
   await SecureStore.deleteItemAsync('refreshTokenKey');
   await SecureStore.deleteItemAsync('accessTokenKey');
+  await SecureStore.deleteItemAsync('currentUserId');
 }
