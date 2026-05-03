@@ -1,15 +1,73 @@
-import { router } from 'expo-router';
+import { router, useLocalSearchParams } from 'expo-router';
+import { useEffect, useState } from 'react';
 import { Image, Pressable, StyleSheet, Text, View } from 'react-native';
 import { Button } from '../../../components/Button';
+import {
+  isVerifyHowToHidden,
+  setVerifyHowToHidden,
+} from '../../../features/verify-how-to/howToPreference';
 import { primitiveColors } from '../../../lib/token/primitive/colors';
 import { typography } from '../../../lib/token/primitive/typography';
 
 const { gray } = primitiveColors;
 
 export default function VerifyHowToScreen() {
+  const { mode, goal } = useLocalSearchParams<{
+    mode?: 'initial' | 'verify';
+    goal?: string;
+  }>();
+  const isVerifyMode = mode === 'verify';
+  const [ready, setReady] = useState(!isVerifyMode);
+
+  useEffect(() => {
+    if (!isVerifyMode) return;
+    let active = true;
+    isVerifyHowToHidden().then((hidden) => {
+      if (!active) return;
+      if (hidden) {
+        router.replace({
+      pathname: '/(group)/verify/method',
+      params: isVerifyMode
+        ? { mode: 'verify', ...(goal ? { goal } : {}) }
+        : goal
+          ? { goal }
+          : undefined,
+    });
+      } else {
+        setReady(true);
+      }
+    });
+    return () => {
+      active = false;
+    };
+  }, [isVerifyMode]);
+
   const handleConfirm = () => {
-    router.replace('/(group)/verify/method');
+    router.replace({
+      pathname: '/(group)/verify/method',
+      params: isVerifyMode
+        ? { mode: 'verify', ...(goal ? { goal } : {}) }
+        : goal
+          ? { goal }
+          : undefined,
+    });
   };
+
+  const handleHideForever = async () => {
+    await setVerifyHowToHidden();
+    router.replace({
+      pathname: '/(group)/verify/method',
+      params: isVerifyMode
+        ? { mode: 'verify', ...(goal ? { goal } : {}) }
+        : goal
+          ? { goal }
+          : undefined,
+    });
+  };
+
+  if (!ready) {
+    return <View style={styles.overlay} />;
+  }
 
   return (
     <Pressable style={styles.overlay} onPress={() => router.back()}>
@@ -29,7 +87,13 @@ export default function VerifyHowToScreen() {
           />
         </View>
 
-        <Button label="확인" color="assistive" onPress={handleConfirm} style={styles.button} />
+        {isVerifyMode ? (
+          <Pressable style={styles.hideButton} onPress={handleHideForever}>
+            <Text style={styles.hideButtonLabel}>다시 보지 않기</Text>
+          </Pressable>
+        ) : (
+          <Button label="확인" color="assistive" onPress={handleConfirm} style={styles.button} />
+        )}
       </Pressable>
     </Pressable>
   );
@@ -48,7 +112,8 @@ const styles = StyleSheet.create({
     maxWidth: 359,
     backgroundColor: '#FFFFFF',
     borderRadius: 24,
-    paddingVertical: 32,
+    paddingTop: 32,
+    paddingBottom: 20,
     paddingHorizontal: 20,
     alignItems: 'center',
     gap: 40,
@@ -80,5 +145,20 @@ const styles = StyleSheet.create({
   },
   button: {
     alignSelf: 'stretch',
+  },
+  hideButton: {
+    height: 44,
+    minWidth: 80,
+    paddingHorizontal: 12,
+    borderRadius: 18,
+    alignItems: 'center',
+    justifyContent: 'center',
+    opacity: 0.3,
+  },
+  hideButtonLabel: {
+    ...typography.primary.body1B,
+    color: gray[800],
+    textAlign: 'center',
+    letterSpacing: -0.32,
   },
 });
