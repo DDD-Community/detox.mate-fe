@@ -78,6 +78,40 @@ export default function GroupHomeScreen() {
         <Text style={styles.debugText}>[임시] 참여된 그룹 삭제</Text>
       </TouchableOpacity>
 
+      <TouchableOpacity
+        style={styles.verifyTestButton}
+        onPress={() => router.push('/(group)/verify')}
+        activeOpacity={0.85}
+      >
+        <Text style={styles.verifyTestText}>[테스트] 목표 설정 전 인증</Text>
+      </TouchableOpacity>
+
+      <TouchableOpacity
+        style={styles.verifyTestButton}
+        onPress={() =>
+          router.push({
+            pathname: '/(group)/verify',
+            params: { mode: 'verify', goal: '1:00' },
+          })
+        }
+        activeOpacity={0.85}
+      >
+        <Text style={styles.verifyTestText}>[테스트] 목표 설정 후 · 미달성 (목표 1h)</Text>
+      </TouchableOpacity>
+
+      <TouchableOpacity
+        style={styles.verifyTestButton}
+        onPress={() =>
+          router.push({
+            pathname: '/(group)/verify',
+            params: { mode: 'verify', goal: '10:00' },
+          })
+        }
+        activeOpacity={0.85}
+      >
+        <Text style={styles.verifyTestText}>[테스트] 목표 설정 후 · 달성 (목표 10h)</Text>
+      </TouchableOpacity>
+
       <View style={styles.cardRow}>
         <TouchableOpacity
           style={styles.card}
@@ -200,6 +234,18 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   debugText: {
+    ...typography.primary.body2M,
+    color: '#FFFFFF',
+  },
+  verifyTestButton: {
+    marginHorizontal: 24,
+    marginBottom: 12,
+    backgroundColor: '#5a8974',
+    borderRadius: 10,
+    paddingVertical: 12,
+    alignItems: 'center',
+  },
+  verifyTestText: {
     ...typography.primary.body2M,
     color: '#FFFFFF',
   },
