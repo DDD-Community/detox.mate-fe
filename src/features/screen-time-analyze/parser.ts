@@ -105,7 +105,7 @@ export function isYesterdayLabel(text: string): boolean {
 function isUsageText(text: string): boolean {
   const value = normalizedWhitespace(text);
   return /^\d+시간\d+분$|^\d+시간$|^\d+분$|^\d+h(?:our|r|rs)?\d+m(?:in|ins|inute|inutes)?$|^\d+h(?:our|r|rs)?$|^\d+m(?:in|ins|inute|inutes)?$/.test(
-    value,
+    value
   );
 }
 
@@ -137,7 +137,7 @@ function usageScore(candidate: OCRObservation, anchor: OCRObservation): number {
 
 function preferredSummaryUsageObservation(
   observations: OCRObservation[],
-  anchor: OCRObservation,
+  anchor: OCRObservation
 ): OCRObservation | undefined {
   return observations
     .filter((observation) => isUsageText(observation.text))
@@ -148,7 +148,7 @@ function preferredSummaryUsageObservation(
 function isSummaryDateCandidate(
   candidate: OCRObservation,
   anchor: OCRObservation,
-  usage: OCRObservation,
+  usage: OCRObservation
 ): boolean {
   const candidateMidY = midY(candidate);
   const usageMidY = midY(usage);
@@ -159,9 +159,7 @@ function isSummaryDateCandidate(
   const verticalDistance = candidateMidY - usageMidY;
   const isBetweenAnchorAndUsage = candidateMidY < anchorMidY && candidateMidY > usageMidY;
 
-  return (
-    isBetweenAnchorAndUsage && verticalDistance <= 0.14 && horizontalDistance <= 0.18
-  );
+  return isBetweenAnchorAndUsage && verticalDistance <= 0.14 && horizontalDistance <= 0.18;
 }
 
 function summaryDateScore(candidate: OCRObservation, usage: OCRObservation): number {
@@ -178,7 +176,7 @@ function summaryDateScore(candidate: OCRObservation, usage: OCRObservation): num
 function preferredSummaryDateObservation(
   observations: OCRObservation[],
   anchor: OCRObservation,
-  usage: OCRObservation,
+  usage: OCRObservation
 ): OCRObservation | undefined {
   return observations
     .filter(isDateLikeText)
@@ -209,7 +207,7 @@ function looseDateScore(candidate: OCRObservation, anchor: OCRObservation): numb
 
 function preferredDateObservationWithoutUsage(
   observations: OCRObservation[],
-  anchor: OCRObservation,
+  anchor: OCRObservation
 ): OCRObservation | undefined {
   return observations
     .filter(isDateLikeText)
@@ -219,7 +217,7 @@ function preferredDateObservationWithoutUsage(
 }
 
 export function extractScreenTimeSummary(
-  observations: OCRObservation[],
+  observations: OCRObservation[]
 ): ExtractedScreenTimeSummaryResult {
   const anchor = screenTimeAnchor(observations);
   if (!anchor) {

@@ -16,11 +16,7 @@
     "ios": {
       "bundleIdentifier": "com.detoxmate.app.dev",
       "infoPlist": {
-        "LSApplicationQueriesSchemes": [
-          "kakaokompassauth",
-          "storykompassauth",
-          "kakaolink"
-        ]
+        "LSApplicationQueriesSchemes": ["kakaokompassauth", "storykompassauth", "kakaolink"]
       }
     },
     "android": {

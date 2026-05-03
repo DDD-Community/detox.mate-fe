@@ -26,13 +26,13 @@ export default function VerifyHowToScreen() {
       if (!active) return;
       if (hidden) {
         router.replace({
-      pathname: '/(group)/verify/method',
-      params: isVerifyMode
-        ? { mode: 'verify', ...(goal ? { goal } : {}) }
-        : goal
-          ? { goal }
-          : undefined,
-    });
+          pathname: '/(group)/verify/method',
+          params: isVerifyMode
+            ? { mode: 'verify', ...(goal ? { goal } : {}) }
+            : goal
+              ? { goal }
+              : undefined,
+        });
       } else {
         setReady(true);
       }
