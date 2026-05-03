@@ -41,11 +41,15 @@
     "@storybook/react-native": "^8",
     "@types/node": "^25.6.0",
     "@types/react": "~19.1.0",
+    "lint-staged": "^16.4.0",
     "openapi3-ts": "^4.5.0",
     "orval": "^8.9.0",
     "prettier": "^3.8.1",
     "react-native-reanimated": "^4.3.0",
     "typescript": "~5.9.2"
+  },
+  "lint-staged": {
+    "*.{ts,tsx,js,jsx,json,md}": "prettier --write"
   },
   "private": true
 }
