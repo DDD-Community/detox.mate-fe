@@ -8,10 +8,13 @@ import { typography } from '../../lib/token/primitive/typography';
 const { green, gray, brown } = primitiveColors;
 
 export default function FeedScreen() {
-  const { groupName, inviteCode } = useLocalSearchParams<{
+  let { groupName, inviteCode } = useLocalSearchParams<{
     groupName?: string;
     inviteCode?: string;
   }>();
+
+  // TODO: inviteCOde 기본값 삭제
+  inviteCode = undefined;
 
   const handleInvite = async () => {
     await Share.share({

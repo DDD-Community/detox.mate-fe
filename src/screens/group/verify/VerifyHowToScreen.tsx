@@ -1,5 +1,5 @@
 import { router } from 'expo-router';
-import { Pressable, StyleSheet, Text, View } from 'react-native';
+import { Image, Pressable, StyleSheet, Text, View } from 'react-native';
 import { Button } from '../../../components/Button';
 import { primitiveColors } from '../../../lib/token/primitive/colors';
 import { typography } from '../../../lib/token/primitive/typography';
@@ -22,8 +22,11 @@ export default function VerifyHowToScreen() {
             </Text>
           </View>
 
-          {/* TODO: 가이드 이미지 추가 예정 */}
-          <View style={styles.imagePlaceholder} />
+          <Image
+            source={require('../../../../assets/screen_time_ref.png')}
+            style={styles.imagePlaceholder}
+            resizeMode="contain"
+          />
         </View>
 
         <Button label="확인" color="assistive" onPress={handleConfirm} style={styles.button} />
