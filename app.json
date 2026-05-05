@@ -17,16 +17,7 @@
     "ios": {
       "bundleIdentifier": "com.detoxmate.app.dev",
       "infoPlist": {
-        "LSApplicationQueriesSchemes": [
-          "kakaokompassauth",
-          "storykompassauth",
-          "kakaolink",
-          "kakaokompassauth",
-
-          "storykompassauth",
-
-          "kakaolink"
-        ],
+        "LSApplicationQueriesSchemes": ["kakaokompassauth", "storykompassauth", "kakaolink"],
         "ITSAppUsesNonExemptEncryption": false
       }
     },
@@ -60,7 +51,7 @@
     "extra": {
       "router": {},
       "eas": {
-        "projectId": "4806e7e2-ce1f-4bd3-bc65-41c0f01cfe7d"
+        "projectId": "0387da46-8602-45c5-b927-229815033a44"
       }
     }
   }
