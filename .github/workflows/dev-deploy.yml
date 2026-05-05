@@ -36,3 +36,11 @@ jobs:
 
       - name: Submit to TestFlight
         run: eas submit --platform ios --latest --profile production --non-interactive
+
+      - name: Notify Discord
+        if: success()
+        run: |
+          curl -s -X POST \
+            -H "Content-Type: application/json" \
+            -d '{"content":"**Dev TestFlight 배포 성공**"}' \
+            "${{ secrets.DISCORD_WEBHOOK_URL_DEV_DEPOLY }}"
