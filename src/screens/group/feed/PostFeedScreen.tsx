@@ -1,7 +1,9 @@
 import * as ImagePicker from 'expo-image-picker';
-import { router } from 'expo-router';
+import { router, useLocalSearchParams } from 'expo-router';
+import * as SecureStore from 'expo-secure-store';
 import { useState } from 'react';
 import {
+  ActivityIndicator,
   Image,
   KeyboardAvoidingView,
   Platform,
@@ -12,14 +14,29 @@ import {
   TextInput,
   View,
 } from 'react-native';
+import { getActivityRecord } from '../../../api/generated/activity-record/activity-record';
+import { ActivityRecordDetailRequestUsageGoalType } from '../../../api/generated/model';
+import { uploadImage } from '../../../lib/uploadImage';
 import { primitiveColors } from '../../../lib/token/primitive/colors';
 import { typography } from '../../../lib/token/primitive/typography';
+
+function parseValueToMinutes(value: string | undefined): number {
+  if (!value) return 0;
+  const [hStr, mStr] = value.split(':');
+  return Number(hStr ?? 0) * 60 + Number(mStr ?? 0);
+}
 
 const { gray, brown, green } = primitiveColors;
 
 export default function PostFeedScreen() {
-  const [imageUri, setImageUri] = useState<string | undefined>();
+  const { value, groupChallengeParticipantId } = useLocalSearchParams<{
+    value?: string;
+    groupChallengeParticipantId?: string;
+  }>();
+
+  const [imageAsset, setImageAsset] = useState<ImagePicker.ImagePickerAsset | undefined>();
   const [text, setText] = useState('');
+  const [submitting, setSubmitting] = useState(false);
 
   const handlePickImage = async () => {
     const result = await ImagePicker.launchImageLibraryAsync({
@@ -27,18 +44,47 @@ export default function PostFeedScreen() {
       quality: 1,
     });
     if (result.canceled || !result.assets[0]) return;
-    setImageUri(result.assets[0].uri);
+    setImageAsset(result.assets[0]);
   };
 
   const handleSkip = () => {
     router.replace('/(group)/verify/complete');
   };
 
-  const canPost = text.trim().length > 0;
+  const canPost = text.trim().length > 0 && !submitting;
 
-  const handlePost = () => {
+  const handlePost = async () => {
     if (!canPost) return;
-    router.replace('/(group)/verify/complete');
+    setSubmitting(true);
+    try {
+      const objectKey = imageAsset
+        ? await uploadImage(imageAsset.uri, {
+            fileName: imageAsset.fileName,
+            mimeType: imageAsset.mimeType,
+            fileSize: imageAsset.fileSize,
+          })
+        : undefined;
+      const userId = await SecureStore.getItemAsync('currentUserId');
+      await getActivityRecord().create(
+        {
+          groupChallengeParticipantId: groupChallengeParticipantId
+            ? Number(groupChallengeParticipantId)
+            : undefined,
+          reflectionText: text,
+          details: [
+            {
+              usageGoalType: ActivityRecordDetailRequestUsageGoalType.TOTAL_USAGE,
+              usedMinutes: parseValueToMinutes(value),
+            },
+          ],
+          activityImageObjectKey: objectKey,
+        },
+        { currentUser: { id: userId ? Number(userId) : undefined } }
+      );
+      router.replace('/(group)/verify/complete');
+    } finally {
+      setSubmitting(false);
+    }
   };
 
   return (
@@ -62,8 +108,8 @@ export default function PostFeedScreen() {
         behavior={Platform.OS === 'ios' ? 'padding' : undefined}
       >
         <Pressable style={styles.dropzone} onPress={handlePickImage}>
-          {imageUri ? (
-            <Image source={{ uri: imageUri }} style={styles.preview} resizeMode="cover" />
+          {imageAsset ? (
+            <Image source={{ uri: imageAsset.uri }} style={styles.preview} resizeMode="cover" />
           ) : (
             <>
               <View style={styles.iconCircle}>
@@ -101,7 +147,11 @@ export default function PostFeedScreen() {
             onPress={handlePost}
             disabled={!canPost}
           >
-            <Text style={styles.postButtonLabel}>게시하기</Text>
+            {submitting ? (
+              <ActivityIndicator color="#FFFFFF" />
+            ) : (
+              <Text style={styles.postButtonLabel}>게시하기</Text>
+            )}
           </Pressable>
         </View>
       </KeyboardAvoidingView>

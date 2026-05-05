@@ -1,7 +1,9 @@
 import * as ImagePicker from 'expo-image-picker';
-import { router } from 'expo-router';
+import { router, useLocalSearchParams } from 'expo-router';
+import * as SecureStore from 'expo-secure-store';
 import { useState } from 'react';
 import {
+  ActivityIndicator,
   Image,
   KeyboardAvoidingView,
   Platform,
@@ -12,18 +14,27 @@ import {
   TextInput,
   View,
 } from 'react-native';
+import { getActivityRecord } from '../../../api/generated/activity-record/activity-record';
+import { ActivityRecordDetailRequestUsageGoalType } from '../../../api/generated/model';
+import { uploadImage } from '../../../lib/uploadImage';
 import { primitiveColors } from '../../../lib/token/primitive/colors';
 import { typography } from '../../../lib/token/primitive/typography';
 
 const { gray, brown, green, system } = primitiveColors;
 
-async function postRetro(_payload: { imageUri?: string; text: string }): Promise<void> {
-  // TODO: API 연동
-  return new Promise((resolve) => setTimeout(resolve, 300));
+function parseValueToMinutes(value: string | undefined): number {
+  if (!value) return 0;
+  const [hStr, mStr] = value.split(':');
+  return Number(hStr ?? 0) * 60 + Number(mStr ?? 0);
 }
 
 export default function RetroScreen() {
-  const [imageUri, setImageUri] = useState<string | undefined>();
+  const { value, groupChallengeParticipantId } = useLocalSearchParams<{
+    value?: string;
+    groupChallengeParticipantId?: string;
+  }>();
+
+  const [imageAsset, setImageAsset] = useState<ImagePicker.ImagePickerAsset | undefined>();
   const [text, setText] = useState('');
   const [submitting, setSubmitting] = useState(false);
 
@@ -35,14 +46,37 @@ export default function RetroScreen() {
       quality: 1,
     });
     if (result.canceled || !result.assets[0]) return;
-    setImageUri(result.assets[0].uri);
+    setImageAsset(result.assets[0]);
   };
 
   const handleSubmit = async () => {
     if (!canSubmit) return;
     setSubmitting(true);
     try {
-      await postRetro({ imageUri, text });
+      const objectKey = imageAsset
+        ? await uploadImage(imageAsset.uri, {
+            fileName: imageAsset.fileName,
+            mimeType: imageAsset.mimeType,
+            fileSize: imageAsset.fileSize,
+          })
+        : undefined;
+      const userId = await SecureStore.getItemAsync('currentUserId');
+      await getActivityRecord().create(
+        {
+          groupChallengeParticipantId: groupChallengeParticipantId
+            ? Number(groupChallengeParticipantId)
+            : undefined,
+          reflectionText: text,
+          details: [
+            {
+              usageGoalType: ActivityRecordDetailRequestUsageGoalType.TOTAL_USAGE,
+              usedMinutes: parseValueToMinutes(value),
+            },
+          ],
+          activityImageObjectKey: objectKey,
+        },
+        { currentUser: { id: userId ? Number(userId) : undefined } }
+      );
       router.replace('/(group)/verify/complete');
     } finally {
       setSubmitting(false);
@@ -68,8 +102,8 @@ export default function RetroScreen() {
       >
         <View style={styles.content}>
           <Pressable style={styles.dropzone} onPress={handlePickImage}>
-            {imageUri ? (
-              <Image source={{ uri: imageUri }} style={styles.preview} resizeMode="cover" />
+            {imageAsset ? (
+              <Image source={{ uri: imageAsset.uri }} style={styles.preview} resizeMode="cover" />
             ) : (
               <>
                 <View style={styles.iconCircle}>
@@ -110,7 +144,11 @@ export default function RetroScreen() {
             onPress={handleSubmit}
             disabled={!canSubmit}
           >
-            <Text style={styles.postButtonLabel}>게시하기</Text>
+            {submitting ? (
+              <ActivityIndicator color="#FFFFFF" />
+            ) : (
+              <Text style={styles.postButtonLabel}>게시하기</Text>
+            )}
           </Pressable>
         </View>
       </KeyboardAvoidingView>
