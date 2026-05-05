@@ -1,6 +1,7 @@
 {
   "expo": {
     "name": "detox-mate-fe",
+    "owner": "jihostudy",
     "slug": "detox-mate-fe",
     "scheme": "detoxmate",
     "version": "1.0.0",
@@ -16,7 +17,15 @@
     "ios": {
       "bundleIdentifier": "com.detoxmate.app.dev",
       "infoPlist": {
-        "LSApplicationQueriesSchemes": ["kakaokompassauth", "storykompassauth", "kakaolink"]
+        "LSApplicationQueriesSchemes": [
+          "kakaokompassauth",
+          "storykompassauth",
+          "kakaolink",
+          "kakaokompassauth",
+          "storykompassauth",
+          "kakaolink"
+        ],
+        "ITSAppUsesNonExemptEncryption": false
       }
     },
     "android": {
@@ -45,6 +54,12 @@
         }
       ],
       "expo-router"
-    ]
+    ],
+    "extra": {
+      "router": {},
+      "eas": {
+        "projectId": "4806e7e2-ce1f-4bd3-bc65-41c0f01cfe7d"
+      }
+    }
   }
 }
