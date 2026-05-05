@@ -1,8 +1,8 @@
 {
   "expo": {
     "name": "detox-mate-fe",
-    "owner": "jihostudy",
     "slug": "detox-mate-fe",
+    "owner": "detoxmate",
     "scheme": "detoxmate",
     "version": "1.0.0",
     "orientation": "portrait",
