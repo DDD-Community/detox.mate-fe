@@ -135,6 +135,7 @@ export function Button({
       accessibilityRole="button"
       accessibilityState={{ disabled }}
       accessibilityLabel={label}
+      style={style}
     >
       {({ pressed }) => {
         const colors = getColors({ variant, color, disabled, pressed });

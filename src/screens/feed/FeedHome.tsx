@@ -3,6 +3,7 @@ import { ActivityIndicator, Image, Share, StyleSheet, Text, View } from 'react-n
 import apiClient from '../../api/client';
 import { Button } from '../../components/Button';
 import { primitiveColors, spacing, typography } from '../../lib/token';
+import ActionGuideBanner from './ActionGuideBanner';
 import FeedHeader from './FeedHeader';
 
 const { brown, gray } = primitiveColors;
@@ -46,21 +47,31 @@ export default function FeedHome() {
     <View style={styles.root}>
       <FeedHeader groupName={group?.name} />
       {loading ? (
-        <View style={styles.body}>
+        <View style={styles.centered}>
           <ActivityIndicator color={gray[400]} />
         </View>
       ) : isGroupActive ? (
-        <InactiveFeed onInvite={handleInvite} />
+        <ActiveFeed onInvite={handleInvite} />
       ) : (
-        <ActiveFeed />
+        <InactiveFeed />
       )}
     </View>
   );
 }
 
-function InactiveFeed({ onInvite }: { onInvite: () => void }) {
+// isGroupActive = false 일 때 렌더링
+function InactiveFeed() {
   return (
-    <View style={styles.body}>
+    <View style={styles.container}>
+      <ActionGuideBanner />
+    </View>
+  );
+}
+
+// isGroupActive = true 일 때 렌더링
+function ActiveFeed({ onInvite }: { onInvite: () => void }) {
+  return (
+    <View style={styles.centered}>
       <Image
         source={require('../../../assets/onboarding-none-feed.png')}
         style={styles.emptyImage}
@@ -85,20 +96,17 @@ function InactiveFeed({ onInvite }: { onInvite: () => void }) {
   );
 }
 
-function ActiveFeed() {
-  return (
-    <View style={styles.body}>
-      <Text style={styles.emptySubtitle}>그룹 활성화 화면 (임시)</Text>
-    </View>
-  );
-}
-
 const styles = StyleSheet.create({
   root: {
     flex: 1,
     backgroundColor: brown[50],
   },
-  body: {
+  container: {
+    paddingHorizontal: spacing[24],
+    paddingTop: spacing[16],
+    gap: spacing[12],
+  },
+  centered: {
     flex: 1,
     alignItems: 'center',
     justifyContent: 'center',
