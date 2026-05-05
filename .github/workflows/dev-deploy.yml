@@ -1,0 +1,38 @@
+name: Deploy to TestFlight
+
+on:
+  workflow_dispatch:
+
+jobs:
+  build-and-deploy:
+    name: Build iOS & Deploy to TestFlight
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 24
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: latest
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Setup EAS
+        uses: expo/expo-github-action@v8
+        with:
+          eas-version: latest
+          token: ${{ secrets.EXPO_TOKEN }}
+
+      - name: Build iOS
+        run: eas build --platform ios --profile production --non-interactive
+
+      - name: Submit to TestFlight
+        run: eas submit --platform ios --latest --profile production --non-interactive

@@ -22,7 +22,9 @@
           "storykompassauth",
           "kakaolink",
           "kakaokompassauth",
+
           "storykompassauth",
+
           "kakaolink"
         ],
         "ITSAppUsesNonExemptEncryption": false
