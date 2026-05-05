@@ -1,11 +1,19 @@
 import * as ImagePicker from 'expo-image-picker';
 import { router, useLocalSearchParams } from 'expo-router';
+import * as SecureStore from 'expo-secure-store';
 import { useState } from 'react';
 import { ActivityIndicator, Image, Pressable, StyleSheet, Text, View } from 'react-native';
 import { Button } from '../../../components/Button';
+import { getActivityRecord } from '../../../api/generated/activity-record/activity-record';
+import { ActivityRecordDetailRequestUsageGoalType } from '../../../api/generated/model';
 import { analyzeScreenTimeImage } from '../../../features/screen-time-analyze';
 import { primitiveColors } from '../../../lib/token/primitive/colors';
 import { typography } from '../../../lib/token/primitive/typography';
+
+function parseValueToMinutes(value: string): number {
+  const [hStr, mStr] = value.split(':');
+  return Number(hStr ?? 0) * 60 + Number(mStr ?? 0);
+}
 
 const { gray, brown } = primitiveColors;
 
@@ -14,15 +22,18 @@ export default function VerifyUploadScreen() {
     imageUri: paramImageUri,
     mode,
     goal,
+    groupChallengeParticipantId,
   } = useLocalSearchParams<{
     imageUri?: string;
     mode?: 'initial' | 'verify';
     goal?: string;
+    groupChallengeParticipantId?: string;
   }>();
   const [imageUri, setImageUri] = useState<string | undefined>(paramImageUri);
   const forwardParams = {
     ...(mode ? { mode } : {}),
     ...(goal ? { goal } : {}),
+    ...(groupChallengeParticipantId ? { groupChallengeParticipantId } : {}),
   };
   const hasImage = Boolean(imageUri);
   const [isAnalyzing, setIsAnalyzing] = useState(false);
@@ -39,29 +50,43 @@ export default function VerifyUploadScreen() {
   const handleAnalyze = async () => {
     if (!imageUri) return;
     setIsAnalyzing(true);
-    let result = await analyzeScreenTimeImage(imageUri);
-    setIsAnalyzing(false);
+    try {
+      let result = await analyzeScreenTimeImage(imageUri);
 
-    // TODO: 임시 — 분석 결과 무관하게 항상 성공 처리. 실제 OCR 연동 시 이 블록 삭제.
-    result = {
-      ok: true,
-      value: '4:32',
-      dateLabel: '어제',
-      rawUsageText: '4시간 32분',
-      elapsedMs: 0,
-    };
+      // TODO: 임시 — 분석 결과 무관하게 항상 성공 처리. 실제 OCR 연동 시 이 블록 삭제.
+      result = {
+        ok: true,
+        value: '4:32',
+        dateLabel: '어제',
+        rawUsageText: '4시간 32분',
+        elapsedMs: 0,
+      };
 
-    if (!result.ok) {
+      if (!result.ok) {
+        router.replace({ pathname: '/(group)/verify/error', params: forwardParams });
+        return;
+      }
+
+      const userId = await SecureStore.getItemAsync('currentUserId');
+      const { allAchieved } = await getActivityRecord().checkAchievement(
+        {
+          details: [
+            {
+              usageGoalType: ActivityRecordDetailRequestUsageGoalType.TOTAL_USAGE,
+              usedMinutes: parseValueToMinutes(result.value),
+            },
+          ],
+        },
+        { currentUser: { id: userId ? Number(userId) : undefined } }
+      );
+
       router.replace({
-        pathname: '/(group)/verify/error',
-        params: forwardParams,
+        pathname: '/(group)/verify/done',
+        params: { value: result.value, achieved: String(allAchieved ?? false), ...forwardParams },
       });
-      return;
+    } finally {
+      setIsAnalyzing(false);
     }
-    router.replace({
-      pathname: '/(group)/verify/done',
-      params: { value: result.value, ...forwardParams },
-    });
   };
 
   const buttonLabel = isAnalyzing ? '분석중이에요...' : '분석하기';
