@@ -2,6 +2,7 @@
   "expo": {
     "name": "detox-mate-fe",
     "slug": "detox-mate-fe",
+    "owner": "detoxmate",
     "scheme": "detoxmate",
     "version": "1.0.0",
     "orientation": "portrait",
@@ -19,8 +20,14 @@
         "LSApplicationQueriesSchemes": [
           "kakaokompassauth",
           "storykompassauth",
+          "kakaolink",
+          "kakaokompassauth",
+
+          "storykompassauth",
+
           "kakaolink"
-        ]
+        ],
+        "ITSAppUsesNonExemptEncryption": false
       }
     },
     "android": {

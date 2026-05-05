@@ -33,10 +33,11 @@ function formatMinutesDiff(minutes: number): string {
 }
 
 export default function VerifyDoneScreen() {
-  const { value, mode, goal } = useLocalSearchParams<{
+  const { value, mode, goal, groupChallengeParticipantId } = useLocalSearchParams<{
     value?: string;
     mode?: 'initial' | 'verify';
     goal?: string;
+    groupChallengeParticipantId?: string;
   }>();
   const display = formatHHMMToDisplay(value);
   const isVerifyMode = mode === 'verify';
@@ -58,7 +59,13 @@ export default function VerifyDoneScreen() {
   };
 
   const handlePostFeed = () => {
-    router.replace('/(group)/post');
+    router.replace({
+      pathname: '/(group)/post',
+      params: {
+        ...(value ? { value } : {}),
+        ...(groupChallengeParticipantId ? { groupChallengeParticipantId } : {}),
+      },
+    });
   };
 
   const handleReportWrongTime = () => {
@@ -69,7 +76,13 @@ export default function VerifyDoneScreen() {
   };
 
   const handleRecordRetro = () => {
-    router.replace('/(group)/verify/retro');
+    router.replace({
+      pathname: '/(group)/verify/retro',
+      params: {
+        ...(value ? { value } : {}),
+        ...(groupChallengeParticipantId ? { groupChallengeParticipantId } : {}),
+      },
+    });
   };
 
   if (!isVerifyMode) {

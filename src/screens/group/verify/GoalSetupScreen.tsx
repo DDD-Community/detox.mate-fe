@@ -1,4 +1,5 @@
 import { router, useLocalSearchParams } from 'expo-router';
+import * as SecureStore from 'expo-secure-store';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import {
   Image,
@@ -10,6 +11,8 @@ import {
   type GestureResponderEvent,
 } from 'react-native';
 import { Button } from '../../../components/Button';
+import { getUserUsageGoalTime } from '../../../api/generated/user-usage-goal-time/user-usage-goal-time';
+import { UserUsageGoalTimeRequestUsageGoalType } from '../../../api/generated/model';
 import { primitiveColors } from '../../../lib/token/primitive/colors';
 import { typography } from '../../../lib/token/primitive/typography';
 
@@ -37,6 +40,7 @@ function formatMinutes(totalMinutes: number): string {
 export default function GoalSetupScreen() {
   const { value } = useLocalSearchParams<{ value?: string }>();
   const [minutes, setMinutes] = useState(INITIAL_MINUTES);
+  const [isSaving, setIsSaving] = useState(false);
 
   const minutesRef = useRef(minutes);
   useEffect(() => {
@@ -79,9 +83,25 @@ export default function GoalSetupScreen() {
     [apply, clearHold]
   );
 
-  const handleSave = () => {
-    // TODO: API 연결 — 개인 목표 시간 저장
-    router.replace('/(group)/home');
+  const handleSave = async () => {
+    setIsSaving(true);
+    try {
+      const userId = await SecureStore.getItemAsync('currentUserId');
+      await getUserUsageGoalTime().setGoalTimes(
+        {
+          goals: [
+            {
+              usageGoalType: UserUsageGoalTimeRequestUsageGoalType.TOTAL_USAGE,
+              goalMinutes: minutes,
+            },
+          ],
+        },
+        { currentUser: { id: userId ? Number(userId) : undefined } }
+      );
+      router.replace('/(group)/home');
+    } finally {
+      setIsSaving(false);
+    }
   };
 
   const screenTimeDisplay = formatHHMMToDisplay(value);
@@ -130,7 +150,13 @@ export default function GoalSetupScreen() {
       </View>
 
       <View style={styles.cta}>
-        <Button label="저장하기" color="primary" onPress={handleSave} style={styles.button} />
+        <Button
+          label={isSaving ? '저장 중...' : '저장하기'}
+          color="primary"
+          onPress={handleSave}
+          disabled={isSaving}
+          style={styles.button}
+        />
       </View>
     </SafeAreaView>
   );

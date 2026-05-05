@@ -78,6 +78,7 @@ export default function GroupHomeScreen() {
         <Text style={styles.debugText}>[임시] 참여된 그룹 삭제</Text>
       </TouchableOpacity>
 
+      {/* TODO: 그룹 챌린지 참여 API 연동 후 groupChallengeParticipantId를 params로 전달 */}
       <TouchableOpacity
         style={styles.verifyTestButton}
         onPress={() => router.push('/(group)/verify')}
