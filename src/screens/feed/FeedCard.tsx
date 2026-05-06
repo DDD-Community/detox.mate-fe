@@ -24,10 +24,12 @@ export default function FeedCard({
   item,
   goalState,
   onPoke,
+  onBodyPress,
 }: {
   item: FeedItem;
   goalState: GoalState;
   onPoke?: (memberId: string) => void;
+  onBodyPress?: () => void;
 }) {
   const { name, isMe, avatarSource, commentCount } = item;
 
@@ -43,12 +45,12 @@ export default function FeedCard({
         <Text style={styles.memberName}>{name}</Text>
       </View>
 
-      <View style={styles.body}>
+      <Pressable style={styles.body} onPress={onBodyPress} disabled={!onBodyPress}>
         <Text style={styles.bodyText}>{BODY_TEXT[goalState]}</Text>
         {showSubtitle && (
           <Text style={styles.subtitleText}>미 설정 시 그룹 스트릭에서 제외돼요</Text>
         )}
-      </View>
+      </Pressable>
 
       {hasFooter && (
         <View style={styles.footer}>

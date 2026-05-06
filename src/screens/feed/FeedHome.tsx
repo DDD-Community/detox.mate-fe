@@ -1,3 +1,4 @@
+import { router } from 'expo-router';
 import { useEffect, useState } from 'react';
 import {
   ActivityIndicator,
@@ -16,6 +17,7 @@ import ActionGuideBanner, { type GoalState } from './ActionGuideBanner';
 import FeedCard, { type FeedItem } from './FeedCard';
 import FeedHeader from './FeedHeader';
 import MemberSection, { type MemberItem } from './MemberSection';
+import { MOCK_COMMENTS } from './FeedPostDetail';
 
 const { brown, gray } = primitiveColors;
 
@@ -35,14 +37,14 @@ const MOCK_FEED: FeedItem[] = [
     name: '나',
     isMe: true,
     avatarSource: require('../../../assets/basic-profile-turtle-hi.png'),
-    commentCount: 10,
+    commentCount: MOCK_COMMENTS.length,
   },
   {
     id: '2',
     name: '서연',
     isMe: false,
     avatarSource: require('../../../assets/basic-profile-turtle-hi.png'),
-    commentCount: 10,
+    commentCount: MOCK_COMMENTS.length,
   },
 ];
 
@@ -159,7 +161,18 @@ function ActiveFeed({
       <ActionGuideBanner goalState={goalState} onGoalSet={onGoalSet} />
       <MemberSection members={members} onInvite={onInvite} />
       {MOCK_FEED.map((item) => (
-        <FeedCard key={item.id} item={item} goalState={goalState} onPoke={onPoke} />
+        <FeedCard
+          key={item.id}
+          item={item}
+          goalState={goalState}
+          onPoke={onPoke}
+          onBodyPress={() =>
+            router.push({
+              pathname: '/(feed)/post-detail',
+              params: { memberId: item.id, goalState },
+            })
+          }
+        />
       ))}
       <DevPanel goalState={goalState} onNextDay={onNextDay} />
     </ScrollView>
