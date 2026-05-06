@@ -6,18 +6,30 @@ import { primitiveColors, radius, spacing, typography } from '../../lib/token';
 const { brown, gray, system } = primitiveColors;
 const WHITE = '#FFFFFF';
 
-export default function ActionGuideBanner() {
-  const [goalSet, setGoalSet] = useState(false);
+export type GoalState = 'notSet' | 'setWaiting' | 'authReady';
+
+interface Props {
+  goalState: GoalState;
+  onGoalSet: () => void;
+}
+
+export default function ActionGuideBanner({ goalState, onGoalSet }: Props) {
   const [sheetVisible, setSheetVisible] = useState(false);
+
+  const banner = {
+    notSet: <GoalBanner onPress={() => setSheetVisible(true)} />,
+    setWaiting: <GoalSetWaitingBanner />,
+    authReady: <DailyAuthBanner />,
+  }[goalState];
 
   return (
     <>
-      {goalSet ? <DailyAuthBanner /> : <GoalBanner onPress={() => setSheetVisible(true)} />}
+      {banner}
       <GoalSettingSheet
         visible={sheetVisible}
         onConfirm={() => {
           setSheetVisible(false);
-          setGoalSet(true);
+          onGoalSet();
         }}
         onDismiss={() => setSheetVisible(false)}
       />
@@ -53,6 +65,26 @@ function GoalBanner({ onPress }: { onPress: () => void }) {
         onPress={onPress}
         style={{ alignSelf: 'stretch' }}
       />
+    </View>
+  );
+}
+
+function GoalSetWaitingBanner() {
+  return (
+    <View style={styles.goalBanner}>
+      <View style={styles.topRow}>
+        <View style={styles.textContainer}>
+          <Text style={styles.goalTitle}>지금 이 순간부터 시작됐어요</Text>
+          <Text style={styles.goalSubtitle}>
+            {'내일부터 스크린타임을 인증할 수 있어요.\n오늘 하루를 버텨보세요!'}
+          </Text>
+        </View>
+        <Image
+          source={require('../../../assets/daily-calendar.png')}
+          style={styles.bannerImage}
+          resizeMode="contain"
+        />
+      </View>
     </View>
   );
 }
@@ -116,14 +148,12 @@ function GoalSettingSheet({
 const styles = StyleSheet.create({
   goalBanner: {
     backgroundColor: brown[100],
-    borderRadius: radius[16],
     padding: spacing[20],
     gap: spacing[12],
   },
   dailyAuthBanner: {
     backgroundColor: system.red.opacity100,
-    borderRadius: radius[16],
-    padding: spacing[20],
+    padding: spacing[28],
     gap: spacing[12],
   },
   topRow: {
