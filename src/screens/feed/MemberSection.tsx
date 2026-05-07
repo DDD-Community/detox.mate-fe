@@ -11,6 +11,7 @@ export type MemberItem = {
   name: string;
   avatarSource: number;
   badgeCount?: number;
+  isGoalAchieved?: boolean;
 };
 
 interface Props {
@@ -68,7 +69,17 @@ function MemberAvatar({ member }: { member: MemberItem }) {
     <View style={styles.avatarItem}>
       <View style={styles.avatarWrapper}>
         <Image source={member.avatarSource} style={styles.avatar} resizeMode="cover" />
-        {member.badgeCount !== undefined && (
+        {member.isGoalAchieved && <View style={styles.avatarRing} />}
+        {member.isGoalAchieved && (
+          <View style={styles.checkBadge}>
+            <Image
+              source={require('../../../assets/icons/regular/icon_rg_Check.png')}
+              style={styles.checkIcon}
+              resizeMode="contain"
+            />
+          </View>
+        )}
+        {!member.isGoalAchieved && member.badgeCount !== undefined && (
           <View style={styles.badge}>
             <Text style={styles.badgeText}>{member.badgeCount}</Text>
           </View>
@@ -139,6 +150,34 @@ const styles = StyleSheet.create({
     width: AVATAR_SIZE,
     height: AVATAR_SIZE,
     borderRadius: radius.full,
+  },
+  avatarRing: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    borderRadius: radius.full,
+    borderWidth: 2,
+    borderColor: green[300],
+  },
+  checkBadge: {
+    position: 'absolute',
+    bottom: 0,
+    right: 0,
+    width: 18,
+    height: 18,
+    borderRadius: radius.full,
+    backgroundColor: green[300],
+    borderWidth: 1.5,
+    borderColor: WHITE,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  checkIcon: {
+    width: 10,
+    height: 10,
+    tintColor: WHITE,
   },
   badge: {
     position: 'absolute',

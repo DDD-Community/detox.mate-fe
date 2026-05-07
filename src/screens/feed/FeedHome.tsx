@@ -1,5 +1,5 @@
 import { router } from 'expo-router';
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import {
   ActivityIndicator,
   Image,
@@ -16,35 +16,142 @@ import { primitiveColors, radius, spacing, typography } from '../../lib/token';
 import ActionGuideBanner, { type GoalState } from './ActionGuideBanner';
 import FeedCard, { type FeedItem } from './FeedCard';
 import FeedHeader from './FeedHeader';
-import MemberSection, { type MemberItem } from './MemberSection';
 import { MOCK_COMMENTS } from './FeedPostDetail';
+import MemberSection, { type MemberItem } from './MemberSection';
 
-const { brown, gray } = primitiveColors;
+const { brown, gray, green } = primitiveColors;
+const WHITE = '#FFFFFF';
+const AVATAR_SRC = require('../../../assets/basic-profile-turtle-hi.png');
 
 const INITIAL_MEMBERS: MemberItem[] = [
-  { id: '1', name: '나', avatarSource: require('../../../assets/basic-profile-turtle-hi.png') },
-  {
-    id: '2',
-    name: '서연',
-    avatarSource: require('../../../assets/basic-profile-turtle-hi.png'),
-    badgeCount: 20,
-  },
+  { id: '1', name: '나', avatarSource: AVATAR_SRC },
+  { id: '2', name: '지수', avatarSource: AVATAR_SRC },
+  { id: '3', name: '민준', avatarSource: AVATAR_SRC },
+  { id: '4', name: '서연', avatarSource: AVATAR_SRC },
+  { id: '5', name: '승호', avatarSource: AVATAR_SRC },
+  { id: '6', name: '현우', avatarSource: AVATAR_SRC },
 ];
 
-const MOCK_FEED: FeedItem[] = [
+const FEED_UNVERIFIED: FeedItem[] = [
   {
     id: '1',
     name: '나',
     isMe: true,
-    avatarSource: require('../../../assets/basic-profile-turtle-hi.png'),
+    avatarSource: AVATAR_SRC,
     commentCount: MOCK_COMMENTS.length,
+    reactionCount: 0,
+    isVerified: false,
   },
   {
     id: '2',
+    name: '지수',
+    isMe: false,
+    avatarSource: AVATAR_SRC,
+    commentCount: MOCK_COMMENTS.length,
+    reactionCount: 0,
+    isVerified: false,
+  },
+  {
+    id: '3',
+    name: '민준',
+    isMe: false,
+    avatarSource: AVATAR_SRC,
+    commentCount: MOCK_COMMENTS.length,
+    reactionCount: 0,
+    isVerified: false,
+  },
+  {
+    id: '4',
     name: '서연',
     isMe: false,
-    avatarSource: require('../../../assets/basic-profile-turtle-hi.png'),
+    avatarSource: AVATAR_SRC,
     commentCount: MOCK_COMMENTS.length,
+    reactionCount: 0,
+    isVerified: false,
+  },
+  {
+    id: '5',
+    name: '승호',
+    isMe: false,
+    avatarSource: AVATAR_SRC,
+    commentCount: MOCK_COMMENTS.length,
+    reactionCount: 0,
+    isVerified: false,
+  },
+  {
+    id: '6',
+    name: '현우',
+    isMe: false,
+    avatarSource: AVATAR_SRC,
+    commentCount: MOCK_COMMENTS.length,
+    reactionCount: 0,
+    isVerified: false,
+  },
+];
+
+const FEED_AUTH_READY: FeedItem[] = [
+  {
+    id: '2',
+    name: '지수',
+    isMe: false,
+    avatarSource: AVATAR_SRC,
+    commentCount: MOCK_COMMENTS.length,
+    reactionCount: 22,
+    isVerified: true,
+    verifiedTimeAgo: '2시간 전',
+    isGoalAchieved: true,
+    photoSource: require('../../../assets/turtle-hi.png'),
+    postText: '2시간동안 런닝 뛰고 온 날!',
+    screenTime: '1h 10m',
+  },
+  {
+    id: '3',
+    name: '민준',
+    isMe: false,
+    avatarSource: AVATAR_SRC,
+    commentCount: MOCK_COMMENTS.length,
+    reactionCount: 22,
+    isVerified: true,
+    verifiedTimeAgo: '5시간 전',
+    isGoalAchieved: false,
+    retroText: '릴스 무한루프에 빠졌어요... 내일은 폰 도서관 사물함에 넣어둘게요 ㅠㅠ',
+    screenTime: '6h 5m',
+  },
+  {
+    id: '1',
+    name: '나',
+    isMe: true,
+    avatarSource: AVATAR_SRC,
+    commentCount: MOCK_COMMENTS.length,
+    reactionCount: 0,
+    isVerified: false,
+  },
+  {
+    id: '4',
+    name: '서연',
+    isMe: false,
+    avatarSource: AVATAR_SRC,
+    commentCount: MOCK_COMMENTS.length,
+    reactionCount: 0,
+    isVerified: false,
+  },
+  {
+    id: '5',
+    name: '승호',
+    isMe: false,
+    avatarSource: AVATAR_SRC,
+    commentCount: MOCK_COMMENTS.length,
+    reactionCount: 0,
+    isVerified: false,
+  },
+  {
+    id: '6',
+    name: '현우',
+    isMe: false,
+    avatarSource: AVATAR_SRC,
+    commentCount: MOCK_COMMENTS.length,
+    reactionCount: 0,
+    isVerified: false,
   },
 ];
 
@@ -62,8 +169,16 @@ export default function FeedHome() {
   const [goalState, setGoalState] = useState<GoalState>('notSet');
   const [devGroupActive, setDevGroupActive] = useState(false);
   const [members, setMembers] = useState<MemberItem[]>(INITIAL_MEMBERS);
+  const [feedItems, setFeedItems] = useState<FeedItem[]>(FEED_UNVERIFIED);
+  const [myReactions, setMyReactions] = useState<Record<string, string>>({});
+  const [pokedMemberIds, setPokedMemberIds] = useState<string[]>([]);
 
   const effectiveGroupActive = isGroupActive || devGroupActive;
+
+  useEffect(() => {
+    setFeedItems(goalState === 'authReady' ? [...FEED_AUTH_READY] : [...FEED_UNVERIFIED]);
+    setMyReactions({});
+  }, [goalState]);
 
   useEffect(() => {
     const fetchGroup = async () => {
@@ -90,6 +205,7 @@ export default function FeedHome() {
   };
 
   const handlePoke = async (memberId: string) => {
+    setPokedMemberIds((prev) => [...prev, memberId]);
     setMembers((prev) =>
       prev.map((m) => (m.id === memberId ? { ...m, badgeCount: (m.badgeCount ?? 0) + 1 } : m))
     );
@@ -99,6 +215,17 @@ export default function FeedHome() {
     } catch {
       // 임시 연결 — 에러 무시
     }
+  };
+
+  const handleReact = (itemId: string, emoji: string) => {
+    if (!myReactions[itemId]) {
+      setFeedItems((prev) =>
+        prev.map((item) =>
+          item.id === itemId ? { ...item, reactionCount: item.reactionCount + 1 } : item
+        )
+      );
+    }
+    setMyReactions((prev) => ({ ...prev, [itemId]: emoji }));
   };
 
   return (
@@ -112,7 +239,11 @@ export default function FeedHome() {
         <ActiveFeed
           onInvite={handleInvite}
           onPoke={handlePoke}
+          onReact={handleReact}
+          feedItems={feedItems}
           members={members}
+          myReactions={myReactions}
+          pokedMemberIds={pokedMemberIds}
           goalState={goalState}
           onGoalSet={() => setGoalState('setWaiting')}
           onNextDay={() => setGoalState('authReady')}
@@ -144,38 +275,77 @@ function InactiveFeed({
 function ActiveFeed({
   onInvite,
   onPoke,
+  onReact,
+  feedItems,
   members,
+  myReactions,
+  pokedMemberIds,
   goalState,
   onGoalSet,
   onNextDay,
 }: {
   onInvite: () => void;
   onPoke: (memberId: string) => void;
+  onReact: (itemId: string, emoji: string) => void;
+  feedItems: FeedItem[];
   members: MemberItem[];
+  myReactions: Record<string, string>;
+  pokedMemberIds: string[];
   goalState: GoalState;
   onGoalSet: () => void;
   onNextDay: () => void;
 }) {
+  const scrollRef = useRef<ScrollView>(null);
+
+  const enrichedMembers = members.map((m) => ({
+    ...m,
+    isGoalAchieved: feedItems.some((f) => f.id === m.id && f.isVerified && f.isGoalAchieved),
+  }));
+
   return (
-    <ScrollView contentContainerStyle={styles.container} showsVerticalScrollIndicator={false}>
-      <ActionGuideBanner goalState={goalState} onGoalSet={onGoalSet} />
-      <MemberSection members={members} onInvite={onInvite} />
-      {MOCK_FEED.map((item) => (
-        <FeedCard
-          key={item.id}
-          item={item}
-          goalState={goalState}
-          onPoke={onPoke}
-          onBodyPress={() =>
-            router.push({
-              pathname: '/(feed)/post-detail',
-              params: { memberId: item.id, goalState },
-            })
-          }
+    <View style={styles.feedWrapper}>
+      <ScrollView
+        ref={scrollRef}
+        contentContainerStyle={styles.container}
+        showsVerticalScrollIndicator={false}
+      >
+        <ActionGuideBanner goalState={goalState} onGoalSet={onGoalSet} />
+        <MemberSection members={enrichedMembers} onInvite={onInvite} />
+        {feedItems.map((item) => (
+          <FeedCard
+            key={item.id}
+            item={item}
+            goalState={goalState}
+            onPoke={onPoke}
+            onReact={onReact}
+            isPoked={pokedMemberIds.includes(item.id)}
+            myReaction={myReactions[item.id]}
+            onBodyPress={() =>
+              router.push({
+                pathname: '/(feed)/post-detail',
+                params: {
+                  item: JSON.stringify(item),
+                  goalState,
+                  isPoked: pokedMemberIds.includes(item.id) ? '1' : '0',
+                },
+              })
+            }
+          />
+        ))}
+        <DevPanel goalState={goalState} onNextDay={onNextDay} />
+      </ScrollView>
+
+      <Pressable
+        style={styles.fab}
+        onPress={() => scrollRef.current?.scrollTo({ y: 0, animated: true })}
+      >
+        <Image
+          source={require('../../../assets/icons/regular/icon_rg_ArrowUp.png')}
+          style={styles.fabIcon}
+          resizeMode="contain"
         />
-      ))}
-      <DevPanel goalState={goalState} onNextDay={onNextDay} />
-    </ScrollView>
+      </Pressable>
+    </View>
   );
 }
 
@@ -196,7 +366,7 @@ function EmptyFeedCard({ onInvite }: { onInvite: () => void }) {
         size="lg"
         leadingIcon={
           <Image
-            source={require('../../../assets/onboarding-share-white.png')}
+            source={require('../../../assets/icons/regular/icon_rg_ShareFat.png')}
             style={styles.buttonIcon}
             resizeMode="contain"
           />
@@ -242,10 +412,13 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: brown[50],
   },
+  feedWrapper: {
+    flex: 1,
+  },
   container: {
-    // paddingHorizontal: spacing[24],
+    paddingHorizontal: spacing[16],
     paddingTop: spacing[16],
-    paddingBottom: spacing[32],
+    paddingBottom: spacing[96],
     gap: spacing[12],
   },
   centered: {
@@ -254,6 +427,27 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     paddingHorizontal: spacing[24],
     gap: spacing[16],
+  },
+  fab: {
+    position: 'absolute',
+    bottom: spacing[32],
+    right: spacing[24],
+    width: 44,
+    height: 44,
+    borderRadius: radius.full,
+    backgroundColor: green[300],
+    alignItems: 'center',
+    justifyContent: 'center',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.15,
+    shadowRadius: 4,
+    elevation: 4,
+  },
+  fabIcon: {
+    width: 20,
+    height: 20,
+    tintColor: WHITE,
   },
   emptyCard: {
     borderRadius: radius[16],
@@ -265,10 +459,6 @@ const styles = StyleSheet.create({
   emptyImage: {
     width: 120,
     height: 120,
-  },
-  emptyTitle: {
-    ...typography.primary.body1B,
-    color: gray[900],
   },
   emptySubtitle: {
     ...typography.primary.body2R,

@@ -1,7 +1,9 @@
 import { router, useLocalSearchParams } from 'expo-router';
+import { useState } from 'react';
 import { Image, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { primitiveColors, radius, spacing, typography } from '../../lib/token';
 import type { GoalState } from './ActionGuideBanner';
+import type { FeedItem } from './FeedCard';
 
 const { gray, green, brown, system } = primitiveColors;
 const WHITE = '#FFFFFF';
@@ -25,13 +27,11 @@ type CommentItem = {
 
 const NOW = Date.now();
 
-// sorted newest-first already; sortedPokes below re-sorts defensively
 const MOCK_POKES: PokeItem[] = [
   { id: '1', name: '지수', avatarSource: AVATAR_SOURCE, pokedAt: NOW - 30 * 60 * 1000 },
   { id: '2', name: '승호', avatarSource: AVATAR_SOURCE, pokedAt: NOW - 60 * 60 * 1000 },
 ];
 
-// sorted oldest-first already; sortedComments below re-sorts defensively
 export const MOCK_COMMENTS: CommentItem[] = [
   {
     id: '1',
@@ -51,11 +51,6 @@ export const MOCK_COMMENTS: CommentItem[] = [
   },
 ];
 
-const MEMBER_NAMES: Record<string, string> = {
-  '1': '나',
-  '2': '서연',
-};
-
 const BODY_TEXT: Record<GoalState, string> = {
   notSet: '개인 목표를 설정해야 해요',
   setWaiting: '내일부터 인증 가능해요',
@@ -63,13 +58,19 @@ const BODY_TEXT: Record<GoalState, string> = {
 };
 
 export default function FeedPostDetail() {
-  const { memberId, goalState } = useLocalSearchParams<{
-    memberId: string;
+  const {
+    item: itemJson,
+    goalState,
+    isPoked: isPokedParam,
+  } = useLocalSearchParams<{
+    item: string;
     goalState: GoalState;
+    isPoked: string;
   }>();
 
-  const memberName = MEMBER_NAMES[memberId] ?? '멤버';
+  const feedItem = JSON.parse(itemJson as string) as FeedItem;
   const state: GoalState = goalState ?? 'authReady';
+  const [isPoked, setIsPoked] = useState(isPokedParam === '1');
 
   const sortedPokes = [...MOCK_POKES].sort((a, b) => b.pokedAt - a.pokedAt);
   const sortedComments = [...MOCK_COMMENTS].sort((a, b) => a.createdAt - b.createdAt);
@@ -89,17 +90,84 @@ export default function FeedPostDetail() {
 
       <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
         <View style={styles.card}>
-          <View style={styles.memberRow}>
-            <Image source={AVATAR_SOURCE} style={styles.avatar} resizeMode="cover" />
-            <Text style={styles.memberName}>{memberName}</Text>
-          </View>
+          {feedItem.isVerified ? (
+            <>
+              {/* Verified header: avatar+label / name / timeAgo */}
+              <View style={styles.verifiedHeader}>
+                <View style={styles.avatarWithLabel}>
+                  <Image source={feedItem.avatarSource} style={styles.avatar} resizeMode="cover" />
+                  <View
+                    style={[
+                      styles.statusLabel,
+                      { backgroundColor: feedItem.isGoalAchieved ? green[300] : gray[400] },
+                    ]}
+                  >
+                    <Text style={styles.statusLabelText}>
+                      {feedItem.isGoalAchieved ? '목표 성공' : '목표 실패'}
+                    </Text>
+                  </View>
+                </View>
+                <Text style={[styles.memberName, { flex: 1 }]}>{feedItem.name}</Text>
+                {feedItem.verifiedTimeAgo != null && (
+                  <Text style={styles.timeAgo}>{feedItem.verifiedTimeAgo}</Text>
+                )}
+              </View>
 
-          <Text style={styles.statusText}>{BODY_TEXT[state]}</Text>
+              {/* Post content */}
+              {feedItem.isGoalAchieved ? (
+                <>
+                  {feedItem.photoSource != null && (
+                    <Image source={feedItem.photoSource} style={styles.photo} resizeMode="cover" />
+                  )}
+                  {feedItem.postText != null && (
+                    <Text style={styles.postText}>{feedItem.postText}</Text>
+                  )}
+                </>
+              ) : (
+                <View style={styles.retroCard}>
+                  <Text style={styles.retroLabel}>한 줄 회고</Text>
+                  <Text style={styles.retroText}>{feedItem.retroText}</Text>
+                </View>
+              )}
 
-          <Pressable style={styles.pokeButton}>
-            <Text>👉</Text>
-            <Text style={styles.pokeButtonText}>콕 찌르기</Text>
-          </Pressable>
+              {feedItem.screenTime != null && (
+                <View
+                  style={[
+                    styles.screentimeRow,
+                    {
+                      backgroundColor: feedItem.isGoalAchieved ? system.green.opacity10 : gray[50],
+                    },
+                  ]}
+                >
+                  <Text style={styles.screentimeLabel}>스크린타임</Text>
+                  <Text style={styles.screentimeValue}>{feedItem.screenTime}</Text>
+                </View>
+              )}
+            </>
+          ) : (
+            <>
+              {/* Unverified header */}
+              <View style={styles.memberRow}>
+                <Image source={feedItem.avatarSource} style={styles.avatar} resizeMode="cover" />
+                <Text style={styles.memberName}>{feedItem.name}</Text>
+              </View>
+
+              <Text style={styles.statusText}>{BODY_TEXT[state]}</Text>
+
+              {!feedItem.isMe && state !== 'setWaiting' && (
+                <Pressable
+                  style={[styles.pokeButton, isPoked && styles.pokeButtonDisabled]}
+                  disabled={isPoked}
+                  onPress={() => setIsPoked(true)}
+                >
+                  <Text>👉</Text>
+                  <Text style={[styles.pokeButtonText, isPoked && styles.pokeButtonTextDisabled]}>
+                    콕 찌르기
+                  </Text>
+                </Pressable>
+              )}
+            </>
+          )}
         </View>
 
         <View style={styles.section}>
@@ -176,31 +244,93 @@ const styles = StyleSheet.create({
     color: gray[900],
   },
   content: {
-    // paddingHorizontal: spacing[24],
+    paddingHorizontal: spacing[16],
     paddingBottom: spacing[40],
     gap: spacing[12],
   },
   card: {
     backgroundColor: WHITE,
     borderRadius: radius[16],
-    padding: spacing[20],
-    alignItems: 'center',
+    padding: spacing[16],
     gap: spacing[12],
   },
-  memberRow: {
+  // Verified header
+  verifiedHeader: {
     flexDirection: 'row',
     alignItems: 'center',
-    alignSelf: 'flex-start',
     gap: spacing[8],
+  },
+  avatarWithLabel: {
+    alignItems: 'center',
+    gap: spacing[4],
   },
   avatar: {
     width: 36,
     height: 36,
     borderRadius: radius.full,
   },
+  statusLabel: {
+    borderRadius: radius.full,
+    paddingHorizontal: spacing[6],
+    paddingVertical: spacing[2],
+  },
+  statusLabelText: {
+    ...typography.primary.caption2,
+    color: WHITE,
+  },
   memberName: {
     ...typography.primary.body2B,
     color: gray[900],
+  },
+  timeAgo: {
+    ...typography.primary.caption,
+    color: gray[400],
+  },
+  // Post content
+  photo: {
+    width: '100%',
+    height: 200,
+    borderRadius: radius[8],
+  },
+  postText: {
+    ...typography.primary.body2R,
+    color: gray[900],
+  },
+  retroCard: {
+    backgroundColor: system.red.opacity10,
+    borderRadius: radius[8],
+    padding: spacing[12],
+    gap: spacing[4],
+  },
+  retroLabel: {
+    ...typography.primary.body3B,
+    color: system.red.opacity100,
+  },
+  retroText: {
+    ...typography.primary.body2R,
+    color: gray[700],
+  },
+  screentimeRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    borderRadius: 12,
+    paddingHorizontal: spacing[12],
+    paddingVertical: spacing[16],
+  },
+  screentimeLabel: {
+    ...typography.primary.body3R,
+    color: gray[500],
+  },
+  screentimeValue: {
+    ...typography.primary.body3B,
+    color: gray[900],
+  },
+  // Unverified card
+  memberRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing[8],
   },
   statusText: {
     ...typography.primary.body2R,
@@ -210,6 +340,7 @@ const styles = StyleSheet.create({
   pokeButton: {
     flexDirection: 'row',
     alignItems: 'center',
+    alignSelf: 'center',
     backgroundColor: green[300],
     borderRadius: radius.full,
     paddingVertical: spacing[8],
@@ -220,6 +351,13 @@ const styles = StyleSheet.create({
     ...typography.primary.body2B,
     color: WHITE,
   },
+  pokeButtonDisabled: {
+    backgroundColor: gray[200],
+  },
+  pokeButtonTextDisabled: {
+    color: gray[400],
+  },
+  // Poke + comment sections
   section: {
     backgroundColor: WHITE,
     borderRadius: radius[16],
