@@ -1,55 +1,40 @@
 import { router, useLocalSearchParams } from 'expo-router';
-import { useState } from 'react';
-import { Image, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { useEffect, useState } from 'react';
+import { Alert, Image, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import apiClient from '../../api/client';
+import { pokeStore } from '../../lib/pokeStore';
 import { primitiveColors, radius, spacing, typography } from '../../lib/token';
 import type { GoalState } from './ActionGuideBanner';
-import type { FeedItem } from './FeedCard';
+import type { FeedItem, PokeEntry, ReactionEntry } from './FeedCard';
 
 const { gray, green, brown, system } = primitiveColors;
 const WHITE = '#FFFFFF';
 const AVATAR_SOURCE = require('../../../assets/basic-profile-turtle-hi.png');
 
-type PokeItem = {
-  id: string;
-  name: string;
-  avatarSource: number;
-  pokedAt: number;
-};
-
 type CommentItem = {
   id: string;
   authorName: string;
-  avatarSource: number;
+  avatarSource: number | { uri: string };
   text: string;
   createdAt: number;
   timeAgoLabel: string;
 };
 
-const NOW = Date.now();
+type CommentAPIItem = {
+  commentId: number;
+  author: { userId: number; displayName: string; profileImageUrl: string };
+  body: string;
+  createdAt: string;
+  replyCount: number;
+};
 
-const MOCK_POKES: PokeItem[] = [
-  { id: '1', name: '지수', avatarSource: AVATAR_SOURCE, pokedAt: NOW - 30 * 60 * 1000 },
-  { id: '2', name: '승호', avatarSource: AVATAR_SOURCE, pokedAt: NOW - 60 * 60 * 1000 },
-];
+type CommentsResponse = {
+  totalCount: number;
+  items: CommentAPIItem[];
+  nextCursor: string | null;
+};
 
-export const MOCK_COMMENTS: CommentItem[] = [
-  {
-    id: '1',
-    authorName: '민준',
-    avatarSource: AVATAR_SOURCE,
-    text: '야 너 인증 언제할거야',
-    createdAt: NOW - 60 * 60 * 1000,
-    timeAgoLabel: '1시간 전',
-  },
-  {
-    id: '2',
-    authorName: '서연',
-    avatarSource: AVATAR_SOURCE,
-    text: '스겜하겠음 ㅈㅅㅈㅅ',
-    createdAt: NOW - 30 * 60 * 1000,
-    timeAgoLabel: '30분 전',
-  },
-];
+export const MOCK_COMMENTS: CommentItem[] = [];
 
 const BODY_TEXT: Record<GoalState, string> = {
   notSet: '개인 목표를 설정해야 해요',
@@ -57,23 +42,72 @@ const BODY_TEXT: Record<GoalState, string> = {
   authReady: '아직 인증하지 않았어요',
 };
 
+function formatTimeAgo(timestamp: number): string {
+  const diff = Date.now() - timestamp;
+  const minutes = Math.floor(diff / 60000);
+  if (minutes < 1) return '방금 전';
+  if (minutes < 60) return `${minutes}분 전`;
+  const hours = Math.floor(minutes / 60);
+  if (hours < 24) return `${hours}시간 전`;
+  return `${Math.floor(hours / 24)}일 전`;
+}
+
 export default function FeedPostDetail() {
   const {
     item: itemJson,
     goalState,
     isPoked: isPokedParam,
+    myReaction,
+    groupChallengeId,
   } = useLocalSearchParams<{
     item: string;
     goalState: GoalState;
     isPoked: string;
+    myReaction: string;
+    groupChallengeId: string;
   }>();
 
   const feedItem = JSON.parse(itemJson as string) as FeedItem;
   const state: GoalState = goalState ?? 'authReady';
   const [isPoked, setIsPoked] = useState(isPokedParam === '1');
+  const [comments, setComments] = useState<CommentItem[]>([]);
 
-  const sortedPokes = [...MOCK_POKES].sort((a, b) => b.pokedAt - a.pokedAt);
-  const sortedComments = [...MOCK_COMMENTS].sort((a, b) => a.createdAt - b.createdAt);
+  useEffect(() => {
+    if (!groupChallengeId || !feedItem.stampId) return;
+    const fetchComments = async () => {
+      try {
+        const res = await apiClient.get<CommentsResponse>(
+          `/group-challenges/${groupChallengeId}/stamps/${feedItem.stampId}/comments`
+        );
+        setComments(
+          res.data.items.map((c) => ({
+            id: String(c.commentId),
+            authorName: c.author.displayName,
+            avatarSource: c.author.profileImageUrl
+              ? { uri: c.author.profileImageUrl }
+              : AVATAR_SOURCE,
+            text: c.body,
+            createdAt: new Date(c.createdAt).getTime(),
+            timeAgoLabel: formatTimeAgo(new Date(c.createdAt).getTime()),
+          }))
+        );
+      } catch {
+        // keep mock data on error
+      }
+    };
+    fetchComments();
+  }, [groupChallengeId, feedItem.stampId]);
+
+  // merge user's own reaction in (from route param) in case feedItem.reactions doesn't have it yet
+  const ownInList = (feedItem.reactions ?? []).some((r) => r.userId === 'me');
+  const ownEntry: ReactionEntry[] =
+    myReaction && !ownInList
+      ? [{ userId: 'me', name: '나', avatarSource: AVATAR_SOURCE as number, emoji: myReaction }]
+      : [];
+  const displayReactions: ReactionEntry[] = [...ownEntry, ...(feedItem.reactions ?? [])];
+  const displayPokes: PokeEntry[] = feedItem.pokes ?? [];
+
+  const sortedComments = [...comments].sort((a, b) => a.createdAt - b.createdAt);
 
   return (
     <View style={styles.root}>
@@ -158,7 +192,11 @@ export default function FeedPostDetail() {
                 <Pressable
                   style={[styles.pokeButton, isPoked && styles.pokeButtonDisabled]}
                   disabled={isPoked}
-                  onPress={() => setIsPoked(true)}
+                  onPress={() => {
+                    Alert.alert(`${feedItem.name}님을 콕 찔렀어요!`);
+                    pokeStore.add(feedItem.id);
+                    setIsPoked(true);
+                  }}
                 >
                   <Text>👉</Text>
                   <Text style={[styles.pokeButtonText, isPoked && styles.pokeButtonTextDisabled]}>
@@ -170,22 +208,45 @@ export default function FeedPostDetail() {
           )}
         </View>
 
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>콕 찌름 {sortedPokes.length}</Text>
-          <View style={styles.pokeRow}>
-            {sortedPokes.map((poke) => (
-              <View key={poke.id} style={styles.pokeAvatarItem}>
-                <View style={styles.pokeAvatarWrapper}>
-                  <Image source={poke.avatarSource} style={styles.pokeAvatar} resizeMode="cover" />
-                  <View style={styles.pokeEmoji}>
-                    <Text style={styles.pokeEmojiText}>👉</Text>
+        {feedItem.isVerified ? (
+          <View style={styles.section}>
+            <Text style={styles.sectionTitle}>감정 표현 {feedItem.reactionCount}</Text>
+            {displayReactions.length > 0 && (
+              <View style={styles.pokeRow}>
+                {displayReactions.map((r) => (
+                  <View key={r.userId} style={styles.pokeAvatarItem}>
+                    <View style={styles.pokeAvatarWrapper}>
+                      <Image source={r.avatarSource} style={styles.pokeAvatar} resizeMode="cover" />
+                      <View style={styles.pokeEmoji}>
+                        <Text style={styles.pokeEmojiText}>{r.emoji}</Text>
+                      </View>
+                    </View>
+                    <Text style={styles.pokeAvatarName}>{r.name}</Text>
                   </View>
-                </View>
-                <Text style={styles.pokeAvatarName}>{poke.name}</Text>
+                ))}
               </View>
-            ))}
+            )}
           </View>
-        </View>
+        ) : (
+          <View style={styles.section}>
+            <Text style={styles.sectionTitle}>콕 찌름 {feedItem.pokeCount}</Text>
+            {displayPokes.length > 0 && (
+              <View style={styles.pokeRow}>
+                {displayPokes.map((p) => (
+                  <View key={p.userId} style={styles.pokeAvatarItem}>
+                    <View style={styles.pokeAvatarWrapper}>
+                      <Image source={p.avatarSource} style={styles.pokeAvatar} resizeMode="cover" />
+                      <View style={styles.pokeEmoji}>
+                        <Text style={styles.pokeEmojiText}>👉</Text>
+                      </View>
+                    </View>
+                    <Text style={styles.pokeAvatarName}>{p.name}</Text>
+                  </View>
+                ))}
+              </View>
+            )}
+          </View>
+        )}
 
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>댓글 {sortedComments.length}</Text>

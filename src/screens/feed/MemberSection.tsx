@@ -9,7 +9,7 @@ const AVATAR_SIZE = 52;
 export type MemberItem = {
   id: string;
   name: string;
-  avatarSource: number;
+  avatarSource: number | { uri: string };
   badgeCount?: number;
   isGoalAchieved?: boolean;
 };

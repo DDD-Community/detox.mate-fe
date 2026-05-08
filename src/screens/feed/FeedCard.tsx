@@ -8,17 +8,34 @@ const WHITE = '#FFFFFF';
 const AVATAR_SIZE = 36;
 const REACTION_EMOJIS = ['👍', '🔥', '💪', '🐢', '🥹'] as const;
 
+export type ReactionEntry = {
+  userId: string;
+  name: string;
+  avatarSource: number | { uri: string };
+  emoji: string;
+};
+
+export type PokeEntry = {
+  userId: string;
+  name: string;
+  avatarSource: number | { uri: string };
+};
+
 export type FeedItem = {
   id: string;
+  stampId?: number;
   name: string;
   isMe: boolean;
-  avatarSource: number;
+  avatarSource: number | { uri: string };
   commentCount: number;
   reactionCount: number;
+  pokeCount: number;
+  reactions: ReactionEntry[];
+  pokes: PokeEntry[];
   isVerified?: boolean;
   verifiedTimeAgo?: string;
   isGoalAchieved?: boolean;
-  photoSource?: number;
+  photoSource?: number | { uri: string };
   postText?: string;
   retroText?: string;
   screenTime?: string;
@@ -98,7 +115,11 @@ export default function FeedCard({
         {/* Footer + reaction picker (absolute, below footer) */}
         <View style={styles.footerWrapper}>
           <View style={styles.footer}>
-            <Pressable style={styles.footerButton} onPress={() => setShowPicker((v) => !v)}>
+            <Pressable
+              style={[styles.footerButton, goalState === 'notSet' && styles.footerButtonDisabled]}
+              disabled={goalState === 'notSet'}
+              onPress={() => setShowPicker((v) => !v)}
+            >
               <Image
                 source={require('../../../assets/impressions.png')}
                 style={styles.impressionIcon}
@@ -168,7 +189,11 @@ export default function FeedCard({
 
       <View style={styles.footerWrapper}>
         <View style={styles.footer}>
-          <Pressable style={styles.footerButton} onPress={() => setShowPicker((v) => !v)}>
+          <Pressable
+              style={[styles.footerButton, goalState === 'notSet' && styles.footerButtonDisabled]}
+              disabled={goalState === 'notSet'}
+              onPress={() => setShowPicker((v) => !v)}
+            >
             <Image
               source={require('../../../assets/impressions.png')}
               style={styles.impressionIcon}
@@ -321,6 +346,9 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: spacing[4],
+  },
+  footerButtonDisabled: {
+    opacity: 0.35,
   },
   impressionIcon: {
     width: 18,
