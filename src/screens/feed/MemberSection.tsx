@@ -183,7 +183,7 @@ const styles = StyleSheet.create({
     position: 'absolute',
     bottom: 0,
     right: 0,
-    backgroundColor: system.orange.opacity100,
+    backgroundColor: system.red.opacity100,
     borderRadius: radius.full,
     minWidth: 18,
     height: 18,

@@ -197,10 +197,10 @@ export default function FeedHome() {
   const [devGroupActive, setDevGroupActive] = useState(false);
   const [members, setMembers] = useState<MemberItem[]>(INITIAL_MEMBERS);
   const [feedItems, setFeedItems] = useState<FeedItem[]>(FEED_UNVERIFIED);
-  const [myReactions, setMyReactions] = useState<Record<string, string>>({});
+  const [myReactions, setMyReactions] = useState<Record<string, string[]>>({});
   const [pokedMemberIds, setPokedMemberIds] = useState<string[]>([]);
   const [myUserId, setMyUserId] = useState<number | null>(null);
-  const [myReactionIds, setMyReactionIds] = useState<Record<string, number>>({});
+  const [myReactionIds, setMyReactionIds] = useState<Record<string, Record<string, number>>>({});
 
   const effectiveGroupActive = isGroupActive || devGroupActive;
 
@@ -295,20 +295,34 @@ export default function FeedHome() {
   };
 
   const handleReact = async (itemId: string, emoji: string) => {
-    const alreadyReacted = !!myReactions[itemId];
+    const userEmojis = myReactions[itemId] ?? [];
+    const hasThisEmoji = userEmojis.includes(emoji);
+
     setFeedItems((prev) =>
       prev.map((item) => {
         if (item.id !== itemId) return item;
+        if (hasThisEmoji) {
+          return {
+            ...item,
+            reactionCount: Math.max(0, item.reactionCount - 1),
+            reactions: item.reactions.filter((r) => !(r.userId === 'me' && r.emoji === emoji)),
+          };
+        }
         const myEntry: ReactionEntry = { userId: 'me', name: '나', avatarSource: AVATAR_SRC, emoji };
-        const filtered = item.reactions.filter((r) => r.userId !== 'me');
         return {
           ...item,
-          reactionCount: alreadyReacted ? item.reactionCount : item.reactionCount + 1,
-          reactions: [myEntry, ...filtered],
+          reactionCount: item.reactionCount + 1,
+          reactions: [myEntry, ...item.reactions],
         };
       })
     );
-    setMyReactions((prev) => ({ ...prev, [itemId]: emoji }));
+    setMyReactions((prev) => {
+      const current = prev[itemId] ?? [];
+      return {
+        ...prev,
+        [itemId]: hasThisEmoji ? current.filter((e) => e !== emoji) : [...current, emoji],
+      };
+    });
 
     if (!groupChallengeId) return;
     const targetItem = feedItems.find((f) => f.id === itemId);
@@ -317,15 +331,26 @@ export default function FeedHome() {
     if (!reactionCode) return;
 
     try {
-      const oldReactionId = myReactionIds[itemId];
-      if (oldReactionId) {
-        await apiClient.delete(`/group-challenges/${groupChallengeId}/reactions/${oldReactionId}`);
+      if (hasThisEmoji) {
+        const reactionId = myReactionIds[itemId]?.[emoji];
+        if (reactionId) {
+          await apiClient.delete(`/group-challenges/${groupChallengeId}/reactions/${reactionId}`);
+          setMyReactionIds((prev) => {
+            const copy = { ...(prev[itemId] ?? {}) };
+            delete copy[emoji];
+            return { ...prev, [itemId]: copy };
+          });
+        }
+      } else {
+        const res = await apiClient.post<PostReactionResponse>(
+          `/group-challenges/${groupChallengeId}/stamps/${targetItem.stampId}/reactions`,
+          { reactionCode }
+        );
+        setMyReactionIds((prev) => ({
+          ...prev,
+          [itemId]: { ...(prev[itemId] ?? {}), [emoji]: res.data.reactionId },
+        }));
       }
-      const res = await apiClient.post<PostReactionResponse>(
-        `/group-challenges/${groupChallengeId}/stamps/${targetItem.stampId}/reactions`,
-        { reactionCode }
-      );
-      setMyReactionIds((prev) => ({ ...prev, [itemId]: res.data.reactionId }));
     } catch {
       // keep optimistic state on error
     }
@@ -333,6 +358,26 @@ export default function FeedHome() {
 
   const handleVerifyMe = () => {
     setFeedItems((prev) => {
+      const alreadyHasFail = prev.some((item) => item.id === 'dev-fail');
+      const mockFail: FeedItem = alreadyHasFail
+        ? (null as unknown as FeedItem)
+        : {
+            id: 'dev-fail',
+            name: '지우',
+            isMe: false,
+            avatarSource: AVATAR_SRC,
+            commentCount: 0,
+            reactionCount: 0,
+            pokeCount: 0,
+            reactions: [],
+            pokes: [],
+            isVerified: true,
+            isGoalAchieved: false,
+            retroText: '오늘은 유튜브를 너무 많이 봤어요... 내일은 꼭 줄여볼게요 ㅠ',
+            screenTime: '5h 20m',
+            verifiedTimeAgo: '1시간 전',
+          };
+
       const meIndex = prev.findIndex((item) => item.isMe);
       const verifiedMe: Partial<FeedItem> = {
         isVerified: true,
@@ -341,23 +386,27 @@ export default function FeedHome() {
         postText: '오늘 인증 완료했어요!',
         screenTime: '2h 30m',
       };
+
+      let updated: FeedItem[];
       if (meIndex !== -1) {
-        return prev.map((item, i) => (i === meIndex ? { ...item, ...verifiedMe } : item));
+        updated = prev.map((item, i) => (i === meIndex ? { ...item, ...verifiedMe } : item));
+      } else {
+        const mockMe: FeedItem = {
+          id: 'dev-me',
+          name: '나',
+          isMe: true,
+          avatarSource: AVATAR_SRC,
+          commentCount: 0,
+          reactionCount: 0,
+          pokeCount: 0,
+          reactions: [],
+          pokes: [],
+          ...verifiedMe,
+        } as FeedItem;
+        updated = [mockMe, ...prev];
       }
-      // Real-API mode: current user not yet in the list — prepend a mock card
-      const mockMe: FeedItem = {
-        id: 'dev-me',
-        name: '나',
-        isMe: true,
-        avatarSource: AVATAR_SRC,
-        commentCount: 0,
-        reactionCount: 0,
-        pokeCount: 0,
-        reactions: [],
-        pokes: [],
-        ...verifiedMe,
-      } as FeedItem;
-      return [mockMe, ...prev];
+
+      return alreadyHasFail ? updated : [...updated, mockFail];
     });
   };
 
@@ -426,7 +475,7 @@ function ActiveFeed({
   onReact: (itemId: string, emoji: string) => void;
   feedItems: FeedItem[];
   members: MemberItem[];
-  myReactions: Record<string, string>;
+  myReactions: Record<string, string[]>;
   pokedMemberIds: string[];
   goalState: GoalState;
   groupChallengeId: string | null;
@@ -458,7 +507,7 @@ function ActiveFeed({
             onPoke={onPoke}
             onReact={onReact}
             isPoked={pokedMemberIds.includes(item.id)}
-            myReaction={myReactions[item.id]}
+            myReactions={myReactions[item.id]}
             onBodyPress={() =>
               router.push({
                 pathname: '/(feed)/post-detail',
@@ -466,7 +515,7 @@ function ActiveFeed({
                   item: JSON.stringify(item),
                   goalState,
                   isPoked: pokedMemberIds.includes(item.id) ? '1' : '0',
-                  myReaction: myReactions[item.id] ?? '',
+                  myReaction: (myReactions[item.id] ?? []).join(','),
                   groupChallengeId: groupChallengeId ?? '',
                 },
               })

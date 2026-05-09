@@ -98,12 +98,14 @@ export default function FeedPostDetail() {
     fetchComments();
   }, [groupChallengeId, feedItem.stampId]);
 
-  // merge user's own reaction in (from route param) in case feedItem.reactions doesn't have it yet
-  const ownInList = (feedItem.reactions ?? []).some((r) => r.userId === 'me');
-  const ownEntry: ReactionEntry[] =
-    myReaction && !ownInList
-      ? [{ userId: 'me', name: '나', avatarSource: AVATAR_SOURCE as number, emoji: myReaction }]
-      : [];
+  // merge any reactions from route param that aren't yet in feedItem.reactions (e.g. race with navigation)
+  const ownInList = new Set(
+    (feedItem.reactions ?? []).filter((r) => r.userId === 'me').map((r) => r.emoji)
+  );
+  const paramEmojis = myReaction ? myReaction.split(',').filter(Boolean) : [];
+  const ownEntry: ReactionEntry[] = paramEmojis
+    .filter((emoji) => !ownInList.has(emoji))
+    .map((emoji) => ({ userId: 'me', name: '나', avatarSource: AVATAR_SOURCE as number, emoji }));
   const displayReactions: ReactionEntry[] = [...ownEntry, ...(feedItem.reactions ?? [])];
   const displayPokes: PokeEntry[] = feedItem.pokes ?? [];
 
@@ -130,15 +132,17 @@ export default function FeedPostDetail() {
               <View style={styles.verifiedHeader}>
                 <View style={styles.avatarWithLabel}>
                   <Image source={feedItem.avatarSource} style={styles.avatar} resizeMode="cover" />
-                  <View
-                    style={[
-                      styles.statusLabel,
-                      { backgroundColor: feedItem.isGoalAchieved ? green[300] : gray[400] },
-                    ]}
-                  >
-                    <Text style={styles.statusLabelText}>
-                      {feedItem.isGoalAchieved ? '목표 성공' : '목표 실패'}
-                    </Text>
+                  <View style={styles.statusLabelAnchor}>
+                    <View
+                      style={[
+                        styles.statusLabel,
+                        { backgroundColor: feedItem.isGoalAchieved ? green[300] : gray[400] },
+                      ]}
+                    >
+                      <Text style={styles.statusLabelText}>
+                        {feedItem.isGoalAchieved ? '목표 성공' : '목표 실패'}
+                      </Text>
+                    </View>
                   </View>
                 </View>
                 <Text style={[styles.memberName, { flex: 1 }]}>{feedItem.name}</Text>
@@ -173,8 +177,22 @@ export default function FeedPostDetail() {
                     },
                   ]}
                 >
-                  <Text style={styles.screentimeLabel}>스크린타임</Text>
-                  <Text style={styles.screentimeValue}>{feedItem.screenTime}</Text>
+                  <Text
+                    style={[
+                      styles.screentimeLabel,
+                      !feedItem.isGoalAchieved && { color: gray[500] },
+                    ]}
+                  >
+                    스크린타임
+                  </Text>
+                  <Text
+                    style={[
+                      styles.screentimeValue,
+                      !feedItem.isGoalAchieved && { color: gray[500] },
+                    ]}
+                  >
+                    {feedItem.screenTime}
+                  </Text>
                 </View>
               )}
             </>
@@ -210,11 +228,11 @@ export default function FeedPostDetail() {
 
         {feedItem.isVerified ? (
           <View style={styles.section}>
-            <Text style={styles.sectionTitle}>감정 표현 {feedItem.reactionCount}</Text>
+            <Text style={styles.sectionTitle}>리액션 {displayReactions.length}</Text>
             {displayReactions.length > 0 && (
               <View style={styles.pokeRow}>
                 {displayReactions.map((r) => (
-                  <View key={r.userId} style={styles.pokeAvatarItem}>
+                  <View key={`${r.userId}-${r.emoji}`} style={styles.pokeAvatarItem}>
                     <View style={styles.pokeAvatarWrapper}>
                       <Image source={r.avatarSource} style={styles.pokeAvatar} resizeMode="cover" />
                       <View style={styles.pokeEmoji}>
@@ -323,12 +341,18 @@ const styles = StyleSheet.create({
   },
   avatarWithLabel: {
     alignItems: 'center',
-    gap: spacing[4],
   },
   avatar: {
     width: 36,
     height: 36,
     borderRadius: radius.full,
+  },
+  statusLabelAnchor: {
+    position: 'absolute',
+    bottom: -spacing[8],
+    left: -24,
+    right: -24,
+    alignItems: 'center',
   },
   statusLabel: {
     borderRadius: radius.full,
@@ -381,11 +405,11 @@ const styles = StyleSheet.create({
   },
   screentimeLabel: {
     ...typography.primary.body3R,
-    color: gray[500],
+    color: system.green.opacity100,
   },
   screentimeValue: {
     ...typography.primary.body3B,
-    color: gray[900],
+    color: system.green.opacity100,
   },
   // Unverified card
   memberRow: {
@@ -405,7 +429,7 @@ const styles = StyleSheet.create({
     backgroundColor: green[300],
     borderRadius: radius.full,
     paddingVertical: spacing[8],
-    paddingHorizontal: spacing[20],
+    paddingHorizontal: spacing[16],
     gap: spacing[4],
   },
   pokeButtonText: {

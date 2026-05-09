@@ -61,7 +61,7 @@ export default function FeedCard({
   onPoke?: (memberId: string) => void;
   onBodyPress?: () => void;
   isPoked?: boolean;
-  myReaction?: string;
+  myReactions?: string[];
   onReact?: (itemId: string, emoji: string) => void;
 }) {
   const [showPicker, setShowPicker] = useState(false);
@@ -76,8 +76,10 @@ export default function FeedCard({
         <View style={styles.header}>
           <View style={styles.avatarWithLabel}>
             <Image source={item.avatarSource} style={styles.avatar} resizeMode="cover" />
-            <View style={[styles.statusLabel, { backgroundColor: labelBg }]}>
-              <Text style={styles.statusLabelText}>{labelText}</Text>
+            <View style={styles.statusLabelAnchor}>
+              <View style={[styles.statusLabel, { backgroundColor: labelBg }]}>
+                <Text style={styles.statusLabelText}>{labelText}</Text>
+              </View>
             </View>
           </View>
           <Text style={[styles.memberName, { flex: 1 }]}>{item.name}</Text>
@@ -107,8 +109,12 @@ export default function FeedCard({
               { backgroundColor: item.isGoalAchieved ? system.green.opacity10 : gray[50] },
             ]}
           >
-            <Text style={styles.screentimeLabel}>스크린타임</Text>
-            <Text style={styles.screentimeValue}>{item.screenTime}</Text>
+            <Text style={[styles.screentimeLabel, !item.isGoalAchieved && { color: gray[500] }]}>
+              스크린타임
+            </Text>
+            <Text style={[styles.screentimeValue, !item.isGoalAchieved && { color: gray[500] }]}>
+              {item.screenTime}
+            </Text>
           </View>
         )}
 
@@ -125,7 +131,7 @@ export default function FeedCard({
                 style={styles.impressionIcon}
                 resizeMode="contain"
               />
-              <Text style={styles.footerCount}>{item.reactionCount}</Text>
+              <Text style={styles.footerCount}>{item.reactions.length}</Text>
             </Pressable>
             <Pressable style={styles.footerButton} onPress={onBodyPress}>
               <Image
@@ -187,45 +193,15 @@ export default function FeedCard({
         </Pressable>
       )}
 
-      <View style={styles.footerWrapper}>
-        <View style={styles.footer}>
-          <Pressable
-              style={[styles.footerButton, goalState === 'notSet' && styles.footerButtonDisabled]}
-              disabled={goalState === 'notSet'}
-              onPress={() => setShowPicker((v) => !v)}
-            >
-            <Image
-              source={require('../../../assets/impressions.png')}
-              style={styles.impressionIcon}
-              resizeMode="contain"
-            />
-            <Text style={styles.footerCount}>{item.reactionCount}</Text>
-          </Pressable>
-          <Pressable style={styles.footerButton} onPress={onBodyPress}>
-            <Image
-              source={require('../../../assets/icons/regular/icon_rg_Chat.png')}
-              style={styles.footerIcon}
-              resizeMode="contain"
-            />
-            <Text style={styles.footerCount}>{item.commentCount}</Text>
-          </Pressable>
-        </View>
-        {showPicker && (
-          <View style={styles.reactionPicker}>
-            {REACTION_EMOJIS.map((emoji) => (
-              <Pressable
-                key={emoji}
-                style={styles.reactionOption}
-                onPress={() => {
-                  onReact?.(item.id, emoji);
-                  setShowPicker(false);
-                }}
-              >
-                <Text style={styles.reactionOptionText}>{emoji}</Text>
-              </Pressable>
-            ))}
-          </View>
-        )}
+      <View style={styles.footer}>
+        <Pressable style={styles.footerButton} onPress={onBodyPress}>
+          <Image
+            source={require('../../../assets/icons/regular/icon_rg_Chat.png')}
+            style={styles.footerIcon}
+            resizeMode="contain"
+          />
+          <Text style={styles.footerCount}>{item.commentCount}</Text>
+        </Pressable>
       </View>
     </View>
   );
@@ -250,12 +226,18 @@ const styles = StyleSheet.create({
   },
   avatarWithLabel: {
     alignItems: 'center',
-    gap: spacing[4],
   },
   avatar: {
     width: AVATAR_SIZE,
     height: AVATAR_SIZE,
     borderRadius: radius.full,
+  },
+  statusLabelAnchor: {
+    position: 'absolute',
+    bottom: -spacing[8],
+    left: -24,
+    right: -24,
+    alignItems: 'center',
   },
   statusLabel: {
     borderRadius: radius.full,
@@ -276,7 +258,7 @@ const styles = StyleSheet.create({
   },
   photo: {
     width: '100%',
-    height: 180,
+    height: 250,
     borderRadius: radius[8],
   },
   postText: {
@@ -307,11 +289,11 @@ const styles = StyleSheet.create({
   },
   screentimeLabel: {
     ...typography.primary.body3R,
-    color: gray[500],
+    color: system.green.opacity100,
   },
   screentimeValue: {
     ...typography.primary.body3B,
-    color: gray[900],
+    color: system.green.opacity100,
   },
   footerWrapper: {
     position: 'relative',
@@ -378,8 +360,8 @@ const styles = StyleSheet.create({
     alignSelf: 'center',
     backgroundColor: green[300],
     borderRadius: radius.full,
-    paddingVertical: spacing[6],
-    paddingHorizontal: spacing[12],
+    paddingVertical: spacing[8],
+    paddingHorizontal: spacing[16],
     gap: spacing[4],
   },
   pokeButtonDisabled: {
