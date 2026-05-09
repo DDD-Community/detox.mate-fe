@@ -6,6 +6,6 @@
  */
 import type { CurrentUser } from './currentUser';
 
-export type IssuePresignedUrlParams = {
+export type GetFeedDetailParams = {
 currentUser: CurrentUser;
 };

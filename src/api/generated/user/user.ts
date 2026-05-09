@@ -4,14 +4,50 @@
  * OpenAPI definition
  * OpenAPI spec version: v0
  */
-import type { GetMeParams, MyProfileResponse } from '../model';
+import type {
+  GetMeParams,
+  MyProfileResponse,
+  UpdateMeParams,
+  UpdateMyProfileRequest,
+  WithdrawParams
+} from '../model';
 
 import { customAxios } from '../../mutator';
 
-export const getUser = () => {
-  const getMe = (params: GetMeParams) => {
-    return customAxios<MyProfileResponse>({ url: `/users/me`, method: 'GET', params });
-  };
-  return { getMe };
-};
-export type GetMeResult = NonNullable<Awaited<ReturnType<ReturnType<typeof getUser>['getMe']>>>;
+
+
+  export const getUser = () => {
+const getMe = (
+    params: GetMeParams,
+ ) => {
+      return customAxios<MyProfileResponse>(
+      {url: `/users/me`, method: 'GET',
+        params
+    },
+      );
+    }
+  const withdraw = (
+    params: WithdrawParams,
+ ) => {
+      return customAxios<void>(
+      {url: `/users/me`, method: 'DELETE',
+        params
+    },
+      );
+    }
+  const updateMe = (
+    updateMyProfileRequest: UpdateMyProfileRequest,
+    params: UpdateMeParams,
+ ) => {
+      return customAxios<MyProfileResponse>(
+      {url: `/users/me`, method: 'PATCH',
+      headers: {'Content-Type': 'application/json', },
+      data: updateMyProfileRequest,
+        params
+    },
+      );
+    }
+  return {getMe,withdraw,updateMe}};
+export type GetMeResult = NonNullable<Awaited<ReturnType<ReturnType<typeof getUser>['getMe']>>>
+export type WithdrawResult = NonNullable<Awaited<ReturnType<ReturnType<typeof getUser>['withdraw']>>>
+export type UpdateMeResult = NonNullable<Awaited<ReturnType<ReturnType<typeof getUser>['updateMe']>>>

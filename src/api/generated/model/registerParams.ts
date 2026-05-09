@@ -7,5 +7,5 @@
 import type { CurrentUser } from './currentUser';
 
 export type RegisterParams = {
-  user: CurrentUser;
+user: CurrentUser;
 };

@@ -7,8 +7,8 @@
 
 export interface CreateGroupRequest {
   /**
-   * @minLength 0
-   * @maxLength 12
-   */
+     * @minLength 0
+     * @maxLength 12
+     */
   name: string;
 }

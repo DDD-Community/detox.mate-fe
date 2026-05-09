@@ -7,5 +7,5 @@
 import type { CurrentUser } from './currentUser';
 
 export type JoinGroupParams = {
-  currentUser: CurrentUser;
+currentUser: CurrentUser;
 };

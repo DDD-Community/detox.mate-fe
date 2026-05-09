@@ -4,8 +4,9 @@
  * OpenAPI definition
  * OpenAPI spec version: v0
  */
-import type { CurrentUser } from './currentUser';
 
-export type GetMyGroupsParams = {
-currentUser: CurrentUser;
-};
+export interface FeedDetailPokedUser {
+  userId?: number;
+  displayName?: string;
+  profileImageUrl?: string;
+}

@@ -7,10 +7,8 @@
 
 export interface CommentResponse {
   commentId?: number;
-  groupChallengeId?: number;
-  stampId?: number;
+  challengeRecordId?: number;
   userId?: number;
-  parentCommentId?: number;
-  commentMessage?: string;
+  commentBody?: string;
   createdAt?: string;
 }

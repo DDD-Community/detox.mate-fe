@@ -7,5 +7,5 @@
 import type { CurrentUser } from './currentUser';
 
 export type DeleteReactionParams = {
-  currentUser: CurrentUser;
+currentUser: CurrentUser;
 };

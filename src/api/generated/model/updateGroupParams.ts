@@ -6,6 +6,6 @@
  */
 import type { CurrentUser } from './currentUser';
 
-export type GetStampDetailParams = {
-  currentUser: CurrentUser;
+export type UpdateGroupParams = {
+currentUser: CurrentUser;
 };

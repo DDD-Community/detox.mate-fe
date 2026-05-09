@@ -4,8 +4,11 @@
  * OpenAPI definition
  * OpenAPI spec version: v0
  */
-import type { CurrentUser } from './currentUser';
 
-export type GetMyGroupsParams = {
-currentUser: CurrentUser;
-};
+export interface UpdateGroupRequest {
+  /**
+     * @minLength 0
+     * @maxLength 12
+     */
+  name: string;
+}

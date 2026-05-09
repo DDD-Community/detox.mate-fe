@@ -10,12 +10,14 @@ export interface HomeFeedMemberCard {
   groupMemberId?: number;
   displayName?: string;
   profileImageUrl?: string;
+  challengeRecordId?: number;
   challengeStatus?: string;
   activityImageUrl?: string;
   oneLineReview?: string;
   totalUsedMinutes?: number;
   goalMinutes?: string;
-  stampId?: number;
+  activityRecordId?: number;
+  verifiedAt?: string;
   reactionCount?: number;
   commentCount?: number;
   pokeCount?: number;

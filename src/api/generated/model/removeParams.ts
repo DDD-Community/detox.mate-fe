@@ -7,5 +7,5 @@
 import type { CurrentUser } from './currentUser';
 
 export type RemoveParams = {
-  user: CurrentUser;
+user: CurrentUser;
 };

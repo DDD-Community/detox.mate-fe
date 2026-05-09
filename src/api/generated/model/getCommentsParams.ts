@@ -4,8 +4,10 @@
  * OpenAPI definition
  * OpenAPI spec version: v0
  */
+import type { CurrentUser } from './currentUser';
 
 export type GetCommentsParams = {
-  cursor?: string;
-  size?: number;
+cursor?: string;
+size?: number;
+currentUser: CurrentUser;
 };

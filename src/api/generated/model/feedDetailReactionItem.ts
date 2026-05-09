@@ -8,6 +8,6 @@
 export interface FeedDetailReactionItem {
   reactionBody?: string;
   userId?: number;
-  username?: string;
+  displayName?: string;
   profileImageUrl?: string;
 }
