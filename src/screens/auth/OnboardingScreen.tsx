@@ -39,8 +39,8 @@ export default function OnboardingScreen() {
 
   const handleNext = async () => {
     if (isLast) {
-      await SecureStore.setItemAsync('isNewUser', 'true');
-      router.replace('/home');
+      await SecureStore.setItemAsync('onboardingDone', 'true');
+      router.replace('/terms-agreement');
     } else {
       setStep((s) => s + 1);
     }

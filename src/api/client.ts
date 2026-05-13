@@ -18,13 +18,16 @@ apiClient.interceptors.request.use(async (config) => {
 apiClient.interceptors.response.use(
   (response) => response,
   async (error) => {
-    if (error.response?.status == 401) {
+    const requestUrl: string = error.config?.url ?? '';
+    // /auth/ 엔드포인트는 재시도하지 않음 — 인터셉터 루프 방지
+    const isAuthEndpoint = requestUrl.includes('/auth/');
+    if (error.response?.status === 401 && !isAuthEndpoint) {
       try {
         await refreshAccessToken();
         return apiClient(error.config);
       } catch (refreshError) {
         await logout();
-        router.replace('/login');
+        router.replace('/login?toast=session');
         return Promise.reject(refreshError);
       }
     }

@@ -1,7 +1,6 @@
 import { useRouter } from 'expo-router';
 import React, { useEffect, useRef, useState } from 'react';
 import { AppState, Linking, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
-import { loginWithKakao } from '../../api/auth';
 import { primitiveColors } from '../../lib/token/primitive/colors';
 import { typography } from '../../lib/token/primitive/typography';
 import { semanticColors } from '../../lib/token/semantic/colors';
@@ -116,10 +115,7 @@ export default function TermsAgreementScreen() {
 
           <TouchableOpacity
             style={[styles.confirmButton, allAgreed && styles.confirmButtonEnabled]}
-            onPress={async () => {
-              await loginWithKakao();
-              router.replace('/onboarding');
-            }}
+            onPress={() => router.replace('/login')}
             disabled={!allAgreed}
             activeOpacity={0.85}
           >

@@ -37,28 +37,25 @@ export async function loginWithKakao(): Promise<OAuthLoginResponse> {
 export async function refreshAccessToken(): Promise<ServerResponseTokens> {
   const refreshToken = await SecureStore.getItemAsync('refreshTokenKey');
 
-  try {
-    const { data } = await apiClient.post<ServerResponseTokens>('/auth/refresh', {
-      refreshToken: refreshToken,
-    });
+  const { data } = await apiClient.post<ServerResponseTokens>('/auth/refresh', {
+    refreshToken: refreshToken,
+  });
 
-    const { accessToken, refreshToken: updatedRefreshToken } = data;
-    await SecureStore.setItemAsync('accessTokenKey', accessToken);
-    await SecureStore.setItemAsync('refreshTokenKey', updatedRefreshToken);
+  const { accessToken, refreshToken: updatedRefreshToken } = data;
+  await SecureStore.setItemAsync('accessTokenKey', accessToken);
+  await SecureStore.setItemAsync('refreshTokenKey', updatedRefreshToken);
 
-    return data;
-  } catch (error) {
-    await logout();
-    throw new Error('다시 로그인해 주세요.');
-  }
+  return data;
 }
 
 export async function logout(): Promise<void> {
   const refreshToken = await SecureStore.getItemAsync('refreshTokenKey');
 
-  await apiClient.post('/auth/logout', {
-    refreshToken,
-  });
+  try {
+    await apiClient.post('/auth/logout', { refreshToken });
+  } catch {
+    // 토큰이 이미 만료된 경우 logout API 실패는 무시하고 로컬 토큰만 삭제
+  }
 
   await SecureStore.deleteItemAsync('refreshTokenKey');
   await SecureStore.deleteItemAsync('accessTokenKey');

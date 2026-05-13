@@ -11,14 +11,14 @@ export default function SplashScreen() {
     const redirect = async () => {
       await new Promise((resolve) => setTimeout(resolve, 1000));
 
-      const accessToken = await SecureStore.getItemAsync('accessTokenKey');
-      if (!accessToken) {
-        router.replace('/login');
+      const onboardingDone = await SecureStore.getItemAsync('onboardingDone');
+      if (onboardingDone !== 'true') {
+        router.replace('/onboarding');
         return;
       }
 
-      const isNewUser = await SecureStore.getItemAsync('isNewUser');
-      if (isNewUser !== 'true') {
+      const accessToken = await SecureStore.getItemAsync('accessTokenKey');
+      if (!accessToken) {
         router.replace('/login');
         return;
       }
@@ -34,7 +34,7 @@ export default function SplashScreen() {
 
         const group = groups[0];
         if (group.members.length >= 2) {
-          router.replace('/feed');
+          router.replace('/home');
         } else {
           router.replace(
             `/feed?groupName=${encodeURIComponent(group.name)}&inviteCode=${encodeURIComponent(group.inviteCode)}`
