@@ -3,9 +3,9 @@ import { router, useLocalSearchParams } from 'expo-router';
 import * as SecureStore from 'expo-secure-store';
 import { useState } from 'react';
 import { ActivityIndicator, Image, Pressable, StyleSheet, Text, View } from 'react-native';
-import { Button } from '../../../components/Button';
 import { getActivityRecord } from '../../../api/generated/activity-record/activity-record';
 import { ActivityRecordDetailRequestUsageGoalType } from '../../../api/generated/model';
+import { Button } from '../../../components/Button';
 import { analyzeScreenTimeImage } from '../../../features/screen-time-analyze';
 import { primitiveColors } from '../../../lib/token/primitive/colors';
 import { typography } from '../../../lib/token/primitive/typography';
@@ -104,11 +104,11 @@ export default function VerifyUploadScreen() {
             <View style={styles.textGroup}>
               <Text style={styles.title}>
                 {mode === 'verify'
-                  ? '어제의 스크린 타임을\n인증해주세요'
-                  : '내 스크린 타임을\n인증해주세요'}
+                  ? '어제의 스크린 타임을\n인증해 주세요'
+                  : '내 스크린 타임을\n인증해 주세요'}
               </Text>
               <Text style={styles.description}>
-                {'스크린 타임 캡쳐를 업로드해주세요.\n목표 기반 데이터로 이용돼요.'}
+                {'스크린 타임 캡쳐를 업로드해 주세요.\n목표 기반 데이터로 이용돼요.'}
               </Text>
             </View>
 

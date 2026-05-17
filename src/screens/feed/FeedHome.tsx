@@ -1,5 +1,4 @@
 import { router, useFocusEffect } from 'expo-router';
-import * as SecureStore from 'expo-secure-store';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import {
   ActivityIndicator,
@@ -112,43 +111,58 @@ const EMOJI_TO_CODE: Record<string, ReactionCode> = {
   '🥹': 'GLOOMY',
 };
 
-type ChallengeMember = {
-  userId: number;
+type ActivityDetail = {
+  usageGoalType: string;
+  usedMinutes: number;
+  goalMinutes: number;
+  isAchieved: boolean;
+};
+
+type ActivityRecord = {
+  submittedAt: string;
+  activityImageUrl: string | null;
+  reflectionText: string | null;
+  allAchieved: boolean;
+  details: ActivityDetail[];
+};
+
+type TodayChallengeMember = {
   groupMemberId: number;
+  groupChallengeParticipantId: number;
+  userId: number;
   displayName: string;
   profileImageUrl: string;
-  challengeStatus: 'VERIFIED' | 'NOT_YET';
-  activityImageUrl: string | null;
-  oneLineReview: string | null;
-  totalUsedMinutes: number | null;
-  goalMinutes: string;
-  stampId: number | null;
+  isUserWithdrawn: boolean;
+  isMe: boolean;
+  memberStatus: string;
+  participantStatus: string;
+  dailyStatus: string;
+  includedInGroupResult: boolean;
+  goals: unknown[];
+  challengeRecordId: number;
+  activityRecord: ActivityRecord | null;
   reactionCount: number;
   commentCount: number;
   pokeCount: number;
   isPoked: boolean;
 };
 
-type ChallengeHomeResponse = {
-  challenge: {
-    groupChallengeId: number;
-    groupChallengeName: string;
-    startAt: string;
-    streakCount: number;
-  };
-  members: ChallengeMember[];
+type TodayFeedResponse = {
+  groupId: number;
+  date: string;
+  dailySummary: unknown;
+  members: TodayChallengeMember[];
 };
 
 type PostReactionResponse = {
   reactionId: number;
-  groupChallengeId: number;
-  stampId: number;
+  challengeRecordId: number;
   userId: number;
   reactionBody: ReactionCode;
   createdAt: string;
 };
 
-const formatMinutes = (minutes: number | null): string | undefined => {
+const formatMinutes = (minutes: number | null | undefined): string | undefined => {
   if (minutes == null) return undefined;
   const h = Math.floor(minutes / 60);
   const m = minutes % 60;
@@ -157,14 +171,25 @@ const formatMinutes = (minutes: number | null): string | undefined => {
   return `${m}m`;
 };
 
-const mapMemberToFeedItem = (m: ChallengeMember, myUserId: number | null): FeedItem => {
-  const isVerified = m.challengeStatus === 'VERIFIED';
-  const isGoalAchieved = isVerified && m.activityImageUrl != null;
+const formatTimeAgo = (isoDate: string): string => {
+  const diff = Date.now() - new Date(isoDate).getTime();
+  const minutes = Math.floor(diff / 60000);
+  if (minutes < 1) return '방금 전';
+  if (minutes < 60) return `${minutes}분 전`;
+  const hours = Math.floor(minutes / 60);
+  if (hours < 24) return `${hours}시간 전`;
+  return `${Math.floor(hours / 24)}일 전`;
+};
+
+const mapMemberToFeedItem = (m: TodayChallengeMember): FeedItem => {
+  const isVerified = m.activityRecord !== null;
+  const isGoalAchieved = m.activityRecord?.allAchieved === true;
+  const totalUsage = m.activityRecord?.details?.find((d) => d.usageGoalType === 'TOTAL_USAGE');
   return {
     id: String(m.userId),
-    stampId: m.stampId ?? undefined,
+    challengeRecordId: m.challengeRecordId,
     name: m.displayName,
-    isMe: m.userId === myUserId,
+    isMe: m.isMe,
     avatarSource: m.profileImageUrl ? { uri: m.profileImageUrl } : AVATAR_SRC,
     commentCount: m.commentCount,
     reactionCount: m.reactionCount,
@@ -173,19 +198,24 @@ const mapMemberToFeedItem = (m: ChallengeMember, myUserId: number | null): FeedI
     pokes: [],
     isVerified,
     isGoalAchieved: isVerified ? isGoalAchieved : undefined,
-    photoSource: isGoalAchieved ? { uri: m.activityImageUrl! } : undefined,
-    postText: isGoalAchieved ? (m.oneLineReview ?? undefined) : undefined,
-    retroText: isVerified && !isGoalAchieved ? (m.oneLineReview ?? undefined) : undefined,
-    screenTime: formatMinutes(m.totalUsedMinutes),
+    photoSource: isGoalAchieved && m.activityRecord?.activityImageUrl
+      ? { uri: m.activityRecord.activityImageUrl }
+      : undefined,
+    postText: isGoalAchieved ? (m.activityRecord?.reflectionText ?? undefined) : undefined,
+    retroText: isVerified && !isGoalAchieved ? (m.activityRecord?.reflectionText ?? undefined) : undefined,
+    screenTime: formatMinutes(totalUsage?.usedMinutes),
+    verifiedTimeAgo: isVerified && m.activityRecord?.submittedAt
+      ? formatTimeAgo(m.activityRecord.submittedAt)
+      : undefined,
   };
 };
 
-const mapMemberToMemberItem = (m: ChallengeMember): MemberItem => ({
+const mapMemberToMemberItem = (m: TodayChallengeMember): MemberItem => ({
   id: String(m.userId),
   name: m.displayName,
   avatarSource: m.profileImageUrl ? { uri: m.profileImageUrl } : AVATAR_SRC,
   badgeCount: m.pokeCount > 0 ? m.pokeCount : undefined,
-  isGoalAchieved: m.challengeStatus === 'VERIFIED' && m.activityImageUrl != null,
+  isGoalAchieved: m.activityRecord?.allAchieved === true,
 });
 
 export default function FeedHome() {
@@ -199,10 +229,25 @@ export default function FeedHome() {
   const [feedItems, setFeedItems] = useState<FeedItem[]>(FEED_UNVERIFIED);
   const [myReactions, setMyReactions] = useState<Record<string, string[]>>({});
   const [pokedMemberIds, setPokedMemberIds] = useState<string[]>([]);
-  const [myUserId, setMyUserId] = useState<number | null>(null);
   const [myReactionIds, setMyReactionIds] = useState<Record<string, Record<string, number>>>({});
 
   const effectiveGroupActive = isGroupActive || devGroupActive;
+
+  const fetchFeedData = useCallback(async (gcId: string) => {
+    try {
+      const res = await apiClient.get<TodayFeedResponse>(
+        `/group-challenges/${gcId}/challenge-records/today`
+      );
+      const { members: apiMembers } = res.data;
+      setFeedItems(apiMembers.map(mapMemberToFeedItem));
+      setMembers(apiMembers.map(mapMemberToMemberItem));
+      const pokedIds = apiMembers.filter((m) => m.isPoked).map((m) => String(m.userId));
+      setPokedMemberIds(pokedIds);
+      pokedIds.forEach((id) => pokeStore.add(id));
+    } catch {
+      // keep existing state on error
+    }
+  }, []);
 
   useFocusEffect(
     useCallback(() => {
@@ -244,26 +289,8 @@ export default function FeedHome() {
 
   useEffect(() => {
     if (!groupChallengeId) return;
-    const fetchHomeData = async () => {
-      try {
-        const myIdStr = await SecureStore.getItemAsync('currentUserId');
-        const myUserIdNum = myIdStr ? Number(myIdStr) : null;
-        setMyUserId(myUserIdNum);
-        const res = await apiClient.get<ChallengeHomeResponse>(
-          `/group-challenges/${groupChallengeId}/home`
-        );
-        const { members: apiMembers } = res.data;
-        setFeedItems(apiMembers.map((m) => mapMemberToFeedItem(m, myUserIdNum)));
-        setMembers(apiMembers.map(mapMemberToMemberItem));
-        const pokedIds = apiMembers.filter((m) => m.isPoked).map((m) => String(m.userId));
-        setPokedMemberIds(pokedIds);
-        pokedIds.forEach((id) => pokeStore.add(id));
-      } catch {
-        // keep existing state on error
-      }
-    };
-    fetchHomeData();
-  }, [groupChallengeId]);
+    fetchFeedData(groupChallengeId);
+  }, [groupChallengeId, fetchFeedData]);
 
   const handleInvite = async () => {
     if (!group) return;
@@ -324,9 +351,8 @@ export default function FeedHome() {
       };
     });
 
-    if (!groupChallengeId) return;
     const targetItem = feedItems.find((f) => f.id === itemId);
-    if (!targetItem?.stampId) return;
+    if (!targetItem?.challengeRecordId) return;
     const reactionCode = EMOJI_TO_CODE[emoji];
     if (!reactionCode) return;
 
@@ -334,7 +360,9 @@ export default function FeedHome() {
       if (hasThisEmoji) {
         const reactionId = myReactionIds[itemId]?.[emoji];
         if (reactionId) {
-          await apiClient.delete(`/group-challenges/${groupChallengeId}/reactions/${reactionId}`);
+          await apiClient.delete(
+            `/challenge-records/${targetItem.challengeRecordId}/reactions/${reactionId}`
+          );
           setMyReactionIds((prev) => {
             const copy = { ...(prev[itemId] ?? {}) };
             delete copy[emoji];
@@ -343,7 +371,7 @@ export default function FeedHome() {
         }
       } else {
         const res = await apiClient.post<PostReactionResponse>(
-          `/group-challenges/${groupChallengeId}/stamps/${targetItem.stampId}/reactions`,
+          `/challenge-records/${targetItem.challengeRecordId}/reactions`,
           { reactionCode }
         );
         setMyReactionIds((prev) => ({
@@ -428,7 +456,6 @@ export default function FeedHome() {
           pokedMemberIds={pokedMemberIds}
           goalState={goalState}
           groupChallengeId={groupChallengeId}
-          onGoalSet={() => setGoalState('setWaiting')}
           onNextDay={() => setGoalState('authReady')}
           onVerifyMe={handleVerifyMe}
         />
@@ -466,7 +493,6 @@ function ActiveFeed({
   pokedMemberIds,
   goalState,
   groupChallengeId,
-  onGoalSet,
   onNextDay,
   onVerifyMe,
 }: {
@@ -479,7 +505,6 @@ function ActiveFeed({
   pokedMemberIds: string[];
   goalState: GoalState;
   groupChallengeId: string | null;
-  onGoalSet: () => void;
   onNextDay: () => void;
   onVerifyMe: () => void;
 }) {
@@ -497,7 +522,7 @@ function ActiveFeed({
         contentContainerStyle={styles.container}
         showsVerticalScrollIndicator={false}
       >
-        <ActionGuideBanner goalState={goalState} onGoalSet={onGoalSet} />
+        <ActionGuideBanner goalState={goalState} />
         <MemberSection members={enrichedMembers} onInvite={onInvite} />
         {feedItems.map((item) => (
           <FeedCard

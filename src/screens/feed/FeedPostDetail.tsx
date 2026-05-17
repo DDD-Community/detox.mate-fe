@@ -1,6 +1,18 @@
 import { router, useLocalSearchParams } from 'expo-router';
 import { useEffect, useState } from 'react';
-import { Alert, Image, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import {
+  Alert,
+  Image,
+  KeyboardAvoidingView,
+  Platform,
+  Pressable,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TextInput,
+  View,
+} from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import apiClient from '../../api/client';
 import { pokeStore } from '../../lib/pokeStore';
 import { primitiveColors, radius, spacing, typography } from '../../lib/token';
@@ -10,6 +22,14 @@ import type { FeedItem, PokeEntry, ReactionEntry } from './FeedCard';
 const { gray, green, brown, system } = primitiveColors;
 const WHITE = '#FFFFFF';
 const AVATAR_SOURCE = require('../../../assets/basic-profile-turtle-hi.png');
+const REACTION_EMOJIS = ['👍', '🔥', '💪', '🐢', '🥹'] as const;
+const EMOJI_TO_CODE: Record<string, string> = {
+  '👍': 'THUMBSUP',
+  '🔥': 'FIGHTING',
+  '💪': 'MUSCLE',
+  '🐢': 'TURTLE',
+  '🥹': 'GLOOMY',
+};
 
 type CommentItem = {
   id: string;
@@ -22,16 +42,45 @@ type CommentItem = {
 
 type CommentAPIItem = {
   commentId: number;
-  author: { userId: number; displayName: string; profileImageUrl: string };
-  body: string;
+  author: { userId: number; displayName: string; profileImageUrl: string; isUserWithdrawn: boolean };
+  commentBody: string;
   createdAt: string;
-  replyCount: number;
 };
 
 type CommentsResponse = {
   totalCount: number;
   items: CommentAPIItem[];
   nextCursor: string | null;
+};
+
+type ReactionSummaryItem = {
+  reactionBody: string;
+  userId: number;
+  displayName: string;
+  profileImageUrl: string;
+  isUserWithdrawn: boolean;
+};
+
+type PokedUser = {
+  userId: number;
+  displayName: string;
+  profileImageUrl: string;
+};
+
+type DetailResponse = {
+  challengeRecordId: number;
+  reactionCount: number;
+  commentCount: number;
+  reactions: { totalCount: number; summary: ReactionSummaryItem[] };
+  pokedUsers: PokedUser[];
+};
+
+const CODE_TO_EMOJI: Record<string, string> = {
+  THUMBSUP: '👍',
+  FIGHTING: '🔥',
+  MUSCLE: '💪',
+  TURTLE: '🐢',
+  GLOOMY: '🥹',
 };
 
 export const MOCK_COMMENTS: CommentItem[] = [];
@@ -67,38 +116,10 @@ export default function FeedPostDetail() {
     groupChallengeId: string;
   }>();
 
+  const insets = useSafeAreaInsets();
   const feedItem = JSON.parse(itemJson as string) as FeedItem;
   const state: GoalState = goalState ?? 'authReady';
-  const [isPoked, setIsPoked] = useState(isPokedParam === '1');
-  const [comments, setComments] = useState<CommentItem[]>([]);
 
-  useEffect(() => {
-    if (!groupChallengeId || !feedItem.stampId) return;
-    const fetchComments = async () => {
-      try {
-        const res = await apiClient.get<CommentsResponse>(
-          `/group-challenges/${groupChallengeId}/stamps/${feedItem.stampId}/comments`
-        );
-        setComments(
-          res.data.items.map((c) => ({
-            id: String(c.commentId),
-            authorName: c.author.displayName,
-            avatarSource: c.author.profileImageUrl
-              ? { uri: c.author.profileImageUrl }
-              : AVATAR_SOURCE,
-            text: c.body,
-            createdAt: new Date(c.createdAt).getTime(),
-            timeAgoLabel: formatTimeAgo(new Date(c.createdAt).getTime()),
-          }))
-        );
-      } catch {
-        // keep mock data on error
-      }
-    };
-    fetchComments();
-  }, [groupChallengeId, feedItem.stampId]);
-
-  // merge any reactions from route param that aren't yet in feedItem.reactions (e.g. race with navigation)
   const ownInList = new Set(
     (feedItem.reactions ?? []).filter((r) => r.userId === 'me').map((r) => r.emoji)
   );
@@ -106,13 +127,156 @@ export default function FeedPostDetail() {
   const ownEntry: ReactionEntry[] = paramEmojis
     .filter((emoji) => !ownInList.has(emoji))
     .map((emoji) => ({ userId: 'me', name: '나', avatarSource: AVATAR_SOURCE as number, emoji }));
-  const displayReactions: ReactionEntry[] = [...ownEntry, ...(feedItem.reactions ?? [])];
-  const displayPokes: PokeEntry[] = feedItem.pokes ?? [];
 
+  const [isPoked, setIsPoked] = useState(isPokedParam === '1');
+  const [comments, setComments] = useState<CommentItem[]>([]);
+  const [reactions, setReactions] = useState<ReactionEntry[]>([
+    ...ownEntry,
+    ...(feedItem.reactions ?? []),
+  ]);
+  const [reactionCount, setReactionCount] = useState(feedItem.reactionCount);
+  const [commentCount, setCommentCount] = useState(feedItem.commentCount);
+  const [myReactionEmojis, setMyReactionEmojis] = useState<string[]>(paramEmojis);
+  const [myReactionIds, setMyReactionIds] = useState<Record<string, number>>({});
+  const [showReactionPicker, setShowReactionPicker] = useState(false);
+  const [commentText, setCommentText] = useState('');
+  const [fetchedPokes, setFetchedPokes] = useState<PokeEntry[]>([]);
+
+  useEffect(() => {
+    if (!feedItem.challengeRecordId) return;
+    const fetchComments = async () => {
+      try {
+        const res = await apiClient.get<CommentsResponse>(
+          `/challenge-records/${feedItem.challengeRecordId}/comments`
+        );
+        const mapped = res.data.items.map((c) => ({
+          id: String(c.commentId),
+          authorName: c.author.displayName,
+          avatarSource: c.author.profileImageUrl
+            ? { uri: c.author.profileImageUrl }
+            : AVATAR_SOURCE,
+          text: c.commentBody,
+          createdAt: new Date(c.createdAt).getTime(),
+          timeAgoLabel: formatTimeAgo(new Date(c.createdAt).getTime()),
+        }));
+        setComments(mapped);
+        setCommentCount(res.data.totalCount);
+      } catch {
+        // keep existing state on error
+      }
+    };
+    fetchComments();
+  }, [feedItem.challengeRecordId]);
+
+  useEffect(() => {
+    if (!groupChallengeId || !feedItem.challengeRecordId) return;
+    const fetchDetail = async () => {
+      try {
+        const res = await apiClient.get<DetailResponse>(
+          `/group-challenges/${groupChallengeId}/challenge-records/${feedItem.challengeRecordId}`
+        );
+        const serverReactions: ReactionEntry[] = res.data.reactions.summary.map((r) => ({
+          userId: String(r.userId),
+          name: r.displayName,
+          avatarSource: r.profileImageUrl ? { uri: r.profileImageUrl } : (AVATAR_SOURCE as number),
+          emoji: CODE_TO_EMOJI[r.reactionBody] ?? r.reactionBody,
+        }));
+        // Merge: keep any optimistic 'me' entries, replace server entries
+        setReactions((prev) => {
+          const myOptimistic = prev.filter((r) => r.userId === 'me');
+          return [...myOptimistic, ...serverReactions];
+        });
+        setReactionCount(res.data.reactionCount);
+
+        const mappedPokes: PokeEntry[] = res.data.pokedUsers.map((u) => ({
+          userId: String(u.userId),
+          name: u.displayName,
+          avatarSource: u.profileImageUrl ? { uri: u.profileImageUrl } : (AVATAR_SOURCE as number),
+        }));
+        // Note: pokes are stored in feedItem, but we can update displayPokes from detail
+        // Currently displayPokes is derived from feedItem.pokes which is [] from API
+        // Store fetched pokes in a ref-like state via a local variable (used in render below)
+        setFetchedPokes(mappedPokes);
+      } catch {
+        // keep existing state on error
+      }
+    };
+    fetchDetail();
+  }, [groupChallengeId, feedItem.challengeRecordId]);
+
+  const displayPokes: PokeEntry[] = fetchedPokes.length > 0 ? fetchedPokes : (feedItem.pokes ?? []);
   const sortedComments = [...comments].sort((a, b) => a.createdAt - b.createdAt);
 
+  const handleReact = async (emoji: string) => {
+    const hasThis = myReactionEmojis.includes(emoji);
+    if (hasThis) {
+      setReactions((prev) => prev.filter((r) => !(r.userId === 'me' && r.emoji === emoji)));
+      setMyReactionEmojis((prev) => prev.filter((e) => e !== emoji));
+      setReactionCount((prev) => Math.max(0, prev - 1));
+      if (!feedItem.challengeRecordId) return;
+      const reactionId = myReactionIds[emoji];
+      if (!reactionId) return;
+      try {
+        await apiClient.delete(
+          `/challenge-records/${feedItem.challengeRecordId}/reactions/${reactionId}`
+        );
+        setMyReactionIds((prev) => {
+          const copy = { ...prev };
+          delete copy[emoji];
+          return copy;
+        });
+      } catch {}
+    } else {
+      const entry: ReactionEntry = {
+        userId: 'me',
+        name: '나',
+        avatarSource: AVATAR_SOURCE as number,
+        emoji,
+      };
+      setReactions((prev) => [entry, ...prev]);
+      setMyReactionEmojis((prev) => [...prev, emoji]);
+      setReactionCount((prev) => prev + 1);
+      if (!feedItem.challengeRecordId) return;
+      const reactionCode = EMOJI_TO_CODE[emoji];
+      if (!reactionCode) return;
+      try {
+        const res = await apiClient.post<{ reactionId: number }>(
+          `/challenge-records/${feedItem.challengeRecordId}/reactions`,
+          { reactionCode }
+        );
+        setMyReactionIds((prev) => ({ ...prev, [emoji]: res.data.reactionId }));
+      } catch {}
+    }
+  };
+
+  const handleSendComment = async () => {
+    const text = commentText.trim();
+    if (!text) return;
+    setCommentText('');
+    const newComment: CommentItem = {
+      id: String(Date.now()),
+      authorName: '나',
+      avatarSource: AVATAR_SOURCE as number,
+      text,
+      createdAt: Date.now(),
+      timeAgoLabel: '방금 전',
+    };
+    setComments((prev) => [...prev, newComment]);
+    setCommentCount((prev) => prev + 1);
+    if (!feedItem.challengeRecordId) return;
+    try {
+      await apiClient.post(
+        `/challenge-records/${feedItem.challengeRecordId}/comments`,
+        { commentBody: text }
+      );
+    } catch {}
+  };
+
   return (
-    <View style={styles.root}>
+    <KeyboardAvoidingView
+      style={styles.root}
+      behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+    >
       <View style={styles.header}>
         <Pressable onPress={() => router.back()} style={styles.backButton}>
           <Image
@@ -128,7 +292,6 @@ export default function FeedPostDetail() {
         <View style={styles.card}>
           {feedItem.isVerified ? (
             <>
-              {/* Verified header: avatar+label / name / timeAgo */}
               <View style={styles.verifiedHeader}>
                 <View style={styles.avatarWithLabel}>
                   <Image source={feedItem.avatarSource} style={styles.avatar} resizeMode="cover" />
@@ -151,7 +314,6 @@ export default function FeedPostDetail() {
                 )}
               </View>
 
-              {/* Post content */}
               {feedItem.isGoalAchieved ? (
                 <>
                   {feedItem.photoSource != null && (
@@ -198,7 +360,6 @@ export default function FeedPostDetail() {
             </>
           ) : (
             <>
-              {/* Unverified header */}
               <View style={styles.memberRow}>
                 <Image source={feedItem.avatarSource} style={styles.avatar} resizeMode="cover" />
                 <Text style={styles.memberName}>{feedItem.name}</Text>
@@ -228,10 +389,14 @@ export default function FeedPostDetail() {
 
         {feedItem.isVerified ? (
           <View style={styles.section}>
-            <Text style={styles.sectionTitle}>리액션 {displayReactions.length}</Text>
-            {displayReactions.length > 0 && (
-              <View style={styles.pokeRow}>
-                {displayReactions.map((r) => (
+            <Text style={styles.sectionTitle}>리액션 {reactionCount}</Text>
+            {reactions.length > 0 && (
+              <ScrollView
+                horizontal
+                showsHorizontalScrollIndicator={false}
+                contentContainerStyle={styles.pokeRow}
+              >
+                {reactions.map((r) => (
                   <View key={`${r.userId}-${r.emoji}`} style={styles.pokeAvatarItem}>
                     <View style={styles.pokeAvatarWrapper}>
                       <Image source={r.avatarSource} style={styles.pokeAvatar} resizeMode="cover" />
@@ -242,14 +407,18 @@ export default function FeedPostDetail() {
                     <Text style={styles.pokeAvatarName}>{r.name}</Text>
                   </View>
                 ))}
-              </View>
+              </ScrollView>
             )}
           </View>
         ) : (
           <View style={styles.section}>
             <Text style={styles.sectionTitle}>콕 찌름 {feedItem.pokeCount}</Text>
             {displayPokes.length > 0 && (
-              <View style={styles.pokeRow}>
+              <ScrollView
+                horizontal
+                showsHorizontalScrollIndicator={false}
+                contentContainerStyle={styles.pokeRow}
+              >
                 {displayPokes.map((p) => (
                   <View key={p.userId} style={styles.pokeAvatarItem}>
                     <View style={styles.pokeAvatarWrapper}>
@@ -261,13 +430,13 @@ export default function FeedPostDetail() {
                     <Text style={styles.pokeAvatarName}>{p.name}</Text>
                   </View>
                 ))}
-              </View>
+              </ScrollView>
             )}
           </View>
         )}
 
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>댓글 {sortedComments.length}</Text>
+          <Text style={styles.sectionTitle}>댓글 {commentCount}</Text>
           {sortedComments.map((comment) => (
             <View key={comment.id} style={styles.commentItem}>
               <Image
@@ -282,18 +451,66 @@ export default function FeedPostDetail() {
                 </View>
                 <Text style={styles.commentText}>{comment.text}</Text>
               </View>
-              <Pressable style={styles.moreButton}>
-                <Image
-                  source={require('../../../assets/icons/regular/icon_rg_DotsThree.png')}
-                  style={styles.moreIcon}
-                  resizeMode="contain"
-                />
-              </Pressable>
             </View>
           ))}
         </View>
       </ScrollView>
-    </View>
+
+      {state === 'authReady' && (showReactionPicker ? (
+        <View style={[styles.pickerBar, { paddingBottom: Math.max(insets.bottom, spacing[12]) }]}>
+          <Pressable style={styles.pickerCountCircle} onPress={() => setShowReactionPicker(false)}>
+            <Text style={styles.pickerCountText}>{reactions.length}</Text>
+          </Pressable>
+          {REACTION_EMOJIS.map((emoji) => (
+            <Pressable
+              key={emoji}
+              style={[
+                styles.pickerEmojiBtn,
+                myReactionEmojis.includes(emoji) && styles.pickerEmojiBtnActive,
+              ]}
+              onPress={() => {
+                handleReact(emoji);
+                setShowReactionPicker(false);
+              }}
+            >
+              <Text style={styles.pickerEmojiText}>{emoji}</Text>
+            </Pressable>
+          ))}
+        </View>
+      ) : (
+        <View style={[styles.inputBar, { paddingBottom: Math.max(insets.bottom, spacing[12]) }]}>
+          <TextInput
+            style={styles.textInput}
+            placeholder="응원 메시지를 남겨보세요"
+            placeholderTextColor={gray[400]}
+            value={commentText}
+            onChangeText={setCommentText}
+            returnKeyType="send"
+            onSubmitEditing={handleSendComment}
+          />
+
+          {commentText.trim().length > 0 ? (
+            <Pressable style={styles.sendBtn} onPress={handleSendComment}>
+              <Image
+                source={require('../../../assets/icons/regular/icon_rg_PaperPlaneRight.png')}
+                style={styles.sendIcon}
+                resizeMode="contain"
+                tintColor={WHITE}
+              />
+            </Pressable>
+          ) : (
+            <Pressable style={styles.impressionBtn} onPress={() => setShowReactionPicker(true)}>
+              <Image
+                source={require('../../../assets/impressions.png')}
+                style={styles.impressionIcon}
+                resizeMode="contain"
+                tintColor={WHITE}
+              />
+            </Pressable>
+          )}
+        </View>
+      ))}
+    </KeyboardAvoidingView>
   );
 }
 
@@ -324,16 +541,15 @@ const styles = StyleSheet.create({
   },
   content: {
     paddingHorizontal: spacing[16],
-    paddingBottom: spacing[40],
+    paddingBottom: spacing[16],
     gap: spacing[12],
   },
   card: {
     backgroundColor: WHITE,
     borderRadius: radius[16],
     padding: spacing[16],
-    gap: spacing[12],
+    gap: spacing[24],
   },
-  // Verified header
   verifiedHeader: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -371,11 +587,11 @@ const styles = StyleSheet.create({
     ...typography.primary.caption,
     color: gray[400],
   },
-  // Post content
   photo: {
     width: '100%',
-    height: 200,
+    height: 250,
     borderRadius: radius[8],
+    marginTop: 2,
   },
   postText: {
     ...typography.primary.body2R,
@@ -411,7 +627,6 @@ const styles = StyleSheet.create({
     ...typography.primary.body3B,
     color: system.green.opacity100,
   },
-  // Unverified card
   memberRow: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -442,7 +657,6 @@ const styles = StyleSheet.create({
   pokeButtonTextDisabled: {
     color: gray[400],
   },
-  // Poke + comment sections
   section: {
     backgroundColor: WHITE,
     borderRadius: radius[16],
@@ -520,12 +734,84 @@ const styles = StyleSheet.create({
     ...typography.primary.body3R,
     color: gray[700],
   },
-  moreButton: {
-    padding: spacing[4],
-    flexShrink: 0,
+  // Bottom input bar
+  inputBar: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: spacing[16],
+    paddingTop: spacing[12],
+    gap: spacing[8],
+    backgroundColor: WHITE,
+    borderTopWidth: StyleSheet.hairlineWidth,
+    borderTopColor: gray[200],
   },
-  moreIcon: {
-    width: 16,
-    height: 16,
+  impressionBtn: {
+    width: 40,
+    height: 40,
+    borderRadius: radius.full,
+    backgroundColor: green[300],
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  impressionIcon: {
+    width: 20,
+    height: 20,
+  },
+  textInput: {
+    flex: 1,
+    height: 40,
+    backgroundColor: gray[50],
+    borderRadius: radius.full,
+    paddingHorizontal: spacing[16],
+    ...typography.primary.body3R,
+    color: gray[900],
+  },
+  sendBtn: {
+    width: 40,
+    height: 40,
+    borderRadius: radius.full,
+    backgroundColor: green[300],
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  sendIcon: {
+    width: 20,
+    height: 20,
+  },
+  // Reaction picker bar
+  pickerBar: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: spacing[20],
+    paddingTop: spacing[12],
+    gap: spacing[12],
+    backgroundColor: WHITE,
+    borderTopWidth: StyleSheet.hairlineWidth,
+    borderTopColor: gray[200],
+  },
+  pickerCountCircle: {
+    width: 40,
+    height: 40,
+    borderRadius: radius.full,
+    backgroundColor: green[300],
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  pickerCountText: {
+    ...typography.primary.body2B,
+    color: WHITE,
+  },
+  pickerEmojiBtn: {
+    width: 40,
+    height: 40,
+    borderRadius: radius.full,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  pickerEmojiBtnActive: {
+    backgroundColor: gray[100],
+  },
+  pickerEmojiText: {
+    fontSize: 24,
   },
 });

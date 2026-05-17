@@ -23,7 +23,7 @@ export type PokeEntry = {
 
 export type FeedItem = {
   id: string;
-  stampId?: number;
+  challengeRecordId?: number;
   name: string;
   isMe: boolean;
   avatarSource: number | { uri: string };
@@ -53,7 +53,7 @@ export default function FeedCard({
   onPoke,
   onBodyPress,
   isPoked = false,
-  myReaction,
+  myReactions,
   onReact,
 }: {
   item: FeedItem;
@@ -131,7 +131,7 @@ export default function FeedCard({
                 style={styles.impressionIcon}
                 resizeMode="contain"
               />
-              <Text style={styles.footerCount}>{item.reactions.length}</Text>
+              <Text style={styles.footerCount}>{item.reactionCount}</Text>
             </Pressable>
             <Pressable style={styles.footerButton} onPress={onBodyPress}>
               <Image
@@ -212,7 +212,7 @@ const styles = StyleSheet.create({
     backgroundColor: WHITE,
     borderRadius: radius[16],
     padding: spacing[16],
-    gap: spacing[12],
+    gap: spacing[24],
     overflow: 'visible',
   },
   cardFront: {
@@ -260,6 +260,7 @@ const styles = StyleSheet.create({
     width: '100%',
     height: 250,
     borderRadius: radius[8],
+    marginTop: 2,
   },
   postText: {
     ...typography.primary.body2R,

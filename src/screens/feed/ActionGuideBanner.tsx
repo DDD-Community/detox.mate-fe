@@ -1,7 +1,7 @@
-import { useState } from 'react';
-import { Image, Modal, Pressable, StyleSheet, Text, View } from 'react-native';
+import { router } from 'expo-router';
+import { Image, StyleSheet, Text, View } from 'react-native';
 import { Button } from '../../components/Button';
-import { primitiveColors, radius, spacing, typography } from '../../lib/token';
+import { primitiveColors, spacing, typography } from '../../lib/token';
 
 const { brown, gray, system } = primitiveColors;
 const WHITE = '#FFFFFF';
@@ -10,34 +10,19 @@ export type GoalState = 'notSet' | 'setWaiting' | 'authReady';
 
 interface Props {
   goalState: GoalState;
-  onGoalSet: () => void;
 }
 
-export default function ActionGuideBanner({ goalState, onGoalSet }: Props) {
-  const [sheetVisible, setSheetVisible] = useState(false);
-
+export default function ActionGuideBanner({ goalState }: Props) {
   const banner = {
-    notSet: <GoalBanner onPress={() => setSheetVisible(true)} />,
+    notSet: <GoalBanner />,
     setWaiting: <GoalSetWaitingBanner />,
     authReady: <DailyAuthBanner />,
   }[goalState];
 
-  return (
-    <>
-      {banner}
-      <GoalSettingSheet
-        visible={sheetVisible}
-        onConfirm={() => {
-          setSheetVisible(false);
-          onGoalSet();
-        }}
-        onDismiss={() => setSheetVisible(false)}
-      />
-    </>
-  );
+  return banner;
 }
 
-function GoalBanner({ onPress }: { onPress: () => void }) {
+function GoalBanner() {
   return (
     <View style={styles.goalBanner}>
       <View style={styles.topRow}>
@@ -62,7 +47,7 @@ function GoalBanner({ onPress }: { onPress: () => void }) {
         }
         color="assistive"
         size="lg"
-        onPress={onPress}
+        onPress={() => router.push('/(group)/verify')}
         style={{ alignSelf: 'stretch' }}
       />
     </View>
@@ -120,30 +105,6 @@ function DailyAuthBanner() {
   );
 }
 
-function GoalSettingSheet({
-  visible,
-  onConfirm,
-  onDismiss,
-}: {
-  visible: boolean;
-  onConfirm: () => void;
-  onDismiss: () => void;
-}) {
-  return (
-    <Modal visible={visible} transparent animationType="slide" onRequestClose={onDismiss}>
-      <Pressable style={styles.overlay} onPress={onDismiss}>
-        <Pressable style={styles.sheet}>
-          <View style={styles.sheetHandle} />
-          <Text style={styles.sheetTitle}>목표 설정하기</Text>
-          <Text style={styles.sheetPlaceholder}>
-            목표 설정 화면이 이곳에 들어옵니다.{'\n'}완료 버튼을 눌러 목표 설정을 완료하세요.
-          </Text>
-          <Button label="완료" onPress={onConfirm} style={{ alignSelf: 'stretch' }} />
-        </Pressable>
-      </Pressable>
-    </Modal>
-  );
-}
 
 const styles = StyleSheet.create({
   goalBanner: {
@@ -189,36 +150,5 @@ const styles = StyleSheet.create({
   buttonIcon: {
     width: 20,
     height: 20,
-  },
-  overlay: {
-    flex: 1,
-    backgroundColor: 'rgba(0, 0, 0, 0.5)',
-    justifyContent: 'flex-end',
-  },
-  sheet: {
-    backgroundColor: WHITE,
-    borderTopLeftRadius: radius[16],
-    borderTopRightRadius: radius[16],
-    padding: spacing[24],
-    paddingBottom: spacing[40],
-    gap: spacing[16],
-  },
-  sheetHandle: {
-    width: 40,
-    height: 4,
-    backgroundColor: gray[200],
-    borderRadius: 2,
-    alignSelf: 'center',
-  },
-  sheetTitle: {
-    ...typography.primary.body1B,
-    color: gray[900],
-    textAlign: 'center',
-  },
-  sheetPlaceholder: {
-    ...typography.primary.body2R,
-    color: gray[400],
-    textAlign: 'center',
-    paddingVertical: spacing[24],
   },
 });
