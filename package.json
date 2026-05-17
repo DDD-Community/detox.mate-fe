@@ -51,5 +51,11 @@
   "lint-staged": {
     "*.{ts,tsx,js,jsx,json,md}": "prettier --write"
   },
+  "pnpm": {
+    "onlyBuiltDependencies": [
+      "dooboolab-welcome",
+      "esbuild"
+    ]
+  },
   "private": true
 }
