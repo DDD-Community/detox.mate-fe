@@ -1,19 +1,20 @@
+import * as Clipboard from 'expo-clipboard';
 import { router } from 'expo-router';
 import * as SecureStore from 'expo-secure-store';
 import { useState } from 'react';
-import { Image, Pressable, StyleSheet, Text, View } from 'react-native';
+import { Image, Pressable, Share, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { getGroup } from '../../../api/generated/group/group';
 import { primitiveColors, radius, spacing, typography } from '../../../lib/token';
 import { LeaveGroupAlert } from './LeaveGroupAlert';
 
-const { brown, gray, green } = primitiveColors;
+const { brown, gray } = primitiveColors;
 
 const ICONS = {
   caretLeft: require('../../../../assets/icons/regular/icon_rg_CaretLeft.png'),
-  shareFat: require('../../../../assets/icons/regular/icon_rg_ShareFat.png'),
-  info: require('../../../../assets/icons/regular/icon_rg_Info.png'),
+  copy: require('../../../../assets/onboarding-copy.png'),
+  shareBlack: require('../../../../assets/onboarding-share-black.png'),
 } as const;
 
 const TURTLE_AVATAR = require('../../../../assets/turtle-hi.png');
@@ -30,6 +31,7 @@ export default function GroupInfoScreen() {
   const groupId = 1;
   // TODO: GET /groups/{groupId} 응답으로 채우기
   const groupName = '{그룹명}';
+  const inviteCode = 'A1C3E';
   const members: Member[] = [
     { id: '1', name: '나', isMe: true },
     { id: '2', name: '서연' },
@@ -43,8 +45,15 @@ export default function GroupInfoScreen() {
     router.back();
   };
 
-  const handleInvite = () => {
-    // TODO: 초대 코드 공유 (Share API + GET /groups/{groupId} 응답의 inviteCode)
+  const handleCopyInviteCode = async () => {
+    await Clipboard.setStringAsync(inviteCode);
+    // TODO: 토스트 "초대 코드가 복사되었어요"
+  };
+
+  const handleShareInviteCode = async () => {
+    await Share.share({
+      message: `우리 함께 디지털 디톡스해요! 💉\n디톡스 메이트 그룹 초대 코드: ${inviteCode}`,
+    });
   };
 
   const handleOpenLeaveAlert = () => {
@@ -65,8 +74,8 @@ export default function GroupInfoScreen() {
         currentUser: { id: userId ? Number(userId) : undefined },
       });
       setIsLeaveAlertOpen(false);
-      // TODO: 마이페이지 진입 시 그룹 상태 재조회 — GET /me/groups
-      router.back();
+      // 그룹 탈퇴 성공 → 홈(그룹 없음 상태)으로 이동
+      router.replace('/home');
     } finally {
       setIsLeaving(false);
     }
@@ -88,11 +97,19 @@ export default function GroupInfoScreen() {
       <View style={styles.body}>
         <Text style={styles.memberCount}>멤버 {members.length}명</Text>
 
-        <Pressable onPress={handleInvite} style={styles.inviteButton}>
-          <Image source={ICONS.shareFat} style={styles.inviteIconLeft} resizeMode="contain" />
-          <Text style={styles.inviteText}>친구 초대하기</Text>
-          <Image source={ICONS.info} style={styles.inviteIconRight} resizeMode="contain" />
-        </Pressable>
+        <View style={styles.inviteCard}>
+          <View style={styles.codeRow}>
+            <Text style={styles.codeLabel}>초대 코드</Text>
+            <Text style={styles.codeText}>{inviteCode}</Text>
+            <Pressable onPress={handleCopyInviteCode} hitSlop={8}>
+              <Image source={ICONS.copy} style={styles.copyIcon} resizeMode="contain" />
+            </Pressable>
+          </View>
+          <Pressable onPress={handleShareInviteCode} style={styles.shareButton}>
+            <Image source={ICONS.shareBlack} style={styles.shareIcon} resizeMode="contain" />
+            <Text style={styles.shareText}>친구에게 공유하기</Text>
+          </Pressable>
+        </View>
 
         <View style={styles.memberList}>
           {members.map((m) => {
@@ -180,30 +197,49 @@ const styles = StyleSheet.create({
     ...typography.primary.body1B,
     color: gray[500],
   },
-  inviteButton: {
-    height: 44,
-    borderRadius: 18,
-    backgroundColor: gray[50],
+  inviteCard: {
+    backgroundColor: '#FFFFFF',
+    borderRadius: radius[16],
+    padding: spacing[16],
+    gap: spacing[12],
+    marginTop: spacing[4],
+  },
+  codeRow: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    gap: spacing[4],
-    paddingHorizontal: spacing[12],
-    marginTop: spacing[4],
+    gap: spacing[12],
+    paddingVertical: spacing[8],
   },
-  inviteIconLeft: {
-    width: 16,
-    height: 16,
-    tintColor: green[300],
+  codeLabel: {
+    ...typography.primary.body2R,
+    color: gray[500],
   },
-  inviteIconRight: {
-    width: 16,
-    height: 16,
-    tintColor: green[300],
+  codeText: {
+    ...typography.primary.title1B,
+    color: gray[900],
+    letterSpacing: 2,
   },
-  inviteText: {
+  copyIcon: {
+    width: 20,
+    height: 20,
+  },
+  shareButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: spacing[8],
+    height: 44,
+    borderRadius: radius[12],
+    backgroundColor: gray[50],
+  },
+  shareIcon: {
+    width: 18,
+    height: 18,
+  },
+  shareText: {
     ...typography.primary.body2B,
-    color: green[300],
+    color: gray[800],
   },
   memberList: {
     gap: spacing[12],

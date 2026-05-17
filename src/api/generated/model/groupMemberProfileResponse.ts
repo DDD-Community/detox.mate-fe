@@ -4,19 +4,24 @@
  * OpenAPI definition
  * OpenAPI spec version: v0
  */
+import type { GroupMemberActivitySummaryResponse } from './groupMemberActivitySummaryResponse';
+import type { GroupMemberGoalChangeAvailabilityResponse } from './groupMemberGoalChangeAvailabilityResponse';
 import type { GroupMemberUsageGoalResponse } from './groupMemberUsageGoalResponse';
-import type { MemberStatsResponse } from './memberStatsResponse';
+import type { GroupMemberWeeklySummaryResponse } from './groupMemberWeeklySummaryResponse';
 
 export interface GroupMemberProfileResponse {
-  id?: number;
+  groupMemberId?: number;
   userId?: number;
   groupId?: number;
   displayName?: string;
   profileImageUrl?: string;
   role?: string;
-  status?: string;
+  memberStatus?: string;
   joinedAt?: string;
-  dayCount?: number;
+  goalStatus?: string;
+  isUserWithdrawn?: boolean;
   currentGoals?: GroupMemberUsageGoalResponse[];
-  stats?: MemberStatsResponse;
+  goalChangeAvailability?: GroupMemberGoalChangeAvailabilityResponse;
+  activitySummary?: GroupMemberActivitySummaryResponse;
+  weeklySummary?: GroupMemberWeeklySummaryResponse;
 }

@@ -21,8 +21,8 @@ export default function EditNicknameScreen() {
   const isValid = nickname.length > 0;
 
   const handleChange = (next: string) => {
-    const sanitized = next.replace(/\s/g, '').slice(0, NICKNAME_MAX_LENGTH);
-    setNickname(sanitized);
+    // 공백 포함 그대로 허용, 10자 초과만 컷
+    setNickname(next.slice(0, NICKNAME_MAX_LENGTH));
   };
 
   const handleBack = () => {

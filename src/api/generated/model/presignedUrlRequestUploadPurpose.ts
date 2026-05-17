@@ -11,4 +11,5 @@ export type PresignedUrlRequestUploadPurpose = typeof PresignedUrlRequestUploadP
 export const PresignedUrlRequestUploadPurpose = {
   ACTIVITY_RECORD_IMAGE: 'ACTIVITY_RECORD_IMAGE',
   PROFILE_IMAGE: 'PROFILE_IMAGE',
+  SCREEN_TIME_OCR_REPORT_IMAGE: 'SCREEN_TIME_OCR_REPORT_IMAGE',
 } as const;

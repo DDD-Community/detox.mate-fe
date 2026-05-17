@@ -10,4 +10,5 @@ export interface FeedDetailReactionItem {
   userId?: number;
   displayName?: string;
   profileImageUrl?: string;
+  isUserWithdrawn?: boolean;
 }

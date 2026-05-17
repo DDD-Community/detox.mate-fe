@@ -32,7 +32,11 @@ export default function FeedScreen() {
         <View style={styles.header}>
           <Text style={styles.headerTitle}>{groupName}</Text>
           <View style={styles.headerIcons}>
-            <TouchableOpacity style={styles.iconButton} activeOpacity={0.7}>
+            <TouchableOpacity
+              style={styles.iconButton}
+              activeOpacity={0.7}
+              onPress={() => router.push('/(group)/notifications')}
+            >
               <Image
                 source={require('../../../assets/onboarding-rg-bell.png')}
                 style={styles.icon}

@@ -22,4 +22,5 @@ export interface HomeFeedMemberCard {
   commentCount?: number;
   pokeCount?: number;
   isPoked?: boolean;
+  isUserWithdrawn?: boolean;
 }

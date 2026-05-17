@@ -16,11 +16,11 @@ import { customAxios } from '../../mutator';
   export const getGroupMember = () => {
 const getGroupMemberProfile = (
     groupId: number,
-    memberId: number,
+    groupMemberId: number,
     params: GetGroupMemberProfileParams,
  ) => {
       return customAxios<GroupMemberProfileResponse>(
-      {url: `/groups/${groupId}/members/${memberId}`, method: 'GET',
+      {url: `/groups/${groupId}/members/${groupMemberId}`, method: 'GET',
         params
     },
       );

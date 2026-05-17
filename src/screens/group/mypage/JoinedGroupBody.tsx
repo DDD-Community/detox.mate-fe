@@ -82,7 +82,7 @@ export function JoinedGroupBody({
 
       <View>
         <Button
-          label="목표 스크린타임 변경"
+          label="목표 스크린 타임 변경"
           color="assistive"
           disabled={daysUntilGoalChange > 0}
           onPress={onGoalChangePress}

@@ -26,10 +26,10 @@ const formatGoal = (totalMinutes: number) => {
 };
 
 export default function EditGoalTimeScreen() {
-  // TODO: GET /me/usage-goal-times/current 응답으로 초기값 세팅
+  // TODO: GET /me/usage-goal-times/current 응답의 goalMinutes로 초기값 세팅
   const [goalMinutes, setGoalMinutes] = useState(120);
-  // TODO: GET /users/me 또는 디바이스 스크린타임으로 채우기
-  const myScreenTime = '6h 5m';
+  // TODO: 위 응답에서 가져온 기존 목표(분)를 표시 — 현재는 mock
+  const existingGoalLabel = '6h 5m';
 
   const canDecrease = goalMinutes - STEP_MINUTES >= MIN_MINUTES;
   const canIncrease = goalMinutes + STEP_MINUTES <= MAX_MINUTES;
@@ -64,12 +64,12 @@ export default function EditGoalTimeScreen() {
       </SafeAreaView>
 
       <View style={styles.body}>
-        <Text style={styles.title}>개인 목표 스크린타임 설정</Text>
+        <Text style={styles.title}>개인 목표 스크린 타임 설정</Text>
         <Text style={styles.subtitle}>2주에 한 번 변경할 수 있어요.</Text>
 
         <View style={styles.myCard}>
-          <Text style={styles.myCardLabel}>내 스크린타임</Text>
-          <Text style={styles.myCardValue}>{myScreenTime}</Text>
+          <Text style={styles.myCardLabel}>기존 목표</Text>
+          <Text style={styles.myCardValue}>{existingGoalLabel}</Text>
         </View>
 
         <View style={styles.pickerWrap}>

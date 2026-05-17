@@ -1,9 +1,14 @@
-import { StyleSheet, Text, View } from 'react-native';
+import { Image, StyleSheet, Text, View } from 'react-native';
 
 import { primitiveColors, radius, spacing, typography } from '../../../lib/token';
 
 const { brown, gray, green, system } = primitiveColors;
 const RED = system.red.opacity100;
+
+const ICONS = {
+  caretDown: require('../../../../assets/icons/fill/icon_fl_CaretDown.png'),
+  caretUp: require('../../../../assets/icons/fill/icon_fl_CaretUp.png'),
+} as const;
 
 export interface WeeklyStatusCardProps {
   weekLabel: string;
@@ -17,10 +22,7 @@ export interface WeeklyStatusCardProps {
   achievableDays: number;
 }
 
-const formatDiff = (minutes: number) => {
-  const sign = minutes >= 0 ? '+' : '-';
-  return `${sign}${Math.abs(minutes)}m`;
-};
+const formatDiff = (minutes: number) => `${Math.abs(minutes)}m`;
 
 export function WeeklyStatusCard({
   weekLabel,
@@ -32,26 +34,41 @@ export function WeeklyStatusCard({
   achievedDays,
   achievableDays,
 }: WeeklyStatusCardProps) {
+  const isPreVerify = verifiedDays === 0;
   const isSaved = diffMinutes < 0;
   const diffColor = isSaved ? green[300] : RED;
   const diffLabel = isSaved ? '목표보다 절약' : '목표보다 초과';
   const diffLabelColor = isSaved ? gray[500] : RED;
+  const donutColor = isPreVerify ? gray[50] : diffColor;
 
   return (
     <View style={styles.card}>
       <View style={styles.header}>
-        <Text style={styles.title}>이번 주 현황</Text>
+        <Text style={styles.title}>주간 현황</Text>
         <Text style={styles.week}>{weekLabel}</Text>
       </View>
 
       <View style={styles.donutWrap}>
-        <View style={[styles.donutOuter, { backgroundColor: diffColor }]}>
+        <View style={[styles.donutOuter, { backgroundColor: donutColor }]}>
           {/* TODO: 진행률 호 표시 — react-native-svg 도입 후 구현 */}
           <View style={styles.donutInner}>
-            <Text style={[styles.diffValue, { color: diffColor }]}>
-              {formatDiff(diffMinutes)}
-            </Text>
-            <Text style={[styles.diffLabel, { color: diffLabelColor }]}>{diffLabel}</Text>
+            {isPreVerify ? (
+              <Text style={styles.preVerifyLabel}>인증 전</Text>
+            ) : (
+              <>
+                <View style={styles.diffValueRow}>
+                  <Image
+                    source={isSaved ? ICONS.caretDown : ICONS.caretUp}
+                    style={[styles.diffIcon, { tintColor: diffColor }]}
+                    resizeMode="contain"
+                  />
+                  <Text style={[styles.diffValue, { color: diffColor }]}>
+                    {formatDiff(diffMinutes)}
+                  </Text>
+                </View>
+                <Text style={[styles.diffLabel, { color: diffLabelColor }]}>{diffLabel}</Text>
+              </>
+            )}
           </View>
         </View>
       </View>
@@ -61,7 +78,7 @@ export function WeeklyStatusCard({
           <View style={styles.statCol}>
             <Text style={styles.statLabel}>평균 스크린 타임</Text>
             <Text style={styles.statPrimary}>
-              {avgScreenTime}/{goalScreenTime}
+              {isPreVerify ? '--h --m' : avgScreenTime}/{goalScreenTime}
             </Text>
           </View>
         </View>
@@ -126,11 +143,25 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
+  diffValueRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing[4],
+  },
+  diffIcon: {
+    width: 18,
+    height: 18,
+  },
   diffValue: {
     ...typography.accent.h2,
   },
   diffLabel: {
     ...typography.primary.body3R,
+    textAlign: 'center',
+  },
+  preVerifyLabel: {
+    ...typography.primary.body3R,
+    color: gray[500],
     textAlign: 'center',
   },
   statsBlock: {

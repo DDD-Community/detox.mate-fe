@@ -10,5 +10,5 @@ export interface GroupMemberUsageGoalResponse {
   id?: number;
   usageGoalType?: GroupMemberUsageGoalResponseUsageGoalType;
   goalMinutes?: number;
-  setAt?: string;
+  createdAt?: string;
 }

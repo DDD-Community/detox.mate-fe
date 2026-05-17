@@ -9,4 +9,5 @@ export interface CommentAuthorInfo {
   userId?: number;
   displayName?: string;
   profileImageUrl?: string;
+  isUserWithdrawn?: boolean;
 }

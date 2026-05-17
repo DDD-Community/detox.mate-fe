@@ -1,9 +1,14 @@
+import * as ImagePicker from 'expo-image-picker';
 import { router, useLocalSearchParams } from 'expo-router';
+import * as SecureStore from 'expo-secure-store';
 import { useState } from 'react';
 import { Image, Pressable, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
+import { getUser } from '../../api/generated/user/user';
+import { PresignedUrlRequestUploadPurpose } from '../../api/generated/model';
 import { Button } from '../../components/Button';
+import { uploadImage } from '../../lib/uploadImage';
 import { primitiveColors, radius, spacing, typography } from '../../lib/token';
 import { JoinedGroupBody } from './mypage/JoinedGroupBody';
 import { ProfileImageBottomSheet } from './mypage/ProfileImageBottomSheet';
@@ -82,6 +87,9 @@ export default function MyPageScreen() {
   const hasJoinedGroup = true;
 
   const [isImageSheetOpen, setIsImageSheetOpen] = useState(false);
+  // null이면 기본 이미지(추후 서버가 내려주는 기본 S3 URL로 대체), 그 외엔 사용자 이미지 URL/URI
+  const [profileImageUri, setProfileImageUri] = useState<string | null>(null);
+  const [isUpdatingProfileImage, setIsUpdatingProfileImage] = useState(false);
 
   const handleBack = () => {
     router.back();
@@ -99,26 +107,76 @@ export default function MyPageScreen() {
     setIsImageSheetOpen(true);
   };
 
-  const handleSelectDefaultImage = () => {
-    setIsImageSheetOpen(false);
-    // TODO: 기본 이미지로 변경 — PATCH /users/me { profileImageObjectKey: null }
+  const getCurrentUserParam = async () => {
+    const userIdStr = await SecureStore.getItemAsync('currentUserId');
+    return { currentUser: { id: userIdStr ? Number(userIdStr) : undefined } };
   };
 
-  const handleSelectGalleryImage = () => {
+  const handleSelectDefaultImage = async () => {
     setIsImageSheetOpen(false);
-    // TODO: 갤러리 이미지 선택 → POST /uploads/presigned-urls → 업로드 → PATCH /users/me
+    if (isUpdatingProfileImage) return;
+    const previous = profileImageUri;
+    setProfileImageUri(null);
+    setIsUpdatingProfileImage(true);
+    try {
+      // 기본 이미지 복귀: 빈 문자열로 objectKey 클리어. 서버가 응답에 기본 S3 URL을 채워 내려줌.
+      const response = await getUser().updateMe(
+        { profileImageObjectKey: '' },
+        await getCurrentUserParam()
+      );
+      setProfileImageUri(response.profileImageUrl ?? null);
+    } catch (e) {
+      setProfileImageUri(previous);
+      // TODO: 에러 토스트
+    } finally {
+      setIsUpdatingProfileImage(false);
+    }
+  };
+
+  const handleSelectGalleryImage = async () => {
+    setIsImageSheetOpen(false);
+    const result = await ImagePicker.launchImageLibraryAsync({
+      mediaTypes: ['images'],
+      quality: 1,
+      allowsEditing: true,
+    });
+    if (result.canceled || !result.assets[0]) return;
+    if (isUpdatingProfileImage) return;
+
+    const asset = result.assets[0];
+    const previous = profileImageUri;
+    setProfileImageUri(asset.uri);
+    setIsUpdatingProfileImage(true);
+    try {
+      const objectKey = await uploadImage(asset.uri, {
+        uploadPurpose: PresignedUrlRequestUploadPurpose.PROFILE_IMAGE,
+        fileName: asset.fileName,
+        mimeType: asset.mimeType,
+        fileSize: asset.fileSize,
+      });
+      const response = await getUser().updateMe(
+        { profileImageObjectKey: objectKey },
+        await getCurrentUserParam()
+      );
+      setProfileImageUri(response.profileImageUrl ?? asset.uri);
+    } catch (e) {
+      setProfileImageUri(previous);
+      // TODO: 에러 토스트
+    } finally {
+      setIsUpdatingProfileImage(false);
+    }
   };
 
   const handleSetGoal = () => {
-    // TODO: 목표 스크린타임 설정 화면 이동
+    router.push('/(group)/verify');
   };
 
   const handleCreateGroup = () => {
-    // TODO: 새 그룹 만들기 화면 이동
+    router.push('/(group)/create');
   };
 
   const handleEnterInviteCode = () => {
-    // TODO: 초대 코드 입력 화면 이동
+    router.push('/(group)/join');
   };
 
   const handleGroupPress = () => {
@@ -147,7 +205,15 @@ export default function MyPageScreen() {
         </SafeAreaView>
 
         <View style={styles.turtleWrap}>
-          <Image source={TURTLE_IMG} style={styles.turtle} resizeMode="contain" />
+          {profileImageUri && !isFriend ? (
+            <Image
+              source={{ uri: profileImageUri }}
+              style={styles.profilePhoto}
+              resizeMode="cover"
+            />
+          ) : (
+            <Image source={TURTLE_IMG} style={styles.turtle} resizeMode="contain" />
+          )}
         </View>
 
         <View style={styles.profileMeta}>
@@ -168,7 +234,12 @@ export default function MyPageScreen() {
               <ProfileChip label={`달성률 ${String(achievementRate).padStart(2, '0')}%`} />
             </View>
             {!isFriend && (
-              <Pressable onPress={handleEditProfileImage} style={styles.cameraButton} hitSlop={8}>
+              <Pressable
+                onPress={handleEditProfileImage}
+                disabled={isUpdatingProfileImage}
+                style={[styles.cameraButton, isUpdatingProfileImage && styles.cameraButtonDisabled]}
+                hitSlop={8}
+              >
                 <Image source={ICONS.camera} style={styles.cameraIcon} resizeMode="contain" />
               </Pressable>
             )}
@@ -179,7 +250,7 @@ export default function MyPageScreen() {
       {isFriend ? (
         <View style={styles.friendBody}>
           <WeeklyStatusCard
-            weekLabel="4월 4주"
+            weekLabel="최근 7일"
             diffMinutes={-30}
             avgScreenTime="1h 30m"
             goalScreenTime="2h 00m"
@@ -191,7 +262,7 @@ export default function MyPageScreen() {
         </View>
       ) : hasGoalSet && hasJoinedGroup ? (
         <JoinedGroupBody
-          weekLabel="4월 4주"
+          weekLabel="최근 7일"
           diffMinutes={-30}
           avgScreenTime="1h 30m"
           goalScreenTime="2h 00m"
@@ -301,6 +372,12 @@ const styles = StyleSheet.create({
     width: 174,
     height: 232,
   },
+  profilePhoto: {
+    width: 200,
+    height: 200,
+    borderRadius: 100,
+    backgroundColor: '#FFFFFF',
+  },
   profileMeta: {
     paddingHorizontal: spacing[16],
     gap: spacing[8],
@@ -359,6 +436,9 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: gray[100],
     borderRadius: radius.full,
+  },
+  cameraButtonDisabled: {
+    opacity: 0.5,
   },
   cameraIcon: {
     width: 20,

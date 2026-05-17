@@ -10,7 +10,7 @@ import type {
   ActivityRecordCreateRequest,
   ActivityRecordCreateResponse,
   CheckAchievementParams,
-  CreateParams
+  Create1Params
 } from '../model';
 
 import { customAxios } from '../../mutator';
@@ -18,9 +18,9 @@ import { customAxios } from '../../mutator';
 
 
   export const getActivityRecord = () => {
-const create = (
+const create1 = (
     activityRecordCreateRequest: ActivityRecordCreateRequest,
-    params: CreateParams,
+    params: Create1Params,
  ) => {
       return customAxios<ActivityRecordCreateResponse>(
       {url: `/activity-records`, method: 'POST',
@@ -42,6 +42,6 @@ const create = (
     },
       );
     }
-  return {create,checkAchievement}};
-export type CreateResult = NonNullable<Awaited<ReturnType<ReturnType<typeof getActivityRecord>['create']>>>
+  return {create1,checkAchievement}};
+export type Create1Result = NonNullable<Awaited<ReturnType<ReturnType<typeof getActivityRecord>['create1']>>>
 export type CheckAchievementResult = NonNullable<Awaited<ReturnType<ReturnType<typeof getActivityRecord>['checkAchievement']>>>

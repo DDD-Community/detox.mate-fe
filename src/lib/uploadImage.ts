@@ -4,7 +4,12 @@ import { getUpload } from '../api/generated/upload/upload';
 
 export async function uploadImage(
   imageUri: string,
-  options?: { fileName?: string | null; mimeType?: string | null; fileSize?: number | null }
+  options?: {
+    fileName?: string | null;
+    mimeType?: string | null;
+    fileSize?: number | null;
+    uploadPurpose?: PresignedUrlRequestUploadPurpose;
+  }
 ): Promise<string> {
   const userIdStr = await SecureStore.getItemAsync('currentUserId');
   const userId = userIdStr ? parseInt(userIdStr, 10) : 0;
@@ -12,6 +17,8 @@ export async function uploadImage(
   const fileName = options?.fileName ?? imageUri.split('/').pop() ?? 'image.jpg';
   const contentType = options?.mimeType ?? 'image/jpeg';
   const fileSize = options?.fileSize ?? 0;
+  const uploadPurpose =
+    options?.uploadPurpose ?? PresignedUrlRequestUploadPurpose.ACTIVITY_RECORD_IMAGE;
 
   const { issuePresignedUrl } = getUpload();
   const { uploadUrl, objectKey } = await issuePresignedUrl(
@@ -19,7 +26,7 @@ export async function uploadImage(
       fileName,
       contentType,
       fileSize,
-      uploadPurpose: PresignedUrlRequestUploadPurpose.ACTIVITY_RECORD_IMAGE,
+      uploadPurpose,
     },
     { currentUser: { id: userId } }
   );

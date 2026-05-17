@@ -1,13 +1,16 @@
-import { router } from 'expo-router';
+import * as Linking from 'expo-linking';
+import * as Notifications from 'expo-notifications';
+import { router, useFocusEffect } from 'expo-router';
 import * as SecureStore from 'expo-secure-store';
-import { useState } from 'react';
-import { Image, Pressable, StyleSheet, Switch, Text, View } from 'react-native';
+import { useCallback, useState } from 'react';
+import { AppState, Image, Pressable, StyleSheet, Switch, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { logout } from '../../../api/auth';
 import { getUser } from '../../../api/generated/user/user';
 import { primitiveColors, radius, spacing, typography } from '../../../lib/token';
 import { LogoutConfirmAlert } from './LogoutConfirmAlert';
+import { NotificationPermissionAlert } from './NotificationPermissionAlert';
 import { WithdrawConfirmAlert } from './WithdrawConfirmAlert';
 
 const { brown, gray, green } = primitiveColors;
@@ -63,16 +66,76 @@ function LinkRow({ label, onPress, hasDivider }: LinkRowProps) {
 }
 
 export default function SettingsScreen() {
-  // TODO: 서버/디바이스 설정과 동기화
-  const [verifyAlarm, setVerifyAlarm] = useState(true);
-  const [generalAlarm, setGeneralAlarm] = useState(true);
+  // 두 가지 상태를 분리 추적
+  //   userPushPreference: 사용자가 앱 내 토글로 명시한 수신 의도 (TODO: 서버/SecureStore 동기화)
+  //   systemGranted:      iOS/Android 시스템 알림 권한 상태 (매번 체크)
+  // 토글 표시값 = 둘 다 true일 때만 ON
+  const [userPushPreference, setUserPushPreference] = useState(true);
+  const [systemGranted, setSystemGranted] = useState(false);
+  const pushAlarm = userPushPreference && systemGranted;
+
+  const [isPermissionAlertOpen, setIsPermissionAlertOpen] = useState(false);
   const [isLogoutAlertOpen, setIsLogoutAlertOpen] = useState(false);
   const [isLoggingOut, setIsLoggingOut] = useState(false);
   const [isWithdrawAlertOpen, setIsWithdrawAlertOpen] = useState(false);
   const [isWithdrawing, setIsWithdrawing] = useState(false);
 
+  const syncSystemPermission = useCallback(async () => {
+    const { status } = await Notifications.getPermissionsAsync();
+    setSystemGranted(status === 'granted');
+  }, []);
+
+  // 화면 진입 + 설정 앱에서 돌아왔을 때 권한 상태 재동기화
+  useFocusEffect(
+    useCallback(() => {
+      syncSystemPermission();
+      const sub = AppState.addEventListener('change', (next) => {
+        if (next === 'active') syncSystemPermission();
+      });
+      return () => sub.remove();
+    }, [syncSystemPermission])
+  );
+
   const handleBack = () => {
     router.back();
+  };
+
+  const handleTogglePushAlarm = async (next: boolean) => {
+    if (!next) {
+      // ON → OFF: 앱 내 수신 동의만 OFF로. 시스템 권한은 안 건드림.
+      // 서버가 더 이상 푸시를 보내지 않게 되어 사용자에겐 "알림이 꺼진" 효과와 동일.
+      setUserPushPreference(false);
+      // TODO: 서버 알림 수신 동의 OFF PATCH + FCM 토큰 삭제
+      return;
+    }
+    // OFF → ON: 시스템 권한 확인
+    const { status, canAskAgain } = await Notifications.getPermissionsAsync();
+    if (status === 'granted') {
+      setSystemGranted(true);
+      setUserPushPreference(true);
+      // TODO: 서버 알림 수신 동의 ON PATCH + FCM 토큰 등록
+      return;
+    }
+    if (canAskAgain) {
+      const result = await Notifications.requestPermissionsAsync();
+      if (result.status === 'granted') {
+        setSystemGranted(true);
+        setUserPushPreference(true);
+        // TODO: 서버 알림 수신 동의 ON PATCH + FCM 토큰 등록
+        return;
+      }
+    }
+    // 권한 거부 + 다시 물어볼 수 없는 상태 → 설정 안내 모달
+    setIsPermissionAlertOpen(true);
+  };
+
+  const handleClosePermissionAlert = () => {
+    setIsPermissionAlertOpen(false);
+  };
+
+  const handleOpenAppSettings = async () => {
+    setIsPermissionAlertOpen(false);
+    await Linking.openSettings();
   };
 
   const handleContact = () => {
@@ -148,13 +211,7 @@ export default function SettingsScreen() {
 
       <View style={styles.body}>
         <View style={styles.card}>
-          <ToggleRow
-            label="인증 알림"
-            value={verifyAlarm}
-            onChange={setVerifyAlarm}
-            hasDivider
-          />
-          <ToggleRow label="알림" value={generalAlarm} onChange={setGeneralAlarm} />
+          <ToggleRow label="푸시 알림" value={pushAlarm} onChange={handleTogglePushAlarm} />
         </View>
 
         <View style={styles.card}>
@@ -181,6 +238,12 @@ export default function SettingsScreen() {
         onClose={handleCloseWithdrawAlert}
         onConfirm={handleConfirmWithdraw}
         loading={isWithdrawing}
+      />
+
+      <NotificationPermissionAlert
+        visible={isPermissionAlertOpen}
+        onClose={handleClosePermissionAlert}
+        onConfirm={handleOpenAppSettings}
       />
     </View>
   );

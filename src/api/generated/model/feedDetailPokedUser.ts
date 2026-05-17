@@ -9,4 +9,5 @@ export interface FeedDetailPokedUser {
   userId?: number;
   displayName?: string;
   profileImageUrl?: string;
+  isUserWithdrawn?: boolean;
 }

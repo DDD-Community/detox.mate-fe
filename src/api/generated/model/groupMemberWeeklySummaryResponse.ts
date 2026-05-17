@@ -5,10 +5,13 @@
  * OpenAPI spec version: v0
  */
 
-export interface MemberRecent7DaysStatsResponse {
+export interface GroupMemberWeeklySummaryResponse {
   startDate?: string;
   endDate?: string;
   totalDays?: number;
-  submittedDays?: number;
+  averageUsedMinutes?: number;
+  goalMinutes?: number;
+  differenceMinutes?: number;
+  certifiedDays?: number;
   achievedDays?: number;
 }

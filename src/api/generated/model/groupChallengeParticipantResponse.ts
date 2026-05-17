@@ -16,4 +16,5 @@ export interface GroupChallengeParticipantResponse {
   joinedAt?: string;
   withdrawnAt?: string;
   goalTimes?: GoalTimeResponse[];
+  isUserWithdrawn?: boolean;
 }

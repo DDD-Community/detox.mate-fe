@@ -5,10 +5,8 @@
  * OpenAPI spec version: v0
  */
 
-export interface MemberOverallStatsResponse {
-  startDate?: string;
-  endDate?: string;
-  totalDays?: number;
-  achievedDays?: number;
+export interface GroupMemberActivitySummaryResponse {
+  firstCertifiedDate?: string;
+  dayCount?: number;
   achievementRate?: number;
 }

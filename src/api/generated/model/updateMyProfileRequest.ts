@@ -8,7 +8,7 @@
 export interface UpdateMyProfileRequest {
   /**
      * @minLength 0
-     * @maxLength 30
+     * @maxLength 10
      */
   displayName?: string;
   /**
