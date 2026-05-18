@@ -8,7 +8,11 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { logout } from '../../../api/auth';
 import { getUser } from '../../../api/generated/user/user';
-import { registerDevicePushToken, unregisterDevicePushToken } from '../../../lib/fcmToken';
+import {
+  ensureDevicePushTokenRegistered,
+  registerDevicePushToken,
+  unregisterDevicePushToken,
+} from '../../../lib/fcmToken';
 import { primitiveColors, radius, spacing, typography } from '../../../lib/token';
 import { LogoutConfirmAlert } from './LogoutConfirmAlert';
 import { NotificationPermissionAlert } from './NotificationPermissionAlert';
@@ -83,8 +87,18 @@ export default function SettingsScreen() {
 
   const syncSystemPermission = useCallback(async () => {
     const { status } = await Notifications.getPermissionsAsync();
-    setSystemGranted(status === 'granted');
-  }, []);
+    const granted = status === 'granted';
+    setSystemGranted(granted);
+    // 사용자가 OS 설정에서 권한을 허용하고 돌아온 경우 토큰이 비어있으면 사후 등록.
+    // 앱 내 동의(userPushPreference)가 OFF면 등록하지 않음.
+    if (granted && userPushPreference) {
+      try {
+        await ensureDevicePushTokenRegistered();
+      } catch {
+        // ignore
+      }
+    }
+  }, [userPushPreference]);
 
   const getCurrentUserParam = async () => {
     const userIdStr = await SecureStore.getItemAsync('currentUserId');
