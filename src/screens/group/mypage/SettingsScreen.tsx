@@ -2,7 +2,7 @@ import * as Linking from 'expo-linking';
 import * as Notifications from 'expo-notifications';
 import { router, useFocusEffect } from 'expo-router';
 import * as SecureStore from 'expo-secure-store';
-import { useCallback, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { AppState, Image, Pressable, StyleSheet, Switch, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
@@ -85,6 +85,31 @@ export default function SettingsScreen() {
     setSystemGranted(status === 'granted');
   }, []);
 
+  const getCurrentUserParam = async () => {
+    const userIdStr = await SecureStore.getItemAsync('currentUserId');
+    return { currentUser: { id: userIdStr ? Number(userIdStr) : undefined } };
+  };
+
+  // 마운트 시 서버의 푸시 알림 동의 상태 가져오기
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      const me = await getUser().getMe(await getCurrentUserParam());
+      if (cancelled) return;
+      setUserPushPreference(me.pushNotificationEnabled ?? true);
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  const patchPushNotificationEnabled = async (enabled: boolean) => {
+    await getUser().updatePushNotificationSetting(
+      { pushNotificationEnabled: enabled },
+      await getCurrentUserParam(),
+    );
+  };
+
   // 화면 진입 + 설정 앱에서 돌아왔을 때 권한 상태 재동기화
   useFocusEffect(
     useCallback(() => {
@@ -100,28 +125,37 @@ export default function SettingsScreen() {
     router.back();
   };
 
+  const applyPushPreference = async (enabled: boolean) => {
+    // optimistic update: state 먼저 반영 후 API 실패 시 롤백
+    const previous = userPushPreference;
+    setUserPushPreference(enabled);
+    try {
+      await patchPushNotificationEnabled(enabled);
+      // TODO: enabled=true 시 FCM 토큰 등록 / false 시 토큰 삭제
+    } catch (e) {
+      setUserPushPreference(previous);
+    }
+  };
+
   const handleTogglePushAlarm = async (next: boolean) => {
     if (!next) {
       // ON → OFF: 앱 내 수신 동의만 OFF로. 시스템 권한은 안 건드림.
       // 서버가 더 이상 푸시를 보내지 않게 되어 사용자에겐 "알림이 꺼진" 효과와 동일.
-      setUserPushPreference(false);
-      // TODO: 서버 알림 수신 동의 OFF PATCH + FCM 토큰 삭제
+      await applyPushPreference(false);
       return;
     }
     // OFF → ON: 시스템 권한 확인
     const { status, canAskAgain } = await Notifications.getPermissionsAsync();
     if (status === 'granted') {
       setSystemGranted(true);
-      setUserPushPreference(true);
-      // TODO: 서버 알림 수신 동의 ON PATCH + FCM 토큰 등록
+      await applyPushPreference(true);
       return;
     }
     if (canAskAgain) {
       const result = await Notifications.requestPermissionsAsync();
       if (result.status === 'granted') {
         setSystemGranted(true);
-        setUserPushPreference(true);
-        // TODO: 서버 알림 수신 동의 ON PATCH + FCM 토큰 등록
+        await applyPushPreference(true);
         return;
       }
     }
