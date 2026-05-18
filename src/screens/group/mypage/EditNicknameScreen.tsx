@@ -1,8 +1,10 @@
 import { router } from 'expo-router';
+import * as SecureStore from 'expo-secure-store';
 import { useState } from 'react';
 import { Image, Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
+import { getUser } from '../../../api/generated/user/user';
 import { Button } from '../../../components/Button';
 import { primitiveColors, radius, spacing, typography } from '../../../lib/token';
 
@@ -12,11 +14,11 @@ const NICKNAME_MAX_LENGTH = 10;
 
 const ICONS = {
   caretLeft: require('../../../../assets/icons/regular/icon_rg_CaretLeft.png'),
-  info: require('../../../../assets/icons/regular/icon_rg_Info.png'),
 } as const;
 
 export default function EditNicknameScreen() {
   const [nickname, setNickname] = useState('');
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const isValid = nickname.length > 0;
 
@@ -29,9 +31,19 @@ export default function EditNicknameScreen() {
     router.back();
   };
 
-  const handleSubmit = () => {
-    if (!isValid) return;
-    // TODO: PATCH /users/me { displayName: nickname }
+  const handleSubmit = async () => {
+    if (!isValid || isSubmitting) return;
+    setIsSubmitting(true);
+    try {
+      const userIdStr = await SecureStore.getItemAsync('currentUserId');
+      await getUser().updateMe(
+        { displayName: nickname },
+        { currentUser: { id: userIdStr ? Number(userIdStr) : undefined } },
+      );
+      router.back();
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   return (
@@ -68,14 +80,8 @@ export default function EditNicknameScreen() {
         <Button
           label="변경 완료"
           color="primary"
-          disabled={!isValid}
+          disabled={!isValid || isSubmitting}
           onPress={handleSubmit}
-          leadingIcon={
-            <Image source={ICONS.info} style={styles.ctaIcon} resizeMode="contain" />
-          }
-          trailingIcon={
-            <Image source={ICONS.info} style={styles.ctaIcon} resizeMode="contain" />
-          }
           style={styles.cta}
         />
       </SafeAreaView>
@@ -139,10 +145,5 @@ const styles = StyleSheet.create({
   },
   cta: {
     alignSelf: 'stretch',
-  },
-  ctaIcon: {
-    width: 16,
-    height: 16,
-    tintColor: '#FFFFFF',
   },
 });
