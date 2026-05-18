@@ -5,6 +5,7 @@ import { useState } from 'react';
 import { Image, Pressable, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
+import { getPoke } from '../../api/generated/poke/poke';
 import { getUser } from '../../api/generated/user/user';
 import { PresignedUrlRequestUploadPurpose } from '../../api/generated/model';
 import { Button } from '../../components/Button';
@@ -71,11 +72,17 @@ function GroupActionCard({ image, imageWidth, imageHeight, label, onPress }: Gro
 
 export default function MyPageScreen() {
   // memberId가 있으면 친구 프로필 모드, 없으면 내 마이페이지 모드
-  const { memberId, friendName } = useLocalSearchParams<{
-    memberId?: string;
-    friendName?: string;
-  }>();
+  const { memberId, friendName, friendUserId, challengeRecordId, friendHasGoalSet } =
+    useLocalSearchParams<{
+      memberId?: string;
+      friendName?: string;
+      friendUserId?: string;
+      challengeRecordId?: string;
+      friendHasGoalSet?: string;
+    }>();
   const isFriend = !!memberId;
+  // 친구가 목표를 설정했는지: 쿼리 파라미터 'true'일 때만 true. 미지정/false면 미설정으로 간주.
+  const isFriendGoalSet = friendHasGoalSet === 'true';
 
   // TODO: API 연동 — isFriend ? GET /groups/{groupId}/members/{memberId} : GET /users/me
   const displayName = isFriend ? friendName ?? '친구' : '지민';
@@ -85,6 +92,8 @@ export default function MyPageScreen() {
   const hasGoalSet = true;
   // TODO: GET /me/groups 응답으로 판단
   const hasJoinedGroup = true;
+
+  const [isPoking, setIsPoking] = useState(false);
 
   const [isImageSheetOpen, setIsImageSheetOpen] = useState(false);
   // null이면 기본 이미지(추후 서버가 내려주는 기본 S3 URL로 대체), 그 외엔 사용자 이미지 URL/URI
@@ -187,6 +196,24 @@ export default function MyPageScreen() {
     router.push('/(group)/goal-time-edit');
   };
 
+  const handlePoke = async () => {
+    if (isPoking) return;
+    if (!challengeRecordId || !friendUserId) {
+      // 콕 찌르기에 필요한 정보가 없으면 무시 (라우팅하는 쪽에서 채워주어야 함)
+      return;
+    }
+    setIsPoking(true);
+    try {
+      await getPoke().pokeUser(
+        Number(challengeRecordId),
+        Number(friendUserId),
+        await getCurrentUserParam(),
+      );
+    } finally {
+      setIsPoking(false);
+    }
+  };
+
   return (
     <View style={styles.root}>
       <View style={styles.profileCard}>
@@ -247,7 +274,25 @@ export default function MyPageScreen() {
         </View>
       </View>
 
-      {isFriend ? (
+      {isFriend && !isFriendGoalSet ? (
+        <>
+          <View style={styles.friendEmptyState}>
+            <Image source={CALENDAR_IMG} style={styles.calendar} resizeMode="contain" />
+            <Text style={styles.friendEmptyText}>
+              아직 목표를 설정하지 않았어요.{'\n'}목표 설정 알림을 보내주세요!
+            </Text>
+          </View>
+          <SafeAreaView edges={['bottom']} style={styles.pokeCtaWrap}>
+            <Button
+              label="콕 찌르기"
+              color="primary"
+              disabled={isPoking}
+              onPress={handlePoke}
+              style={styles.pokeCta}
+            />
+          </SafeAreaView>
+        </>
+      ) : isFriend ? (
         <View style={styles.friendBody}>
           <WeeklyStatusCard
             weekLabel="최근 7일"
@@ -508,5 +553,28 @@ const styles = StyleSheet.create({
   friendBody: {
     paddingHorizontal: spacing[16],
     paddingTop: spacing[16],
+  },
+  friendEmptyState: {
+    flex: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: spacing[16],
+    paddingHorizontal: spacing[24],
+  },
+  friendEmptyText: {
+    ...typography.primary.body3R,
+    fontSize: 14,
+    lineHeight: 21,
+    color: gray[400],
+    textAlign: 'center',
+  },
+  pokeCtaWrap: {
+    paddingHorizontal: spacing[16],
+    paddingBottom: spacing[16],
+    alignItems: 'center',
+  },
+  pokeCta: {
+    width: 311,
+    alignSelf: 'center',
   },
 });

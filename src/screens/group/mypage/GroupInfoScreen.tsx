@@ -24,6 +24,10 @@ interface Member {
   name: string;
   profileImageUrl?: string;
   isMe?: boolean;
+  // 콕 찌르기에 필요한 추가 정보 (API 연동 시 채워짐)
+  userId?: number;
+  challengeRecordId?: number;
+  hasGoalSet?: boolean;
 }
 
 export default function GroupInfoScreen() {
@@ -141,7 +145,13 @@ export default function GroupInfoScreen() {
                 onPress={() =>
                   router.push({
                     pathname: '/(group)/mypage',
-                    params: { memberId: m.id, friendName: m.name },
+                    params: {
+                      memberId: m.id,
+                      friendName: m.name,
+                      friendUserId: m.userId,
+                      challengeRecordId: m.challengeRecordId,
+                      friendHasGoalSet: m.hasGoalSet ? 'true' : 'false',
+                    },
                   })
                 }
               >
