@@ -1,8 +1,11 @@
 import { router } from 'expo-router';
-import { useState } from 'react';
-import { Image, Pressable, StyleSheet, Text, View } from 'react-native';
+import * as SecureStore from 'expo-secure-store';
+import { useEffect, useState } from 'react';
+import { ActivityIndicator, Image, Pressable, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
+import { getUserUsageGoalTime } from '../../../api/generated/user-usage-goal-time/user-usage-goal-time';
+import { UserUsageGoalTimeRequestUsageGoalType } from '../../../api/generated/model';
 import { Button } from '../../../components/Button';
 import { primitiveColors, radius, spacing, typography } from '../../../lib/token';
 
@@ -14,7 +17,6 @@ const MAX_MINUTES = 24 * 60 - STEP_MINUTES;
 
 const ICONS = {
   caretLeft: require('../../../../assets/icons/regular/icon_rg_CaretLeft.png'),
-  info: require('../../../../assets/icons/regular/icon_rg_Info.png'),
   minusCircle: require('../../../../assets/icons/fill/icon_fl_MinusCircle.png'),
   plusCircle: require('../../../../assets/icons/fill/icon_fl_PlusCircle.png'),
 } as const;
@@ -26,13 +28,44 @@ const formatGoal = (totalMinutes: number) => {
 };
 
 export default function EditGoalTimeScreen() {
-  // TODO: GET /me/usage-goal-times/current 응답의 goalMinutes로 초기값 세팅
   const [goalMinutes, setGoalMinutes] = useState(120);
-  // TODO: 위 응답에서 가져온 기존 목표(분)를 표시 — 현재는 mock
-  const existingGoalLabel = '6h 5m';
+  const [existingGoalMinutes, setExistingGoalMinutes] = useState<number | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
+  const [isSaving, setIsSaving] = useState(false);
+
+  const getCurrentUserParam = async () => {
+    const userIdStr = await SecureStore.getItemAsync('currentUserId');
+    return { currentUser: { id: userIdStr ? Number(userIdStr) : undefined } };
+  };
+
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      try {
+        const response = await getUserUsageGoalTime().getCurrentGoalTimes(
+          await getCurrentUserParam(),
+        );
+        if (cancelled) return;
+        const total = response.goals?.find(
+          (g) => g.usageGoalType === UserUsageGoalTimeRequestUsageGoalType.TOTAL_USAGE,
+        );
+        if (total?.goalMinutes != null) {
+          setGoalMinutes(total.goalMinutes);
+          setExistingGoalMinutes(total.goalMinutes);
+        }
+      } finally {
+        if (!cancelled) setIsLoading(false);
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   const canDecrease = goalMinutes - STEP_MINUTES >= MIN_MINUTES;
   const canIncrease = goalMinutes + STEP_MINUTES <= MAX_MINUTES;
+  const isUnchanged =
+    existingGoalMinutes != null && goalMinutes === existingGoalMinutes;
 
   const handleDecrease = () => {
     if (!canDecrease) return;
@@ -48,8 +81,25 @@ export default function EditGoalTimeScreen() {
     router.back();
   };
 
-  const handleSave = () => {
-    // TODO: POST /me/usage-goal-times { totalMinutes: goalMinutes }
+  const handleSave = async () => {
+    if (isSaving || isUnchanged) return;
+    setIsSaving(true);
+    try {
+      await getUserUsageGoalTime().setGoalTimes(
+        {
+          goals: [
+            {
+              usageGoalType: UserUsageGoalTimeRequestUsageGoalType.TOTAL_USAGE,
+              goalMinutes,
+            },
+          ],
+        },
+        await getCurrentUserParam(),
+      );
+      router.back();
+    } finally {
+      setIsSaving(false);
+    }
   };
 
   return (
@@ -69,9 +119,16 @@ export default function EditGoalTimeScreen() {
 
         <View style={styles.myCard}>
           <Text style={styles.myCardLabel}>기존 목표</Text>
-          <Text style={styles.myCardValue}>{existingGoalLabel}</Text>
+          <Text style={styles.myCardValue}>
+            {existingGoalMinutes != null ? formatGoal(existingGoalMinutes) : '-'}
+          </Text>
         </View>
 
+        {isLoading ? (
+          <View style={styles.loadingWrap}>
+            <ActivityIndicator color={gray[400]} />
+          </View>
+        ) : (
         <View style={styles.pickerWrap}>
           <View style={styles.pickerRow}>
             <Pressable
@@ -102,6 +159,7 @@ export default function EditGoalTimeScreen() {
           </View>
           <Text style={styles.unitLabel}>하루 기준</Text>
         </View>
+        )}
       </View>
 
       <SafeAreaView edges={['bottom']} style={styles.ctaWrap}>
@@ -114,13 +172,8 @@ export default function EditGoalTimeScreen() {
         <Button
           label="저장하기"
           color="primary"
+          disabled={isLoading || isSaving || isUnchanged}
           onPress={handleSave}
-          leadingIcon={
-            <Image source={ICONS.info} style={styles.ctaIcon} resizeMode="contain" />
-          }
-          trailingIcon={
-            <Image source={ICONS.info} style={styles.ctaIcon} resizeMode="contain" />
-          }
           style={styles.saveButton}
         />
       </SafeAreaView>
@@ -220,9 +273,9 @@ const styles = StyleSheet.create({
   saveButton: {
     flex: 1,
   },
-  ctaIcon: {
-    width: 16,
-    height: 16,
-    tintColor: '#FFFFFF',
+  loadingWrap: {
+    flex: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
 });
