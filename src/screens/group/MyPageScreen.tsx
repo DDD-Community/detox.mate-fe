@@ -1,7 +1,7 @@
 import * as ImagePicker from 'expo-image-picker';
-import { router, useLocalSearchParams } from 'expo-router';
+import { router, useFocusEffect, useLocalSearchParams } from 'expo-router';
 import * as SecureStore from 'expo-secure-store';
-import { useEffect, useState } from 'react';
+import { useCallback, useState } from 'react';
 import { ActivityIndicator, Image, Pressable, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
@@ -122,62 +122,72 @@ export default function MyPageScreen() {
     return { currentUser: { id: userIdStr ? Number(userIdStr) : undefined } };
   };
 
-  useEffect(() => {
-    let cancelled = false;
-    (async () => {
-      try {
-        const userParam = await getCurrentUserParam();
-        if (isFriend) {
-          const groupIdNum = friendGroupId ? Number(friendGroupId) : NaN;
-          const memberIdNum = memberId ? Number(memberId) : NaN;
-          if (Number.isFinite(groupIdNum) && Number.isFinite(memberIdNum)) {
-            const data = await getGroupMember().getGroupMemberProfile(
-              groupIdNum,
-              memberIdNum,
-              userParam,
-            );
-            if (cancelled) return;
-            setFriendProfile(data);
+  // 첫 진입 시에만 ActivityIndicator를 노출. 화면 복귀 시(refresh)는 백그라운드로 갱신.
+  useFocusEffect(
+    useCallback(() => {
+      let cancelled = false;
+      (async () => {
+        try {
+          const userParam = await getCurrentUserParam();
+          if (isFriend) {
+            const groupIdNum = friendGroupId ? Number(friendGroupId) : NaN;
+            const memberIdNum = memberId ? Number(memberId) : NaN;
+            if (Number.isFinite(groupIdNum) && Number.isFinite(memberIdNum)) {
+              const data = await getGroupMember().getGroupMemberProfile(
+                groupIdNum,
+                memberIdNum,
+                userParam,
+              );
+              if (cancelled) return;
+              setFriendProfile(data);
+            }
+            return;
           }
-          return;
+
+          const [me, goalsResponse, myGroups] = await Promise.all([
+            getUser().getMe(userParam),
+            getUserUsageGoalTime().getCurrentGoalTimes(userParam),
+            getGroup().getMyGroups(userParam),
+          ]);
+          if (cancelled) return;
+
+          setProfile(me);
+          setProfileImageUri(me.profileImageUrl ?? null);
+          setHasGoalSet((goalsResponse.goals?.length ?? 0) > 0);
+
+          const firstGroup = myGroups?.[0];
+          if (!firstGroup?.id || !me.id) {
+            setGroup(null);
+            setMemberProfile(null);
+            return;
+          }
+
+          const groupData = await getGroup().getGroup(firstGroup.id, userParam);
+          if (cancelled) return;
+          setGroup(groupData);
+
+          const myMember = groupData.members?.find((m) => m.userId === me.id);
+          if (!myMember?.id) {
+            setMemberProfile(null);
+            return;
+          }
+
+          const profileData = await getGroupMember().getGroupMemberProfile(
+            firstGroup.id,
+            myMember.id,
+            userParam,
+          );
+          if (cancelled) return;
+          setMemberProfile(profileData);
+        } finally {
+          if (!cancelled) setIsLoading(false);
         }
-
-        const [me, goalsResponse, myGroups] = await Promise.all([
-          getUser().getMe(userParam),
-          getUserUsageGoalTime().getCurrentGoalTimes(userParam),
-          getGroup().getMyGroups(userParam),
-        ]);
-        if (cancelled) return;
-
-        setProfile(me);
-        setProfileImageUri(me.profileImageUrl ?? null);
-        setHasGoalSet((goalsResponse.goals?.length ?? 0) > 0);
-
-        const firstGroup = myGroups?.[0];
-        if (!firstGroup?.id || !me.id) return;
-
-        const groupData = await getGroup().getGroup(firstGroup.id, userParam);
-        if (cancelled) return;
-        setGroup(groupData);
-
-        const myMember = groupData.members?.find((m) => m.userId === me.id);
-        if (!myMember?.id) return;
-
-        const profileData = await getGroupMember().getGroupMemberProfile(
-          firstGroup.id,
-          myMember.id,
-          userParam,
-        );
-        if (cancelled) return;
-        setMemberProfile(profileData);
-      } finally {
-        if (!cancelled) setIsLoading(false);
-      }
-    })();
-    return () => {
-      cancelled = true;
-    };
-  }, [isFriend, friendGroupId, memberId]);
+      })();
+      return () => {
+        cancelled = true;
+      };
+    }, [isFriend, friendGroupId, memberId]),
+  );
 
   const handleBack = () => {
     router.back();
