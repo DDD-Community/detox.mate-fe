@@ -56,31 +56,33 @@ const formatMessage = (item: NotificationHistoryItemResponse): string => {
 const TOAST_DURATION_MS = 2500;
 
 const routeByTarget = (type?: string, id?: number) => {
-  // 서버가 반환하는 targetType 값에 따라 라우팅. 새 값이 추가되면 case 추가.
+  // 백엔드 enum 기준 라우팅.
   switch (type) {
-    case 'POST':
     case 'FEED':
-    case 'CHALLENGE_RECORD':
-    case 'ACTIVITY_RECORD':
+      // targetId: groupChallengeId
       router.push({
         pathname: '/(group)/feed',
-        params: id ? { challengeRecordId: String(id) } : undefined,
+        params: id != null ? { groupChallengeId: String(id) } : undefined,
       });
       return;
-    case 'USER':
-    case 'USER_PROFILE':
-    case 'MEMBER':
+    case 'FEED_DETAIL':
+      // targetId: challengeRecordId — 별도 상세 화면이 없어 피드로 보내며 파라미터 전달
       router.push({
-        pathname: '/(group)/mypage',
-        params: id ? { memberId: String(id) } : undefined,
+        pathname: '/(group)/feed',
+        params: id != null ? { challengeRecordId: String(id) } : undefined,
       });
       return;
     case 'GROUP':
-      router.push('/(group)/group-info');
+      // targetId: groupId
+      router.push({
+        pathname: '/(group)/group-info',
+        params: id != null ? { groupId: String(id) } : undefined,
+      });
       return;
+    case 'NONE':
     default:
-      // 알 수 없는 타입은 피드로 폴백
-      router.push('/(group)/feed');
+      // 이동 없음
+      return;
   }
 };
 
