@@ -245,7 +245,10 @@ export default function MyPageScreen() {
   };
 
   const handleGroupPress = () => {
-    router.push('/(group)/group-info');
+    router.push({
+      pathname: '/(group)/group-info',
+      params: group?.id != null ? { groupId: String(group.id) } : undefined,
+    });
   };
 
   const handleChangeGoal = () => {

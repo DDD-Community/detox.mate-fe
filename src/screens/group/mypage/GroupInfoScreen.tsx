@@ -1,11 +1,20 @@
 import * as Clipboard from 'expo-clipboard';
-import { router } from 'expo-router';
+import { router, useLocalSearchParams } from 'expo-router';
 import * as SecureStore from 'expo-secure-store';
-import { useState } from 'react';
-import { Image, Pressable, Share, StyleSheet, Text, View } from 'react-native';
+import { useEffect, useState } from 'react';
+import {
+  ActivityIndicator,
+  Image,
+  Pressable,
+  Share,
+  StyleSheet,
+  Text,
+  View,
+} from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { getGroup } from '../../../api/generated/group/group';
+import type { GroupMemberResponse } from '../../../api/generated/model';
 import { primitiveColors, radius, spacing, typography } from '../../../lib/token';
 import { LeaveGroupAlert } from './LeaveGroupAlert';
 
@@ -19,42 +28,68 @@ const ICONS = {
 
 const TURTLE_AVATAR = require('../../../../assets/turtle-hi.png');
 
-interface Member {
-  id: string;
-  name: string;
-  profileImageUrl?: string;
-  isMe?: boolean;
-  // 콕 찌르기에 필요한 추가 정보 (API 연동 시 채워짐)
-  userId?: number;
-  challengeRecordId?: number;
-  hasGoalSet?: boolean;
-}
-
 export default function GroupInfoScreen() {
-  // TODO: useLocalSearchParams로 groupId 받기
-  const groupId = 1;
-  // TODO: GET /groups/{groupId} 응답으로 채우기
-  const groupName = '{그룹명}';
-  const inviteCode = 'A1C3E';
-  const members: Member[] = [
-    { id: '1', name: '나', isMe: true },
-    { id: '2', name: '서연' },
-    { id: '3', name: '지민' },
-  ];
+  const { groupId: groupIdParam } = useLocalSearchParams<{ groupId?: string }>();
+
+  const [groupId, setGroupId] = useState<number | null>(
+    groupIdParam ? Number(groupIdParam) : null,
+  );
+  const [groupName, setGroupName] = useState('');
+  const [inviteCode, setInviteCode] = useState('');
+  const [members, setMembers] = useState<GroupMemberResponse[]>([]);
+  const [myUserId, setMyUserId] = useState<number | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
 
   const [isLeaveAlertOpen, setIsLeaveAlertOpen] = useState(false);
   const [isLeaving, setIsLeaving] = useState(false);
+
+  const getCurrentUserParam = async () => {
+    const userIdStr = await SecureStore.getItemAsync('currentUserId');
+    return { currentUser: { id: userIdStr ? Number(userIdStr) : undefined } };
+  };
+
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      try {
+        const userParam = await getCurrentUserParam();
+        setMyUserId(userParam.currentUser.id ?? null);
+
+        let targetId = groupId;
+        if (targetId == null) {
+          const myGroups = await getGroup().getMyGroups(userParam);
+          if (cancelled) return;
+          targetId = myGroups?.[0]?.id ?? null;
+          if (targetId != null) setGroupId(targetId);
+        }
+        if (targetId == null) return;
+
+        const data = await getGroup().getGroup(targetId, userParam);
+        if (cancelled) return;
+        setGroupName(data.name ?? '');
+        setInviteCode(data.inviteCode ?? '');
+        setMembers(data.members ?? []);
+      } finally {
+        if (!cancelled) setIsLoading(false);
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   const handleBack = () => {
     router.back();
   };
 
   const handleCopyInviteCode = async () => {
+    if (!inviteCode) return;
     await Clipboard.setStringAsync(inviteCode);
     // TODO: 토스트 "초대 코드가 복사되었어요"
   };
 
   const handleShareInviteCode = async () => {
+    if (!inviteCode) return;
     await Share.share({
       message: `우리 함께 디지털 디톡스해요! 💉\n디톡스 메이트 그룹 초대 코드: ${inviteCode}`,
     });
@@ -70,13 +105,10 @@ export default function GroupInfoScreen() {
   };
 
   const handleConfirmLeave = async () => {
-    if (isLeaving) return;
+    if (isLeaving || groupId == null) return;
     setIsLeaving(true);
     try {
-      const userId = await SecureStore.getItemAsync('currentUserId');
-      await getGroup().leaveGroup(groupId, {
-        currentUser: { id: userId ? Number(userId) : undefined },
-      });
+      await getGroup().leaveGroup(groupId, await getCurrentUserParam());
       setIsLeaveAlertOpen(false);
       // 그룹 탈퇴 성공 → 홈(그룹 없음 상태)으로 이동
       router.replace('/home');
@@ -98,73 +130,80 @@ export default function GroupInfoScreen() {
         </View>
       </SafeAreaView>
 
-      <View style={styles.body}>
-        <Text style={styles.memberCount}>멤버 {members.length}명</Text>
+      {isLoading ? (
+        <View style={styles.loadingWrap}>
+          <ActivityIndicator color={gray[400]} />
+        </View>
+      ) : (
+        <View style={styles.body}>
+          <Text style={styles.memberCount}>멤버 {members.length}명</Text>
 
-        <View style={styles.inviteCard}>
-          <View style={styles.codeRow}>
-            <Text style={styles.codeLabel}>초대 코드</Text>
-            <Text style={styles.codeText}>{inviteCode}</Text>
-            <Pressable onPress={handleCopyInviteCode} hitSlop={8}>
-              <Image source={ICONS.copy} style={styles.copyIcon} resizeMode="contain" />
+          <View style={styles.inviteCard}>
+            <View style={styles.codeRow}>
+              <Text style={styles.codeLabel}>초대 코드</Text>
+              <Text style={styles.codeText}>{inviteCode}</Text>
+              <Pressable onPress={handleCopyInviteCode} hitSlop={8}>
+                <Image source={ICONS.copy} style={styles.copyIcon} resizeMode="contain" />
+              </Pressable>
+            </View>
+            <Pressable onPress={handleShareInviteCode} style={styles.shareButton}>
+              <Image source={ICONS.shareBlack} style={styles.shareIcon} resizeMode="contain" />
+              <Text style={styles.shareText}>친구에게 공유하기</Text>
             </Pressable>
           </View>
-          <Pressable onPress={handleShareInviteCode} style={styles.shareButton}>
-            <Image source={ICONS.shareBlack} style={styles.shareIcon} resizeMode="contain" />
-            <Text style={styles.shareText}>친구에게 공유하기</Text>
+
+          <View style={styles.memberList}>
+            {members.map((m) => {
+              const isMe = myUserId != null && m.userId === myUserId;
+              const displayName = m.displayName ?? '';
+              const content = (
+                <>
+                  <Image
+                    source={m.profileImageUrl ? { uri: m.profileImageUrl } : TURTLE_AVATAR}
+                    style={styles.memberAvatar}
+                    resizeMode="cover"
+                  />
+                  <Text style={styles.memberName} numberOfLines={1}>
+                    {isMe ? '나' : displayName}
+                  </Text>
+                </>
+              );
+
+              if (isMe) {
+                return (
+                  <View key={m.id} style={styles.memberCard}>
+                    {content}
+                  </View>
+                );
+              }
+
+              return (
+                <Pressable
+                  key={m.id}
+                  style={styles.memberCard}
+                  onPress={() =>
+                    router.push({
+                      pathname: '/(group)/mypage',
+                      params: {
+                        memberId: m.id != null ? String(m.id) : '',
+                        friendName: displayName,
+                        friendUserId: m.userId != null ? String(m.userId) : '',
+                        // challengeRecordId / friendHasGoalSet은 friend profile fetch 작업에서 채움
+                      },
+                    })
+                  }
+                >
+                  {content}
+                </Pressable>
+              );
+            })}
+          </View>
+
+          <Pressable onPress={handleOpenLeaveAlert} style={styles.leaveCard}>
+            <Text style={styles.leaveText}>그룹 나가기</Text>
           </Pressable>
         </View>
-
-        <View style={styles.memberList}>
-          {members.map((m) => {
-            const content = (
-              <>
-                <Image
-                  source={m.profileImageUrl ? { uri: m.profileImageUrl } : TURTLE_AVATAR}
-                  style={styles.memberAvatar}
-                  resizeMode="cover"
-                />
-                <Text style={styles.memberName} numberOfLines={1}>
-                  {m.name}
-                </Text>
-              </>
-            );
-
-            if (m.isMe) {
-              return (
-                <View key={m.id} style={styles.memberCard}>
-                  {content}
-                </View>
-              );
-            }
-
-            return (
-              <Pressable
-                key={m.id}
-                style={styles.memberCard}
-                onPress={() =>
-                  router.push({
-                    pathname: '/(group)/mypage',
-                    params: {
-                      memberId: m.id,
-                      friendName: m.name,
-                      friendUserId: m.userId,
-                      challengeRecordId: m.challengeRecordId,
-                      friendHasGoalSet: m.hasGoalSet ? 'true' : 'false',
-                    },
-                  })
-                }
-              >
-                {content}
-              </Pressable>
-            );
-          })}
-        </View>
-
-        <Pressable onPress={handleOpenLeaveAlert} style={styles.leaveCard}>
-          <Text style={styles.leaveText}>그룹 나가기</Text>
-        </Pressable>
-      </View>
+      )}
 
       <LeaveGroupAlert
         visible={isLeaveAlertOpen}
@@ -196,6 +235,11 @@ const styles = StyleSheet.create({
     ...typography.accent.title2,
     color: gray[800],
     flex: 1,
+  },
+  loadingWrap: {
+    flex: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   body: {
     flex: 1,
