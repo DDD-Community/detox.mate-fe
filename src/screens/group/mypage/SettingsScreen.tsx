@@ -8,6 +8,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { logout } from '../../../api/auth';
 import { getUser } from '../../../api/generated/user/user';
+import { registerDevicePushToken, unregisterDevicePushToken } from '../../../lib/fcmToken';
 import { primitiveColors, radius, spacing, typography } from '../../../lib/token';
 import { LogoutConfirmAlert } from './LogoutConfirmAlert';
 import { NotificationPermissionAlert } from './NotificationPermissionAlert';
@@ -131,9 +132,19 @@ export default function SettingsScreen() {
     setUserPushPreference(enabled);
     try {
       await patchPushNotificationEnabled(enabled);
-      // TODO: enabled=true 시 FCM 토큰 등록 / false 시 토큰 삭제
     } catch (e) {
       setUserPushPreference(previous);
+      return;
+    }
+    // 푸시 토큰 등록/삭제는 best-effort. 실패해도 동의 설정 자체는 유지.
+    try {
+      if (enabled) {
+        await registerDevicePushToken();
+      } else {
+        await unregisterDevicePushToken();
+      }
+    } catch {
+      // ignore
     }
   };
 
@@ -197,6 +208,12 @@ export default function SettingsScreen() {
     if (isLoggingOut) return;
     setIsLoggingOut(true);
     try {
+      // 푸시 토큰 제거는 best-effort. 실패해도 로그아웃은 진행.
+      try {
+        await unregisterDevicePushToken();
+      } catch {
+        // ignore
+      }
       await logout();
       setIsLogoutAlertOpen(false);
       router.replace('/(auth)/login');
@@ -218,6 +235,12 @@ export default function SettingsScreen() {
     if (isWithdrawing) return;
     setIsWithdrawing(true);
     try {
+      // 푸시 토큰 제거는 best-effort. 실패해도 탈퇴는 진행.
+      try {
+        await unregisterDevicePushToken();
+      } catch {
+        // ignore
+      }
       const userId = await SecureStore.getItemAsync('currentUserId');
       await getUser().withdraw({
         currentUser: { id: userId ? Number(userId) : undefined },
