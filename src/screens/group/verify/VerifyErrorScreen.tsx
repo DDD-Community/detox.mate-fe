@@ -25,7 +25,7 @@ export default function VerifyErrorScreen() {
       <View style={styles.alert}>
         <View style={styles.textGroup}>
           <Text style={styles.title}>날짜를 인식할 수 없습니다.</Text>
-          <Text style={styles.description}>날짜가 포함되게 캡쳐해주세요.</Text>
+          <Text style={styles.description}>날짜가 포함되게 캡쳐해 주세요.</Text>
         </View>
         <Pressable style={styles.button} onPress={handleRetake}>
           <Text style={styles.buttonLabel}>다시 캡쳐하러 가기</Text>

@@ -83,8 +83,6 @@ const CODE_TO_EMOJI: Record<string, string> = {
   GLOOMY: '🥹',
 };
 
-export const MOCK_COMMENTS: CommentItem[] = [];
-
 const BODY_TEXT: Record<GoalState, string> = {
   notSet: '개인 목표를 설정해야 해요',
   setWaiting: '내일부터 인증 가능해요',

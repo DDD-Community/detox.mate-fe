@@ -76,7 +76,7 @@ export default function VerifyHowToScreen() {
           <View style={styles.textGroup}>
             <Text style={styles.title}>이렇게 찍어주세요</Text>
             <Text style={styles.description}>
-              설정 - 스크린타임에서{'\n'}어제의 총 스크린타임이 보이도록 캡쳐해주세요
+              설정 - 스크린타임에서{'\n'}어제의 총 스크린타임이 보이도록 캡쳐해 주세요
             </Text>
           </View>
 
