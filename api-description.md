@@ -1,10 +1,14 @@
-1. `DELETE` /group-challenges/{groupChallengeId}/reactions/{reactionId} : 본인이 단 감정표현을 삭제한다
+---
+
+## Reaction
+
+1. `DELETE` /challenge-records/{challengeRecordId}/reactions/{reactionId} : 본인이 단 리액션을 삭제한다
 
 - Parameters
-  - groupChallengeId
+  - **challengeRecordId**
   - reactionId
 
-2. `POST` /group-challenges/{groupChallengeId}/stamps/{stampId}/reactions : 감정 표현을 추가한다.
+1. `POST` /challenge-records/{challengeRecordId}/reactions : 인증 후 챌린지 기록에 리액션을 추가한다. 인증 전 챌린지 기록에는 리액션을 남길 수 없다.
 
 - 보낼 때 형태 예시
 
@@ -15,129 +19,281 @@
 ```
 
 - Parameters
-  - groupChallengeId
-  - stampId
+  - **challengeRecordId**
 - 응답 예시
 
 ```
 {
   "reactionId": 9001,
-  "groupChallengeId": 1,
-  "stampId": 101,
+  "challengeRecordId": 1,
   "userId": 1,
-  "reactionBody": "MUSCLE",
-  "createdAt": "2026-04-26T10:00:00Z"
+  "reactionBody": "CLAP",
+  "createdAt": "2026-05-01T10:30:00"
 }
 ```
 
-3. `GET` /group-challenges/{groupChallengeId}/stamps/{stampId} : 해당 게시글의 상세 정보를 반환한다.
+## Feed
+
+1. `GET` /group-challenges/{groupChallengeId}/challenge-records/{challengeRecordId} : 피드 상세 조회, 챌린지 기록 피드 상세를 리스트 카드와 같은 인터페이스로 조회한다. 상세에서는 콕/리액션 상세 필드를 함께 제공한다.
 
 - Parameters
   - groupChallengeId
-  - stampId
+  - challengeRecordId
+  - Authorization : Bearer {accessToken} 형식의 서비스 access token
 - 응답형태 (예시)
 
 ```
 {
-  "challenge": {
-    "groupChallengeId": 1,
-    "groupChallengeName": "수능 100일 전 모임",
-    "startAt": "2026-04-20T00:00:00Z",
-    "streakCount": 7
-  },
-  "members": [
+  "groupMemberId": 100,
+  "groupChallengeParticipantId": 1000,
+  "userId": 10,
+  "displayName": "민준",
+  "profileImageUrl": "https://example.com/profiles/minjun.png",
+  "isUserWithdrawn": false,
+  "isMe": false,
+  "memberStatus": "ACTIVE",
+  "participantStatus": "JOINED",
+  "dailyStatus": "GOAL_ACHIEVED",
+  "includedInGroupResult": true,
+  "goals": [
     {
-      "userId": 1,
-      "groupMemberId": 11,
-      "displayName": "강슬빈",
-      "profileImageUrl": "https://cdn.detoxmate.co.kr/profile/1.png",
-      "challengeStatus": "VERIFIED",
-      "activityImageUrl": "https://cdn.detoxmate.co.kr/acting/1.png",
-      "oneLineReview": "2시간 러닝 뛰고 옴",
-      "totalUsedMinutes": 70,
-      "goalMinutes": "8H 30M",
-      "stampId": 101,
-      "reactionCount": 3,
-      "commentCount": 5,
-      "pokeCount": 0,
-      "isPoked": false
-    },
-    {
-      "userId": 2,
-      "groupMemberId": 12,
-      "displayName": "김지호",
-      "profileImageUrl": "https://cdn.detoxmate.co.kr/profile/2.png",
-      "challengeStatus": "NOT_YET",
-      "activityImageUrl": null,
-      "oneLineReview": null,
-      "totalUsedMinutes": null,
-      "goalMinutes": "8H 30M",
-      "stampId": null,
-      "reactionCount": 0,
-      "commentCount": 0,
-      "pokeCount": 1,
-      "isPoked": true
+      "userUsageGoalTimeId": 900,
+      "usageGoalType": "TOTAL_USAGE",
+      "goalMinutes": 120,
+      "effectiveDate": "2026-05-03"
     }
-  ]
+  ],
+  "challengeRecordId": 10000,
+  "activityRecord": {
+    "submittedAt": "2026-05-03T13:00:00",
+    "activityImageUrl": "https://example.com/activity-records/10000.png",
+    "reflectionText": "오늘 인증 완료",
+    "allAchieved": true,
+    "details": [
+      {
+        "usageGoalType": "TOTAL_USAGE",
+        "usedMinutes": 90,
+        "goalMinutes": 120,
+        "isAchieved": true
+      }
+    ]
+  },
+  "reactionCount": 4,
+  "commentCount": 2,
+  "pokeCount": 0,
+  "isPoked": false,
+  "pokeable": false,
+  "pokedUsers": [],
+  "reactions": {
+    "totalCount": 1,
+    "summary": [
+      {
+        "reactionBody": "CLAP",
+        "userId": 11,
+        "displayName": "서연",
+        "profileImageUrl": "https://example.com/profiles/seoyeon.png",
+        "isUserWithdrawn": false
+      }
+    ]
+  }
 }
 ```
 
-4. `GET` /group-challenges/{groupChallengeId}/home : 진행 중인 그룹 챌린지의 홈 피드(챌린지 요약 + 멤버별 카드)를 반환한다.
+1. `GET` /group-challenges/{groupChallengeId}/overview : 홈 화면의 피드 목록 외 챌린지/모임 개요 정보를 조회한다.
 
 - Parameters
   - groupChallengeId
+  - Authorization
 - 응답 예시
 
 ```
 {
-  "challenge": {
-    "groupChallengeId": 1,
-    "groupChallengeName": "수능 100일 전 모임",
-    "startAt": "2026-04-20T00:00:00Z",
-    "streakCount": 7
+  "groupChallengeId": 1,
+  "groupId": 10,
+  "groupName": "수능방",
+  "challengeNo": 3,
+  "status": "ACTIVE",
+  "startAt": "2026-05-03T09:00:00",
+  "endAt": null,
+  "streakCount": 3
+}
+```
+
+1. `GET` /group-challenges/{groupChallengeId}/challenge-records/today : 홈 화면에서 오늘 피드를 조회한다. 누락된 오늘 챌린지 기록을 생성하고 활성 멤버만 반환한다.
+
+- Parameters
+  - groupChallengeId
+  - Authorization
+- 응답 예시
+
+```
+{
+  "groupId": 10,
+  "date": "2026-05-03",
+  "dailySummary": {
+    "date": "2026-05-03",
+    "dayStatus": "IN_PROGRESS",
+    "result": null,
+    "activeMemberCount": 2,
+    "certifiedMemberCount": 1,
+    "requiredCount": 1
   },
   "members": [
     {
-      "userId": 1,
-      "groupMemberId": 11,
-      "displayName": "강슬빈",
-      "profileImageUrl": "https://cdn.detoxmate.co.kr/profile/1.png",
-      "challengeStatus": "VERIFIED",
-      "activityImageUrl": "https://cdn.detoxmate.co.kr/acting/1.png",
-      "oneLineReview": "2시간 러닝 뛰고 옴",
-      "totalUsedMinutes": 70,
-      "goalMinutes": "8H 30M",
-      "stampId": 101,
-      "reactionCount": 3,
-      "commentCount": 5,
+      "groupMemberId": 100,
+      "groupChallengeParticipantId": 1000,
+      "userId": 10,
+      "displayName": "민준",
+      "profileImageUrl": "https://example.com/profiles/minjun.png",
+      "isUserWithdrawn": false,
+      "isMe": false,
+      "memberStatus": "ACTIVE",
+      "participantStatus": "JOINED",
+      "dailyStatus": "GOAL_ACHIEVED",
+      "includedInGroupResult": true,
+      "goals": [
+        {
+          "userUsageGoalTimeId": 900,
+          "usageGoalType": "TOTAL_USAGE",
+          "goalMinutes": 120,
+          "effectiveDate": "2026-05-03"
+        }
+      ],
+      "challengeRecordId": 10000,
+      "activityRecord": {
+        "submittedAt": "2026-05-03T13:00:00",
+        "activityImageUrl": "https://example.com/activity-records/10000.png",
+        "reflectionText": "오늘 인증 완료",
+        "allAchieved": true,
+        "details": [
+          {
+            "usageGoalType": "TOTAL_USAGE",
+            "usedMinutes": 90,
+            "goalMinutes": 120,
+            "isAchieved": true
+          }
+        ]
+      },
+      "reactionCount": 4,
+      "commentCount": 2,
       "pokeCount": 0,
       "isPoked": false
     },
     {
-      "userId": 2,
-      "groupMemberId": 12,
-      "displayName": "김지호",
-      "profileImageUrl": "https://cdn.detoxmate.co.kr/profile/2.png",
-      "challengeStatus": "NOT_YET",
-      "activityImageUrl": null,
-      "oneLineReview": null,
-      "totalUsedMinutes": null,
-      "goalMinutes": "8H 30M",
-      "stampId": null,
+      "groupMemberId": 101,
+      "groupChallengeParticipantId": 1001,
+      "userId": 11,
+      "displayName": "서연",
+      "profileImageUrl": "https://example.com/profiles/seoyeon.png",
+      "isUserWithdrawn": false,
+      "isMe": false,
+      "memberStatus": "ACTIVE",
+      "participantStatus": "JOINED",
+      "dailyStatus": "NOT_CERTIFIED",
+      "includedInGroupResult": true,
+      "goals": [],
+      "challengeRecordId": 10001,
+      "activityRecord": null,
       "reactionCount": 0,
-      "commentCount": 0,
-      "pokeCount": 1,
+      "commentCount": 1,
+      "pokeCount": 3,
       "isPoked": true
     }
   ]
 }
 ```
 
-5. `GET` /group-challenges/{groupChallengeId}/stamps/{stampId}/comments : 게시물의 댓글 목록을 커서 기반으로 조회한다.
+1. `GET` /group-challenges/{groupChallengeId}/challenge-records : 캘린더 히스토리 화면에서 과거 날짜의 피드를 조회한다. 오늘 이전 날짜만 허용하고 기록을 생성하지 않는다.
 
 - Parameters
   - groupChallengeId
-  - stampId
+  - date : query, (조회 날짜(yyyy-MM-dd, KST 기준). 오늘 이전 날짜만 허용)
+  - Authorization
+- 응답 예시
+
+```
+{
+  "groupId": 10,
+  "date": "2026-05-03",
+  "dailySummary": {
+    "date": "2026-05-03",
+    "dayStatus": "IN_PROGRESS",
+    "result": null,
+    "activeMemberCount": 2,
+    "certifiedMemberCount": 1,
+    "requiredCount": 1
+  },
+  "members": [
+    {
+      "groupMemberId": 100,
+      "groupChallengeParticipantId": 1000,
+      "userId": 10,
+      "displayName": "민준",
+      "profileImageUrl": "https://example.com/profiles/minjun.png",
+      "isUserWithdrawn": false,
+      "isMe": false,
+      "memberStatus": "ACTIVE",
+      "participantStatus": "JOINED",
+      "dailyStatus": "GOAL_ACHIEVED",
+      "includedInGroupResult": true,
+      "goals": [
+        {
+          "userUsageGoalTimeId": 900,
+          "usageGoalType": "TOTAL_USAGE",
+          "goalMinutes": 120,
+          "effectiveDate": "2026-05-03"
+        }
+      ],
+      "challengeRecordId": 10000,
+      "activityRecord": {
+        "submittedAt": "2026-05-03T13:00:00",
+        "activityImageUrl": "https://example.com/activity-records/10000.png",
+        "reflectionText": "오늘 인증 완료",
+        "allAchieved": true,
+        "details": [
+          {
+            "usageGoalType": "TOTAL_USAGE",
+            "usedMinutes": 90,
+            "goalMinutes": 120,
+            "isAchieved": true
+          }
+        ]
+      },
+      "reactionCount": 4,
+      "commentCount": 2,
+      "pokeCount": 0,
+      "isPoked": false
+    },
+    {
+      "groupMemberId": 101,
+      "groupChallengeParticipantId": 1001,
+      "userId": 11,
+      "displayName": "서연",
+      "profileImageUrl": "https://example.com/profiles/seoyeon.png",
+      "isUserWithdrawn": false,
+      "isMe": false,
+      "memberStatus": "ACTIVE",
+      "participantStatus": "JOINED",
+      "dailyStatus": "NOT_CERTIFIED",
+      "includedInGroupResult": true,
+      "goals": [],
+      "challengeRecordId": 10001,
+      "activityRecord": null,
+      "reactionCount": 0,
+      "commentCount": 1,
+      "pokeCount": 3,
+      "isPoked": true
+    }
+  ]
+}
+```
+
+## Comment (댓글)
+
+1. `GET` /challenge-records/{challengeRecordId}/comments : 챌린지 기록의 현재 상태에 맞는 댓글 목록을 조회한다. 인증 전 기록이면 인증 전 댓글, 인증 후 기록이면 인증 후 댓글만 반환한다.
+
+- Parameters
+  - **challengeRecordId**
 - 응답 형태 예시
 
 ```
@@ -149,25 +305,59 @@
       "author": {
         "userId": 3,
         "displayName": "민준",
-        "profileImageUrl": "https://cdn.detoxmate.co.kr/profile/3.png"
+        "profileImageUrl": "https://cdn.detoxmate.co.kr/profile/3.png",
+        "isUserWithdrawn": false
       },
-      "body": "와 대박! 오늘도 성공하셨네 독하다 독해",
-      "relatedComment": [
-        {
-          "commentId": 2,
-          "author": {
-            "userId": 4,
-            "displayName": "지수",
-            "profileImageUrl": "https://cdn.detoxmate.co.kr/profile/4.png"
-          },
-          "body": "ㄹㅇ 멋있어요",
-          "createdAt": "2026-04-26T11:00:00Z"
-        }
-      ],
-      "createdAt": "2026-04-26T10:00:00Z",
-      "replyCount": 1
+      "commentBody": "와 대박! 오늘도 성공하셨네 독하다 독해",
+      "createdAt": "2026-04-26T10:00:00"
     }
   ],
   "nextCursor": "eyJpZCI6MX0="
 }
+```
+
+1. `POST` /challenge-records/{challengeRecordId}/comments : 챌린지 기록에 댓글을 작성한다. 챌린지 기록 상태에 따라 인증 전 댓글 또는 인증 후 댓글로 저장된다.
+
+- Parameters
+  - **challengeRecordId**
+- Request body
+
+```json
+{
+  "commentBody": "오늘도 화이팅!"
+}
+```
+
+- 응답 형태 예시
+
+```
+{
+  "commentId": 10,
+  "challengeRecordId": 1,
+  "userId": 1,
+  "commentBody": "오늘도 화이팅!",
+  "createdAt": "2026-05-01T10:30:00"
+}
+```
+
+## Group Activity Calendar
+
+1. `GET` /group-challenges/{groupChallengeId}/activity-calendar : 첫 인증 시작일 이후의 그룹 인증 누적 요약과 오늘을 제외한 그룹 스트릭을 조회한다.
+
+- Parameters
+  - groupChallengeId
+  - Authorization
+- 응답 형태 예시
+
+```
+{
+  "groupId": 1,
+  "streakDays": 4,
+  "summary": {
+    "startDate": "2026-04-10",
+    "endDate": "2026-05-07",
+    "allCount": 0,
+    "halfCount": 7,
+    "resetCount": 3
+  }
 ```

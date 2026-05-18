@@ -14,6 +14,7 @@
     "api:gen": "orval"
   },
   "dependencies": {
+    "@react-native-community/datetimepicker": "^9.1.0",
     "@react-native-seoul/kakao-login": "^5.4.2",
     "axios": "^1.15.0",
     "expo": "~54.0.33",
