@@ -1,7 +1,22 @@
 import { router } from 'expo-router';
-import { Image, Pressable, SectionList, StyleSheet, Text, View } from 'react-native';
+import * as SecureStore from 'expo-secure-store';
+import { useEffect, useRef, useState } from 'react';
+import {
+  ActivityIndicator,
+  Image,
+  Pressable,
+  SectionList,
+  StyleSheet,
+  Text,
+  View,
+} from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
+import { getNotificationHistory } from '../../api/generated/notification-history/notification-history';
+import type {
+  NotificationHistoryItemResponse,
+  NotificationHistoryListResponse,
+} from '../../api/generated/model';
 import { primitiveColors, radius, spacing, typography } from '../../lib/token';
 
 const { brown, gray } = primitiveColors;
@@ -13,93 +28,120 @@ const ICONS = {
 const DEFAULT_AVATAR = require('../../../assets/turtle-hi.png');
 const EMPTY_IMAGE = require('../../../assets/onboarding-none-feed.png');
 
-interface NotificationItem {
-  id: string;
-  avatarUrl?: string;
-  message: string;
-  timeLabel: string;
-}
-
 interface NotificationSection {
   title: string;
-  data: NotificationItem[];
+  data: NotificationHistoryItemResponse[];
 }
 
-// TODO: 백엔드 알림 API 추가 후 교체
-//   GET /me/notifications?cursor=...&limit=20
-//     → { items: NotificationItem[], nextCursor?: string, ... }
-//   PATCH /me/notifications/{id}/read
-//   PATCH /me/notifications/read-all
-const MOCK_SECTIONS: NotificationSection[] = [
-  {
-    title: '오늘',
-    data: [
-      {
-        id: 'n-1',
-        message: '민준님이 댓글을 남겼어요:\n오 대박 나도 오늘 해야하는데 ㅋㅋ',
-        timeLabel: '방금 전',
-      },
-      {
-        id: 'n-2',
-        message: '지민님이 댓글을 남겼어요:\n왜 아직도 안함?',
-        timeLabel: '방금 전',
-      },
-      {
-        id: 'n-3',
-        message: '지민님이 회원님의 인증에 반응했어요.',
-        timeLabel: '5분 전',
-      },
-      {
-        id: 'n-4',
-        message: '태희님이 오늘 인증을 완료했어요.',
-        timeLabel: '32분 전',
-      },
-      {
-        id: 'n-5',
-        message: '수빈님이 콕 찔렀어요 👉 오늘 인증 잊지 마세요!',
-        timeLabel: '3시간 전',
-      },
-    ],
-  },
-  {
-    title: '어제',
-    data: [
-      {
-        id: 'n-6',
-        message: '새 멤버 예린님이 수능 D-100 그룹에 합류했어요 🎉',
-        timeLabel: '어제',
-      },
-    ],
-  },
-  {
-    title: '3일 전',
-    data: [
-      {
-        id: 'n-7',
-        message: '새 멤버 예린님이 수능 D-100 그룹에 합류했어요 🎉',
-        timeLabel: '어제',
-      },
-      {
-        id: 'n-8',
-        message: '새 멤버 예린님이 수능 D-100 그룹에 합류했어요 🎉',
-        timeLabel: '어제',
-      },
-    ],
-  },
-];
+const formatRelativeTime = (iso?: string): string => {
+  if (!iso) return '';
+  const then = new Date(iso).getTime();
+  if (Number.isNaN(then)) return '';
+  const diffSec = Math.floor((Date.now() - then) / 1000);
+  if (diffSec < 60) return '방금 전';
+  const diffMin = Math.floor(diffSec / 60);
+  if (diffMin < 60) return `${diffMin}분 전`;
+  const diffHour = Math.floor(diffMin / 60);
+  if (diffHour < 24) return `${diffHour}시간 전`;
+  const diffDay = Math.floor(diffHour / 24);
+  if (diffDay === 1) return '어제';
+  return `${diffDay}일 전`;
+};
+
+const formatMessage = (item: NotificationHistoryItemResponse): string => {
+  if (item.title && item.message) return `${item.title}\n${item.message}`;
+  return item.title ?? item.message ?? '';
+};
+
+const TOAST_DURATION_MS = 2500;
+
+const routeByTarget = (type?: string, id?: number) => {
+  // 서버가 반환하는 targetType 값에 따라 라우팅. 새 값이 추가되면 case 추가.
+  switch (type) {
+    case 'POST':
+    case 'FEED':
+    case 'CHALLENGE_RECORD':
+    case 'ACTIVITY_RECORD':
+      router.push({
+        pathname: '/(group)/feed',
+        params: id ? { challengeRecordId: String(id) } : undefined,
+      });
+      return;
+    case 'USER':
+    case 'USER_PROFILE':
+    case 'MEMBER':
+      router.push({
+        pathname: '/(group)/mypage',
+        params: id ? { memberId: String(id) } : undefined,
+      });
+      return;
+    case 'GROUP':
+      router.push('/(group)/group-info');
+      return;
+    default:
+      // 알 수 없는 타입은 피드로 폴백
+      router.push('/(group)/feed');
+  }
+};
 
 export default function NotificationListScreen() {
-  // TODO: API 응답으로 교체. 비어 있으면 빈 상태 렌더.
-  const sections = MOCK_SECTIONS;
-  const isEmpty = sections.every((s) => s.data.length === 0);
+  const [sections, setSections] = useState<NotificationSection[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [toastMessage, setToastMessage] = useState<string | null>(null);
+  const toastTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  const showToast = (message: string) => {
+    setToastMessage(message);
+    if (toastTimerRef.current) clearTimeout(toastTimerRef.current);
+    toastTimerRef.current = setTimeout(() => setToastMessage(null), TOAST_DURATION_MS);
+  };
+
+  useEffect(() => {
+    return () => {
+      if (toastTimerRef.current) clearTimeout(toastTimerRef.current);
+    };
+  }, []);
+
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      try {
+        const userIdStr = await SecureStore.getItemAsync('currentUserId');
+        const response: NotificationHistoryListResponse = await getNotificationHistory().getMyNotifications({
+          currentUser: { id: userIdStr ? Number(userIdStr) : undefined },
+        });
+        if (cancelled) return;
+        const next: NotificationSection[] = (response.groups ?? []).map((g) => ({
+          title: g.label ?? '',
+          data: g.notifications ?? [],
+        }));
+        setSections(next);
+      } finally {
+        if (!cancelled) setIsLoading(false);
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  const isEmpty = !isLoading && sections.every((s) => s.data.length === 0);
 
   const handleBack = () => {
     router.back();
   };
 
-  const handlePressItem = (_item: NotificationItem) => {
-    // TODO: 알림 종류별 라우팅 (댓글→해당 피드, 반응→피드, 그룹 가입→그룹 정보 등)
-    //       + PATCH /me/notifications/{id}/read 호출
+  const handlePressItem = async (item: NotificationHistoryItemResponse) => {
+    if (!item.id) return;
+    const userIdStr = await SecureStore.getItemAsync('currentUserId');
+    const nav = await getNotificationHistory().getNotificationHistory(item.id, {
+      currentUser: { id: userIdStr ? Number(userIdStr) : undefined },
+    });
+    if (!nav.navigable) {
+      showToast(nav.reason ?? '이동할 수 없는 알림이에요');
+      return;
+    }
+    routeByTarget(nav.targetType, nav.targetId);
   };
 
   return (
@@ -113,39 +155,47 @@ export default function NotificationListScreen() {
         </View>
       </SafeAreaView>
 
-      {isEmpty ? (
+      {isLoading ? (
+        <View style={styles.loadingWrap}>
+          <ActivityIndicator color={gray[400]} />
+        </View>
+      ) : isEmpty ? (
         <View style={styles.emptyWrap}>
           <Image source={EMPTY_IMAGE} style={styles.emptyImage} resizeMode="contain" />
           <Text style={styles.emptyText}>아직 알림이 없어요</Text>
         </View>
       ) : (
-      <SectionList
-        sections={sections}
-        keyExtractor={(item) => item.id}
-        stickySectionHeadersEnabled={false}
-        renderSectionHeader={({ section }) => (
-          <View style={styles.sectionHeader}>
-            <Text style={styles.sectionHeaderText}>{section.title}</Text>
-          </View>
-        )}
-        renderItem={({ item }) => (
-          <Pressable
-            onPress={() => handlePressItem(item)}
-            style={({ pressed }) => [styles.row, pressed && styles.rowPressed]}
-          >
-            <Image
-              source={item.avatarUrl ? { uri: item.avatarUrl } : DEFAULT_AVATAR}
-              style={styles.avatar}
-              resizeMode="cover"
-            />
-            <View style={styles.rowBody}>
-              <Text style={styles.message}>{item.message}</Text>
-              <Text style={styles.timeLabel}>{item.timeLabel}</Text>
+        <SectionList
+          sections={sections}
+          keyExtractor={(item, index) => String(item.id ?? index)}
+          stickySectionHeadersEnabled={false}
+          renderSectionHeader={({ section }) => (
+            <View style={styles.sectionHeader}>
+              <Text style={styles.sectionHeaderText}>{section.title}</Text>
             </View>
-          </Pressable>
-        )}
-        contentContainerStyle={styles.listContent}
-      />
+          )}
+          renderItem={({ item }) => (
+            <Pressable
+              onPress={() => handlePressItem(item)}
+              style={({ pressed }) => [styles.row, pressed && styles.rowPressed]}
+            >
+              <Image source={DEFAULT_AVATAR} style={styles.avatar} resizeMode="cover" />
+              <View style={styles.rowBody}>
+                <Text style={styles.message}>{formatMessage(item)}</Text>
+                <Text style={styles.timeLabel}>{formatRelativeTime(item.createdAt)}</Text>
+              </View>
+            </Pressable>
+          )}
+          contentContainerStyle={styles.listContent}
+        />
+      )}
+
+      {toastMessage && (
+        <SafeAreaView edges={['bottom']} pointerEvents="box-none" style={styles.toastWrap}>
+          <View style={styles.toast}>
+            <Text style={styles.toastText}>{toastMessage}</Text>
+          </View>
+        </SafeAreaView>
       )}
     </View>
   );
@@ -214,6 +264,11 @@ const styles = StyleSheet.create({
     ...typography.primary.body3R,
     color: gray[400],
   },
+  loadingWrap: {
+    flex: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
   emptyWrap: {
     flex: 1,
     alignItems: 'center',
@@ -227,6 +282,27 @@ const styles = StyleSheet.create({
   emptyText: {
     ...typography.accent.body2,
     color: gray[400],
+    textAlign: 'center',
+  },
+  toastWrap: {
+    position: 'absolute',
+    left: 0,
+    right: 0,
+    bottom: 0,
+    alignItems: 'center',
+    paddingHorizontal: spacing[16],
+    paddingBottom: spacing[16],
+  },
+  toast: {
+    maxWidth: 343,
+    paddingHorizontal: spacing[16],
+    paddingVertical: spacing[8],
+    backgroundColor: 'rgba(43, 47, 56, 0.8)',
+    borderRadius: radius[16],
+  },
+  toastText: {
+    ...typography.primary.body3R,
+    color: '#FFFFFF',
     textAlign: 'center',
   },
 });
