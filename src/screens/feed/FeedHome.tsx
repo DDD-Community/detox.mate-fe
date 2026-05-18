@@ -440,7 +440,7 @@ export default function FeedHome() {
 
   return (
     <View style={styles.root}>
-      <FeedHeader groupName={group?.name} />
+      <FeedHeader groupName={group?.name} groupChallengeId={groupChallengeId} />
       {loading ? (
         <View style={styles.centered}>
           <ActivityIndicator color={gray[400]} />

@@ -1,13 +1,22 @@
-import { Image, StyleSheet, TouchableOpacity, View, Text } from 'react-native';
+import { router } from 'expo-router';
+import { Image, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { primitiveColors, spacing, typography } from '../../lib/token';
 
 const { gray } = primitiveColors;
 
 interface FeedHeaderProps {
   groupName?: string;
+  groupChallengeId?: string | null;
 }
 
-export default function FeedHeader({ groupName }: FeedHeaderProps) {
+export default function FeedHeader({ groupName, groupChallengeId }: FeedHeaderProps) {
+  const handleCalendarPress = () => {
+    router.push({
+      pathname: '/(feed)/calendar',
+      params: { groupChallengeId: groupChallengeId ?? '' },
+    });
+  };
+
   return (
     <View style={styles.header}>
       <Text style={styles.title}>{groupName}</Text>
@@ -19,7 +28,7 @@ export default function FeedHeader({ groupName }: FeedHeaderProps) {
             resizeMode="contain"
           />
         </TouchableOpacity>
-        <TouchableOpacity style={styles.iconButton}>
+        <TouchableOpacity style={styles.iconButton} onPress={handleCalendarPress}>
           <Image
             source={require('../../../assets/onboarding-calendar.png')}
             style={styles.icon}

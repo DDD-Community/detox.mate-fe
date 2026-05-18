@@ -55,6 +55,7 @@ export default function FeedCard({
   isPoked = false,
   myReactions,
   onReact,
+  historyMode = false,
 }: {
   item: FeedItem;
   goalState: GoalState;
@@ -63,6 +64,7 @@ export default function FeedCard({
   isPoked?: boolean;
   myReactions?: string[];
   onReact?: (itemId: string, emoji: string) => void;
+  historyMode?: boolean;
 }) {
   const [showPicker, setShowPicker] = useState(false);
 
@@ -164,7 +166,8 @@ export default function FeedCard({
   }
 
   // ── Unverified card ──
-  const showPokeButton = !item.isMe && goalState !== 'setWaiting';
+  const showPokeButton = !historyMode && !item.isMe && goalState !== 'setWaiting';
+  const unverifiedBodyText = historyMode ? '인증하지 않았어요' : BODY_TEXT[goalState];
 
   return (
     <View style={[styles.card, showPicker && styles.cardFront]}>
@@ -174,7 +177,7 @@ export default function FeedCard({
       </View>
 
       <Pressable style={styles.body} onPress={onBodyPress} disabled={!onBodyPress}>
-        <Text style={styles.bodyText}>{BODY_TEXT[goalState]}</Text>
+        <Text style={styles.bodyText}>{unverifiedBodyText}</Text>
       </Pressable>
 
       {showPokeButton && (
