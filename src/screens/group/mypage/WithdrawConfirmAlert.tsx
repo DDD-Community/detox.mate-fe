@@ -42,8 +42,7 @@ export function WithdrawConfirmAlert({
               </Text>
               <View style={styles.warningChip}>
                 <Image source={ICONS.info} style={styles.warningIcon} resizeMode="contain" />
-                <Text style={styles.warningText}>삭제된 그룹은 복구될 수 없어요</Text>
-                <Image source={ICONS.info} style={styles.warningIcon} resizeMode="contain" />
+                <Text style={styles.warningText}>삭제된 기록은 복구될 수 없어요</Text>
               </View>
             </View>
           </View>
