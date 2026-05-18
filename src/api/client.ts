@@ -23,6 +23,15 @@ const isNetworkError = (error: AxiosError) =>
     error.code === 'ETIMEDOUT' ||
     error.message === 'Network Error');
 
+const DEFAULT_ERROR_MESSAGE = '요청을 처리하지 못했어요. 잠시 후 다시 시도해주세요';
+
+const extractErrorMessage = (data: unknown): string | undefined => {
+  if (!data || typeof data !== 'object') return undefined;
+  const record = data as Record<string, unknown>;
+  const candidate = record.message ?? record.error ?? record.errorMessage;
+  return typeof candidate === 'string' && candidate.length > 0 ? candidate : undefined;
+};
+
 apiClient.interceptors.response.use(
   (response) => response,
   async (error: AxiosError) => {
@@ -38,13 +47,19 @@ apiClient.interceptors.response.use(
     }
 
     if (isNetworkError(error) && error.config) {
-      const { enqueue } = useNetworkErrorToastStore.getState();
+      const { enqueueNetworkRetry } = useNetworkErrorToastStore.getState();
       return new Promise((resolve, reject) => {
-        enqueue({
+        enqueueNetworkRetry({
           retry: () => apiClient(error.config!).then(resolve).catch(reject),
           cancel: () => reject(error),
         });
       });
+    }
+
+    // 그 외 응답 에러(4xx/5xx)는 토스트로 안내
+    if (error.response) {
+      const message = extractErrorMessage(error.response.data) ?? DEFAULT_ERROR_MESSAGE;
+      useNetworkErrorToastStore.getState().showMessage(message);
     }
 
     return Promise.reject(error);

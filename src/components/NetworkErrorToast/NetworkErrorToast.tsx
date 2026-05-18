@@ -8,22 +8,31 @@ const { system } = primitiveColors;
 
 const ICON = require('../../../assets/icons/fill/icon_fl_WarningCircle.png');
 
+const NETWORK_ERROR_MESSAGE = '네트워크 연결 상태 확인 후, 다시 시도해주세요';
+
 export function NetworkErrorToast() {
   const visible = useNetworkErrorToastStore((s) => s.visible);
+  const hasRetryQueue = useNetworkErrorToastStore((s) => s.pending.length > 0);
+  const message = useNetworkErrorToastStore((s) => s.message);
   const retryAll = useNetworkErrorToastStore((s) => s.retryAll);
 
   if (!visible) return null;
+
+  // 네트워크 재시도 큐가 있으면 재시도 토스트, 없으면 일반 메시지 토스트
+  const text = hasRetryQueue ? NETWORK_ERROR_MESSAGE : message ?? '';
 
   return (
     <SafeAreaView edges={['bottom']} pointerEvents="box-none" style={styles.safeArea}>
       <View style={styles.toast}>
         <View style={styles.messageGroup}>
           <Image source={ICON} style={styles.icon} resizeMode="contain" />
-          <Text style={styles.message}>네트워크 연결 상태 확인 후, 다시 시도해주세요</Text>
+          <Text style={styles.message}>{text}</Text>
         </View>
-        <Pressable onPress={retryAll} hitSlop={8}>
-          <Text style={styles.retry}>재시도</Text>
-        </Pressable>
+        {hasRetryQueue && (
+          <Pressable onPress={retryAll} hitSlop={8}>
+            <Text style={styles.retry}>재시도</Text>
+          </Pressable>
+        )}
       </View>
     </SafeAreaView>
   );
