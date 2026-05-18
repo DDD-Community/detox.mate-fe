@@ -13,6 +13,7 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
+import { getFeed } from '../../../api/generated/feed/feed';
 import { getGroup } from '../../../api/generated/group/group';
 import type { GroupMemberResponse } from '../../../api/generated/model';
 import { primitiveColors, radius, spacing, typography } from '../../../lib/token';
@@ -38,6 +39,10 @@ export default function GroupInfoScreen() {
   const [inviteCode, setInviteCode] = useState('');
   const [members, setMembers] = useState<GroupMemberResponse[]>([]);
   const [myUserId, setMyUserId] = useState<number | null>(null);
+  // userId → 오늘의 challengeRecordId 매핑 (콕 찌르기에 필요)
+  const [challengeRecordIdByUserId, setChallengeRecordIdByUserId] = useState<
+    Record<number, number>
+  >({});
   const [isLoading, setIsLoading] = useState(true);
 
   const [isLeaveAlertOpen, setIsLeaveAlertOpen] = useState(false);
@@ -69,6 +74,19 @@ export default function GroupInfoScreen() {
         setGroupName(data.name ?? '');
         setInviteCode(data.inviteCode ?? '');
         setMembers(data.members ?? []);
+
+        const groupChallengeId = data.currentChallenge?.id;
+        if (groupChallengeId != null) {
+          const today = await getFeed().getTodayChallengeRecords(groupChallengeId, userParam);
+          if (cancelled) return;
+          const map: Record<number, number> = {};
+          for (const m of today.members ?? []) {
+            if (m.userId != null && m.challengeRecordId != null) {
+              map[m.userId] = m.challengeRecordId;
+            }
+          }
+          setChallengeRecordIdByUserId(map);
+        }
       } finally {
         if (!cancelled) setIsLoading(false);
       }
@@ -177,6 +195,8 @@ export default function GroupInfoScreen() {
                 );
               }
 
+              const challengeRecordId =
+                m.userId != null ? challengeRecordIdByUserId[m.userId] : undefined;
               return (
                 <Pressable
                   key={m.id}
@@ -189,7 +209,8 @@ export default function GroupInfoScreen() {
                         friendName: displayName,
                         friendUserId: m.userId != null ? String(m.userId) : '',
                         friendGroupId: groupId != null ? String(groupId) : '',
-                        // challengeRecordId는 별도 challengeRecord 매핑 작업에서 채움
+                        challengeRecordId:
+                          challengeRecordId != null ? String(challengeRecordId) : '',
                       },
                     })
                   }
