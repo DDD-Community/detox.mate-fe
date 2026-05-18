@@ -88,23 +88,27 @@ const formatMinutes = (m?: number) => {
 
 export default function MyPageScreen() {
   // memberId가 있으면 친구 프로필 모드, 없으면 내 마이페이지 모드
-  const { memberId, friendName, friendUserId, challengeRecordId, friendHasGoalSet } =
-    useLocalSearchParams<{
-      memberId?: string;
-      friendName?: string;
-      friendUserId?: string;
-      challengeRecordId?: string;
-      friendHasGoalSet?: string;
-    }>();
+  const {
+    memberId,
+    friendName,
+    friendUserId,
+    challengeRecordId,
+    friendGroupId,
+  } = useLocalSearchParams<{
+    memberId?: string;
+    friendName?: string;
+    friendUserId?: string;
+    challengeRecordId?: string;
+    friendGroupId?: string;
+  }>();
   const isFriend = !!memberId;
-  // 친구가 목표를 설정했는지: 쿼리 파라미터 'true'일 때만 true. 미지정/false면 미설정으로 간주.
-  const isFriendGoalSet = friendHasGoalSet === 'true';
 
   const [profile, setProfile] = useState<MyProfileResponse | null>(null);
   const [hasGoalSet, setHasGoalSet] = useState(false);
   const [group, setGroup] = useState<GroupResponse | null>(null);
   const [memberProfile, setMemberProfile] = useState<GroupMemberProfileResponse | null>(null);
-  const [isLoading, setIsLoading] = useState(!isFriend);
+  const [friendProfile, setFriendProfile] = useState<GroupMemberProfileResponse | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
 
   const [isPoking, setIsPoking] = useState(false);
 
@@ -119,11 +123,25 @@ export default function MyPageScreen() {
   };
 
   useEffect(() => {
-    if (isFriend) return;
     let cancelled = false;
     (async () => {
       try {
         const userParam = await getCurrentUserParam();
+        if (isFriend) {
+          const groupIdNum = friendGroupId ? Number(friendGroupId) : NaN;
+          const memberIdNum = memberId ? Number(memberId) : NaN;
+          if (Number.isFinite(groupIdNum) && Number.isFinite(memberIdNum)) {
+            const data = await getGroupMember().getGroupMemberProfile(
+              groupIdNum,
+              memberIdNum,
+              userParam,
+            );
+            if (cancelled) return;
+            setFriendProfile(data);
+          }
+          return;
+        }
+
         const [me, goalsResponse, myGroups] = await Promise.all([
           getUser().getMe(userParam),
           getUserUsageGoalTime().getCurrentGoalTimes(userParam),
@@ -159,7 +177,7 @@ export default function MyPageScreen() {
     return () => {
       cancelled = true;
     };
-  }, [isFriend]);
+  }, [isFriend, friendGroupId, memberId]);
 
   const handleBack = () => {
     router.back();
@@ -273,17 +291,18 @@ export default function MyPageScreen() {
     }
   };
 
-  // 본인 모드 파생값
+  // 현재 모드에 따른 데이터 소스
+  const activeProfile = isFriend ? friendProfile : memberProfile;
+  const isFriendGoalSet = (friendProfile?.currentGoals?.length ?? 0) > 0;
+
   const displayName = isFriend
-    ? friendName ?? '친구'
+    ? friendProfile?.displayName ?? friendName ?? '친구'
     : profile?.displayName ?? '';
-  const dayCount = isFriend ? 27 : memberProfile?.activitySummary?.dayCount ?? 0;
-  const achievementRate = isFriend
-    ? 0
-    : memberProfile?.activitySummary?.achievementRate ?? 0;
+  const dayCount = activeProfile?.activitySummary?.dayCount ?? 0;
+  const achievementRate = activeProfile?.activitySummary?.achievementRate ?? 0;
   const hasJoinedGroup = !!group;
 
-  const weekly = memberProfile?.weeklySummary;
+  const weekly = activeProfile?.weeklySummary;
   const avgScreenTime = formatMinutes(weekly?.averageUsedMinutes);
   const goalScreenTime = formatMinutes(weekly?.goalMinutes);
   const diffMinutes = weekly?.differenceMinutes ?? 0;
@@ -357,7 +376,11 @@ export default function MyPageScreen() {
         </View>
       </View>
 
-      {isFriend && !isFriendGoalSet ? (
+      {isFriend && isLoading ? (
+        <View style={styles.loadingWrap}>
+          <ActivityIndicator color={gray[400]} />
+        </View>
+      ) : isFriend && !isFriendGoalSet ? (
         <>
           <View style={styles.friendEmptyState}>
             <Image source={CALENDAR_IMG} style={styles.calendar} resizeMode="contain" />
@@ -379,13 +402,13 @@ export default function MyPageScreen() {
         <View style={styles.friendBody}>
           <WeeklyStatusCard
             weekLabel="최근 7일"
-            diffMinutes={-30}
-            avgScreenTime="1h 30m"
-            goalScreenTime="2h 00m"
-            verifiedDays={5}
-            totalVerifyDays={7}
-            achievedDays={3}
-            achievableDays={5}
+            diffMinutes={diffMinutes}
+            avgScreenTime={avgScreenTime}
+            goalScreenTime={goalScreenTime}
+            verifiedDays={certifiedDays}
+            totalVerifyDays={totalVerifyDays}
+            achievedDays={achievedDays}
+            achievableDays={certifiedDays}
           />
         </View>
       ) : isLoading ? (

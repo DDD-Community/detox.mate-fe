@@ -188,7 +188,8 @@ export default function GroupInfoScreen() {
                         memberId: m.id != null ? String(m.id) : '',
                         friendName: displayName,
                         friendUserId: m.userId != null ? String(m.userId) : '',
-                        // challengeRecordId / friendHasGoalSet은 friend profile fetch 작업에서 채움
+                        friendGroupId: groupId != null ? String(groupId) : '',
+                        // challengeRecordId는 별도 challengeRecord 매핑 작업에서 채움
                       },
                     })
                   }
