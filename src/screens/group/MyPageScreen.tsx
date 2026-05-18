@@ -1,12 +1,20 @@
 import * as ImagePicker from 'expo-image-picker';
 import { router, useLocalSearchParams } from 'expo-router';
 import * as SecureStore from 'expo-secure-store';
-import { useState } from 'react';
-import { Image, Pressable, StyleSheet, Text, View } from 'react-native';
+import { useEffect, useState } from 'react';
+import { ActivityIndicator, Image, Pressable, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
+import { getGroup } from '../../api/generated/group/group';
+import { getGroupMember } from '../../api/generated/group-member/group-member';
 import { getPoke } from '../../api/generated/poke/poke';
 import { getUser } from '../../api/generated/user/user';
+import { getUserUsageGoalTime } from '../../api/generated/user-usage-goal-time/user-usage-goal-time';
+import type {
+  GroupMemberProfileResponse,
+  GroupResponse,
+  MyProfileResponse,
+} from '../../api/generated/model';
 import { PresignedUrlRequestUploadPurpose } from '../../api/generated/model';
 import { Button } from '../../components/Button';
 import { uploadImage } from '../../lib/uploadImage';
@@ -70,6 +78,14 @@ function GroupActionCard({ image, imageWidth, imageHeight, label, onPress }: Gro
   );
 }
 
+const formatMinutes = (m?: number) => {
+  if (m == null) return '0h 00m';
+  const safe = Math.max(0, m);
+  const h = Math.floor(safe / 60);
+  const min = safe % 60;
+  return `${h}h ${String(min).padStart(2, '0')}m`;
+};
+
 export default function MyPageScreen() {
   // memberId가 있으면 친구 프로필 모드, 없으면 내 마이페이지 모드
   const { memberId, friendName, friendUserId, challengeRecordId, friendHasGoalSet } =
@@ -84,14 +100,11 @@ export default function MyPageScreen() {
   // 친구가 목표를 설정했는지: 쿼리 파라미터 'true'일 때만 true. 미지정/false면 미설정으로 간주.
   const isFriendGoalSet = friendHasGoalSet === 'true';
 
-  // TODO: API 연동 — isFriend ? GET /groups/{groupId}/members/{memberId} : GET /users/me
-  const displayName = isFriend ? friendName ?? '친구' : '지민';
-  const dayCount = 27;
-  const achievementRate = 0;
-  // TODO: GET /me/usage-goal-times/current 응답으로 판단
-  const hasGoalSet = true;
-  // TODO: GET /me/groups 응답으로 판단
-  const hasJoinedGroup = true;
+  const [profile, setProfile] = useState<MyProfileResponse | null>(null);
+  const [hasGoalSet, setHasGoalSet] = useState(false);
+  const [group, setGroup] = useState<GroupResponse | null>(null);
+  const [memberProfile, setMemberProfile] = useState<GroupMemberProfileResponse | null>(null);
+  const [isLoading, setIsLoading] = useState(!isFriend);
 
   const [isPoking, setIsPoking] = useState(false);
 
@@ -99,6 +112,54 @@ export default function MyPageScreen() {
   // null이면 기본 이미지(추후 서버가 내려주는 기본 S3 URL로 대체), 그 외엔 사용자 이미지 URL/URI
   const [profileImageUri, setProfileImageUri] = useState<string | null>(null);
   const [isUpdatingProfileImage, setIsUpdatingProfileImage] = useState(false);
+
+  const getCurrentUserParam = async () => {
+    const userIdStr = await SecureStore.getItemAsync('currentUserId');
+    return { currentUser: { id: userIdStr ? Number(userIdStr) : undefined } };
+  };
+
+  useEffect(() => {
+    if (isFriend) return;
+    let cancelled = false;
+    (async () => {
+      try {
+        const userParam = await getCurrentUserParam();
+        const [me, goalsResponse, myGroups] = await Promise.all([
+          getUser().getMe(userParam),
+          getUserUsageGoalTime().getCurrentGoalTimes(userParam),
+          getGroup().getMyGroups(userParam),
+        ]);
+        if (cancelled) return;
+
+        setProfile(me);
+        setProfileImageUri(me.profileImageUrl ?? null);
+        setHasGoalSet((goalsResponse.goals?.length ?? 0) > 0);
+
+        const firstGroup = myGroups?.[0];
+        if (!firstGroup?.id || !me.id) return;
+
+        const groupData = await getGroup().getGroup(firstGroup.id, userParam);
+        if (cancelled) return;
+        setGroup(groupData);
+
+        const myMember = groupData.members?.find((m) => m.userId === me.id);
+        if (!myMember?.id) return;
+
+        const profileData = await getGroupMember().getGroupMemberProfile(
+          firstGroup.id,
+          myMember.id,
+          userParam,
+        );
+        if (cancelled) return;
+        setMemberProfile(profileData);
+      } finally {
+        if (!cancelled) setIsLoading(false);
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [isFriend]);
 
   const handleBack = () => {
     router.back();
@@ -114,11 +175,6 @@ export default function MyPageScreen() {
 
   const handleEditProfileImage = () => {
     setIsImageSheetOpen(true);
-  };
-
-  const getCurrentUserParam = async () => {
-    const userIdStr = await SecureStore.getItemAsync('currentUserId');
-    return { currentUser: { id: userIdStr ? Number(userIdStr) : undefined } };
   };
 
   const handleSelectDefaultImage = async () => {
@@ -214,6 +270,30 @@ export default function MyPageScreen() {
     }
   };
 
+  // 본인 모드 파생값
+  const displayName = isFriend
+    ? friendName ?? '친구'
+    : profile?.displayName ?? '';
+  const dayCount = isFriend ? 27 : memberProfile?.activitySummary?.dayCount ?? 0;
+  const achievementRate = isFriend
+    ? 0
+    : memberProfile?.activitySummary?.achievementRate ?? 0;
+  const hasJoinedGroup = !!group;
+
+  const weekly = memberProfile?.weeklySummary;
+  const avgScreenTime = formatMinutes(weekly?.averageUsedMinutes);
+  const goalScreenTime = formatMinutes(weekly?.goalMinutes);
+  const diffMinutes = weekly?.differenceMinutes ?? 0;
+  const certifiedDays = weekly?.certifiedDays ?? 0;
+  const totalVerifyDays = weekly?.totalDays ?? 7;
+  const achievedDays = weekly?.achievedDays ?? 0;
+  const groupMembers = (group?.members ?? []).map((m) => ({
+    name: m.displayName ?? '',
+  }));
+  const groupName = group?.name ?? '';
+  const daysUntilGoalChange =
+    memberProfile?.goalChangeAvailability?.remainingDays ?? 0;
+
   return (
     <View style={styles.root}>
       <View style={styles.profileCard}>
@@ -305,19 +385,23 @@ export default function MyPageScreen() {
             achievableDays={5}
           />
         </View>
+      ) : isLoading ? (
+        <View style={styles.loadingWrap}>
+          <ActivityIndicator color={gray[400]} />
+        </View>
       ) : hasGoalSet && hasJoinedGroup ? (
         <JoinedGroupBody
           weekLabel="최근 7일"
-          diffMinutes={-30}
-          avgScreenTime="1h 30m"
-          goalScreenTime="2h 00m"
-          verifiedDays={5}
-          totalVerifyDays={7}
-          achievedDays={3}
-          achievableDays={5}
-          groupMembers={[{ name: '지민' }, { name: '수진' }, { name: '혜진' }]}
-          groupName="{Group Name}"
-          daysUntilGoalChange={8}
+          diffMinutes={diffMinutes}
+          avgScreenTime={avgScreenTime}
+          goalScreenTime={goalScreenTime}
+          verifiedDays={certifiedDays}
+          totalVerifyDays={totalVerifyDays}
+          achievedDays={achievedDays}
+          achievableDays={certifiedDays}
+          groupMembers={groupMembers}
+          groupName={groupName}
+          daysUntilGoalChange={daysUntilGoalChange}
           onGroupPress={handleGroupPress}
           onGoalChangePress={handleChangeGoal}
         />
@@ -488,6 +572,11 @@ const styles = StyleSheet.create({
   cameraIcon: {
     width: 20,
     height: 20,
+  },
+  loadingWrap: {
+    flex: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   emptyState: {
     flex: 1,
