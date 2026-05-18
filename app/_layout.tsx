@@ -3,6 +3,7 @@ import { Stack } from 'expo-router';
 import * as SplashScreen from 'expo-splash-screen';
 import { useEffect } from 'react';
 import { fontSources } from '../src/lib/token/primitive/fonts';
+import { NetworkErrorToast } from '../src/components/NetworkErrorToast';
 
 import StorybookUIRoot from '../.storybook';
 
@@ -25,5 +26,10 @@ export default function RootLayout() {
     return <StorybookUIRoot />;
   }
 
-  return <Stack screenOptions={{ headerShown: false }} />;
+  return (
+    <>
+      <Stack screenOptions={{ headerShown: false }} />
+      <NetworkErrorToast />
+    </>
+  );
 }
