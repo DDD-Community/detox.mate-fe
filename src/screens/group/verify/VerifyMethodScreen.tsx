@@ -57,7 +57,7 @@ export default function VerifyMethodScreen() {
         <View style={styles.content}>
           <View style={styles.textGroup}>
             <Text style={styles.title}>{'내 스크린 타임\n인증하기'}</Text>
-            <Text style={styles.description}>둘 중 하나를 선택해 주세요.</Text>
+            <Text style={styles.description}>둘 중 하나를 선택해주세요.</Text>
           </View>
 
           <View style={styles.actions}>
