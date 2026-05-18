@@ -326,6 +326,11 @@ export default function MyPageScreen() {
   const daysUntilGoalChange =
     memberProfile?.goalChangeAvailability?.remainingDays ?? 0;
 
+  // 표시할 프로필 이미지: 친구 모드면 친구 응답, 본인 모드면 로컬 state(낙관적 업데이트 + 서버 응답)
+  const displayProfileImageUri = isFriend
+    ? friendProfile?.profileImageUrl ?? null
+    : profileImageUri;
+
   return (
     <View style={styles.root}>
       <View style={styles.profileCard}>
@@ -344,9 +349,9 @@ export default function MyPageScreen() {
         </SafeAreaView>
 
         <View style={styles.turtleWrap}>
-          {profileImageUri && !isFriend ? (
+          {displayProfileImageUri ? (
             <Image
-              source={{ uri: profileImageUri }}
+              source={{ uri: displayProfileImageUri }}
               style={styles.profilePhoto}
               resizeMode="cover"
             />
