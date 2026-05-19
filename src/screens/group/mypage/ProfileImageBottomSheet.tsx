@@ -27,8 +27,8 @@ export function ProfileImageBottomSheet({
       statusBarTranslucent
     >
       <Pressable style={styles.backdrop} onPress={onClose}>
-        <Pressable onPress={(event) => event.stopPropagation()} style={styles.sheetWrap}>
-          <SafeAreaView edges={['bottom']} style={styles.sheet}>
+        <SafeAreaView edges={['bottom']} style={styles.sheetWrap}>
+          <Pressable onPress={(event) => event.stopPropagation()} style={styles.sheet}>
             <View style={styles.grabberWrap}>
               <View style={styles.grabber} />
             </View>
@@ -50,8 +50,8 @@ export function ProfileImageBottomSheet({
                 <Text style={styles.rowText}>갤러리에서 선택</Text>
               </Pressable>
             </View>
-          </SafeAreaView>
-        </Pressable>
+          </Pressable>
+        </SafeAreaView>
       </Pressable>
     </Modal>
   );
@@ -65,11 +65,11 @@ const styles = StyleSheet.create({
   },
   sheetWrap: {
     paddingHorizontal: spacing[8],
+    paddingBottom: spacing[8],
   },
   sheet: {
     backgroundColor: '#FFFFFF',
-    borderTopLeftRadius: 24,
-    borderTopRightRadius: 24,
+    borderRadius: 24,
     paddingHorizontal: spacing[28],
     paddingBottom: spacing[16],
   },
