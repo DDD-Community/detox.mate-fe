@@ -1,6 +1,6 @@
 import { router, useFocusEffect } from 'expo-router';
 import * as SecureStore from 'expo-secure-store';
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useRef, useState } from 'react';
 import {
   ActivityIndicator,
   Image,
@@ -26,72 +26,6 @@ import MemberSection, { type MemberItem } from './MemberSection';
 const { brown, gray, green } = primitiveColors;
 const WHITE = '#FFFFFF';
 const AVATAR_SRC = require('../../../assets/basic-profile-turtle-hi.png');
-const VERIFIED_ME_PHOTO = require('../../../assets/turtle-hi.png');
-
-const INITIAL_MEMBERS: MemberItem[] = [
-  { id: '1', name: '나', avatarSource: AVATAR_SRC },
-  { id: '2', name: '지수', avatarSource: AVATAR_SRC },
-  { id: '3', name: '민준', avatarSource: AVATAR_SRC },
-  { id: '4', name: '서연', avatarSource: AVATAR_SRC },
-  { id: '5', name: '승호', avatarSource: AVATAR_SRC },
-  { id: '6', name: '현우', avatarSource: AVATAR_SRC },
-];
-
-const EMPTY_ITEM_BASE = { reactions: [] as ReactionEntry[], pokes: [] as PokeEntry[] };
-
-const FEED_UNVERIFIED: FeedItem[] = [
-  { id: '1', name: '나', isMe: true, avatarSource: AVATAR_SRC, commentCount: 0, reactionCount: 0, pokeCount: 0, isVerified: false, ...EMPTY_ITEM_BASE },
-  { id: '2', name: '지수', isMe: false, avatarSource: AVATAR_SRC, commentCount: 0, reactionCount: 0, pokeCount: 0, isVerified: false, ...EMPTY_ITEM_BASE },
-  { id: '3', name: '민준', isMe: false, avatarSource: AVATAR_SRC, commentCount: 0, reactionCount: 0, pokeCount: 0, isVerified: false, ...EMPTY_ITEM_BASE },
-  { id: '4', name: '서연', isMe: false, avatarSource: AVATAR_SRC, commentCount: 0, reactionCount: 0, pokeCount: 0, isVerified: false, ...EMPTY_ITEM_BASE },
-  { id: '5', name: '승호', isMe: false, avatarSource: AVATAR_SRC, commentCount: 0, reactionCount: 0, pokeCount: 0, isVerified: false, ...EMPTY_ITEM_BASE },
-  { id: '6', name: '현우', isMe: false, avatarSource: AVATAR_SRC, commentCount: 0, reactionCount: 0, pokeCount: 0, isVerified: false, ...EMPTY_ITEM_BASE },
-];
-
-const FEED_AUTH_READY: FeedItem[] = [
-  {
-    id: '2',
-    name: '지수',
-    isMe: false,
-    avatarSource: AVATAR_SRC,
-    commentCount: 2,
-    reactionCount: 2,
-    pokeCount: 0,
-    reactions: [
-      { userId: '3', name: '민준', avatarSource: AVATAR_SRC, emoji: '💪' },
-      { userId: '4', name: '서연', avatarSource: AVATAR_SRC, emoji: '👍' },
-    ],
-    pokes: [],
-    isVerified: true,
-    verifiedTimeAgo: '2시간 전',
-    isGoalAchieved: true,
-    photoSource: VERIFIED_ME_PHOTO,
-    postText: '2시간동안 런닝 뛰고 온 날!',
-    screenTime: '1h 10m',
-  },
-  {
-    id: '3',
-    name: '민준',
-    isMe: false,
-    avatarSource: AVATAR_SRC,
-    commentCount: 1,
-    reactionCount: 1,
-    pokeCount: 0,
-    reactions: [
-      { userId: '2', name: '지수', avatarSource: AVATAR_SRC, emoji: '🥹' },
-    ],
-    pokes: [],
-    isVerified: true,
-    verifiedTimeAgo: '5시간 전',
-    isGoalAchieved: false,
-    retroText: '릴스 무한루프에 빠졌어요... 내일은 폰 도서관 사물함에 넣어둘게요 ㅠㅠ',
-    screenTime: '6h 5m',
-  },
-  { id: '1', name: '나', isMe: true, avatarSource: AVATAR_SRC, commentCount: 0, reactionCount: 0, pokeCount: 0, isVerified: false, ...EMPTY_ITEM_BASE },
-  { id: '4', name: '서연', isMe: false, avatarSource: AVATAR_SRC, commentCount: 0, reactionCount: 0, pokeCount: 0, isVerified: false, ...EMPTY_ITEM_BASE },
-  { id: '5', name: '승호', isMe: false, avatarSource: AVATAR_SRC, commentCount: 0, reactionCount: 0, pokeCount: 0, isVerified: false, ...EMPTY_ITEM_BASE },
-  { id: '6', name: '현우', isMe: false, avatarSource: AVATAR_SRC, commentCount: 0, reactionCount: 0, pokeCount: 0, isVerified: false, ...EMPTY_ITEM_BASE },
-];
 
 type GroupInfo = {
   id: string;
@@ -237,14 +171,11 @@ export default function FeedHome() {
   const [isGroupActive, setIsGroupActive] = useState(false);
   const [loading, setLoading] = useState(true);
   const [goalState, setGoalState] = useState<GoalState>('notSet');
-  const [devGroupActive, setDevGroupActive] = useState(false);
-  const [members, setMembers] = useState<MemberItem[]>(INITIAL_MEMBERS);
-  const [feedItems, setFeedItems] = useState<FeedItem[]>(FEED_UNVERIFIED);
+  const [members, setMembers] = useState<MemberItem[]>([]);
+  const [feedItems, setFeedItems] = useState<FeedItem[]>([]);
   const [myReactions, setMyReactions] = useState<Record<string, string[]>>({});
   const [pokedMemberIds, setPokedMemberIds] = useState<string[]>([]);
   const [myReactionIds, setMyReactionIds] = useState<Record<string, Record<string, number>>>({});
-
-  const effectiveGroupActive = isGroupActive || devGroupActive;
 
   const fetchGoalState = useCallback(async () => {
     try {
@@ -326,12 +257,6 @@ export default function FeedHome() {
       fetchGroupAndChallenge();
     }, [fetchGoalState, fetchGroupAndChallenge])
   );
-
-  useEffect(() => {
-    if (groupChallengeId) return;
-    setFeedItems(goalState === 'authReady' ? [...FEED_AUTH_READY] : [...FEED_UNVERIFIED]);
-    setMyReactions({});
-  }, [goalState, groupChallengeId]);
 
   const handleInvite = async () => {
     if (!group) return;
@@ -425,60 +350,6 @@ export default function FeedHome() {
     }
   };
 
-  const handleVerifyMe = () => {
-    setFeedItems((prev) => {
-      const alreadyHasFail = prev.some((item) => item.id === 'dev-fail');
-      const mockFail: FeedItem = alreadyHasFail
-        ? (null as unknown as FeedItem)
-        : {
-            id: 'dev-fail',
-            name: '지우',
-            isMe: false,
-            avatarSource: AVATAR_SRC,
-            commentCount: 0,
-            reactionCount: 0,
-            pokeCount: 0,
-            reactions: [],
-            pokes: [],
-            isVerified: true,
-            isGoalAchieved: false,
-            retroText: '오늘은 유튜브를 너무 많이 봤어요... 내일은 꼭 줄여볼게요 ㅠ',
-            screenTime: '5h 20m',
-            verifiedTimeAgo: '1시간 전',
-          };
-
-      const meIndex = prev.findIndex((item) => item.isMe);
-      const verifiedMe: Partial<FeedItem> = {
-        isVerified: true,
-        isGoalAchieved: true,
-        photoSource: VERIFIED_ME_PHOTO,
-        postText: '오늘 인증 완료했어요!',
-        screenTime: '2h 30m',
-      };
-
-      let updated: FeedItem[];
-      if (meIndex !== -1) {
-        updated = prev.map((item, i) => (i === meIndex ? { ...item, ...verifiedMe } : item));
-      } else {
-        const mockMe: FeedItem = {
-          id: 'dev-me',
-          name: '나',
-          isMe: true,
-          avatarSource: AVATAR_SRC,
-          commentCount: 0,
-          reactionCount: 0,
-          pokeCount: 0,
-          reactions: [],
-          pokes: [],
-          ...verifiedMe,
-        } as FeedItem;
-        updated = [mockMe, ...prev];
-      }
-
-      return alreadyHasFail ? updated : [...updated, mockFail];
-    });
-  };
-
   return (
     <View style={styles.root}>
       <FeedHeader groupName={group?.name} groupChallengeId={groupChallengeId} />
@@ -486,7 +357,7 @@ export default function FeedHome() {
         <View style={styles.centered}>
           <ActivityIndicator color={gray[400]} />
         </View>
-      ) : effectiveGroupActive ? (
+      ) : isGroupActive ? (
         <ActiveFeed
           onInvite={handleInvite}
           onPoke={handlePoke}
@@ -497,28 +368,19 @@ export default function FeedHome() {
           pokedMemberIds={pokedMemberIds}
           goalState={goalState}
           groupChallengeId={groupChallengeId}
-          onNextDay={() => setGoalState('authReady')}
-          onVerifyMe={handleVerifyMe}
         />
       ) : (
-        <InactiveFeed onInvite={handleInvite} onDevActivateGroup={() => setDevGroupActive(true)} />
+        <InactiveFeed onInvite={handleInvite} />
       )}
     </View>
   );
 }
 
 // isGroupActive = false 일 때 렌더링
-function InactiveFeed({
-  onInvite,
-  onDevActivateGroup,
-}: {
-  onInvite: () => void;
-  onDevActivateGroup: () => void;
-}) {
+function InactiveFeed({ onInvite }: { onInvite: () => void }) {
   return (
     <View style={styles.container}>
       <EmptyFeedCard onInvite={onInvite} />
-      <DevPanel goalState="notSet" onNextDay={() => {}} onActivateGroup={onDevActivateGroup} />
     </View>
   );
 }
@@ -534,8 +396,6 @@ function ActiveFeed({
   pokedMemberIds,
   goalState,
   groupChallengeId,
-  onNextDay,
-  onVerifyMe,
 }: {
   onInvite: () => void;
   onPoke: (memberId: string) => void;
@@ -546,8 +406,6 @@ function ActiveFeed({
   pokedMemberIds: string[];
   goalState: GoalState;
   groupChallengeId: string | null;
-  onNextDay: () => void;
-  onVerifyMe: () => void;
 }) {
   const scrollRef = useRef<ScrollView>(null);
 
@@ -588,7 +446,6 @@ function ActiveFeed({
             }
           />
         ))}
-        <DevPanel goalState={goalState} onNextDay={onNextDay} onVerifyMe={onVerifyMe} />
       </ScrollView>
 
       <Pressable
@@ -630,43 +487,6 @@ function EmptyFeedCard({ onInvite }: { onInvite: () => void }) {
         onPress={onInvite}
         style={{ alignSelf: 'stretch' }}
       />
-    </View>
-  );
-}
-
-function DevPanel({
-  goalState,
-  onNextDay,
-  onActivateGroup,
-  onVerifyMe,
-}: {
-  goalState: GoalState;
-  onNextDay: () => void;
-  onActivateGroup?: () => void;
-  onVerifyMe?: () => void;
-}) {
-  const showNextDay = goalState === 'setWaiting';
-  const showActivate = !!onActivateGroup;
-  const showVerifyMe = !!onVerifyMe && goalState === 'authReady';
-  if (!showNextDay && !showActivate && !showVerifyMe) return null;
-
-  return (
-    <View style={devStyles.panel}>
-      {showNextDay && (
-        <Pressable style={devStyles.button} onPress={onNextDay}>
-          <Text style={devStyles.label}>[임시] 하루 경과</Text>
-        </Pressable>
-      )}
-      {showActivate && (
-        <Pressable style={devStyles.button} onPress={onActivateGroup}>
-          <Text style={devStyles.label}>[임시] 그룹 활성화 (2명 참여)</Text>
-        </Pressable>
-      )}
-      {showVerifyMe && (
-        <Pressable style={devStyles.button} onPress={onVerifyMe}>
-          <Text style={devStyles.label}>[임시] 내가 인증 완료</Text>
-        </Pressable>
-      )}
     </View>
   );
 }
@@ -732,24 +552,5 @@ const styles = StyleSheet.create({
   buttonIcon: {
     width: 20,
     height: 20,
-  },
-});
-
-const devStyles = StyleSheet.create({
-  panel: {
-    gap: spacing[8],
-    alignItems: 'center',
-    marginTop: spacing[8],
-  },
-  button: {
-    borderWidth: 1,
-    borderColor: gray[300],
-    borderRadius: radius[8],
-    paddingVertical: spacing[8],
-    paddingHorizontal: spacing[16],
-  },
-  label: {
-    ...typography.primary.body3R,
-    color: gray[400],
   },
 });

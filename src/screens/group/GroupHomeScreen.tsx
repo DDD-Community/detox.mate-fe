@@ -1,6 +1,5 @@
 import { useRouter } from 'expo-router';
-import { Alert, Image, Pressable, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
-import apiClient from '../../api/client';
+import { Image, Pressable, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { primitiveColors } from '../../lib/token/primitive/colors';
 import { typography } from '../../lib/token/primitive/typography';
 
@@ -8,39 +7,6 @@ const { brown, gray } = primitiveColors;
 
 export default function GroupHomeScreen() {
   const router = useRouter();
-
-  const handleGetMe = async () => {
-    try {
-      const res = await apiClient.get('/users/me');
-      console.log('users/me:', JSON.stringify(res.data));
-      Alert.alert('users/me', JSON.stringify(res.data, null, 2));
-    } catch (e: any) {
-      console.log('users/me error:', e?.response);
-      Alert.alert('실패', `${e?.response?.status}: ${e?.response?.data?.message}`);
-    }
-  };
-
-  const handleGetMyGroups = async () => {
-    try {
-      const res = await apiClient.get('/me/groups');
-      console.log('me/groups:', JSON.stringify(res.data));
-      Alert.alert('me/groups', JSON.stringify(res.data, null, 2));
-    } catch (e: any) {
-      console.log('me/groups error:', e?.response);
-      Alert.alert('실패', `${e?.response?.status}: ${e?.response?.data?.message}`);
-    }
-  };
-
-  const handleDeleteGroup = async () => {
-    try {
-      const res = await apiClient.delete('/groups/10');
-      console.log('delete res:', res);
-      Alert.alert('성공', '그룹이 삭제됐어요');
-    } catch (e: any) {
-      console.log('delete error:', e?.response);
-      Alert.alert('실패', `${e?.response?.status}: ${e?.response?.data?.message}`);
-    }
-  };
 
   return (
     <View style={styles.root}>
@@ -69,53 +35,6 @@ export default function GroupHomeScreen() {
         <Text style={styles.title}>아직 그룹이 없어요</Text>
         <Text style={styles.subtitle}>새 그룹을 만들거나 친구가 만든 그룹에 입장해요</Text>
       </View>
-
-      <TouchableOpacity style={styles.debugButton} onPress={handleGetMe} activeOpacity={0.8}>
-        <Text style={styles.debugText}>[임시] GET /users/me</Text>
-      </TouchableOpacity>
-
-      <TouchableOpacity style={styles.debugButton} onPress={handleGetMyGroups} activeOpacity={0.8}>
-        <Text style={styles.debugText}>[임시] GET /me/groups</Text>
-      </TouchableOpacity>
-
-      <TouchableOpacity style={styles.debugButton} onPress={handleDeleteGroup} activeOpacity={0.8}>
-        <Text style={styles.debugText}>[임시] 참여된 그룹 삭제</Text>
-      </TouchableOpacity>
-
-      {/* TODO: 그룹 챌린지 참여 API 연동 후 groupChallengeParticipantId를 params로 전달 */}
-      <TouchableOpacity
-        style={styles.verifyTestButton}
-        onPress={() => router.push('/(group)/verify')}
-        activeOpacity={0.85}
-      >
-        <Text style={styles.verifyTestText}>[테스트] 목표 설정 전 인증</Text>
-      </TouchableOpacity>
-
-      <TouchableOpacity
-        style={styles.verifyTestButton}
-        onPress={() =>
-          router.push({
-            pathname: '/(group)/verify',
-            params: { mode: 'verify', goal: '1:00' },
-          })
-        }
-        activeOpacity={0.85}
-      >
-        <Text style={styles.verifyTestText}>[테스트] 목표 설정 후 · 미달성 (목표 1h)</Text>
-      </TouchableOpacity>
-
-      <TouchableOpacity
-        style={styles.verifyTestButton}
-        onPress={() =>
-          router.push({
-            pathname: '/(group)/verify',
-            params: { mode: 'verify', goal: '10:00' },
-          })
-        }
-        activeOpacity={0.85}
-      >
-        <Text style={styles.verifyTestText}>[테스트] 목표 설정 후 · 달성 (목표 10h)</Text>
-      </TouchableOpacity>
 
       <View style={styles.cardRow}>
         <TouchableOpacity
@@ -229,29 +148,5 @@ const styles = StyleSheet.create({
   cardLabel: {
     ...typography.primary.body2M,
     color: gray[900],
-  },
-  debugButton: {
-    marginHorizontal: 24,
-    marginBottom: 12,
-    backgroundColor: '#FF5252',
-    borderRadius: 10,
-    paddingVertical: 12,
-    alignItems: 'center',
-  },
-  debugText: {
-    ...typography.primary.body2M,
-    color: '#FFFFFF',
-  },
-  verifyTestButton: {
-    marginHorizontal: 24,
-    marginBottom: 12,
-    backgroundColor: '#5a8974',
-    borderRadius: 10,
-    paddingVertical: 12,
-    alignItems: 'center',
-  },
-  verifyTestText: {
-    ...typography.primary.body2M,
-    color: '#FFFFFF',
   },
 });
