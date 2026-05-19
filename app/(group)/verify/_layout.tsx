@@ -6,7 +6,7 @@ export default function VerifyLayout() {
       screenOptions={{
         headerShown: false,
         presentation: 'transparentModal',
-        animation: 'slide_from_bottom',
+        animation: 'fade',
         contentStyle: { backgroundColor: 'transparent' },
       }}
     >

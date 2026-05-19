@@ -2,8 +2,9 @@ import { router } from 'expo-router';
 import { Image, Pressable, StyleSheet, Text, View } from 'react-native';
 import { primitiveColors } from '../../../lib/token/primitive/colors';
 import { typography } from '../../../lib/token/primitive/typography';
+import { VerifyBottomSheet } from './VerifyBottomSheet';
 
-const { gray, brown, green } = primitiveColors;
+const { green } = primitiveColors;
 
 export default function VerifyCompleteScreen() {
   const handleGoHome = () => {
@@ -11,55 +12,26 @@ export default function VerifyCompleteScreen() {
   };
 
   return (
-    <Pressable style={styles.overlay} onPress={() => router.back()}>
-      <Pressable style={styles.sheet} onPress={() => {}}>
-        <View style={styles.grabberWrap}>
-          <View style={styles.grabber} />
+    <VerifyBottomSheet onDismiss={() => router.back()}>
+      <View style={styles.content}>
+        <View style={styles.heading}>
+          <Image
+            source={require('../../../../assets/onboarding-check.png')}
+            style={styles.checkIcon}
+            resizeMode="contain"
+          />
+          <Text style={styles.title}>{'인증 완료 !\n오늘도 잘 해냈어요 !'}</Text>
         </View>
 
-        <View style={styles.content}>
-          <View style={styles.heading}>
-            <Image
-              source={require('../../../../assets/onboarding-check.png')}
-              style={styles.checkIcon}
-              resizeMode="contain"
-            />
-            <Text style={styles.title}>{'인증 완료 !\n오늘도 잘 해냈어요 !'}</Text>
-          </View>
-
-          <Pressable style={styles.button} onPress={handleGoHome}>
-            <Text style={styles.buttonLabel}>홈으로 돌아가기</Text>
-          </Pressable>
-        </View>
-      </Pressable>
-    </Pressable>
+        <Pressable style={styles.button} onPress={handleGoHome}>
+          <Text style={styles.buttonLabel}>홈으로 돌아가기</Text>
+        </Pressable>
+      </View>
+    </VerifyBottomSheet>
   );
 }
 
 const styles = StyleSheet.create({
-  overlay: {
-    flex: 1,
-    backgroundColor: 'rgba(0, 0, 0, 0.5)',
-    justifyContent: 'flex-end',
-  },
-  sheet: {
-    backgroundColor: brown[50],
-    borderTopLeftRadius: 24,
-    borderTopRightRadius: 24,
-    paddingHorizontal: 20,
-    paddingBottom: 40,
-  },
-  grabberWrap: {
-    paddingTop: 5,
-    paddingBottom: 11,
-    alignItems: 'center',
-  },
-  grabber: {
-    width: 52,
-    height: 5,
-    borderRadius: 100,
-    backgroundColor: gray[100],
-  },
   content: {
     gap: 40,
   },

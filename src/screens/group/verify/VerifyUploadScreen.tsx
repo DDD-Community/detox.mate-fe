@@ -9,13 +9,14 @@ import { ActivityRecordDetailRequestUsageGoalType } from '../../../api/generated
 import { analyzeScreenTimeImage } from '../../../features/screen-time-analyze';
 import { primitiveColors } from '../../../lib/token/primitive/colors';
 import { typography } from '../../../lib/token/primitive/typography';
+import { VerifyBottomSheet } from './VerifyBottomSheet';
 
 function parseValueToMinutes(value: string): number {
   const [hStr, mStr] = value.split(':');
   return Number(hStr ?? 0) * 60 + Number(mStr ?? 0);
 }
 
-const { gray, brown } = primitiveColors;
+const { gray } = primitiveColors;
 
 export default function VerifyUploadScreen() {
   const {
@@ -93,86 +94,55 @@ export default function VerifyUploadScreen() {
   const buttonDisabled = !hasImage || isAnalyzing;
 
   return (
-    <Pressable style={styles.overlay} onPress={() => (isAnalyzing ? null : router.back())}>
-      <Pressable style={styles.sheet} onPress={() => {}}>
-        <View style={styles.grabberWrap}>
-          <View style={styles.grabber} />
-        </View>
-
-        <View style={styles.content}>
-          <View style={styles.section}>
-            <View style={styles.textGroup}>
-              <Text style={styles.title}>
-                {mode === 'verify'
-                  ? '어제의 스크린 타임을\n인증해주세요'
-                  : '내 스크린 타임을\n인증해주세요'}
-              </Text>
-              <Text style={styles.description}>
-                {'스크린 타임 캡쳐를 업로드해주세요.\n목표 기반 데이터로 이용돼요.'}
-              </Text>
-            </View>
-
-            {hasImage ? (
-              <View style={styles.previewBox}>
-                <Image source={{ uri: imageUri }} style={styles.preview} resizeMode="cover" />
-              </View>
-            ) : (
-              <Pressable style={styles.dropzone} onPress={handlePickImage}>
-                <View style={styles.iconCircle}>
-                  <Image
-                    source={require('../../../../assets/icons/regular/icon_rg_UploadSimple.png')}
-                    style={styles.uploadIcon}
-                    resizeMode="contain"
-                  />
-                </View>
-                <View style={styles.dropzoneText}>
-                  <Text style={styles.dropzoneTitle}>캡처 업로드</Text>
-                  <Text style={styles.dropzoneCaption}>AI로 사용시간이 자동 분석돼요</Text>
-                </View>
-              </Pressable>
-            )}
+    <VerifyBottomSheet onDismiss={() => router.back()} dismissDisabled={isAnalyzing}>
+      <View style={styles.content}>
+        <View style={styles.section}>
+          <View style={styles.textGroup}>
+            <Text style={styles.title}>
+              {mode === 'verify'
+                ? '어제의 스크린 타임을\n인증해주세요'
+                : '내 스크린 타임을\n인증해주세요'}
+            </Text>
+            <Text style={styles.description}>
+              {'스크린 타임 캡쳐를 업로드해주세요.\n목표 기반 데이터로 이용돼요.'}
+            </Text>
           </View>
 
-          <Button
-            label={buttonLabel}
-            color="assistive"
-            onPress={handleAnalyze}
-            disabled={buttonDisabled}
-            style={styles.button}
-            leadingIcon={
-              isAnalyzing ? <ActivityIndicator size="small" color="#FFFFFF" /> : undefined
-            }
-          />
+          {hasImage ? (
+            <View style={styles.previewBox}>
+              <Image source={{ uri: imageUri }} style={styles.preview} resizeMode="cover" />
+            </View>
+          ) : (
+            <Pressable style={styles.dropzone} onPress={handlePickImage}>
+              <View style={styles.iconCircle}>
+                <Image
+                  source={require('../../../../assets/icons/regular/icon_rg_UploadSimple.png')}
+                  style={styles.uploadIcon}
+                  resizeMode="contain"
+                />
+              </View>
+              <View style={styles.dropzoneText}>
+                <Text style={styles.dropzoneTitle}>캡처 업로드</Text>
+                <Text style={styles.dropzoneCaption}>AI로 사용시간이 자동 분석돼요</Text>
+              </View>
+            </Pressable>
+          )}
         </View>
-      </Pressable>
-    </Pressable>
+
+        <Button
+          label={buttonLabel}
+          color="assistive"
+          onPress={handleAnalyze}
+          disabled={buttonDisabled}
+          style={styles.button}
+          leadingIcon={isAnalyzing ? <ActivityIndicator size="small" color="#FFFFFF" /> : undefined}
+        />
+      </View>
+    </VerifyBottomSheet>
   );
 }
 
 const styles = StyleSheet.create({
-  overlay: {
-    flex: 1,
-    backgroundColor: 'rgba(0, 0, 0, 0.5)',
-    justifyContent: 'flex-end',
-  },
-  sheet: {
-    backgroundColor: brown[50],
-    borderTopLeftRadius: 24,
-    borderTopRightRadius: 24,
-    paddingHorizontal: 20,
-    paddingBottom: 40,
-  },
-  grabberWrap: {
-    paddingTop: 5,
-    paddingBottom: 11,
-    alignItems: 'center',
-  },
-  grabber: {
-    width: 52,
-    height: 5,
-    borderRadius: 100,
-    backgroundColor: gray[100],
-  },
   content: {
     gap: 40,
   },
