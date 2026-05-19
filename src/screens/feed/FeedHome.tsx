@@ -1,4 +1,5 @@
 import { router, useFocusEffect } from 'expo-router';
+import * as SecureStore from 'expo-secure-store';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import {
   ActivityIndicator,
@@ -11,6 +12,8 @@ import {
   View,
 } from 'react-native';
 import apiClient from '../../api/client';
+import { getUserUsageGoalTime } from '../../api/generated/user-usage-goal-time/user-usage-goal-time';
+import { CurrentUsageGoalTimeResponseUsageGoalType } from '../../api/generated/model';
 import { Button } from '../../components/Button';
 import { pokeStore } from '../../lib/pokeStore';
 import { primitiveColors, radius, spacing, typography } from '../../lib/token';
@@ -171,6 +174,16 @@ const formatMinutes = (minutes: number | null | undefined): string | undefined =
   return `${m}m`;
 };
 
+const isCreatedToday = (isoDate: string): boolean => {
+  const created = new Date(isoDate);
+  const now = new Date();
+  return (
+    created.getFullYear() === now.getFullYear() &&
+    created.getMonth() === now.getMonth() &&
+    created.getDate() === now.getDate()
+  );
+};
+
 const formatTimeAgo = (isoDate: string): string => {
   const diff = Date.now() - new Date(isoDate).getTime();
   const minutes = Math.floor(diff / 60000);
@@ -233,6 +246,30 @@ export default function FeedHome() {
 
   const effectiveGroupActive = isGroupActive || devGroupActive;
 
+  const fetchGoalState = useCallback(async () => {
+    try {
+      const userIdStr = await SecureStore.getItemAsync('currentUserId');
+      const userParam = {
+        currentUser: { id: userIdStr ? Number(userIdStr) : undefined },
+      };
+      const response = await getUserUsageGoalTime().getCurrentGoalTimes(userParam);
+      const total = response.goals?.find(
+        (g) => g.usageGoalType === CurrentUsageGoalTimeResponseUsageGoalType.TOTAL_USAGE
+      );
+      if (!total) {
+        setGoalState('notSet');
+        return;
+      }
+      if (total.createdAt && isCreatedToday(total.createdAt)) {
+        setGoalState('setWaiting');
+      } else {
+        setGoalState('authReady');
+      }
+    } catch {
+      // keep current state on error
+    }
+  }, []);
+
   const fetchFeedData = useCallback(async (gcId: string) => {
     try {
       const res = await apiClient.get<TodayFeedResponse>(
@@ -252,7 +289,8 @@ export default function FeedHome() {
   useFocusEffect(
     useCallback(() => {
       setPokedMemberIds(pokeStore.getAll());
-    }, [])
+      fetchGoalState();
+    }, [fetchGoalState])
   );
 
   useEffect(() => {
