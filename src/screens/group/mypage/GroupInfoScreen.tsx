@@ -128,8 +128,8 @@ export default function GroupInfoScreen() {
     try {
       await getGroup().leaveGroup(groupId, await getCurrentUserParam());
       setIsLeaveAlertOpen(false);
-      // 그룹 탈퇴 성공 → 홈(그룹 없음 상태)으로 이동
-      router.replace('/home');
+      // 그룹 탈퇴 성공 → 그룹 없음 화면으로 이동
+      router.replace('/(group)/home');
     } finally {
       setIsLeaving(false);
     }
