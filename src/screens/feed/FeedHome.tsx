@@ -290,7 +290,10 @@ export default function FeedHome() {
     useCallback(() => {
       setPokedMemberIds(pokeStore.getAll());
       fetchGoalState();
-    }, [fetchGoalState])
+      if (groupChallengeId) {
+        fetchFeedData(groupChallengeId);
+      }
+    }, [fetchGoalState, fetchFeedData, groupChallengeId])
   );
 
   useEffect(() => {
@@ -324,11 +327,6 @@ export default function FeedHome() {
     };
     fetchData();
   }, []);
-
-  useEffect(() => {
-    if (!groupChallengeId) return;
-    fetchFeedData(groupChallengeId);
-  }, [groupChallengeId, fetchFeedData]);
 
   const handleInvite = async () => {
     if (!group) return;
