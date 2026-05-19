@@ -58,7 +58,7 @@ export default function GroupJoinScreen() {
   };
 
   const handleGoToFeed = () => {
-    router.replace('/home');
+    router.replace('/(feed)/home');
   };
 
   return (
