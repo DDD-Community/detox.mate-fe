@@ -8,7 +8,7 @@ const { green } = primitiveColors;
 
 export default function VerifyCompleteScreen() {
   const handleGoHome = () => {
-    router.replace('/(group)/home');
+    router.replace('/(feed)/home');
   };
 
   return (
