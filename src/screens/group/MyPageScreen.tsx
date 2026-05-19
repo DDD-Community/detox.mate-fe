@@ -23,23 +23,25 @@ import { JoinedGroupBody } from './mypage/JoinedGroupBody';
 import { ProfileImageBottomSheet } from './mypage/ProfileImageBottomSheet';
 import { WeeklyStatusCard } from './mypage/WeeklyStatusCard';
 
+import iconCaretLeft from '../../../assets/icons/regular/icon_rg_CaretLeft.png';
+import iconCamera from '../../../assets/icons/regular/icon_rg_Camera.png';
+import iconFolder from '../../../assets/icons/regular/icon_rg_Folder.png';
+import iconGearSix from '../../../assets/icons/regular/icon_rg_GearSix.png';
+import iconPencil from '../../../assets/icons/regular/icon_rg_PencilSimple.png';
+import CALENDAR_IMG from '../../../assets/mypage-calender.png';
+import GROUP_INVITE_IMG from '../../../assets/onboarding-group-invite.png';
+import GROUP_PLUS_IMG from '../../../assets/onboarding-group-plus.png';
+import TURTLE_IMG from '../../../assets/turtle-hi.png';
+
 const { brown, gray, green } = primitiveColors;
 
 const ICONS = {
-  caretLeft: require('../../../assets/icons/regular/icon_rg_CaretLeft.png'),
-  gearSix: require('../../../assets/icons/regular/icon_rg_GearSix.png'),
-  pencil: require('../../../assets/icons/regular/icon_rg_PencilSimple.png'),
-  camera: require('../../../assets/icons/regular/icon_rg_Camera.png'),
-  folder: require('../../../assets/icons/regular/icon_rg_Folder.png'),
-  x: require('../../../assets/icons/regular/icon_rg_X.png'),
-  info: require('../../../assets/icons/regular/icon_rg_Info.png'),
+  caretLeft: iconCaretLeft,
+  gearSix: iconGearSix,
+  pencil: iconPencil,
+  camera: iconCamera,
+  folder: iconFolder,
 } as const;
-
-const TURTLE_IMG = require('../../../assets/turtle-hi.png');
-// TODO: daily-calendar 전용 에셋 확보 후 교체
-const CALENDAR_IMG = require('../../../assets/onboarding-calendar.png');
-const GROUP_PLUS_IMG = require('../../../assets/onboarding-group-plus.png');
-const GROUP_INVITE_IMG = require('../../../assets/onboarding-group-invite.png');
 
 interface ProfileChipProps {
   label: string;
@@ -52,7 +54,6 @@ function ProfileChip({ label }: ProfileChipProps) {
       <Text style={styles.chipText} numberOfLines={1}>
         {label}
       </Text>
-      <Image source={ICONS.x} style={styles.chipTrailingIcon} resizeMode="contain" />
     </View>
   );
 }
@@ -212,13 +213,17 @@ export default function MyPageScreen() {
     setProfileImageUri(null);
     setIsUpdatingProfileImage(true);
     try {
-      // 기본 이미지 복귀: 빈 문자열로 objectKey 클리어. 서버가 응답에 기본 S3 URL을 채워 내려줌.
+      // 기본 이미지 복귀: objectKey를 null로 명시해 클리어. 서버가 응답에 기본 S3 URL을 채워 내려줌.
       const response = await getUser().updateMe(
-        { profileImageObjectKey: '' },
+        { profileImageObjectKey: null as unknown as string },
         await getCurrentUserParam()
       );
+      // eslint-disable-next-line no-console
+      console.log('[default-image] response', response);
       setProfileImageUri(response.profileImageUrl ?? null);
     } catch (e) {
+      // eslint-disable-next-line no-console
+      console.log('[default-image] failed', (e as { response?: { data?: unknown } })?.response?.data ?? e);
       setProfileImageUri(previous);
       // TODO: 에러 토스트
     } finally {
@@ -228,6 +233,13 @@ export default function MyPageScreen() {
 
   const handleSelectGalleryImage = async () => {
     setIsImageSheetOpen(false);
+    // iOS Modal dismiss animation이 끝나기 전에 native picker를 띄우면
+    // presentation 충돌로 picker가 즉시 닫혀버림. 짧게 대기.
+    await new Promise<void>((resolve) => setTimeout(resolve, 300));
+
+    const permission = await ImagePicker.requestMediaLibraryPermissionsAsync();
+    if (!permission.granted) return;
+
     const result = await ImagePicker.launchImageLibraryAsync({
       mediaTypes: ['images'],
       quality: 1,
@@ -480,12 +492,6 @@ export default function MyPageScreen() {
               label="목표 스크린타임 설정"
               color="assistive"
               onPress={handleSetGoal}
-              leadingIcon={
-                <Image source={ICONS.info} style={styles.ctaIcon} resizeMode="contain" />
-              }
-              trailingIcon={
-                <Image source={ICONS.info} style={styles.ctaIcon} resizeMode="contain" />
-              }
               style={styles.cta}
             />
           </SafeAreaView>
@@ -589,10 +595,6 @@ const styles = StyleSheet.create({
     width: 14,
     height: 14,
   },
-  chipTrailingIcon: {
-    width: 12,
-    height: 12,
-  },
   chipText: {
     ...typography.primary.body2B,
     color: green[300],
@@ -641,11 +643,6 @@ const styles = StyleSheet.create({
   },
   cta: {
     alignSelf: 'stretch',
-  },
-  ctaIcon: {
-    width: 16,
-    height: 16,
-    tintColor: '#FFFFFF',
   },
   goalSetBody: {
     paddingHorizontal: spacing[16],
