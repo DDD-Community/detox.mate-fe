@@ -54,11 +54,12 @@ export default function GroupCreateScreen() {
 
   const handleGoToFeed = () => {
     if (memberCount >= 2) {
-      router.replace('/feed');
+      router.replace('/(feed)/home');
     } else {
-      router.replace(
-        `/feed?groupName=${encodeURIComponent(groupName.trim())}&inviteCode=${encodeURIComponent(inviteCode)}`
-      );
+      router.replace({
+        pathname: '/(feed)/home',
+        params: { groupName: groupName.trim(), inviteCode },
+      });
     }
   };
 
