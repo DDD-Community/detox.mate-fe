@@ -98,7 +98,7 @@ export default function GoalSetupScreen() {
         },
         { currentUser: { id: userId ? Number(userId) : undefined } }
       );
-      router.replace('/(group)/home');
+      router.replace('/(feed)/home');
     } finally {
       setIsSaving(false);
     }

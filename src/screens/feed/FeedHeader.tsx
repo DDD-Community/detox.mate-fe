@@ -21,7 +21,10 @@ export default function FeedHeader({ groupName, groupChallengeId }: FeedHeaderPr
     <View style={styles.header}>
       <Text style={styles.title}>{groupName}</Text>
       <View style={styles.icons}>
-        <TouchableOpacity style={styles.iconButton}>
+        <TouchableOpacity
+          style={styles.iconButton}
+          onPress={() => router.push('/(group)/notifications')}
+        >
           <Image
             source={require('../../../assets/onboarding-rg-bell.png')}
             style={styles.icon}
@@ -35,7 +38,10 @@ export default function FeedHeader({ groupName, groupChallengeId }: FeedHeaderPr
             resizeMode="contain"
           />
         </TouchableOpacity>
-        <TouchableOpacity style={styles.iconButton}>
+        <TouchableOpacity
+          style={styles.iconButton}
+          onPress={() => router.push('/(group)/mypage')}
+        >
           <Image
             source={require('../../../assets/onboarding-rg-user.png')}
             style={styles.icon}

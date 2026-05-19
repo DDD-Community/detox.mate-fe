@@ -52,16 +52,7 @@ export default function VerifyUploadScreen() {
     if (!imageUri) return;
     setIsAnalyzing(true);
     try {
-      let result = await analyzeScreenTimeImage(imageUri);
-
-      // TODO: 임시 — 분석 결과 무관하게 항상 성공 처리. 실제 OCR 연동 시 이 블록 삭제.
-      result = {
-        ok: true,
-        value: '4:32',
-        dateLabel: '어제',
-        rawUsageText: '4시간 32분',
-        elapsedMs: 0,
-      };
+      const result = await analyzeScreenTimeImage(imageUri);
 
       if (!result.ok) {
         router.replace({ pathname: '/(group)/verify/error', params: forwardParams });

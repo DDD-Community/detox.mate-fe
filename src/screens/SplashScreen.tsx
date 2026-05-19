@@ -22,7 +22,7 @@ export default function SplashScreen() {
         return;
       }
 
-      router.replace('/home');
+      router.replace('/(feed)/home');
     };
     redirect();
   }, []);

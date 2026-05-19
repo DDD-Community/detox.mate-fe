@@ -61,14 +61,14 @@ const routeByTarget = (type?: string, id?: number) => {
     case 'FEED':
       // targetId: groupChallengeId
       router.push({
-        pathname: '/(group)/feed',
+        pathname: '/(feed)/home',
         params: id != null ? { groupChallengeId: String(id) } : undefined,
       });
       return;
     case 'FEED_DETAIL':
       // targetId: challengeRecordId — 별도 상세 화면이 없어 피드로 보내며 파라미터 전달
       router.push({
-        pathname: '/(group)/feed',
+        pathname: '/(feed)/home',
         params: id != null ? { challengeRecordId: String(id) } : undefined,
       });
       return;
