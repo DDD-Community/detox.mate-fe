@@ -1,9 +1,8 @@
-import { loginWithKakao, logout, refreshAccessToken } from './auth/kakaoLogin';
 import { useFonts } from 'expo-font';
 import * as SplashScreen from 'expo-splash-screen';
-import { StatusBar } from 'expo-status-bar';
 import { useEffect } from 'react';
 import { Button, StyleSheet, View } from 'react-native';
+import { loginWithKakao, logout, refreshAccessToken } from './src/api/auth';
 import { fontSources } from './src/lib/token/primitive/fonts';
 
 SplashScreen.preventAutoHideAsync();

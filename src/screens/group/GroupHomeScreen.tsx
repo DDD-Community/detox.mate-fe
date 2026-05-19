@@ -1,5 +1,5 @@
 import { useRouter } from 'expo-router';
-import { Alert, Image, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { Alert, Image, Pressable, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import apiClient from '../../api/client';
 import { primitiveColors } from '../../lib/token/primitive/colors';
 import { typography } from '../../lib/token/primitive/typography';
@@ -50,9 +50,13 @@ export default function GroupHomeScreen() {
           <Text style={styles.headerTitle}>디톡스 메이트</Text>
         </View>
         <View style={styles.headerIcons}>
-          <Image source={require('../../../assets/onboarding-rg-bell.png')} />
+          <Pressable hitSlop={8} onPress={() => router.push('/(group)/notifications')}>
+            <Image source={require('../../../assets/onboarding-rg-bell.png')} />
+          </Pressable>
           <View style={{ gap: 50 }} />
-          <Image source={require('../../../assets/onboarding-rg-user.png')} />
+          <Pressable hitSlop={8} onPress={() => router.push('/(group)/mypage')}>
+            <Image source={require('../../../assets/onboarding-rg-user.png')} />
+          </Pressable>
         </View>
       </View>
 

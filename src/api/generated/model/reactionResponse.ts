@@ -7,8 +7,7 @@
 
 export interface ReactionResponse {
   reactionId?: number;
-  groupChallengeId?: number;
-  stampId?: number;
+  challengeRecordId?: number;
   userId?: number;
   reactionBody?: string;
   createdAt?: string;

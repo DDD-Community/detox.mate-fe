@@ -9,4 +9,5 @@ export interface MyProfileResponse {
   id?: number;
   displayName?: string;
   profileImageUrl?: string;
+  pushNotificationEnabled?: boolean;
 }

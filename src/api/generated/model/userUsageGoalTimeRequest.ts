@@ -9,8 +9,8 @@ import type { UserUsageGoalTimeRequestUsageGoalType } from './userUsageGoalTimeR
 export interface UserUsageGoalTimeRequest {
   usageGoalType: UserUsageGoalTimeRequestUsageGoalType;
   /**
-   * @minimum 0
-   * @maximum 1440
-   */
+     * @minimum 0
+     * @maximum 1440
+     */
   goalMinutes: number;
 }

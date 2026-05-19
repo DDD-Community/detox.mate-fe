@@ -5,13 +5,10 @@
  * OpenAPI spec version: v0
  */
 import type { CommentAuthorInfo } from './commentAuthorInfo';
-import type { RelatedCommentDto } from './relatedCommentDto';
 
 export interface CommentItem {
   commentId?: number;
   author?: CommentAuthorInfo;
-  body?: string;
-  relatedComment?: RelatedCommentDto[];
+  commentBody?: string;
   createdAt?: string;
-  replyCount?: number;
 }

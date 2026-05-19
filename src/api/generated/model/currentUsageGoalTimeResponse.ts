@@ -7,7 +7,8 @@
 import type { CurrentUsageGoalTimeResponseUsageGoalType } from './currentUsageGoalTimeResponseUsageGoalType';
 
 export interface CurrentUsageGoalTimeResponse {
+  id?: number;
   usageGoalType?: CurrentUsageGoalTimeResponseUsageGoalType;
   goalMinutes?: number;
-  setAt?: string;
+  createdAt?: string;
 }

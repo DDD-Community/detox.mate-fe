@@ -4,25 +4,28 @@
  * OpenAPI definition
  * OpenAPI spec version: v0
  */
-import type { IssuePresignedUrlParams, PresignedUrlRequest, PresignedUrlResponse } from '../model';
+import type {
+  IssuePresignedUrlParams,
+  PresignedUrlRequest,
+  PresignedUrlResponse
+} from '../model';
 
 import { customAxios } from '../../mutator';
 
-export const getUpload = () => {
-  const issuePresignedUrl = (
+
+
+  export const getUpload = () => {
+const issuePresignedUrl = (
     presignedUrlRequest: PresignedUrlRequest,
-    params: IssuePresignedUrlParams
-  ) => {
-    return customAxios<PresignedUrlResponse>({
-      url: `/uploads/presigned-urls`,
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+    params: IssuePresignedUrlParams,
+ ) => {
+      return customAxios<PresignedUrlResponse>(
+      {url: `/uploads/presigned-urls`, method: 'POST',
+      headers: {'Content-Type': 'application/json', },
       data: presignedUrlRequest,
-      params,
-    });
-  };
-  return { issuePresignedUrl };
-};
-export type IssuePresignedUrlResult = NonNullable<
-  Awaited<ReturnType<ReturnType<typeof getUpload>['issuePresignedUrl']>>
->;
+        params
+    },
+      );
+    }
+  return {issuePresignedUrl}};
+export type IssuePresignedUrlResult = NonNullable<Awaited<ReturnType<ReturnType<typeof getUpload>['issuePresignedUrl']>>>
