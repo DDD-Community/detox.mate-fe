@@ -286,14 +286,45 @@ export default function FeedHome() {
     }
   }, []);
 
+  const initialLoadDone = useRef(false);
+
+  const fetchGroupAndChallenge = useCallback(async () => {
+    try {
+      const [groupRes, challengeRes] = await Promise.all([
+        apiClient.get<GroupInfo[]>('/me/groups'),
+        apiClient.get<GroupChallenge[]>('/me/group-challenges'),
+      ]);
+
+      const groups = groupRes.data;
+      if (groups.length > 0) {
+        const g = groups[0];
+        setGroup(g);
+        setIsGroupActive(g.members.length >= 2);
+      } else {
+        setGroup(null);
+        setIsGroupActive(false);
+      }
+
+      const challenges = challengeRes.data;
+      const gcId = challenges.length > 0 ? challenges[0].id : null;
+      setGroupChallengeId(gcId);
+      if (gcId) {
+        await fetchFeedData(gcId);
+      }
+    } finally {
+      if (!initialLoadDone.current) {
+        setLoading(false);
+        initialLoadDone.current = true;
+      }
+    }
+  }, [fetchFeedData]);
+
   useFocusEffect(
     useCallback(() => {
       setPokedMemberIds(pokeStore.getAll());
       fetchGoalState();
-      if (groupChallengeId) {
-        fetchFeedData(groupChallengeId);
-      }
-    }, [fetchGoalState, fetchFeedData, groupChallengeId])
+      fetchGroupAndChallenge();
+    }, [fetchGoalState, fetchGroupAndChallenge])
   );
 
   useEffect(() => {
@@ -301,32 +332,6 @@ export default function FeedHome() {
     setFeedItems(goalState === 'authReady' ? [...FEED_AUTH_READY] : [...FEED_UNVERIFIED]);
     setMyReactions({});
   }, [goalState, groupChallengeId]);
-
-  useEffect(() => {
-    const fetchData = async () => {
-      try {
-        const [groupRes, challengeRes] = await Promise.all([
-          apiClient.get<GroupInfo[]>('/me/groups'),
-          apiClient.get<GroupChallenge[]>('/me/group-challenges'),
-        ]);
-
-        const groups = groupRes.data;
-        if (groups.length > 0) {
-          const g = groups[0];
-          setGroup(g);
-          setIsGroupActive(g.members.length >= 2);
-        }
-
-        const challenges = challengeRes.data;
-        if (challenges.length > 0) {
-          setGroupChallengeId(challenges[0].id);
-        }
-      } finally {
-        setLoading(false);
-      }
-    };
-    fetchData();
-  }, []);
 
   const handleInvite = async () => {
     if (!group) return;
