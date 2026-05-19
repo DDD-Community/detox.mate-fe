@@ -14,4 +14,5 @@ export interface GroupMemberResponse {
   status?: string;
   joinedAt?: string;
   leftAt?: string;
+  isUserWithdrawn?: boolean;
 }

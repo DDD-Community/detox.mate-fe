@@ -14,6 +14,7 @@
     "api:gen": "orval"
   },
   "dependencies": {
+    "@react-native-community/datetimepicker": "^9.1.0",
     "@react-native-seoul/kakao-login": "^5.4.2",
     "axios": "^1.15.0",
     "expo": "~54.0.33",
@@ -22,6 +23,7 @@
     "expo-font": "~14.0.11",
     "expo-image-picker": "~17.0.10",
     "expo-linking": "~8.0.11",
+    "expo-notifications": "~0.32.17",
     "expo-router": "~6.0.23",
     "expo-secure-store": "~15.0.8",
     "expo-splash-screen": "~31.0.13",

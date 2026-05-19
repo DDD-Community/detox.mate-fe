@@ -5,8 +5,8 @@
  * OpenAPI spec version: v0
  */
 
-export type ActivityRecordDetailRequestUsageGoalType =
-  (typeof ActivityRecordDetailRequestUsageGoalType)[keyof typeof ActivityRecordDetailRequestUsageGoalType];
+export type ActivityRecordDetailRequestUsageGoalType = typeof ActivityRecordDetailRequestUsageGoalType[keyof typeof ActivityRecordDetailRequestUsageGoalType];
+
 
 export const ActivityRecordDetailRequestUsageGoalType = {
   TOTAL_USAGE: 'TOTAL_USAGE',

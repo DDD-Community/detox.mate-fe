@@ -9,36 +9,35 @@ import type {
   GetCurrentGoalTimesParams,
   SetGoalTimesParams,
   UserUsageGoalTimesSetRequest,
-  UserUsageGoalTimesSetResponse,
+  UserUsageGoalTimesSetResponse
 } from '../model';
 
 import { customAxios } from '../../mutator';
 
-export const getUserUsageGoalTime = () => {
-  const setGoalTimes = (
+
+
+  export const getUserUsageGoalTime = () => {
+const setGoalTimes = (
     userUsageGoalTimesSetRequest: UserUsageGoalTimesSetRequest,
-    params: SetGoalTimesParams
-  ) => {
-    return customAxios<UserUsageGoalTimesSetResponse>({
-      url: `/me/usage-goal-times`,
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+    params: SetGoalTimesParams,
+ ) => {
+      return customAxios<UserUsageGoalTimesSetResponse>(
+      {url: `/me/usage-goal-times`, method: 'POST',
+      headers: {'Content-Type': 'application/json', },
       data: userUsageGoalTimesSetRequest,
-      params,
-    });
-  };
-  const getCurrentGoalTimes = (params: GetCurrentGoalTimesParams) => {
-    return customAxios<CurrentUsageGoalTimesResponse>({
-      url: `/me/usage-goal-times/current`,
-      method: 'GET',
-      params,
-    });
-  };
-  return { setGoalTimes, getCurrentGoalTimes };
-};
-export type SetGoalTimesResult = NonNullable<
-  Awaited<ReturnType<ReturnType<typeof getUserUsageGoalTime>['setGoalTimes']>>
->;
-export type GetCurrentGoalTimesResult = NonNullable<
-  Awaited<ReturnType<ReturnType<typeof getUserUsageGoalTime>['getCurrentGoalTimes']>>
->;
+        params
+    },
+      );
+    }
+  const getCurrentGoalTimes = (
+    params: GetCurrentGoalTimesParams,
+ ) => {
+      return customAxios<CurrentUsageGoalTimesResponse>(
+      {url: `/me/usage-goal-times/current`, method: 'GET',
+        params
+    },
+      );
+    }
+  return {setGoalTimes,getCurrentGoalTimes}};
+export type SetGoalTimesResult = NonNullable<Awaited<ReturnType<ReturnType<typeof getUserUsageGoalTime>['setGoalTimes']>>>
+export type GetCurrentGoalTimesResult = NonNullable<Awaited<ReturnType<ReturnType<typeof getUserUsageGoalTime>['getCurrentGoalTimes']>>>

@@ -7,5 +7,5 @@
 import type { CurrentUser } from './currentUser';
 
 export type LeaveGroupParams = {
-  currentUser: CurrentUser;
+currentUser: CurrentUser;
 };

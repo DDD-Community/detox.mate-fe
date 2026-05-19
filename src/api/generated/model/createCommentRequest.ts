@@ -7,6 +7,5 @@
 
 export interface CreateCommentRequest {
   /** @minLength 1 */
-  commentMessage: string;
-  parentCommentId?: number;
+  commentBody: string;
 }

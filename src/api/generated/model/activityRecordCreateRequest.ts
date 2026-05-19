@@ -9,7 +9,7 @@ import type { ActivityRecordDetailRequest } from './activityRecordDetailRequest'
 export interface ActivityRecordCreateRequest {
   activityImageObjectKey?: string;
   reflectionText?: string;
-  groupChallengeParticipantId?: number;
+  groupChallengeParticipantId: number;
   /** @minItems 1 */
   details: ActivityRecordDetailRequest[];
 }
