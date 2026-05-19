@@ -7,9 +7,9 @@ import { RegisterFcmTokenRequestPlatform } from '../api/generated/model';
 
 const STORED_TOKEN_KEY = 'fcmDeviceTokenKey';
 
-const getCurrentUserParam = async () => {
+const getUserParam = async () => {
   const userIdStr = await SecureStore.getItemAsync('currentUserId');
-  return { currentUser: { id: userIdStr ? Number(userIdStr) : undefined } };
+  return { user: { id: userIdStr ? Number(userIdStr) : undefined } };
 };
 
 const getPlatform = (): RegisterFcmTokenRequestPlatform => {
@@ -36,10 +36,7 @@ export async function registerDevicePushToken(): Promise<void> {
   }
   if (!token) return;
 
-  await getFcmToken().register(
-    { token, platform: getPlatform() },
-    await getCurrentUserParam(),
-  );
+  await getFcmToken().register({ token, platform: getPlatform() }, await getUserParam());
   await SecureStore.setItemAsync(STORED_TOKEN_KEY, token);
 }
 
@@ -51,7 +48,7 @@ export async function unregisterDevicePushToken(): Promise<void> {
   const token = await SecureStore.getItemAsync(STORED_TOKEN_KEY);
   if (!token) return;
   try {
-    await getFcmToken().remove({ token }, await getCurrentUserParam());
+    await getFcmToken().remove({ token }, await getUserParam());
   } finally {
     await SecureStore.deleteItemAsync(STORED_TOKEN_KEY);
   }
@@ -82,9 +79,6 @@ export async function handleNewDevicePushToken(token: string): Promise<void> {
   const stored = await SecureStore.getItemAsync(STORED_TOKEN_KEY);
   if (stored === token) return;
 
-  await getFcmToken().register(
-    { token, platform: getPlatform() },
-    await getCurrentUserParam(),
-  );
+  await getFcmToken().register({ token, platform: getPlatform() }, await getUserParam());
   await SecureStore.setItemAsync(STORED_TOKEN_KEY, token);
 }

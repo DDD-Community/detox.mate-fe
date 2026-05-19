@@ -53,7 +53,7 @@ export default function FeedCard({
   onPoke,
   onBodyPress,
   isPoked = false,
-  myReaction,
+  myReactions,
   onReact,
 }: {
   item: FeedItem;
