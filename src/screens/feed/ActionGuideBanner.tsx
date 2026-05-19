@@ -47,7 +47,7 @@ function GoalBanner() {
         }
         color="assistive"
         size="lg"
-        onPress={() => router.push('/(group)/verify')}
+        onPress={() => router.push('/(group)/goal')}
         style={{ alignSelf: 'stretch' }}
       />
     </View>
@@ -99,6 +99,7 @@ function DailyAuthBanner() {
         }
         color="assistive"
         size="lg"
+        onPress={() => router.push('/(group)/verify')}
         style={{ alignSelf: 'stretch' }}
       />
     </View>
