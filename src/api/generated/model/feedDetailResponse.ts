@@ -5,19 +5,28 @@
  * OpenAPI spec version: v0
  */
 import type { FeedDetailAuthorInfo } from './feedDetailAuthorInfo';
+import type { FeedDetailPokedUser } from './feedDetailPokedUser';
 import type { FeedDetailReactionSummary } from './feedDetailReactionSummary';
+import type { FeedDetailResponseGoalStatus } from './feedDetailResponseGoalStatus';
 import type { FeedDetailUsageDetail } from './feedDetailUsageDetail';
 
 export interface FeedDetailResponse {
-  stampId?: number;
+  challengeRecordId?: number;
   groupChallengeId?: number;
+  activityRecordId?: number;
+  challengeStatus?: string;
+  recordDate?: string;
   author?: FeedDetailAuthorInfo;
-  createdAt?: string;
+  activityCreatedAt?: string;
   activityImageUrl?: string;
   oneLineReview?: string;
-  goalStatus?: string;
+  goalStatus?: FeedDetailResponseGoalStatus;
   snapshotGoalMinutes?: number;
   details?: FeedDetailUsageDetail[];
   reactions?: FeedDetailReactionSummary;
   commentCount?: number;
+  pokeCount?: number;
+  pokeable?: boolean;
+  poked?: boolean;
+  pokedUsers?: FeedDetailPokedUser[];
 }

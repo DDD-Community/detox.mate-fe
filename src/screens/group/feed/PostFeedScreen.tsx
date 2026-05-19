@@ -37,6 +37,10 @@ export default function PostFeedScreen() {
   const [imageAsset, setImageAsset] = useState<ImagePicker.ImagePickerAsset | undefined>();
   const [text, setText] = useState('');
   const [submitting, setSubmitting] = useState(false);
+  const participantId = groupChallengeParticipantId
+    ? Number(groupChallengeParticipantId)
+    : undefined;
+  const hasValidParticipantId = participantId != null && !Number.isNaN(participantId);
 
   const handlePickImage = async () => {
     const result = await ImagePicker.launchImageLibraryAsync({
@@ -51,7 +55,7 @@ export default function PostFeedScreen() {
     router.replace('/(group)/verify/complete');
   };
 
-  const canPost = text.trim().length > 0 && !submitting;
+  const canPost = text.trim().length > 0 && hasValidParticipantId && !submitting;
 
   const handlePost = async () => {
     if (!canPost) return;
@@ -65,11 +69,9 @@ export default function PostFeedScreen() {
           })
         : undefined;
       const userId = await SecureStore.getItemAsync('currentUserId');
-      await getActivityRecord().create(
+      await getActivityRecord().create1(
         {
-          groupChallengeParticipantId: groupChallengeParticipantId
-            ? Number(groupChallengeParticipantId)
-            : undefined,
+          groupChallengeParticipantId: participantId,
           reflectionText: text,
           details: [
             {
