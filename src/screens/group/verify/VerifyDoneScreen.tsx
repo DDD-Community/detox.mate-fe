@@ -3,6 +3,7 @@ import { Image, Pressable, StyleSheet, Text, View } from 'react-native';
 import { Button } from '../../../components/Button';
 import { primitiveColors } from '../../../lib/token/primitive/colors';
 import { typography } from '../../../lib/token/primitive/typography';
+import { VerifyBottomSheet } from './VerifyBottomSheet';
 
 const { gray, brown, green, system } = primitiveColors;
 
@@ -87,143 +88,108 @@ export default function VerifyDoneScreen() {
 
   if (!isVerifyMode) {
     return (
-      <Pressable style={styles.overlay} onPress={() => router.back()}>
-        <Pressable style={styles.sheet} onPress={() => {}}>
-          <View style={styles.grabberWrap}>
-            <View style={styles.grabber} />
-          </View>
-
-          <View style={styles.content}>
-            <View style={styles.heading}>
-              <Image
-                source={require('../../../../assets/onboarding-check.png')}
-                style={styles.checkIcon}
-                resizeMode="contain"
-              />
-              <Text style={styles.title}>분석 완료 !</Text>
-            </View>
-
-            <View style={styles.summary}>
-              <Text style={styles.summaryLabel}>내 스크린타임</Text>
-              <Text style={styles.summaryValue}>{display}</Text>
-            </View>
-
-            <Button
-              label="개인 목표 설정하기"
-              color="primary"
-              onPress={handleSetGoal}
-              style={styles.button}
-            />
-          </View>
-        </Pressable>
-      </Pressable>
-    );
-  }
-
-  return (
-    <Pressable style={styles.overlay} onPress={() => router.back()}>
-      <Pressable style={styles.sheet} onPress={() => {}}>
-        <View style={styles.grabberWrap}>
-          <View style={styles.grabber} />
-        </View>
-
-        <View style={styles.verifyContent}>
+      <VerifyBottomSheet onDismiss={() => router.back()}>
+        <View style={styles.content}>
           <View style={styles.heading}>
             <Image
               source={require('../../../../assets/onboarding-check.png')}
               style={styles.checkIcon}
               resizeMode="contain"
             />
-            <Text style={styles.verifyTitle}>{'어제의 스크린 타임\n분석 완료 !'}</Text>
+            <Text style={styles.title}>분석 완료 !</Text>
           </View>
 
-          <View style={styles.verifySummaryGroup}>
-            <View style={goalAchieved ? styles.verifySummary : styles.verifySummaryMissed}>
-              <Text
-                style={goalAchieved ? styles.verifySummaryLabel : styles.verifySummaryLabelMissed}
-              >
-                내 스크린타임
-              </Text>
-              <Text
-                style={goalAchieved ? styles.verifySummaryValue : styles.verifySummaryValueMissed}
-              >
-                {goalAchieved ? display : `총 ${display}`}
-              </Text>
-            </View>
-            <View style={styles.goalCompareRow}>
-              <Image
-                source={
-                  goalAchieved
-                    ? require('../../../../assets/icons/regular/icon_rg_CheckCircle.png')
-                    : require('../../../../assets/icons/fill/icon_fl_CheckCircle.png')
-                }
-                style={goalAchieved ? styles.goalCompareIcon : styles.goalCompareIconMissed}
-                resizeMode="contain"
-              />
-              <Text style={goalAchieved ? styles.goalCompareText : styles.goalCompareTextMissed}>
-                {goalAchieved
-                  ? diffText
-                    ? `좋아요, 목표보다 ${diffText} 덜 썼어요!`
-                    : '좋아요, 분석을 완료했어요!'
-                  : '목표를 미달성 했어요, 조금만 더 힘내보아요!'}
-              </Text>
-            </View>
+          <View style={styles.summary}>
+            <Text style={styles.summaryLabel}>내 스크린타임</Text>
+            <Text style={styles.summaryValue}>{display}</Text>
           </View>
 
-          {goalAchieved ? (
-            <View style={styles.actionGroup}>
-              <View style={styles.actionRow}>
-                <Pressable style={styles.skipButton} onPress={handleSkip}>
-                  <Text style={styles.skipButtonLabel}>건너뛰기</Text>
-                </Pressable>
-                <Pressable style={styles.postButton} onPress={handlePostFeed}>
-                  <Text style={styles.postButtonLabel}>게시물 올리기</Text>
-                </Pressable>
-              </View>
-              <Pressable style={styles.reportButton} onPress={handleReportWrongTime}>
-                <Text style={styles.reportButtonLabel}>시간이 틀려요</Text>
-              </Pressable>
-            </View>
-          ) : (
-            <View style={styles.actionGroup}>
-              <Pressable style={styles.recordButton} onPress={handleRecordRetro}>
-                <Text style={styles.recordButtonLabel}>회고 기록하기</Text>
-              </Pressable>
-              <Pressable style={styles.reportButton} onPress={handleReportWrongTime}>
-                <Text style={styles.reportButtonLabel}>시간이 틀려요</Text>
-              </Pressable>
-            </View>
-          )}
+          <Button
+            label="개인 목표 설정하기"
+            color="primary"
+            onPress={handleSetGoal}
+            style={styles.button}
+          />
         </View>
-      </Pressable>
-    </Pressable>
+      </VerifyBottomSheet>
+    );
+  }
+
+  return (
+    <VerifyBottomSheet onDismiss={() => router.back()}>
+      <View style={styles.verifyContent}>
+        <View style={styles.heading}>
+          <Image
+            source={require('../../../../assets/onboarding-check.png')}
+            style={styles.checkIcon}
+            resizeMode="contain"
+          />
+          <Text style={styles.verifyTitle}>{'어제의 스크린 타임\n분석 완료 !'}</Text>
+        </View>
+
+        <View style={styles.verifySummaryGroup}>
+          <View style={goalAchieved ? styles.verifySummary : styles.verifySummaryMissed}>
+            <Text
+              style={goalAchieved ? styles.verifySummaryLabel : styles.verifySummaryLabelMissed}
+            >
+              내 스크린타임
+            </Text>
+            <Text
+              style={goalAchieved ? styles.verifySummaryValue : styles.verifySummaryValueMissed}
+            >
+              {goalAchieved ? display : `총 ${display}`}
+            </Text>
+          </View>
+          <View style={styles.goalCompareRow}>
+            <Image
+              source={
+                goalAchieved
+                  ? require('../../../../assets/icons/regular/icon_rg_CheckCircle.png')
+                  : require('../../../../assets/icons/fill/icon_fl_CheckCircle.png')
+              }
+              style={goalAchieved ? styles.goalCompareIcon : styles.goalCompareIconMissed}
+              resizeMode="contain"
+            />
+            <Text style={goalAchieved ? styles.goalCompareText : styles.goalCompareTextMissed}>
+              {goalAchieved
+                ? diffText
+                  ? `좋아요, 목표보다 ${diffText} 덜 썼어요!`
+                  : '좋아요, 분석을 완료했어요!'
+                : '목표를 미달성 했어요, 조금만 더 힘내보아요!'}
+            </Text>
+          </View>
+        </View>
+
+        {goalAchieved ? (
+          <View style={styles.actionGroup}>
+            <View style={styles.actionRow}>
+              <Pressable style={styles.skipButton} onPress={handleSkip}>
+                <Text style={styles.skipButtonLabel}>건너뛰기</Text>
+              </Pressable>
+              <Pressable style={styles.postButton} onPress={handlePostFeed}>
+                <Text style={styles.postButtonLabel}>게시물 올리기</Text>
+              </Pressable>
+            </View>
+            <Pressable style={styles.reportButton} onPress={handleReportWrongTime}>
+              <Text style={styles.reportButtonLabel}>시간이 틀려요</Text>
+            </Pressable>
+          </View>
+        ) : (
+          <View style={styles.actionGroup}>
+            <Pressable style={styles.recordButton} onPress={handleRecordRetro}>
+              <Text style={styles.recordButtonLabel}>회고 기록하기</Text>
+            </Pressable>
+            <Pressable style={styles.reportButton} onPress={handleReportWrongTime}>
+              <Text style={styles.reportButtonLabel}>시간이 틀려요</Text>
+            </Pressable>
+          </View>
+        )}
+      </View>
+    </VerifyBottomSheet>
   );
 }
 
 const styles = StyleSheet.create({
-  overlay: {
-    flex: 1,
-    backgroundColor: 'rgba(0, 0, 0, 0.5)',
-    justifyContent: 'flex-end',
-  },
-  sheet: {
-    backgroundColor: brown[50],
-    borderTopLeftRadius: 24,
-    borderTopRightRadius: 24,
-    paddingHorizontal: 20,
-    paddingBottom: 40,
-  },
-  grabberWrap: {
-    paddingTop: 5,
-    paddingBottom: 11,
-    alignItems: 'center',
-  },
-  grabber: {
-    width: 52,
-    height: 5,
-    borderRadius: 100,
-    backgroundColor: gray[100],
-  },
   content: {
     gap: 40,
   },

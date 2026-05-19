@@ -7,12 +7,11 @@ export default function VerifyLayout() {
         headerShown: false,
         presentation: 'transparentModal',
         animation: 'fade',
+        contentStyle: { backgroundColor: 'transparent' },
       }}
     >
-      <Stack.Screen name="wrong-time" options={{ presentation: 'card', animation: 'default' }} />
-      <Stack.Screen name="complete" options={{ presentation: 'card', animation: 'default' }} />
+      <Stack.Screen name="index" options={{ animation: 'fade' }} />
       <Stack.Screen name="retro" options={{ presentation: 'card', animation: 'default' }} />
-      <Stack.Screen name="error" options={{ presentation: 'card', animation: 'default' }} />
     </Stack>
   );
 }
