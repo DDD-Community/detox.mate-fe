@@ -12,15 +12,14 @@ import {
   View,
 } from 'react-native';
 import apiClient from '../../api/client';
-import { getUserUsageGoalTime } from '../../api/generated/user-usage-goal-time/user-usage-goal-time';
 import { CurrentUsageGoalTimeResponseUsageGoalType } from '../../api/generated/model';
+import { getUserUsageGoalTime } from '../../api/generated/user-usage-goal-time/user-usage-goal-time';
 import { Button } from '../../components/Button';
 import { pokeStore } from '../../lib/pokeStore';
 import { primitiveColors, radius, spacing, typography } from '../../lib/token';
 import ActionGuideBanner, { type GoalState } from './ActionGuideBanner';
 import FeedCard, { type FeedItem, type PokeEntry, type ReactionEntry } from './FeedCard';
 import FeedHeader from './FeedHeader';
-import { MOCK_COMMENTS } from './FeedPostDetail';
 import MemberSection, { type MemberItem } from './MemberSection';
 
 const { brown, gray, green } = primitiveColors;
@@ -145,15 +144,18 @@ const mapMemberToFeedItem = (m: TodayChallengeMember): FeedItem => {
     pokes: [],
     isVerified,
     isGoalAchieved: isVerified ? isGoalAchieved : undefined,
-    photoSource: isGoalAchieved && m.activityRecord?.activityImageUrl
-      ? { uri: m.activityRecord.activityImageUrl }
-      : undefined,
+    photoSource:
+      isGoalAchieved && m.activityRecord?.activityImageUrl
+        ? { uri: m.activityRecord.activityImageUrl }
+        : undefined,
     postText: isGoalAchieved ? (m.activityRecord?.reflectionText ?? undefined) : undefined,
-    retroText: isVerified && !isGoalAchieved ? (m.activityRecord?.reflectionText ?? undefined) : undefined,
+    retroText:
+      isVerified && !isGoalAchieved ? (m.activityRecord?.reflectionText ?? undefined) : undefined,
     screenTime: formatMinutes(totalUsage?.usedMinutes),
-    verifiedTimeAgo: isVerified && m.activityRecord?.submittedAt
-      ? formatTimeAgo(m.activityRecord.submittedAt)
-      : undefined,
+    verifiedTimeAgo:
+      isVerified && m.activityRecord?.submittedAt
+        ? formatTimeAgo(m.activityRecord.submittedAt)
+        : undefined,
   };
 };
 
@@ -301,7 +303,12 @@ export default function FeedHome() {
             reactions: item.reactions.filter((r) => !(r.userId === 'me' && r.emoji === emoji)),
           };
         }
-        const myEntry: ReactionEntry = { userId: 'me', name: '나', avatarSource: AVATAR_SRC, emoji };
+        const myEntry: ReactionEntry = {
+          userId: 'me',
+          name: '나',
+          avatarSource: AVATAR_SRC,
+          emoji,
+        };
         return {
           ...item,
           reactionCount: item.reactionCount + 1,
