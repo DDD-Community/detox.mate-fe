@@ -16,6 +16,9 @@
     },
     "ios": {
       "bundleIdentifier": "com.detoxmate.app.dev",
+      "entitlements": {
+        "aps-environment": "production"
+      },
       "infoPlist": {
         "LSApplicationQueriesSchemes": ["kakaokompassauth", "storykompassauth", "kakaolink"],
         "ITSAppUsesNonExemptEncryption": false
@@ -46,7 +49,8 @@
           "kakaoAppKey": "9fee24e132d201aa33e5fdd08f435726"
         }
       ],
-      "expo-router"
+      "expo-router",
+      "expo-notifications"
     ],
     "extra": {
       "router": {},
