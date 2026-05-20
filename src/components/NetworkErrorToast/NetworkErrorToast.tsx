@@ -15,6 +15,7 @@ export function NetworkErrorToast() {
   const hasRetryQueue = useNetworkErrorToastStore((s) => s.pending.length > 0);
   const message = useNetworkErrorToastStore((s) => s.message);
   const retryAll = useNetworkErrorToastStore((s) => s.retryAll);
+  const dismiss = useNetworkErrorToastStore((s) => s.dismiss);
 
   if (!visible) return null;
 
@@ -28,11 +29,16 @@ export function NetworkErrorToast() {
           <Image source={ICON} style={styles.icon} resizeMode="contain" />
           <Text style={styles.message}>{text}</Text>
         </View>
-        {hasRetryQueue && (
-          <Pressable onPress={retryAll} hitSlop={8}>
-            <Text style={styles.retry}>재시도</Text>
+        <View style={styles.actions}>
+          {hasRetryQueue && (
+            <Pressable onPress={retryAll} hitSlop={8}>
+              <Text style={styles.retry}>재시도</Text>
+            </Pressable>
+          )}
+          <Pressable onPress={dismiss} hitSlop={8}>
+            <Text style={styles.close}>닫기</Text>
           </Pressable>
-        )}
+        </View>
       </View>
     </SafeAreaView>
   );
@@ -76,8 +82,18 @@ const styles = StyleSheet.create({
     color: '#FFFFFF',
     flexShrink: 1,
   },
+  actions: {
+    flexDirection: 'row',
+    gap: spacing[12],
+    flexShrink: 0,
+  },
   retry: {
     ...typography.primary.body3B,
     color: system.blue.opacity100,
+  },
+  close: {
+    ...typography.primary.body3B,
+    color: '#FFFFFF',
+    opacity: 0.6,
   },
 });
