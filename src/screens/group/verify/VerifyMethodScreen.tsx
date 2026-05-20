@@ -45,7 +45,7 @@ export default function VerifyMethodScreen() {
         params: forwardParams,
       });
     });
-    await Linking.openSettings();
+    await Linking.openURL('App-Prefs:');
   };
 
   return (
