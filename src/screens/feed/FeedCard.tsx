@@ -170,15 +170,15 @@ export default function FeedCard({
   const unverifiedBodyText = historyMode ? '인증하지 않았어요' : BODY_TEXT[goalState];
 
   return (
-    <View style={[styles.card, showPicker && styles.cardFront]}>
+    <Pressable style={[styles.card, showPicker && styles.cardFront]} onPress={onBodyPress}>
       <View style={styles.header}>
         <Image source={item.avatarSource} style={styles.avatar} resizeMode="cover" />
         <Text style={styles.memberName}>{item.name}</Text>
       </View>
 
-      <Pressable style={styles.body} onPress={onBodyPress} disabled={!onBodyPress}>
+      <View style={styles.body}>
         <Text style={styles.bodyText}>{unverifiedBodyText}</Text>
-      </Pressable>
+      </View>
 
       {showPokeButton && (
         <Pressable
@@ -197,16 +197,16 @@ export default function FeedCard({
       )}
 
       <View style={styles.footer}>
-        <Pressable style={styles.footerButton} onPress={onBodyPress}>
+        <View style={styles.footerButton}>
           <Image
             source={require('../../../assets/icons/regular/icon_rg_Chat.png')}
             style={styles.footerIcon}
             resizeMode="contain"
           />
           <Text style={styles.footerCount}>{item.commentCount}</Text>
-        </Pressable>
+        </View>
       </View>
-    </View>
+    </Pressable>
   );
 }
 
