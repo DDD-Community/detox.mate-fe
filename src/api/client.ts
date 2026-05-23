@@ -3,9 +3,10 @@ import { router } from 'expo-router';
 import * as SecureStore from 'expo-secure-store';
 import { clearAuthSession, refreshAccessToken } from './auth';
 import { useNetworkErrorToastStore } from '../stores/networkErrorToastStore';
+import { env } from '../config/env';
 
 const apiClient = axios.create({
-  baseURL: 'https://api-dev.detoxmate.co.kr',
+  baseURL: env.apiBaseUrl,
 });
 
 const PUBLIC_AUTH_PATHS = [
