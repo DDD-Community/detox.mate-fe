@@ -10,14 +10,14 @@ export default function SplashScreen() {
     const redirect = async () => {
       await new Promise((resolve) => setTimeout(resolve, 1000));
 
-      const accessToken = await SecureStore.getItemAsync('accessTokenKey');
-      if (!accessToken) {
-        router.replace('/login');
+      const isNewUser = await SecureStore.getItemAsync('isNewUser');
+      if (isNewUser !== 'true') {
+        router.replace('/onboarding');
         return;
       }
 
-      const isNewUser = await SecureStore.getItemAsync('isNewUser');
-      if (isNewUser !== 'true') {
+      const accessToken = await SecureStore.getItemAsync('accessTokenKey');
+      if (!accessToken) {
         router.replace('/login');
         return;
       }

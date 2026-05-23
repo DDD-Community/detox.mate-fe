@@ -1,4 +1,3 @@
-import * as SecureStore from 'expo-secure-store';
 import { useRouter } from 'expo-router';
 import React, { useState } from 'react';
 import { Image, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
@@ -38,8 +37,7 @@ export default function OnboardingScreen() {
 
   const handleNext = async () => {
     if (isLast) {
-      await SecureStore.setItemAsync('isNewUser', 'true');
-      router.replace('/(group)/home');
+      router.replace('/terms-agreement');
     } else {
       setStep((s) => s + 1);
     }
