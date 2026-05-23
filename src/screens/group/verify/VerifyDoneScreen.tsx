@@ -1,6 +1,7 @@
 import { router, useLocalSearchParams } from 'expo-router';
 import { Image, Pressable, StyleSheet, Text, View } from 'react-native';
 import { Button } from '../../../components/Button';
+import { submitTotalUsageActivityRecord } from '../../../features/activity-record/submitTotalUsageActivityRecord';
 import { primitiveColors } from '../../../lib/token/primitive/colors';
 import { typography } from '../../../lib/token/primitive/typography';
 import { VerifyBottomSheet } from './VerifyBottomSheet';
@@ -55,7 +56,13 @@ export default function VerifyDoneScreen() {
     });
   };
 
-  const handleSkip = () => {
+  const handleSkip = async () => {
+    if (isVerifyMode) {
+      await submitTotalUsageActivityRecord({
+        value,
+        groupChallengeParticipantId,
+      });
+    }
     router.replace('/(group)/verify/complete');
   };
 

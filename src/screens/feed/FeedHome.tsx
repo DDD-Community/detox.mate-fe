@@ -54,6 +54,11 @@ type ActivityDetail = {
   isAchieved: boolean;
 };
 
+type DailyGoal = {
+  usageGoalType?: string;
+  goalMinutes?: number;
+};
+
 type ActivityRecord = {
   submittedAt: string;
   activityImageUrl: string | null;
@@ -74,7 +79,7 @@ type TodayChallengeMember = {
   participantStatus: string;
   dailyStatus: string;
   includedInGroupResult: boolean;
-  goals: unknown[];
+  goals: DailyGoal[];
   challengeRecordId: number;
   activityRecord: ActivityRecord | null;
   reactionCount: number;
@@ -107,6 +112,13 @@ const formatMinutes = (minutes: number | null | undefined): string | undefined =
   return `${m}m`;
 };
 
+const formatMinutesAsHHMM = (minutes: number | null | undefined): string | undefined => {
+  if (minutes == null) return undefined;
+  const h = Math.floor(minutes / 60);
+  const m = minutes % 60;
+  return `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}`;
+};
+
 const isCreatedToday = (isoDate: string): boolean => {
   const created = new Date(isoDate);
   const now = new Date();
@@ -131,8 +143,10 @@ const mapMemberToFeedItem = (m: TodayChallengeMember): FeedItem => {
   const isVerified = m.activityRecord !== null;
   const isGoalAchieved = m.activityRecord?.allAchieved === true;
   const totalUsage = m.activityRecord?.details?.find((d) => d.usageGoalType === 'TOTAL_USAGE');
+  const totalGoal = m.goals?.find((goal) => goal.usageGoalType === 'TOTAL_USAGE');
   return {
     id: String(m.userId),
+    groupChallengeParticipantId: m.groupChallengeParticipantId,
     challengeRecordId: m.challengeRecordId,
     name: m.displayName,
     isMe: m.isMe,
@@ -152,6 +166,7 @@ const mapMemberToFeedItem = (m: TodayChallengeMember): FeedItem => {
     retroText:
       isVerified && !isGoalAchieved ? (m.activityRecord?.reflectionText ?? undefined) : undefined,
     screenTime: formatMinutes(totalUsage?.usedMinutes),
+    goal: formatMinutesAsHHMM(totalGoal?.goalMinutes),
     verifiedTimeAgo:
       isVerified && m.activityRecord?.submittedAt
         ? formatTimeAgo(m.activityRecord.submittedAt)
@@ -420,6 +435,7 @@ function ActiveFeed({
     ...m,
     isGoalAchieved: feedItems.some((f) => f.id === m.id && f.isVerified && f.isGoalAchieved),
   }));
+  const myFeedItem = feedItems.find((item) => item.isMe);
 
   return (
     <View style={styles.feedWrapper}>
@@ -428,7 +444,17 @@ function ActiveFeed({
         contentContainerStyle={styles.container}
         showsVerticalScrollIndicator={false}
       >
-        <ActionGuideBanner goalState={goalState} />
+        <ActionGuideBanner
+          goalState={goalState}
+          verifyParams={{
+            ...(myFeedItem?.goal ? { goal: myFeedItem.goal } : {}),
+            ...(myFeedItem?.groupChallengeParticipantId
+              ? {
+                  groupChallengeParticipantId: String(myFeedItem.groupChallengeParticipantId),
+                }
+              : {}),
+          }}
+        />
         <MemberSection members={enrichedMembers} onInvite={onInvite} />
         {feedItems.map((item) => (
           <FeedCard

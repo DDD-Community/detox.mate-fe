@@ -5,9 +5,10 @@ import { primitiveColors } from '../../../lib/token/primitive/colors';
 const { green } = primitiveColors;
 
 export default function VerifyErrorScreen() {
-  const { mode, goal } = useLocalSearchParams<{
+  const { mode, goal, groupChallengeParticipantId } = useLocalSearchParams<{
     mode?: 'initial' | 'verify';
     goal?: string;
+    groupChallengeParticipantId?: string;
   }>();
 
   const handleRetake = () => {
@@ -16,6 +17,7 @@ export default function VerifyErrorScreen() {
       params: {
         ...(mode ? { mode } : {}),
         ...(goal ? { goal } : {}),
+        ...(groupChallengeParticipantId ? { groupChallengeParticipantId } : {}),
       },
     });
   };

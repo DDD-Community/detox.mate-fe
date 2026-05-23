@@ -23,6 +23,7 @@ export type PokeEntry = {
 
 export type FeedItem = {
   id: string;
+  groupChallengeParticipantId?: number;
   challengeRecordId?: number;
   name: string;
   isMe: boolean;
@@ -39,6 +40,7 @@ export type FeedItem = {
   postText?: string;
   retroText?: string;
   screenTime?: string;
+  goal?: string;
 };
 
 const BODY_TEXT: Record<GoalState, string> = {

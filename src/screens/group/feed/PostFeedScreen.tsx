@@ -1,6 +1,5 @@
 import * as ImagePicker from 'expo-image-picker';
 import { router, useLocalSearchParams } from 'expo-router';
-import * as SecureStore from 'expo-secure-store';
 import { useState } from 'react';
 import {
   ActivityIndicator,
@@ -14,17 +13,10 @@ import {
   TextInput,
   View,
 } from 'react-native';
-import { getActivityRecord } from '../../../api/generated/activity-record/activity-record';
-import { ActivityRecordDetailRequestUsageGoalType } from '../../../api/generated/model';
+import { submitTotalUsageActivityRecord } from '../../../features/activity-record/submitTotalUsageActivityRecord';
 import { uploadImage } from '../../../lib/uploadImage';
 import { primitiveColors } from '../../../lib/token/primitive/colors';
 import { typography } from '../../../lib/token/primitive/typography';
-
-function parseValueToMinutes(value: string | undefined): number {
-  if (!value) return 0;
-  const [hStr, mStr] = value.split(':');
-  return Number(hStr ?? 0) * 60 + Number(mStr ?? 0);
-}
 
 const { gray, brown, green } = primitiveColors;
 
@@ -51,7 +43,11 @@ export default function PostFeedScreen() {
     setImageAsset(result.assets[0]);
   };
 
-  const handleSkip = () => {
+  const handleSkip = async () => {
+    await submitTotalUsageActivityRecord({
+      value,
+      groupChallengeParticipantId,
+    });
     router.replace('/(group)/verify/complete');
   };
 
@@ -68,21 +64,12 @@ export default function PostFeedScreen() {
             fileSize: imageAsset.fileSize,
           })
         : undefined;
-      const userId = await SecureStore.getItemAsync('currentUserId');
-      await getActivityRecord().create1(
-        {
-          groupChallengeParticipantId: participantId,
-          reflectionText: text,
-          details: [
-            {
-              usageGoalType: ActivityRecordDetailRequestUsageGoalType.TOTAL_USAGE,
-              usedMinutes: parseValueToMinutes(value),
-            },
-          ],
-          activityImageObjectKey: objectKey,
-        },
-        { currentUser: { id: userId ? Number(userId) : undefined } }
-      );
+      await submitTotalUsageActivityRecord({
+        value,
+        groupChallengeParticipantId: participantId,
+        reflectionText: text,
+        activityImageObjectKey: objectKey,
+      });
       router.replace('/(group)/verify/complete');
     } finally {
       setSubmitting(false);

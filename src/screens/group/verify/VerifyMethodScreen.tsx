@@ -11,15 +11,17 @@ import { VerifyBottomSheet } from './VerifyBottomSheet';
 const { gray } = primitiveColors;
 
 export default function VerifyMethodScreen() {
-  const { mode, goal } = useLocalSearchParams<{
+  const { mode, goal, groupChallengeParticipantId } = useLocalSearchParams<{
     mode?: 'initial' | 'verify';
     goal?: string;
+    groupChallengeParticipantId?: string;
   }>();
   const awaitingReturnRef = useRef(false);
 
   const forwardParams = {
     ...(mode ? { mode } : {}),
     ...(goal ? { goal } : {}),
+    ...(groupChallengeParticipantId ? { groupChallengeParticipantId } : {}),
   };
 
   const handleGallery = async () => {

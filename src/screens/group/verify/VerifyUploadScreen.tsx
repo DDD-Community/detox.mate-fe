@@ -59,6 +59,14 @@ export default function VerifyUploadScreen() {
         return;
       }
 
+      if (mode !== 'verify') {
+        router.replace({
+          pathname: '/(group)/verify/done',
+          params: { value: result.value, ...forwardParams },
+        });
+        return;
+      }
+
       const userId = await SecureStore.getItemAsync('currentUserId');
       const { allAchieved } = await getActivityRecord().checkAchievement(
         {

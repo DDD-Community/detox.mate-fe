@@ -10,13 +10,17 @@ export type GoalState = 'notSet' | 'setWaiting' | 'authReady';
 
 interface Props {
   goalState: GoalState;
+  verifyParams?: {
+    goal?: string;
+    groupChallengeParticipantId?: string;
+  };
 }
 
-export default function ActionGuideBanner({ goalState }: Props) {
+export default function ActionGuideBanner({ goalState, verifyParams }: Props) {
   const banner = {
     notSet: <GoalBanner />,
     setWaiting: <GoalSetWaitingBanner />,
-    authReady: <DailyAuthBanner />,
+    authReady: <DailyAuthBanner verifyParams={verifyParams} />,
   }[goalState];
 
   return banner;
@@ -74,7 +78,7 @@ function GoalSetWaitingBanner() {
   );
 }
 
-function DailyAuthBanner() {
+function DailyAuthBanner({ verifyParams }: Pick<Props, 'verifyParams'>) {
   return (
     <View style={styles.dailyAuthBanner}>
       <View style={styles.topRow}>
@@ -99,13 +103,23 @@ function DailyAuthBanner() {
         }
         color="assistive"
         size="lg"
-        onPress={() => router.push('/(group)/verify')}
+        onPress={() =>
+          router.push({
+            pathname: '/(group)/verify',
+            params: {
+              mode: 'verify',
+              ...(verifyParams?.goal ? { goal: verifyParams.goal } : {}),
+              ...(verifyParams?.groupChallengeParticipantId
+                ? { groupChallengeParticipantId: verifyParams.groupChallengeParticipantId }
+                : {}),
+            },
+          })
+        }
         style={{ alignSelf: 'stretch' }}
       />
     </View>
   );
 }
-
 
 const styles = StyleSheet.create({
   goalBanner: {
