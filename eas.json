@@ -11,17 +11,38 @@
     "preview": {
       "distribution": "internal"
     },
+    "development-store": {
+      "autoIncrement": true,
+      "distribution": "store",
+      "env": {
+        "APP_ENV": "development"
+      },
+      "ios": {
+        "credentialsSource": "remote"
+      }
+    },
     "production": {
       "autoIncrement": true,
+      "distribution": "store",
+      "env": {
+        "APP_ENV": "production"
+      },
       "ios": {
         "credentialsSource": "remote"
       }
     }
   },
   "submit": {
+    "development-store": {
+      "ios": {
+        "ascAppId": "6762039576",
+        "bundleIdentifier": "com.detoxmate.app.dev"
+      }
+    },
     "production": {
       "ios": {
-        "ascAppId": "6762039576"
+        "ascAppId": "6762039576",
+        "bundleIdentifier": "com.detoxmate.app"
       }
     }
   }
