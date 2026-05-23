@@ -14,84 +14,69 @@ import type {
   JoinGroupRequest,
   LeaveGroupParams,
   UpdateGroupParams,
-  UpdateGroupRequest
+  UpdateGroupRequest,
 } from '../model';
 
 import { customAxios } from '../../mutator';
 
-
-
-  export const getGroup = () => {
-const createGroup = (
-    createGroupRequest: CreateGroupRequest,
-    params: CreateGroupParams,
- ) => {
-      return customAxios<GroupResponse>(
-      {url: `/groups`, method: 'POST',
-      headers: {'Content-Type': 'application/json', },
+export const getGroup = () => {
+  const createGroup = (createGroupRequest: CreateGroupRequest, params: CreateGroupParams) => {
+    return customAxios<GroupResponse>({
+      url: `/groups`,
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
       data: createGroupRequest,
-        params
-    },
-      );
-    }
-  const joinGroup = (
-    joinGroupRequest: JoinGroupRequest,
-    params: JoinGroupParams,
- ) => {
-      return customAxios<GroupResponse>(
-      {url: `/groups/join`, method: 'POST',
-      headers: {'Content-Type': 'application/json', },
+      params,
+    });
+  };
+  const joinGroup = (joinGroupRequest: JoinGroupRequest, params: JoinGroupParams) => {
+    return customAxios<GroupResponse>({
+      url: `/groups/join`,
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
       data: joinGroupRequest,
-        params
-    },
-      );
-    }
-  const getGroup = (
-    groupId: number,
-    params: GetGroupParams,
- ) => {
-      return customAxios<GroupResponse>(
-      {url: `/groups/${groupId}`, method: 'GET',
-        params
-    },
-      );
-    }
+      params,
+    });
+  };
+  const getGroup = (groupId: number, params: GetGroupParams) => {
+    return customAxios<GroupResponse>({ url: `/groups/${groupId}`, method: 'GET', params });
+  };
   const updateGroup = (
     groupId: number,
     updateGroupRequest: UpdateGroupRequest,
-    params: UpdateGroupParams,
- ) => {
-      return customAxios<GroupResponse>(
-      {url: `/groups/${groupId}`, method: 'PATCH',
-      headers: {'Content-Type': 'application/json', },
+    params: UpdateGroupParams
+  ) => {
+    return customAxios<GroupResponse>({
+      url: `/groups/${groupId}`,
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
       data: updateGroupRequest,
-        params
-    },
-      );
-    }
-  const getMyGroups = (
-    params: GetMyGroupsParams,
- ) => {
-      return customAxios<GroupResponse[]>(
-      {url: `/me/groups`, method: 'GET',
-        params
-    },
-      );
-    }
-  const leaveGroup = (
-    groupId: number,
-    params: LeaveGroupParams,
- ) => {
-      return customAxios<void>(
-      {url: `/groups/${groupId}/members/me`, method: 'DELETE',
-        params
-    },
-      );
-    }
-  return {createGroup,joinGroup,getGroup,updateGroup,getMyGroups,leaveGroup}};
-export type CreateGroupResult = NonNullable<Awaited<ReturnType<ReturnType<typeof getGroup>['createGroup']>>>
-export type JoinGroupResult = NonNullable<Awaited<ReturnType<ReturnType<typeof getGroup>['joinGroup']>>>
-export type GetGroupResult = NonNullable<Awaited<ReturnType<ReturnType<typeof getGroup>['getGroup']>>>
-export type UpdateGroupResult = NonNullable<Awaited<ReturnType<ReturnType<typeof getGroup>['updateGroup']>>>
-export type GetMyGroupsResult = NonNullable<Awaited<ReturnType<ReturnType<typeof getGroup>['getMyGroups']>>>
-export type LeaveGroupResult = NonNullable<Awaited<ReturnType<ReturnType<typeof getGroup>['leaveGroup']>>>
+      params,
+    });
+  };
+  const getMyGroups = (params: GetMyGroupsParams) => {
+    return customAxios<GroupResponse[]>({ url: `/me/groups`, method: 'GET', params });
+  };
+  const leaveGroup = (groupId: number, params: LeaveGroupParams) => {
+    return customAxios<void>({ url: `/groups/${groupId}/members/me`, method: 'DELETE', params });
+  };
+  return { createGroup, joinGroup, getGroup, updateGroup, getMyGroups, leaveGroup };
+};
+export type CreateGroupResult = NonNullable<
+  Awaited<ReturnType<ReturnType<typeof getGroup>['createGroup']>>
+>;
+export type JoinGroupResult = NonNullable<
+  Awaited<ReturnType<ReturnType<typeof getGroup>['joinGroup']>>
+>;
+export type GetGroupResult = NonNullable<
+  Awaited<ReturnType<ReturnType<typeof getGroup>['getGroup']>>
+>;
+export type UpdateGroupResult = NonNullable<
+  Awaited<ReturnType<ReturnType<typeof getGroup>['updateGroup']>>
+>;
+export type GetMyGroupsResult = NonNullable<
+  Awaited<ReturnType<ReturnType<typeof getGroup>['getMyGroups']>>
+>;
+export type LeaveGroupResult = NonNullable<
+  Awaited<ReturnType<ReturnType<typeof getGroup>['leaveGroup']>>
+>;
