@@ -112,7 +112,7 @@ function isUsageText(text: string): boolean {
 function screenTimeAnchor(observations: OCRObservation[]): OCRObservation | undefined {
   return observations.find((observation) => {
     const text = normalizedWhitespace(observation.text).toLowerCase();
-    return text.includes('스크린타임') || text.includes('screentime');
+    return text.includes(normalizedWhitespace('스크린 타임')) || text.includes('screentime');
   });
 }
 

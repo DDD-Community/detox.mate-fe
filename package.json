@@ -4,7 +4,7 @@
   "main": "expo-router/entry",
   "scripts": {
     "start": "expo start",
-    "storybook": "EXPO_PUBLIC_STORYBOOK=true expo start",
+    "start:storybook": "EXPO_PUBLIC_STORYBOOK=true expo start",
     "storybook:generate": "sb-rn-get-stories --config-path .storybook",
     "android": "expo run:android",
     "ios": "expo run:ios",
@@ -14,26 +14,31 @@
     "api:gen": "orval"
   },
   "dependencies": {
-    "@react-native-community/datetimepicker": "^9.1.0",
+    "@react-native-community/datetimepicker": "^8.6.0",
+    "@react-native-community/slider": "5.1.2",
     "@react-native-seoul/kakao-login": "^5.4.2",
     "axios": "^1.15.0",
-    "expo": "~54.0.33",
-    "expo-clipboard": "~8.0.8",
-    "expo-constants": "~18.0.13",
-    "expo-font": "~14.0.11",
-    "expo-image-picker": "~17.0.10",
-    "expo-linking": "~8.0.11",
-    "expo-notifications": "~0.32.17",
-    "expo-router": "~6.0.23",
-    "expo-secure-store": "~15.0.8",
-    "expo-splash-screen": "~31.0.13",
-    "expo-status-bar": "~3.0.9",
-    "react": "19.1.0",
-    "react-dom": "19.1.0",
-    "react-native": "0.81.5",
+    "expo": "~55.0.26",
+    "expo-clipboard": "~55.0.13",
+    "expo-constants": "~55.0.16",
+    "expo-font": "~55.0.8",
+    "expo-image-picker": "~55.0.20",
+    "expo-linking": "~55.0.15",
+    "expo-notifications": "~55.0.23",
+    "expo-router": "~55.0.16",
+    "expo-secure-store": "~55.0.14",
+    "expo-splash-screen": "~55.0.21",
+    "expo-status-bar": "~55.0.6",
+    "phosphor-react-native": "3.0.6",
+    "react": "19.2.0",
+    "react-dom": "19.2.0",
+    "react-native": "0.83.6",
+    "react-native-gesture-handler": "~2.30.1",
     "react-native-safe-area-context": "~5.6.2",
-    "react-native-screens": "~4.16.0",
+    "react-native-screens": "~4.23.0",
+    "react-native-svg": "15.15.3",
     "react-native-web": "^0.21.2",
+    "react-native-worklets": "0.7.4",
     "zustand": "^5.0.12"
   },
   "devDependencies": {
@@ -42,12 +47,12 @@
     "@storybook/addon-ondevice-controls": "^8",
     "@storybook/react-native": "^8",
     "@types/node": "^25.6.0",
-    "@types/react": "~19.1.0",
+    "@types/react": "~19.2.15",
     "lint-staged": "^16.4.0",
     "openapi3-ts": "^4.5.0",
     "orval": "^8.9.0",
     "prettier": "^3.8.1",
-    "react-native-reanimated": "^4.3.0",
+    "react-native-reanimated": "^4.2.1",
     "typescript": "~5.9.2"
   },
   "lint-staged": {
@@ -57,7 +62,10 @@
     "onlyBuiltDependencies": [
       "dooboolab-welcome",
       "esbuild"
-    ]
+    ],
+    "patchedDependencies": {
+      "react-native-worklets@0.7.4": "patches/react-native-worklets@0.7.4.patch"
+    }
   },
   "private": true
 }

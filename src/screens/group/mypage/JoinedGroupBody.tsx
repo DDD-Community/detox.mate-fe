@@ -1,16 +1,18 @@
 import { Image, Pressable, StyleSheet, Text, View } from 'react-native';
 
 import { Button } from '../../../components/Button';
+import { Icon } from '../../../components/Icon';
 import { primitiveColors, radius, spacing, typography } from '../../../lib/token';
 import { WeeklyStatusCard } from './WeeklyStatusCard';
 
 const { gray } = primitiveColors;
+const DEFAULT_AVATAR = require('../../../../assets/basic-profile-turtle-hi.png');
 
-const ICONS = {
-  caretRight: require('../../../../assets/icons/regular/icon_rg_CaretRight.png'),
-  info: require('../../../../assets/icons/regular/icon_rg_Info.png'),
-  infoFill: require('../../../../assets/icons/fill/icon_fl_Info.png'),
-} as const;
+export interface JoinedGroupItem {
+  id?: number;
+  name: string;
+  members: { name: string; profileImageUrl?: string | null }[];
+}
 
 export interface JoinedGroupBodyProps {
   weekLabel: string;
@@ -21,19 +23,29 @@ export interface JoinedGroupBodyProps {
   totalVerifyDays: number;
   achievedDays: number;
   achievableDays: number;
-  groupMembers: { name: string }[];
-  groupName: string;
+  groups: JoinedGroupItem[];
   daysUntilGoalChange: number;
-  onGroupPress?: () => void;
+  onGroupPress?: (groupId?: number) => void;
   onGoalChangePress?: () => void;
 }
 
-function MemberAvatar({ name, offset }: { name: string; offset: number }) {
+function MemberAvatar({
+  name,
+  profileImageUrl,
+  offset,
+}: {
+  name: string;
+  profileImageUrl?: string | null;
+  offset: number;
+}) {
   return (
     <View style={[styles.avatar, { left: offset }]}>
-      <Text style={styles.avatarText} numberOfLines={1}>
-        {name}
-      </Text>
+      <Image
+        source={profileImageUrl ? { uri: profileImageUrl } : DEFAULT_AVATAR}
+        style={styles.avatarImage}
+        resizeMode="cover"
+        accessibilityLabel={name ? `${name} 프로필 이미지` : '기본 프로필 이미지'}
+      />
     </View>
   );
 }
@@ -47,8 +59,7 @@ export function JoinedGroupBody({
   totalVerifyDays,
   achievedDays,
   achievableDays,
-  groupMembers,
-  groupName,
+  groups,
   daysUntilGoalChange,
   onGroupPress,
   onGoalChangePress,
@@ -66,19 +77,30 @@ export function JoinedGroupBody({
         achievableDays={achievableDays}
       />
 
-      <Pressable onPress={onGroupPress} style={styles.groupCard}>
-        <View style={styles.groupCardLeft}>
-          <View style={styles.avatarStack}>
-            {groupMembers.slice(0, 3).map((m, idx) => (
-              <MemberAvatar key={`${m.name}-${idx}`} name={m.name} offset={idx * 23} />
-            ))}
+      {groups.map((group) => (
+        <Pressable
+          key={group.id ?? group.name}
+          onPress={() => onGroupPress?.(group.id)}
+          style={styles.groupCard}
+        >
+          <View style={styles.groupCardLeft}>
+            <View style={styles.avatarStack}>
+              {group.members.slice(0, 3).map((m, idx) => (
+                <MemberAvatar
+                  key={`${group.id ?? group.name}-${m.name}-${idx}`}
+                  name={m.name}
+                  profileImageUrl={m.profileImageUrl}
+                  offset={idx * 23}
+                />
+              ))}
+            </View>
+            <Text style={styles.groupName} numberOfLines={1}>
+              {group.name}
+            </Text>
           </View>
-          <Text style={styles.groupName} numberOfLines={1}>
-            {groupName}
-          </Text>
-        </View>
-        <Image source={ICONS.caretRight} style={styles.caretIcon} resizeMode="contain" />
-      </Pressable>
+          <Icon name="caretRight" size={24} color={gray[900]} />
+        </Pressable>
+      ))}
 
       <View>
         <Button
@@ -86,17 +108,11 @@ export function JoinedGroupBody({
           color="assistive"
           disabled={daysUntilGoalChange > 0}
           onPress={onGoalChangePress}
-          leadingIcon={
-            <Image source={ICONS.info} style={styles.ctaIcon} resizeMode="contain" />
-          }
-          trailingIcon={
-            <Image source={ICONS.info} style={styles.ctaIcon} resizeMode="contain" />
-          }
           style={styles.cta}
         />
         {daysUntilGoalChange > 0 ? (
           <View style={styles.changeHintRow}>
-            <Image source={ICONS.infoFill} style={styles.hintIcon} resizeMode="contain" />
+            <Icon name="info" size={18} weight="fill" color={gray[500]} />
             <Text style={styles.changeHintText}>{daysUntilGoalChange}일 뒤 변경 가능해요</Text>
           </View>
         ) : null}
@@ -109,6 +125,7 @@ const styles = StyleSheet.create({
   root: {
     paddingHorizontal: spacing[16],
     paddingTop: spacing[16],
+    paddingBottom: spacing[32],
     gap: spacing[20],
   },
   groupCard: {
@@ -142,27 +159,19 @@ const styles = StyleSheet.create({
     borderColor: '#FFFFFF',
     alignItems: 'center',
     justifyContent: 'center',
+    overflow: 'hidden',
   },
-  avatarText: {
-    ...typography.primary.body3R,
-    color: gray[800],
+  avatarImage: {
+    width: '100%',
+    height: '100%',
   },
   groupName: {
     ...typography.primary.body1B,
     color: gray[400],
     flex: 1,
   },
-  caretIcon: {
-    width: 24,
-    height: 24,
-  },
   cta: {
     alignSelf: 'stretch',
-  },
-  ctaIcon: {
-    width: 16,
-    height: 16,
-    tintColor: '#FFFFFF',
   },
   changeHintRow: {
     flexDirection: 'row',
@@ -170,10 +179,6 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     gap: spacing[4],
     marginTop: spacing[12],
-  },
-  hintIcon: {
-    width: 18,
-    height: 18,
   },
   changeHintText: {
     ...typography.accent.body2,

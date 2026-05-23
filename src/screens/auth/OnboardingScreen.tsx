@@ -1,4 +1,3 @@
-import * as SecureStore from 'expo-secure-store';
 import { useRouter } from 'expo-router';
 import React, { useState } from 'react';
 import { Image, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
@@ -10,13 +9,13 @@ const { green, gray, brown } = primitiveColors;
 const PAGES = [
   {
     image: require('../../../assets/turtle-hollow.png'),
-    title: '스크린타임,\n혼자선 못 줄여요',
+    title: '스크린 타임,\n혼자선 못 줄여요',
     subtitle: '디톡스 메이트는 친구들과 함께\n매일 디지털 디톡스를 인증하는 앱이에요',
     info: '디지털 디톡스란? 디지털 기기 사용을 중단하고 휴식을 취하는 것',
   },
   {
     image: require('../../../assets/turtle-with-ai.png'),
-    title: '매일 어제의\n스크린타임을 인증해요',
+    title: '매일 어제의\n스크린 타임을 인증해요',
     subtitle: '스크린샷을 올리면 AI가 분석해요\n실패하면 한 줄 반성문을 남겨야 해요',
     info: null,
   },
@@ -38,8 +37,7 @@ export default function OnboardingScreen() {
 
   const handleNext = async () => {
     if (isLast) {
-      await SecureStore.setItemAsync('isNewUser', 'true');
-      router.replace('/(group)/home');
+      router.replace('/terms-agreement');
     } else {
       setStep((s) => s + 1);
     }

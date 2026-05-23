@@ -1,14 +1,10 @@
-import { Image, StyleSheet, Text, View } from 'react-native';
+import { StyleSheet, Text, View } from 'react-native';
 
+import { Icon } from '../../../components/Icon';
 import { primitiveColors, radius, spacing, typography } from '../../../lib/token';
 
 const { brown, gray, green, system } = primitiveColors;
 const RED = system.red.opacity100;
-
-const ICONS = {
-  caretDown: require('../../../../assets/icons/fill/icon_fl_CaretDown.png'),
-  caretUp: require('../../../../assets/icons/fill/icon_fl_CaretUp.png'),
-} as const;
 
 export interface WeeklyStatusCardProps {
   weekLabel: string;
@@ -57,10 +53,11 @@ export function WeeklyStatusCard({
             ) : (
               <>
                 <View style={styles.diffValueRow}>
-                  <Image
-                    source={isSaved ? ICONS.caretDown : ICONS.caretUp}
-                    style={[styles.diffIcon, { tintColor: diffColor }]}
-                    resizeMode="contain"
+                  <Icon
+                    name={isSaved ? 'caretDown' : 'caretUp'}
+                    size={18}
+                    weight="fill"
+                    color={diffColor}
                   />
                   <Text style={[styles.diffValue, { color: diffColor }]}>
                     {formatDiff(diffMinutes)}
@@ -147,10 +144,6 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: spacing[4],
-  },
-  diffIcon: {
-    width: 18,
-    height: 18,
   },
   diffValue: {
     ...typography.accent.h2,

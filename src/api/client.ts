@@ -1,7 +1,7 @@
 import axios, { AxiosError } from 'axios';
 import { router } from 'expo-router';
 import * as SecureStore from 'expo-secure-store';
-import { logout, refreshAccessToken } from './auth';
+import { clearAuthSession, refreshAccessToken } from './auth';
 import { useNetworkErrorToastStore } from '../stores/networkErrorToastStore';
 import { env } from '../config/env';
 
@@ -9,7 +9,24 @@ const apiClient = axios.create({
   baseURL: env.apiBaseUrl,
 });
 
+const PUBLIC_AUTH_PATHS = [
+  '/auth/social/kakao',
+  '/auth/social/apple',
+  '/auth/refresh',
+  '/auth/logout',
+  '/dev/auth/test-login',
+];
+
+const isPublicAuthRequest = (url?: string) =>
+  Boolean(url && PUBLIC_AUTH_PATHS.some((path) => url.includes(path)));
+
+let refreshPromise: Promise<unknown> | null = null;
+
 apiClient.interceptors.request.use(async (config) => {
+  if (config.skipAuth || isPublicAuthRequest(config.url)) {
+    return config;
+  }
+
   const accessToken = await SecureStore.getItemAsync('accessTokenKey');
   if (accessToken) {
     config.headers['Authorization'] = `Bearer ${accessToken}`;
@@ -36,12 +53,24 @@ const extractErrorMessage = (data: unknown): string | undefined => {
 apiClient.interceptors.response.use(
   (response) => response,
   async (error: AxiosError) => {
-    if (error.response?.status == 401) {
+    const originalRequest = error.config;
+    const canRefresh =
+      error.response?.status === 401 &&
+      originalRequest &&
+      !originalRequest._retry &&
+      !originalRequest.skipAuthRefresh &&
+      !isPublicAuthRequest(originalRequest.url);
+
+    if (canRefresh) {
+      originalRequest._retry = true;
       try {
-        await refreshAccessToken();
-        return apiClient(error.config!);
+        refreshPromise ??= refreshAccessToken().finally(() => {
+          refreshPromise = null;
+        });
+        await refreshPromise;
+        return apiClient(originalRequest);
       } catch (refreshError) {
-        await logout();
+        await clearAuthSession();
         router.replace('/login');
         return Promise.reject(refreshError);
       }
@@ -58,7 +87,7 @@ apiClient.interceptors.response.use(
     }
 
     // 그 외 응답 에러(4xx/5xx)는 토스트로 안내
-    if (error.response) {
+    if (error.response && !error.config?.skipAuthRefresh) {
       const message = extractErrorMessage(error.response.data) ?? DEFAULT_ERROR_MESSAGE;
       useNetworkErrorToastStore.getState().showMessage(message);
     }

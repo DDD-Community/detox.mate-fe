@@ -3,13 +3,13 @@ import { router, useLocalSearchParams } from 'expo-router';
 import { useEffect, useState } from 'react';
 import {
   ActivityIndicator,
-  Image,
   ScrollView,
   StyleSheet,
   Text,
   TouchableOpacity,
   View,
 } from 'react-native';
+import { Icon } from '../../components/Icon';
 import apiClient from '../../api/client';
 import { primitiveColors, radius, spacing, typography } from '../../lib/token';
 
@@ -78,11 +78,7 @@ export default function CalendarScreen() {
       {/* Header */}
       <View style={styles.header}>
         <TouchableOpacity onPress={() => router.back()} style={styles.backBtn}>
-          <Image
-            source={require('../../../assets/icons/regular/icon_rg_CaretLeft.png')}
-            style={styles.backIcon}
-            resizeMode="contain"
-          />
+          <Icon name="caretLeft" size={20} color={gray[900]} />
         </TouchableOpacity>
         <Text style={styles.headerTitle}>캘린더</Text>
       </View>
@@ -160,10 +156,6 @@ const styles = StyleSheet.create({
   },
   backBtn: {
     padding: spacing[4],
-  },
-  backIcon: {
-    width: 20,
-    height: 20,
   },
   headerTitle: {
     ...typography.primary.body1B,

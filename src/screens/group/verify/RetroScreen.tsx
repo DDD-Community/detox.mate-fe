@@ -1,6 +1,5 @@
 import * as ImagePicker from 'expo-image-picker';
 import { router, useLocalSearchParams } from 'expo-router';
-import * as SecureStore from 'expo-secure-store';
 import { useState } from 'react';
 import {
   ActivityIndicator,
@@ -14,19 +13,13 @@ import {
   TextInput,
   View,
 } from 'react-native';
-import { getActivityRecord } from '../../../api/generated/activity-record/activity-record';
-import { ActivityRecordDetailRequestUsageGoalType } from '../../../api/generated/model';
+import { Icon } from '../../../components/Icon';
+import { submitTotalUsageActivityRecord } from '../../../features/activity-record/submitTotalUsageActivityRecord';
 import { uploadImage } from '../../../lib/uploadImage';
 import { primitiveColors } from '../../../lib/token/primitive/colors';
 import { typography } from '../../../lib/token/primitive/typography';
 
 const { gray, brown, green, system } = primitiveColors;
-
-function parseValueToMinutes(value: string | undefined): number {
-  if (!value) return 0;
-  const [hStr, mStr] = value.split(':');
-  return Number(hStr ?? 0) * 60 + Number(mStr ?? 0);
-}
 
 export default function RetroScreen() {
   const { value, groupChallengeParticipantId } = useLocalSearchParams<{
@@ -64,21 +57,12 @@ export default function RetroScreen() {
             fileSize: imageAsset.fileSize,
           })
         : undefined;
-      const userId = await SecureStore.getItemAsync('currentUserId');
-      await getActivityRecord().create1(
-        {
-          groupChallengeParticipantId: participantId,
-          reflectionText: text,
-          details: [
-            {
-              usageGoalType: ActivityRecordDetailRequestUsageGoalType.TOTAL_USAGE,
-              usedMinutes: parseValueToMinutes(value),
-            },
-          ],
-          activityImageObjectKey: objectKey,
-        },
-        { currentUser: { id: userId ? Number(userId) : undefined } }
-      );
+      await submitTotalUsageActivityRecord({
+        value,
+        groupChallengeParticipantId: participantId,
+        reflectionText: text,
+        activityImageObjectKey: objectKey,
+      });
       router.replace('/(group)/verify/complete');
     } finally {
       setSubmitting(false);
@@ -89,11 +73,7 @@ export default function RetroScreen() {
     <SafeAreaView style={styles.root}>
       <View style={styles.header}>
         <Pressable style={styles.headerBack} onPress={() => router.back()}>
-          <Image
-            source={require('../../../../assets/icons/regular/icon_rg_CaretLeft.png')}
-            style={styles.headerBackIcon}
-            resizeMode="contain"
-          />
+          <Icon name="caretLeft" size={24} color={gray[900]} />
           <Text style={styles.headerTitle}>오늘의 회고</Text>
         </Pressable>
       </View>
@@ -109,11 +89,7 @@ export default function RetroScreen() {
             ) : (
               <>
                 <View style={styles.iconCircle}>
-                  <Image
-                    source={require('../../../../assets/icons/regular/icon_rg_UploadSimple.png')}
-                    style={styles.uploadIcon}
-                    resizeMode="contain"
-                  />
+                  <Icon name="uploadSimple" size={23} color="#2B2F38" />
                 </View>
                 <View style={styles.dropzoneText}>
                   <Text style={styles.dropzoneTitle}>사진 업로드 (선택)</Text>
@@ -175,10 +151,6 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     gap: 16,
   },
-  headerBackIcon: {
-    width: 24,
-    height: 24,
-  },
   headerTitle: {
     ...typography.accent.title2,
     color: gray[800],
@@ -210,10 +182,6 @@ const styles = StyleSheet.create({
     backgroundColor: '#F3F4F6',
     alignItems: 'center',
     justifyContent: 'center',
-  },
-  uploadIcon: {
-    width: 23,
-    height: 23,
   },
   dropzoneText: {
     alignItems: 'center',

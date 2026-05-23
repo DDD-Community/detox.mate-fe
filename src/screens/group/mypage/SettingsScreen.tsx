@@ -2,8 +2,8 @@ import * as Linking from 'expo-linking';
 import * as Notifications from 'expo-notifications';
 import { router, useFocusEffect } from 'expo-router';
 import * as SecureStore from 'expo-secure-store';
-import { useCallback, useEffect, useState } from 'react';
-import { AppState, Image, Pressable, StyleSheet, Switch, Text, View } from 'react-native';
+import { useCallback, useEffect, useRef, useState } from 'react';
+import { AppState, Pressable, StyleSheet, Switch, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { logout } from '../../../api/auth';
@@ -13,6 +13,7 @@ import {
   registerDevicePushToken,
   unregisterDevicePushToken,
 } from '../../../lib/fcmToken';
+import { Icon } from '../../../components/Icon';
 import { primitiveColors, radius, spacing, typography } from '../../../lib/token';
 import { LogoutConfirmAlert } from './LogoutConfirmAlert';
 import { NotificationPermissionAlert } from './NotificationPermissionAlert';
@@ -20,25 +21,22 @@ import { WithdrawConfirmAlert } from './WithdrawConfirmAlert';
 
 const { brown, gray, green } = primitiveColors;
 
-const ICONS = {
-  caretLeft: require('../../../../assets/icons/regular/icon_rg_CaretLeft.png'),
-  caretRight: require('../../../../assets/icons/regular/icon_rg_CaretRight.png'),
-} as const;
-
 interface ToggleRowProps {
   label: string;
   value: boolean;
   onChange: (next: boolean) => void;
+  disabled?: boolean;
   hasDivider?: boolean;
 }
 
-function ToggleRow({ label, value, onChange, hasDivider }: ToggleRowProps) {
+function ToggleRow({ label, value, onChange, disabled, hasDivider }: ToggleRowProps) {
   return (
     <View style={[styles.row, hasDivider && styles.rowDivider]}>
       <Text style={styles.rowLabel}>{label}</Text>
       <Switch
         value={value}
         onValueChange={onChange}
+        disabled={disabled}
         trackColor={{ false: gray[200], true: green[400] }}
         thumbColor="#FFFFFF"
         ios_backgroundColor={gray[200]}
@@ -65,7 +63,7 @@ function LinkRow({ label, onPress, hasDivider }: LinkRowProps) {
       ]}
     >
       <Text style={styles.rowLabel}>{label}</Text>
-      <Image source={ICONS.caretRight} style={styles.caretIcon} resizeMode="contain" />
+      <Icon name="caretRight" size={24} color={gray[900]} />
     </Pressable>
   );
 }
@@ -75,9 +73,12 @@ export default function SettingsScreen() {
   //   userPushPreference: 사용자가 앱 내 토글로 명시한 수신 의도 (TODO: 서버/SecureStore 동기화)
   //   systemGranted:      iOS/Android 시스템 알림 권한 상태 (매번 체크)
   // 토글 표시값 = 둘 다 true일 때만 ON
-  const [userPushPreference, setUserPushPreference] = useState(true);
+  const [userPushPreference, setUserPushPreference] = useState<boolean | null>(null);
+  const userPushPreferenceRef = useRef<boolean | null>(null);
   const [systemGranted, setSystemGranted] = useState(false);
-  const pushAlarm = userPushPreference && systemGranted;
+  const pushAlarm = userPushPreference === true && systemGranted;
+  const [isPushUpdating, setIsPushUpdating] = useState(false);
+  const pushToggleDisabled = userPushPreference === null || isPushUpdating;
 
   const [isPermissionAlertOpen, setIsPermissionAlertOpen] = useState(false);
   const [isLogoutAlertOpen, setIsLogoutAlertOpen] = useState(false);
@@ -85,20 +86,25 @@ export default function SettingsScreen() {
   const [isWithdrawAlertOpen, setIsWithdrawAlertOpen] = useState(false);
   const [isWithdrawing, setIsWithdrawing] = useState(false);
 
+  const updateUserPushPreference = useCallback((next: boolean | null) => {
+    userPushPreferenceRef.current = next;
+    setUserPushPreference(next);
+  }, []);
+
   const syncSystemPermission = useCallback(async () => {
     const { status } = await Notifications.getPermissionsAsync();
     const granted = status === 'granted';
     setSystemGranted(granted);
     // 사용자가 OS 설정에서 권한을 허용하고 돌아온 경우 토큰이 비어있으면 사후 등록.
     // 앱 내 동의(userPushPreference)가 OFF면 등록하지 않음.
-    if (granted && userPushPreference) {
+    if (granted && userPushPreferenceRef.current === true) {
       try {
         await ensureDevicePushTokenRegistered();
       } catch {
         // ignore
       }
     }
-  }, [userPushPreference]);
+  }, []);
 
   const getCurrentUserParam = async () => {
     const userIdStr = await SecureStore.getItemAsync('currentUserId');
@@ -111,17 +117,24 @@ export default function SettingsScreen() {
     (async () => {
       const me = await getUser().getMe(await getCurrentUserParam());
       if (cancelled) return;
-      setUserPushPreference(me.pushNotificationEnabled ?? true);
+      updateUserPushPreference(me.pushNotificationEnabled ?? true);
     })();
     return () => {
       cancelled = true;
     };
-  }, []);
+  }, [updateUserPushPreference]);
+
+  useEffect(() => {
+    if (userPushPreference !== true || !systemGranted || isPushUpdating) return;
+    ensureDevicePushTokenRegistered().catch(() => {
+      // ignore
+    });
+  }, [isPushUpdating, systemGranted, userPushPreference]);
 
   const patchPushNotificationEnabled = async (enabled: boolean) => {
     await getUser().updatePushNotificationSetting(
       { pushNotificationEnabled: enabled },
-      await getCurrentUserParam(),
+      await getCurrentUserParam()
     );
   };
 
@@ -142,12 +155,12 @@ export default function SettingsScreen() {
 
   const applyPushPreference = async (enabled: boolean) => {
     // optimistic update: state 먼저 반영 후 API 실패 시 롤백
-    const previous = userPushPreference;
-    setUserPushPreference(enabled);
+    const previous = userPushPreferenceRef.current ?? false;
+    updateUserPushPreference(enabled);
     try {
       await patchPushNotificationEnabled(enabled);
     } catch (e) {
-      setUserPushPreference(previous);
+      updateUserPushPreference(previous);
       return;
     }
     // 푸시 토큰 등록/삭제는 best-effort. 실패해도 동의 설정 자체는 유지.
@@ -163,29 +176,35 @@ export default function SettingsScreen() {
   };
 
   const handleTogglePushAlarm = async (next: boolean) => {
-    if (!next) {
-      // ON → OFF: 앱 내 수신 동의만 OFF로. 시스템 권한은 안 건드림.
-      // 서버가 더 이상 푸시를 보내지 않게 되어 사용자에겐 "알림이 꺼진" 효과와 동일.
-      await applyPushPreference(false);
-      return;
-    }
-    // OFF → ON: 시스템 권한 확인
-    const { status, canAskAgain } = await Notifications.getPermissionsAsync();
-    if (status === 'granted') {
-      setSystemGranted(true);
-      await applyPushPreference(true);
-      return;
-    }
-    if (canAskAgain) {
-      const result = await Notifications.requestPermissionsAsync();
-      if (result.status === 'granted') {
+    if (isPushUpdating || userPushPreference === null) return;
+    setIsPushUpdating(true);
+    try {
+      if (!next) {
+        // ON → OFF: 앱 내 수신 동의만 OFF로. 시스템 권한은 안 건드림.
+        // 서버가 더 이상 푸시를 보내지 않게 되어 사용자에겐 "알림이 꺼진" 효과와 동일.
+        await applyPushPreference(false);
+        return;
+      }
+      // OFF → ON: 시스템 권한 확인
+      const { status, canAskAgain } = await Notifications.getPermissionsAsync();
+      if (status === 'granted') {
         setSystemGranted(true);
         await applyPushPreference(true);
         return;
       }
+      if (canAskAgain) {
+        const result = await Notifications.requestPermissionsAsync();
+        if (result.status === 'granted') {
+          setSystemGranted(true);
+          await applyPushPreference(true);
+          return;
+        }
+      }
+      // 권한 거부 + 다시 물어볼 수 없는 상태 → 설정 안내 모달
+      setIsPermissionAlertOpen(true);
+    } finally {
+      setIsPushUpdating(false);
     }
-    // 권한 거부 + 다시 물어볼 수 없는 상태 → 설정 안내 모달
-    setIsPermissionAlertOpen(true);
   };
 
   const handleClosePermissionAlert = () => {
@@ -274,7 +293,7 @@ export default function SettingsScreen() {
       <SafeAreaView edges={['top']}>
         <View style={styles.header}>
           <Pressable onPress={handleBack} hitSlop={8}>
-            <Image source={ICONS.caretLeft} style={styles.headerIcon} resizeMode="contain" />
+            <Icon name="caretLeft" size={24} color={gray[800]} />
           </Pressable>
           <Text style={styles.headerTitle}>설정</Text>
         </View>
@@ -282,7 +301,12 @@ export default function SettingsScreen() {
 
       <View style={styles.body}>
         <View style={styles.card}>
-          <ToggleRow label="푸시 알림" value={pushAlarm} onChange={handleTogglePushAlarm} />
+          <ToggleRow
+            label="푸시 알림"
+            value={pushAlarm}
+            onChange={handleTogglePushAlarm}
+            disabled={pushToggleDisabled}
+          />
         </View>
 
         <View style={styles.card}>
@@ -332,10 +356,6 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     gap: spacing[16],
   },
-  headerIcon: {
-    width: 24,
-    height: 24,
-  },
   headerTitle: {
     ...typography.accent.title2,
     color: gray[800],
@@ -374,10 +394,6 @@ const styles = StyleSheet.create({
   rowLabel: {
     ...typography.primary.body1R,
     color: gray[800],
-  },
-  caretIcon: {
-    width: 24,
-    height: 24,
   },
   withdrawWrap: {
     marginTop: spacing[4],

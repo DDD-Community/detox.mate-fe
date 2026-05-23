@@ -1,14 +1,11 @@
-import { Image, Modal, Pressable, StyleSheet, Text, View } from 'react-native';
+import { Modal, Pressable, StyleSheet, Text, View } from 'react-native';
 
+import { Icon } from '../../../components/Icon';
 import { primitiveColors, radius, spacing, typography } from '../../../lib/token';
 
 const { gray, system } = primitiveColors;
 const RED = system.red.opacity100;
 const RED_10 = system.red.opacity10;
-
-const ICONS = {
-  info: require('../../../../assets/icons/regular/icon_rg_Info.png'),
-} as const;
 
 interface WithdrawConfirmAlertProps {
   visible: boolean;
@@ -37,11 +34,10 @@ export function WithdrawConfirmAlert({
             <Text style={styles.title}>정말 탈퇴하시겠어요?</Text>
             <View style={styles.descBlock}>
               <Text style={styles.descText}>
-                탈퇴 시 저장된 히스토리와 챌린지 참여 기록이{'\n'}모두 삭제되며 복구할 수
-                없어요.
+                탈퇴 시 저장된 히스토리와 챌린지 참여 기록이{'\n'}모두 삭제되며 복구할 수 없어요.
               </Text>
               <View style={styles.warningChip}>
-                <Image source={ICONS.info} style={styles.warningIcon} resizeMode="contain" />
+                <Icon name="info" size={16} color={RED} />
                 <Text style={styles.warningText}>삭제된 기록은 복구될 수 없어요</Text>
               </View>
             </View>
@@ -123,11 +119,6 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: spacing[4],
-  },
-  warningIcon: {
-    width: 16,
-    height: 16,
-    tintColor: RED,
   },
   warningText: {
     ...typography.primary.body2B,

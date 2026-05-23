@@ -1,15 +1,43 @@
 import { useRouter } from 'expo-router';
-import { Image, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { useState } from 'react';
+import { Alert, Image, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { loginWithKakao, loginWithNewTestUser } from '../../api/auth';
+import { registerDevicePushToken } from '../../lib/fcmToken';
 import { primitiveColors } from '../../lib/token/primitive/colors';
 import { typography } from '../../lib/token/primitive/typography';
 
 const { brown, gray } = primitiveColors;
+type LoginProvider = 'kakao' | 'test';
 
 export default function LoginScreen() {
   const router = useRouter();
+  const [pendingProvider, setPendingProvider] = useState<LoginProvider | null>(null);
+
+  const completeLogin = async (provider: LoginProvider, login: () => Promise<unknown>) => {
+    if (pendingProvider) return;
+
+    setPendingProvider(provider);
+    try {
+      await login();
+      try {
+        await registerDevicePushToken();
+      } catch {
+        // 토큰 등록 실패는 로그인 흐름을 막지 않음
+      }
+      router.replace('/(group)/home');
+    } catch {
+      Alert.alert('로그인 실패', '로그인을 처리하지 못했어요. 잠시 후 다시 시도해주세요.');
+    } finally {
+      setPendingProvider(null);
+    }
+  };
 
   const handleKakaoLogin = () => {
-    router.replace('/terms-agreement');
+    completeLogin('kakao', loginWithKakao);
+  };
+
+  const handleTestLogin = () => {
+    completeLogin('test', loginWithNewTestUser);
   };
 
   return (
@@ -31,18 +59,38 @@ export default function LoginScreen() {
         <TouchableOpacity
           style={styles.kakaoButton}
           onPress={handleKakaoLogin}
+          disabled={!!pendingProvider}
           activeOpacity={0.85}
         >
           <View style={styles.buttonInner}>
             <Image source={require('../../../assets/logo-kakao-login.png')}></Image>
-            <Text style={styles.kakaoText}>카카오로 시작하기</Text>
+            <Text style={styles.kakaoText}>
+              {pendingProvider === 'kakao' ? '카카오 로그인 중...' : '카카오로 시작하기'}
+            </Text>
             <View style={styles.iconPlaceholder} />
           </View>
         </TouchableOpacity>
 
         <View style={styles.buttonGap} />
 
-        <TouchableOpacity style={styles.appleButton} activeOpacity={0.85}>
+        <TouchableOpacity
+          style={[styles.testButton, pendingProvider && styles.testButtonDisabled]}
+          onPress={handleTestLogin}
+          disabled={!!pendingProvider}
+          activeOpacity={0.85}
+        >
+          <Text style={styles.testText}>
+            {pendingProvider === 'test' ? '테스트 계정 생성 중...' : '새 테스트 계정으로 시작하기'}
+          </Text>
+        </TouchableOpacity>
+
+        <View style={styles.buttonGap} />
+
+        <TouchableOpacity
+          style={styles.appleButton}
+          disabled={!!pendingProvider}
+          activeOpacity={0.85}
+        >
           <View style={styles.buttonInner}>
             <Image source={require('../../../assets/logo-apple-login.png')}></Image>
             <Text style={styles.appleText}>애플로 시작하기</Text>
@@ -100,6 +148,17 @@ const styles = StyleSheet.create({
     borderRadius: 18,
     paddingVertical: 16,
   },
+  testButton: {
+    alignItems: 'center',
+    backgroundColor: '#FFFFFF',
+    borderColor: gray[200],
+    borderRadius: 18,
+    borderWidth: 1,
+    paddingVertical: 16,
+  },
+  testButtonDisabled: {
+    opacity: 0.6,
+  },
   buttonInner: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -129,6 +188,11 @@ const styles = StyleSheet.create({
     flex: 1,
     ...typography.primary.body1B,
     color: '#FFFFFF',
+    textAlign: 'center',
+  },
+  testText: {
+    ...typography.primary.body1B,
+    color: gray[800],
     textAlign: 'center',
   },
 });

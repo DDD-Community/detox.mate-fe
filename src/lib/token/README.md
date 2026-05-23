@@ -114,25 +114,19 @@ const styles = StyleSheet.create({
 
 ### Icons
 
-SVG 파일은 `src/assets/icons/`에 저장하고, 레지스트리에 등록합니다.
+아이콘은 `phosphor-react-native` 컴포넌트를 공용 `Icon` 래퍼로 사용합니다.
 
 ```typescript
-// src/lib/token/icons/index.ts 에 등록
-export const iconNames = {
-  home: 'ic-home',
-  search: 'ic-search',
-} as const;
+import { Icon } from 'src/components/Icon';
 
-// 사용
-import { iconNames, type IconName } from 'src/lib/token';
-const myIcon: IconName = 'home'; // 타입 안전
+<Icon name="caretLeft" size={24} color={primitiveColors.gray[900]} />;
 ```
 
 **새 아이콘 추가 절차:**
 
-1. SVG 파일을 `src/assets/icons/`에 저장 (kebab-case: `ic-arrow-left.svg`)
-2. `src/lib/token/icons/index.ts`의 `iconNames`에 등록
-3. 컴포넌트에서 import하여 사용
+1. `src/lib/token/icons/index.ts`에서 Phosphor 아이콘을 direct import
+2. `iconComponents`에 camelCase 키로 등록
+3. 컴포넌트에서 `Icon`의 `name` prop으로 사용
 
 ## 핵심 규칙
 

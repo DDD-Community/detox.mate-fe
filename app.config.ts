@@ -2,7 +2,7 @@ import type { ExpoConfig } from 'expo/config';
 
 const appEnv = process.env.APP_ENV === 'production' ? 'production' : 'development';
 const isProduction = appEnv === 'production';
-const appVersion = process.env.APP_VERSION ?? '1.0.0';
+const appVersion = isProduction ? (process.env.APP_VERSION ?? '1.0.0') : '1.0.0';
 
 const config: ExpoConfig = {
   name: isProduction ? 'DetoxMate' : 'detox-mate-fe',
@@ -13,7 +13,6 @@ const config: ExpoConfig = {
   orientation: 'portrait',
   icon: './assets/icon.png',
   userInterfaceStyle: 'light',
-  newArchEnabled: true,
   splash: {
     image: './assets/splash-icon.png',
     resizeMode: 'contain',
@@ -34,7 +33,6 @@ const config: ExpoConfig = {
       foregroundImage: './assets/adaptive-icon.png',
       backgroundColor: '#ffffff',
     },
-    edgeToEdgeEnabled: true,
     predictiveBackGestureEnabled: false,
     package: 'com.detoxmate.fe',
   },
@@ -56,6 +54,9 @@ const config: ExpoConfig = {
     ],
     'expo-router',
     'expo-notifications',
+    '@react-native-community/datetimepicker',
+    'expo-font',
+    './plugins/with-sdk55-app-delegate-fixes',
   ],
   extra: {
     appEnv,
