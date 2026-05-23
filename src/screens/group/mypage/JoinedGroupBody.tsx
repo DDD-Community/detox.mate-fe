@@ -12,6 +12,12 @@ const ICONS = {
   infoFill: require('../../../../assets/icons/fill/icon_fl_Info.png'),
 } as const;
 
+export interface JoinedGroupItem {
+  id?: number;
+  name: string;
+  members: { name: string }[];
+}
+
 export interface JoinedGroupBodyProps {
   weekLabel: string;
   diffMinutes: number;
@@ -21,10 +27,9 @@ export interface JoinedGroupBodyProps {
   totalVerifyDays: number;
   achievedDays: number;
   achievableDays: number;
-  groupMembers: { name: string }[];
-  groupName: string;
+  groups: JoinedGroupItem[];
   daysUntilGoalChange: number;
-  onGroupPress?: () => void;
+  onGroupPress?: (groupId?: number) => void;
   onGoalChangePress?: () => void;
 }
 
@@ -47,8 +52,7 @@ export function JoinedGroupBody({
   totalVerifyDays,
   achievedDays,
   achievableDays,
-  groupMembers,
-  groupName,
+  groups,
   daysUntilGoalChange,
   onGroupPress,
   onGoalChangePress,
@@ -66,19 +70,29 @@ export function JoinedGroupBody({
         achievableDays={achievableDays}
       />
 
-      <Pressable onPress={onGroupPress} style={styles.groupCard}>
-        <View style={styles.groupCardLeft}>
-          <View style={styles.avatarStack}>
-            {groupMembers.slice(0, 3).map((m, idx) => (
-              <MemberAvatar key={`${m.name}-${idx}`} name={m.name} offset={idx * 23} />
-            ))}
+      {groups.map((group) => (
+        <Pressable
+          key={group.id ?? group.name}
+          onPress={() => onGroupPress?.(group.id)}
+          style={styles.groupCard}
+        >
+          <View style={styles.groupCardLeft}>
+            <View style={styles.avatarStack}>
+              {group.members.slice(0, 3).map((m, idx) => (
+                <MemberAvatar
+                  key={`${group.id ?? group.name}-${m.name}-${idx}`}
+                  name={m.name}
+                  offset={idx * 23}
+                />
+              ))}
+            </View>
+            <Text style={styles.groupName} numberOfLines={1}>
+              {group.name}
+            </Text>
           </View>
-          <Text style={styles.groupName} numberOfLines={1}>
-            {groupName}
-          </Text>
-        </View>
-        <Image source={ICONS.caretRight} style={styles.caretIcon} resizeMode="contain" />
-      </Pressable>
+          <Image source={ICONS.caretRight} style={styles.caretIcon} resizeMode="contain" />
+        </Pressable>
+      ))}
 
       <View>
         <Button
@@ -86,12 +100,8 @@ export function JoinedGroupBody({
           color="assistive"
           disabled={daysUntilGoalChange > 0}
           onPress={onGoalChangePress}
-          leadingIcon={
-            <Image source={ICONS.info} style={styles.ctaIcon} resizeMode="contain" />
-          }
-          trailingIcon={
-            <Image source={ICONS.info} style={styles.ctaIcon} resizeMode="contain" />
-          }
+          leadingIcon={<Image source={ICONS.info} style={styles.ctaIcon} resizeMode="contain" />}
+          trailingIcon={<Image source={ICONS.info} style={styles.ctaIcon} resizeMode="contain" />}
           style={styles.cta}
         />
         {daysUntilGoalChange > 0 ? (
@@ -109,6 +119,7 @@ const styles = StyleSheet.create({
   root: {
     paddingHorizontal: spacing[16],
     paddingTop: spacing[16],
+    paddingBottom: spacing[32],
     gap: spacing[20],
   },
   groupCard: {
