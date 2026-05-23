@@ -9,39 +9,34 @@ import type {
   ActivityRecordAchievementCheckResponse,
   ActivityRecordCreateRequest,
   ActivityRecordCreateResponse,
-  CheckAchievementParams,
-  Create1Params
 } from '../model';
 
 import { customAxios } from '../../mutator';
 
-
-
-  export const getActivityRecord = () => {
-const create1 = (
-    activityRecordCreateRequest: ActivityRecordCreateRequest,
-    params: Create1Params,
- ) => {
-      return customAxios<ActivityRecordCreateResponse>(
-      {url: `/activity-records`, method: 'POST',
-      headers: {'Content-Type': 'application/json', },
+export const getActivityRecord = () => {
+  const create1 = (activityRecordCreateRequest: ActivityRecordCreateRequest) => {
+    return customAxios<ActivityRecordCreateResponse>({
+      url: `/activity-records`,
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
       data: activityRecordCreateRequest,
-        params
-    },
-      );
-    }
+    });
+  };
   const checkAchievement = (
-    activityRecordAchievementCheckRequest: ActivityRecordAchievementCheckRequest,
-    params: CheckAchievementParams,
- ) => {
-      return customAxios<ActivityRecordAchievementCheckResponse>(
-      {url: `/activity-records/achievement-check`, method: 'POST',
-      headers: {'Content-Type': 'application/json', },
+    activityRecordAchievementCheckRequest: ActivityRecordAchievementCheckRequest
+  ) => {
+    return customAxios<ActivityRecordAchievementCheckResponse>({
+      url: `/activity-records/achievement-check`,
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
       data: activityRecordAchievementCheckRequest,
-        params
-    },
-      );
-    }
-  return {create1,checkAchievement}};
-export type Create1Result = NonNullable<Awaited<ReturnType<ReturnType<typeof getActivityRecord>['create1']>>>
-export type CheckAchievementResult = NonNullable<Awaited<ReturnType<ReturnType<typeof getActivityRecord>['checkAchievement']>>>
+    });
+  };
+  return { create1, checkAchievement };
+};
+export type Create1Result = NonNullable<
+  Awaited<ReturnType<ReturnType<typeof getActivityRecord>['create1']>>
+>;
+export type CheckAchievementResult = NonNullable<
+  Awaited<ReturnType<ReturnType<typeof getActivityRecord>['checkAchievement']>>
+>;

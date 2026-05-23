@@ -33,28 +33,28 @@ export default function GroupInfoScreen() {
   const [isLeaveAlertOpen, setIsLeaveAlertOpen] = useState(false);
   const [isLeaving, setIsLeaving] = useState(false);
 
-  const getCurrentUserParam = async () => {
+  const getCurrentUserId = async () => {
     const userIdStr = await SecureStore.getItemAsync('currentUserId');
-    return { currentUser: { id: userIdStr ? Number(userIdStr) : undefined } };
+    return userIdStr ? Number(userIdStr) : null;
   };
 
   useEffect(() => {
     let cancelled = false;
     (async () => {
       try {
-        const userParam = await getCurrentUserParam();
-        setMyUserId(userParam.currentUser.id ?? null);
+        const currentUserId = await getCurrentUserId();
+        setMyUserId(currentUserId);
 
         let targetId = groupId;
         if (targetId == null) {
-          const myGroups = await getGroup().getMyGroups(userParam);
+          const myGroups = await getGroup().getMyGroups();
           if (cancelled) return;
           targetId = myGroups?.[0]?.id ?? null;
           if (targetId != null) setGroupId(targetId);
         }
         if (targetId == null) return;
 
-        const data = await getGroup().getGroup(targetId, userParam);
+        const data = await getGroup().getGroup(targetId);
         if (cancelled) return;
         setGroupName(data.name ?? '');
         setInviteCode(data.inviteCode ?? '');
@@ -62,7 +62,7 @@ export default function GroupInfoScreen() {
 
         const groupChallengeId = data.currentChallenge?.id;
         if (groupChallengeId != null) {
-          const today = await getFeed().getTodayChallengeRecords(groupChallengeId, userParam);
+          const today = await getFeed().getTodayChallengeRecords(groupChallengeId);
           if (cancelled) return;
           const map: Record<number, number> = {};
           for (const m of today.members ?? []) {
@@ -111,7 +111,7 @@ export default function GroupInfoScreen() {
     if (isLeaving || groupId == null) return;
     setIsLeaving(true);
     try {
-      await getGroup().leaveGroup(groupId, await getCurrentUserParam());
+      await getGroup().leaveGroup(groupId);
       setIsLeaveAlertOpen(false);
       // 그룹 탈퇴 성공 → 그룹 없음 화면으로 이동
       router.replace('/(group)/home');

@@ -4,37 +4,25 @@
  * OpenAPI definition
  * OpenAPI spec version: v0
  */
-import type {
-  GetMyNotificationsParams,
-  GetNotificationHistoryParams,
-  NotificationHistoryListResponse,
-  NotificationNavigationResponse
-} from '../model';
+import type { NotificationHistoryListResponse, NotificationNavigationResponse } from '../model';
 
 import { customAxios } from '../../mutator';
 
-
-
-  export const getNotificationHistory = () => {
-const getMyNotifications = (
-    params: GetMyNotificationsParams,
- ) => {
-      return customAxios<NotificationHistoryListResponse>(
-      {url: `/notifications`, method: 'GET',
-        params
-    },
-      );
-    }
-  const getNotificationHistory = (
-    notificationHistoryId: number,
-    params: GetNotificationHistoryParams,
- ) => {
-      return customAxios<NotificationNavigationResponse>(
-      {url: `/notifications/${notificationHistoryId}/navigation`, method: 'GET',
-        params
-    },
-      );
-    }
-  return {getMyNotifications,getNotificationHistory}};
-export type GetMyNotificationsResult = NonNullable<Awaited<ReturnType<ReturnType<typeof getNotificationHistory>['getMyNotifications']>>>
-export type GetNotificationHistoryResult = NonNullable<Awaited<ReturnType<ReturnType<typeof getNotificationHistory>['getNotificationHistory']>>>
+export const getNotificationHistory = () => {
+  const getMyNotifications = () => {
+    return customAxios<NotificationHistoryListResponse>({ url: `/notifications`, method: 'GET' });
+  };
+  const getNotificationHistory = (notificationHistoryId: number) => {
+    return customAxios<NotificationNavigationResponse>({
+      url: `/notifications/${notificationHistoryId}/navigation`,
+      method: 'GET',
+    });
+  };
+  return { getMyNotifications, getNotificationHistory };
+};
+export type GetMyNotificationsResult = NonNullable<
+  Awaited<ReturnType<ReturnType<typeof getNotificationHistory>['getMyNotifications']>>
+>;
+export type GetNotificationHistoryResult = NonNullable<
+  Awaited<ReturnType<ReturnType<typeof getNotificationHistory>['getNotificationHistory']>>
+>;

@@ -5,8 +5,8 @@
  * OpenAPI spec version: v0
  */
 
-export type ScreenTimeOcrErrorReportUpdateResponseStatus = typeof ScreenTimeOcrErrorReportUpdateResponseStatus[keyof typeof ScreenTimeOcrErrorReportUpdateResponseStatus];
-
+export type ScreenTimeOcrErrorReportUpdateResponseStatus =
+  (typeof ScreenTimeOcrErrorReportUpdateResponseStatus)[keyof typeof ScreenTimeOcrErrorReportUpdateResponseStatus];
 
 export const ScreenTimeOcrErrorReportUpdateResponseStatus = {
   PENDING: 'PENDING',

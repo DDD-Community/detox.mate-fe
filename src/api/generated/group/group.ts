@@ -5,60 +5,47 @@
  * OpenAPI spec version: v0
  */
 import type {
-  CreateGroupParams,
   CreateGroupRequest,
-  GetGroupParams,
-  GetMyGroupsParams,
   GroupResponse,
-  JoinGroupParams,
   JoinGroupRequest,
-  LeaveGroupParams,
-  UpdateGroupParams,
   UpdateGroupRequest,
 } from '../model';
 
 import { customAxios } from '../../mutator';
 
 export const getGroup = () => {
-  const createGroup = (createGroupRequest: CreateGroupRequest, params: CreateGroupParams) => {
+  const createGroup = (createGroupRequest: CreateGroupRequest) => {
     return customAxios<GroupResponse>({
       url: `/groups`,
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       data: createGroupRequest,
-      params,
     });
   };
-  const joinGroup = (joinGroupRequest: JoinGroupRequest, params: JoinGroupParams) => {
+  const joinGroup = (joinGroupRequest: JoinGroupRequest) => {
     return customAxios<GroupResponse>({
       url: `/groups/join`,
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       data: joinGroupRequest,
-      params,
     });
   };
-  const getGroup = (groupId: number, params: GetGroupParams) => {
-    return customAxios<GroupResponse>({ url: `/groups/${groupId}`, method: 'GET', params });
+  const getGroup = (groupId: number) => {
+    return customAxios<GroupResponse>({ url: `/groups/${groupId}`, method: 'GET' });
   };
-  const updateGroup = (
-    groupId: number,
-    updateGroupRequest: UpdateGroupRequest,
-    params: UpdateGroupParams
-  ) => {
+  const updateGroup = (groupId: number, updateGroupRequest: UpdateGroupRequest) => {
     return customAxios<GroupResponse>({
       url: `/groups/${groupId}`,
       method: 'PATCH',
       headers: { 'Content-Type': 'application/json' },
       data: updateGroupRequest,
-      params,
     });
   };
-  const getMyGroups = (params: GetMyGroupsParams) => {
-    return customAxios<GroupResponse[]>({ url: `/me/groups`, method: 'GET', params });
+  const getMyGroups = () => {
+    return customAxios<GroupResponse[]>({ url: `/me/groups`, method: 'GET' });
   };
-  const leaveGroup = (groupId: number, params: LeaveGroupParams) => {
-    return customAxios<void>({ url: `/groups/${groupId}/members/me`, method: 'DELETE', params });
+  const leaveGroup = (groupId: number) => {
+    return customAxios<void>({ url: `/groups/${groupId}/members/me`, method: 'DELETE' });
   };
   return { createGroup, joinGroup, getGroup, updateGroup, getMyGroups, leaveGroup };
 };

@@ -4,9 +4,7 @@
  * OpenAPI definition
  * OpenAPI spec version: v0
  */
-import type { CurrentUser } from './currentUser';
 
 export type GetMyGroupChallengesParams = {
-currentUser: CurrentUser;
-status?: string;
+  status?: string;
 };

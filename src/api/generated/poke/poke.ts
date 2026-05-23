@@ -4,25 +4,17 @@
  * OpenAPI definition
  * OpenAPI spec version: v0
  */
-import type {
-  PokeUserParams
-} from '../model';
-
 import { customAxios } from '../../mutator';
 
-
-
-  export const getPoke = () => {
-const pokeUser = (
-    challengeRecordId: number,
-    receiverUserId: number,
-    params: PokeUserParams,
- ) => {
-      return customAxios<void>(
-      {url: `/challenge-records/${challengeRecordId}/pokes/${receiverUserId}`, method: 'POST',
-        params
-    },
-      );
-    }
-  return {pokeUser}};
-export type PokeUserResult = NonNullable<Awaited<ReturnType<ReturnType<typeof getPoke>['pokeUser']>>>
+export const getPoke = () => {
+  const pokeUser = (challengeRecordId: number, receiverUserId: number) => {
+    return customAxios<void>({
+      url: `/challenge-records/${challengeRecordId}/pokes/${receiverUserId}`,
+      method: 'POST',
+    });
+  };
+  return { pokeUser };
+};
+export type PokeUserResult = NonNullable<
+  Awaited<ReturnType<ReturnType<typeof getPoke>['pokeUser']>>
+>;

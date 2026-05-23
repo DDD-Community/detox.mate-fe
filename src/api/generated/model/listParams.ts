@@ -7,7 +7,7 @@
 import type { ListStatus } from './listStatus';
 
 export type ListParams = {
-status?: ListStatus;
-page?: number;
-size?: number;
+  status?: ListStatus;
+  page?: number;
+  size?: number;
 };

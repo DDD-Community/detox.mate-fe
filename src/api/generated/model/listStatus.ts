@@ -5,8 +5,7 @@
  * OpenAPI spec version: v0
  */
 
-export type ListStatus = typeof ListStatus[keyof typeof ListStatus];
-
+export type ListStatus = (typeof ListStatus)[keyof typeof ListStatus];
 
 export const ListStatus = {
   PENDING: 'PENDING',

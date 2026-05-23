@@ -4,9 +4,7 @@
  * OpenAPI definition
  * OpenAPI spec version: v0
  */
-import type { CurrentUser } from './currentUser';
 
 export type GetHistoryChallengeRecordsParams = {
-date: string;
-currentUser: CurrentUser;
+  date: string;
 };

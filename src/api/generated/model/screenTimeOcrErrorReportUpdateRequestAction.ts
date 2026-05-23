@@ -5,8 +5,8 @@
  * OpenAPI spec version: v0
  */
 
-export type ScreenTimeOcrErrorReportUpdateRequestAction = typeof ScreenTimeOcrErrorReportUpdateRequestAction[keyof typeof ScreenTimeOcrErrorReportUpdateRequestAction];
-
+export type ScreenTimeOcrErrorReportUpdateRequestAction =
+  (typeof ScreenTimeOcrErrorReportUpdateRequestAction)[keyof typeof ScreenTimeOcrErrorReportUpdateRequestAction];
 
 export const ScreenTimeOcrErrorReportUpdateRequestAction = {
   CORRECT: 'CORRECT',

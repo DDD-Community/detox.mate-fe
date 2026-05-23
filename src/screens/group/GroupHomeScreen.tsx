@@ -1,5 +1,4 @@
 import { useFocusEffect, useRouter } from 'expo-router';
-import * as SecureStore from 'expo-secure-store';
 import { useCallback, useState } from 'react';
 import {
   ActivityIndicator,
@@ -27,10 +26,7 @@ export default function GroupHomeScreen() {
       (async () => {
         setIsCheckingGroups(true);
         try {
-          const userIdStr = await SecureStore.getItemAsync('currentUserId');
-          const groups = await getGroup().getMyGroups({
-            currentUser: { id: userIdStr ? Number(userIdStr) : undefined },
-          });
+          const groups = await getGroup().getMyGroups();
 
           if (cancelled) return;
 

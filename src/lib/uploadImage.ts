@@ -1,4 +1,3 @@
-import * as SecureStore from 'expo-secure-store';
 import { PresignedUrlRequestUploadPurpose } from '../api/generated/model';
 import { getUpload } from '../api/generated/upload/upload';
 
@@ -11,9 +10,6 @@ export async function uploadImage(
     uploadPurpose?: PresignedUrlRequestUploadPurpose;
   }
 ): Promise<string> {
-  const userIdStr = await SecureStore.getItemAsync('currentUserId');
-  const userId = userIdStr ? parseInt(userIdStr, 10) : 0;
-
   const fileName = options?.fileName ?? imageUri.split('/').pop() ?? 'image.jpg';
   const contentType = options?.mimeType ?? 'image/jpeg';
   const fileSize = options?.fileSize ?? 0;
@@ -21,15 +17,12 @@ export async function uploadImage(
     options?.uploadPurpose ?? PresignedUrlRequestUploadPurpose.ACTIVITY_RECORD_IMAGE;
 
   const { issuePresignedUrl } = getUpload();
-  const { uploadUrl, objectKey } = await issuePresignedUrl(
-    {
-      fileName,
-      contentType,
-      fileSize,
-      uploadPurpose,
-    },
-    { currentUser: { id: userId } }
-  );
+  const { uploadUrl, objectKey } = await issuePresignedUrl({
+    fileName,
+    contentType,
+    fileSize,
+    uploadPurpose,
+  });
 
   if (!uploadUrl || !objectKey) {
     throw new Error('presigned URL을 발급받지 못했습니다');

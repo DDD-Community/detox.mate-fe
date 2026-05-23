@@ -1,5 +1,4 @@
 import { router } from 'expo-router';
-import * as SecureStore from 'expo-secure-store';
 import { useEffect, useState } from 'react';
 import { ActivityIndicator, Pressable, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -28,18 +27,11 @@ export default function EditGoalTimeScreen() {
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
 
-  const getCurrentUserParam = async () => {
-    const userIdStr = await SecureStore.getItemAsync('currentUserId');
-    return { currentUser: { id: userIdStr ? Number(userIdStr) : undefined } };
-  };
-
   useEffect(() => {
     let cancelled = false;
     (async () => {
       try {
-        const response = await getUserUsageGoalTime().getCurrentGoalTimes(
-          await getCurrentUserParam()
-        );
+        const response = await getUserUsageGoalTime().getCurrentGoalTimes();
         if (cancelled) return;
         const total = response.goals?.find(
           (g) => g.usageGoalType === UserUsageGoalTimeRequestUsageGoalType.TOTAL_USAGE
@@ -79,17 +71,14 @@ export default function EditGoalTimeScreen() {
     if (isSaving || isUnchanged) return;
     setIsSaving(true);
     try {
-      await getUserUsageGoalTime().setGoalTimes(
-        {
-          goals: [
-            {
-              usageGoalType: UserUsageGoalTimeRequestUsageGoalType.TOTAL_USAGE,
-              goalMinutes,
-            },
-          ],
-        },
-        await getCurrentUserParam()
-      );
+      await getUserUsageGoalTime().setGoalTimes({
+        goals: [
+          {
+            usageGoalType: UserUsageGoalTimeRequestUsageGoalType.TOTAL_USAGE,
+            goalMinutes,
+          },
+        ],
+      });
       router.back();
     } finally {
       setIsSaving(false);

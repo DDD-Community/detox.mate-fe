@@ -1,5 +1,4 @@
 import { router, useFocusEffect } from 'expo-router';
-import * as SecureStore from 'expo-secure-store';
 import { useCallback, useRef, useState } from 'react';
 import {
   ActivityIndicator,
@@ -197,11 +196,7 @@ export default function FeedHome() {
 
   const fetchGoalState = useCallback(async () => {
     try {
-      const userIdStr = await SecureStore.getItemAsync('currentUserId');
-      const userParam = {
-        currentUser: { id: userIdStr ? Number(userIdStr) : undefined },
-      };
-      const response = await getUserUsageGoalTime().getCurrentGoalTimes(userParam);
+      const response = await getUserUsageGoalTime().getCurrentGoalTimes();
       const total = response.goals?.find(
         (g) => g.usageGoalType === CurrentUsageGoalTimeResponseUsageGoalType.TOTAL_USAGE
       );

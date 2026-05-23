@@ -8,34 +8,35 @@ import type {
   AdminScreenTimeOcrErrorReportListResponse,
   ListParams,
   ScreenTimeOcrErrorReportUpdateRequest,
-  ScreenTimeOcrErrorReportUpdateResponse
+  ScreenTimeOcrErrorReportUpdateResponse,
 } from '../model';
 
 import { customAxios } from '../../mutator';
 
-
-
-  export const getAdminScreenTimeOcrErrorReport = () => {
-const update = (
+export const getAdminScreenTimeOcrErrorReport = () => {
+  const update = (
     reportId: number,
-    screenTimeOcrErrorReportUpdateRequest: ScreenTimeOcrErrorReportUpdateRequest,
- ) => {
-      return customAxios<ScreenTimeOcrErrorReportUpdateResponse>(
-      {url: `/admin/screen-time-ocr-error-reports/${reportId}`, method: 'PATCH',
-      headers: {'Content-Type': 'application/json', },
-      data: screenTimeOcrErrorReportUpdateRequest
-    },
-      );
-    }
-  const list = (
-    params?: ListParams,
- ) => {
-      return customAxios<AdminScreenTimeOcrErrorReportListResponse>(
-      {url: `/admin/screen-time-ocr-error-reports`, method: 'GET',
-        params
-    },
-      );
-    }
-  return {update,list}};
-export type UpdateResult = NonNullable<Awaited<ReturnType<ReturnType<typeof getAdminScreenTimeOcrErrorReport>['update']>>>
-export type ListResult = NonNullable<Awaited<ReturnType<ReturnType<typeof getAdminScreenTimeOcrErrorReport>['list']>>>
+    screenTimeOcrErrorReportUpdateRequest: ScreenTimeOcrErrorReportUpdateRequest
+  ) => {
+    return customAxios<ScreenTimeOcrErrorReportUpdateResponse>({
+      url: `/admin/screen-time-ocr-error-reports/${reportId}`,
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      data: screenTimeOcrErrorReportUpdateRequest,
+    });
+  };
+  const list = (params?: ListParams) => {
+    return customAxios<AdminScreenTimeOcrErrorReportListResponse>({
+      url: `/admin/screen-time-ocr-error-reports`,
+      method: 'GET',
+      params,
+    });
+  };
+  return { update, list };
+};
+export type UpdateResult = NonNullable<
+  Awaited<ReturnType<ReturnType<typeof getAdminScreenTimeOcrErrorReport>['update']>>
+>;
+export type ListResult = NonNullable<
+  Awaited<ReturnType<ReturnType<typeof getAdminScreenTimeOcrErrorReport>['list']>>
+>;

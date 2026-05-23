@@ -4,42 +4,32 @@
  * OpenAPI definition
  * OpenAPI spec version: v0
  */
-import type {
-  RegisterFcmTokenRequest,
-  RegisterParams,
-  RemoveFcmTokenRequest,
-  RemoveParams
-} from '../model';
+import type { RegisterFcmTokenRequest, RemoveFcmTokenRequest } from '../model';
 
 import { customAxios } from '../../mutator';
 
-
-
-  export const getFcmToken = () => {
-const register = (
-    registerFcmTokenRequest: RegisterFcmTokenRequest,
-    params: RegisterParams,
- ) => {
-      return customAxios<void>(
-      {url: `/notifications/tokens`, method: 'POST',
-      headers: {'Content-Type': 'application/json', },
+export const getFcmToken = () => {
+  const register = (registerFcmTokenRequest: RegisterFcmTokenRequest) => {
+    return customAxios<void>({
+      url: `/notifications/tokens`,
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
       data: registerFcmTokenRequest,
-        params
-    },
-      );
-    }
-  const remove = (
-    removeFcmTokenRequest: RemoveFcmTokenRequest,
-    params: RemoveParams,
- ) => {
-      return customAxios<void>(
-      {url: `/notifications/tokens`, method: 'DELETE',
-      headers: {'Content-Type': 'application/json', },
+    });
+  };
+  const remove = (removeFcmTokenRequest: RemoveFcmTokenRequest) => {
+    return customAxios<void>({
+      url: `/notifications/tokens`,
+      method: 'DELETE',
+      headers: { 'Content-Type': 'application/json' },
       data: removeFcmTokenRequest,
-        params
-    },
-      );
-    }
-  return {register,remove}};
-export type RegisterResult = NonNullable<Awaited<ReturnType<ReturnType<typeof getFcmToken>['register']>>>
-export type RemoveResult = NonNullable<Awaited<ReturnType<ReturnType<typeof getFcmToken>['remove']>>>
+    });
+  };
+  return { register, remove };
+};
+export type RegisterResult = NonNullable<
+  Awaited<ReturnType<ReturnType<typeof getFcmToken>['register']>>
+>;
+export type RemoveResult = NonNullable<
+  Awaited<ReturnType<ReturnType<typeof getFcmToken>['remove']>>
+>;

@@ -7,13 +7,13 @@
 
 export interface UpdateMyProfileRequest {
   /**
-     * @minLength 0
-     * @maxLength 10
-     */
+   * @minLength 0
+   * @maxLength 10
+   */
   displayName?: string;
   /**
-     * @minLength 0
-     * @maxLength 1024
-     */
+   * @minLength 0
+   * @maxLength 1024
+   */
   profileImageObjectKey?: string;
 }
