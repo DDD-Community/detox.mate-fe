@@ -25,7 +25,6 @@ import { WeeklyStatusCard } from './mypage/WeeklyStatusCard';
 
 import iconCaretLeft from '../../../assets/icons/regular/icon_rg_CaretLeft.png';
 import iconCamera from '../../../assets/icons/regular/icon_rg_Camera.png';
-import iconFolder from '../../../assets/icons/regular/icon_rg_Folder.png';
 import iconGearSix from '../../../assets/icons/regular/icon_rg_GearSix.png';
 import iconPencil from '../../../assets/icons/regular/icon_rg_PencilSimple.png';
 import CALENDAR_IMG from '../../../assets/mypage-calender.png';
@@ -40,7 +39,6 @@ const ICONS = {
   gearSix: iconGearSix,
   pencil: iconPencil,
   camera: iconCamera,
-  folder: iconFolder,
 } as const;
 
 interface ProfileChipProps {
@@ -50,7 +48,6 @@ interface ProfileChipProps {
 function ProfileChip({ label }: ProfileChipProps) {
   return (
     <View style={styles.chip}>
-      <Image source={ICONS.folder} style={styles.chipLeadingIcon} resizeMode="contain" />
       <Text style={styles.chipText} numberOfLines={1}>
         {label}
       </Text>
@@ -590,10 +587,6 @@ const styles = StyleSheet.create({
     paddingHorizontal: spacing[12],
     backgroundColor: '#FFFFFF',
     borderRadius: radius.full,
-  },
-  chipLeadingIcon: {
-    width: 14,
-    height: 14,
   },
   chipText: {
     ...typography.primary.body2B,
