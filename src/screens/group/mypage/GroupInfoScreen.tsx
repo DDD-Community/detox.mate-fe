@@ -14,11 +14,6 @@ import { LeaveGroupAlert } from './LeaveGroupAlert';
 
 const { brown, gray } = primitiveColors;
 
-const ICONS = {
-  copy: require('../../../../assets/onboarding-copy.png'),
-  shareBlack: require('../../../../assets/onboarding-share-black.png'),
-} as const;
-
 const DEFAULT_AVATAR = require('../../../../assets/basic-profile-turtle-hi.png');
 
 export default function GroupInfoScreen() {
@@ -151,11 +146,11 @@ export default function GroupInfoScreen() {
               <Text style={styles.codeLabel}>초대 코드</Text>
               <Text style={styles.codeText}>{inviteCode}</Text>
               <Pressable onPress={handleCopyInviteCode} hitSlop={8}>
-                <Image source={ICONS.copy} style={styles.copyIcon} resizeMode="contain" />
+                <Icon name="copy" size={20} color={gray[800]} />
               </Pressable>
             </View>
             <Pressable onPress={handleShareInviteCode} style={styles.shareButton}>
-              <Image source={ICONS.shareBlack} style={styles.shareIcon} resizeMode="contain" />
+              <Icon name="shareFat" size={18} color={gray[800]} />
               <Text style={styles.shareText}>친구에게 공유하기</Text>
             </Pressable>
           </View>
@@ -282,10 +277,6 @@ const styles = StyleSheet.create({
     color: gray[900],
     letterSpacing: 2,
   },
-  copyIcon: {
-    width: 20,
-    height: 20,
-  },
   shareButton: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -294,10 +285,6 @@ const styles = StyleSheet.create({
     height: 44,
     borderRadius: radius[12],
     backgroundColor: gray[50],
-  },
-  shareIcon: {
-    width: 18,
-    height: 18,
   },
   shareText: {
     ...typography.primary.body2B,

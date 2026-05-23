@@ -8,6 +8,7 @@ import { CaretUpIcon } from 'phosphor-react-native/src/icons/CaretUp';
 import { ChatIcon } from 'phosphor-react-native/src/icons/Chat';
 import { CheckIcon } from 'phosphor-react-native/src/icons/Check';
 import { CheckCircleIcon } from 'phosphor-react-native/src/icons/CheckCircle';
+import { CopyIcon } from 'phosphor-react-native/src/icons/Copy';
 import { GearSixIcon } from 'phosphor-react-native/src/icons/GearSix';
 import { ImageSquareIcon } from 'phosphor-react-native/src/icons/ImageSquare';
 import { InfoIcon } from 'phosphor-react-native/src/icons/Info';
@@ -33,6 +34,7 @@ export const iconComponents = {
   chat: ChatIcon,
   check: CheckIcon,
   checkCircle: CheckCircleIcon,
+  copy: CopyIcon,
   gearSix: GearSixIcon,
   imageSquare: ImageSquareIcon,
   info: InfoIcon,

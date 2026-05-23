@@ -3,6 +3,7 @@ import { useRouter } from 'expo-router';
 import React, { useState } from 'react';
 import { Image, Share, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
 import apiClient from '../../api/client';
+import { Icon } from '../../components/Icon';
 import { primitiveColors } from '../../lib/token/primitive/colors';
 import { typography } from '../../lib/token/primitive/typography';
 
@@ -112,20 +113,12 @@ export default function GroupJoinScreen() {
               <Text style={styles.codeLabel}>초대 코드</Text>
               <Text style={styles.codeText}>{inviteCode}</Text>
               <TouchableOpacity onPress={handleCopy} activeOpacity={0.7}>
-                <Image
-                  source={require('../../../assets/onboarding-copy.png')}
-                  style={styles.copyIcon}
-                  resizeMode="contain"
-                />
+                <Icon name="copy" size={20} color={gray[800]} />
               </TouchableOpacity>
             </View>
 
             <TouchableOpacity style={styles.shareInCard} onPress={handleShare} activeOpacity={0.8}>
-              <Image
-                source={require('../../../assets/onboarding-share-black.png')}
-                style={styles.shareIcon}
-                resizeMode="contain"
-              />
+              <Icon name="shareFat" size={18} color={gray[900]} />
               <Text style={styles.shareText}>친구에게 공유하기</Text>
             </TouchableOpacity>
           </View>
@@ -248,10 +241,6 @@ const styles = StyleSheet.create({
     color: gray[900],
     letterSpacing: 2,
   },
-  copyIcon: {
-    width: 20,
-    height: 20,
-  },
   shareInCard: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -260,10 +249,6 @@ const styles = StyleSheet.create({
     backgroundColor: gray[50],
     borderRadius: 10,
     paddingVertical: 12,
-  },
-  shareIcon: {
-    width: 18,
-    height: 18,
   },
   shareText: {
     ...typography.primary.body2M,
