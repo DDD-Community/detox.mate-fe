@@ -2,7 +2,15 @@ import * as ImagePicker from 'expo-image-picker';
 import { router, useFocusEffect, useLocalSearchParams } from 'expo-router';
 import * as SecureStore from 'expo-secure-store';
 import { useCallback, useState } from 'react';
-import { ActivityIndicator, Image, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import {
+  ActivityIndicator,
+  Image,
+  Pressable,
+  ScrollView,
+  StyleSheet,
+  Text,
+  View,
+} from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { getGroup } from '../../api/generated/group/group';
@@ -17,29 +25,20 @@ import type {
 } from '../../api/generated/model';
 import { PresignedUrlRequestUploadPurpose } from '../../api/generated/model';
 import { Button } from '../../components/Button';
+import { Icon } from '../../components/Icon';
 import { uploadImage } from '../../lib/uploadImage';
 import { primitiveColors, radius, spacing, typography } from '../../lib/token';
 import { JoinedGroupBody } from './mypage/JoinedGroupBody';
 import { ProfileImageBottomSheet } from './mypage/ProfileImageBottomSheet';
 import { WeeklyStatusCard } from './mypage/WeeklyStatusCard';
 
-import iconCaretLeft from '../../../assets/icons/regular/icon_rg_CaretLeft.png';
-import iconCamera from '../../../assets/icons/regular/icon_rg_Camera.png';
-import iconGearSix from '../../../assets/icons/regular/icon_rg_GearSix.png';
-import iconPencil from '../../../assets/icons/regular/icon_rg_PencilSimple.png';
 import CALENDAR_IMG from '../../../assets/mypage-calender.png';
 import GROUP_INVITE_IMG from '../../../assets/onboarding-group-invite.png';
 import GROUP_PLUS_IMG from '../../../assets/onboarding-group-plus.png';
 import TURTLE_IMG from '../../../assets/turtle-hi.png';
 
 const { brown, gray, green } = primitiveColors;
-
-const ICONS = {
-  caretLeft: iconCaretLeft,
-  gearSix: iconGearSix,
-  pencil: iconPencil,
-  camera: iconCamera,
-} as const;
+const DEFAULT_PROFILE_IMAGE_OBJECT_KEY = 'static/turtle-hi.png';
 
 interface ProfileChipProps {
   label: string;
@@ -86,19 +85,14 @@ const formatMinutes = (m?: number) => {
 
 export default function MyPageScreen() {
   // memberId가 있으면 친구 프로필 모드, 없으면 내 마이페이지 모드
-  const {
-    memberId,
-    friendName,
-    friendUserId,
-    challengeRecordId,
-    friendGroupId,
-  } = useLocalSearchParams<{
-    memberId?: string;
-    friendName?: string;
-    friendUserId?: string;
-    challengeRecordId?: string;
-    friendGroupId?: string;
-  }>();
+  const { memberId, friendName, friendUserId, challengeRecordId, friendGroupId } =
+    useLocalSearchParams<{
+      memberId?: string;
+      friendName?: string;
+      friendUserId?: string;
+      challengeRecordId?: string;
+      friendGroupId?: string;
+    }>();
   const isFriend = !!memberId;
 
   const [profile, setProfile] = useState<MyProfileResponse | null>(null);
@@ -112,7 +106,7 @@ export default function MyPageScreen() {
   const [isPoking, setIsPoking] = useState(false);
 
   const [isImageSheetOpen, setIsImageSheetOpen] = useState(false);
-  // null이면 기본 이미지(추후 서버가 내려주는 기본 S3 URL로 대체), 그 외엔 사용자 이미지 URL/URI
+  // null이면 로컬 기본 이미지, 그 외엔 서버 URL/로컬 URI
   const [profileImageUri, setProfileImageUri] = useState<string | null>(null);
   const [isUpdatingProfileImage, setIsUpdatingProfileImage] = useState(false);
 
@@ -135,7 +129,7 @@ export default function MyPageScreen() {
               const data = await getGroupMember().getGroupMemberProfile(
                 groupIdNum,
                 memberIdNum,
-                userParam,
+                userParam
               );
               if (cancelled) return;
               setFriendProfile(data);
@@ -158,7 +152,7 @@ export default function MyPageScreen() {
             .map((item) => item.id)
             .filter((id): id is number => id != null);
           const groupDetails = await Promise.all(
-            groupIds.map((groupId) => getGroup().getGroup(groupId, userParam)),
+            groupIds.map((groupId) => getGroup().getGroup(groupId, userParam))
           );
           if (cancelled) return;
           setGroups(groupDetails);
@@ -181,7 +175,7 @@ export default function MyPageScreen() {
           const profileData = await getGroupMember().getGroupMemberProfile(
             firstGroup.id,
             myMember.id,
-            userParam,
+            userParam
           );
           if (cancelled) return;
           setMemberProfile(profileData);
@@ -192,7 +186,7 @@ export default function MyPageScreen() {
       return () => {
         cancelled = true;
       };
-    }, [isFriend, friendGroupId, memberId]),
+    }, [isFriend, friendGroupId, memberId])
   );
 
   const handleBack = () => {
@@ -218,9 +212,8 @@ export default function MyPageScreen() {
     setProfileImageUri(null);
     setIsUpdatingProfileImage(true);
     try {
-      // 기본 이미지 복귀: 빈 objectKey로 사용자 업로드 이미지를 클리어한다.
       const response = await getUser().updateMe(
-        { profileImageObjectKey: '' },
+        { profileImageObjectKey: DEFAULT_PROFILE_IMAGE_OBJECT_KEY },
         await getCurrentUserParam()
       );
       // eslint-disable-next-line no-console
@@ -228,7 +221,10 @@ export default function MyPageScreen() {
       setProfileImageUri(response.profileImageUrl ?? null);
     } catch (e) {
       // eslint-disable-next-line no-console
-      console.log('[default-image] failed', (e as { response?: { data?: unknown } })?.response?.data ?? e);
+      console.log(
+        '[default-image] failed',
+        (e as { response?: { data?: unknown } })?.response?.data ?? e
+      );
       setProfileImageUri(previous);
       // TODO: 에러 토스트
     } finally {
@@ -311,7 +307,7 @@ export default function MyPageScreen() {
       await getPoke().pokeUser(
         Number(challengeRecordId),
         Number(friendUserId),
-        await getCurrentUserParam(),
+        await getCurrentUserParam()
       );
     } finally {
       setIsPoking(false);
@@ -323,8 +319,8 @@ export default function MyPageScreen() {
   const isFriendGoalSet = (friendProfile?.currentGoals?.length ?? 0) > 0;
 
   const displayName = isFriend
-    ? friendProfile?.displayName ?? friendName ?? '친구'
-    : profile?.displayName ?? '';
+    ? (friendProfile?.displayName ?? friendName ?? '친구')
+    : (profile?.displayName ?? '');
   const dayCount = activeProfile?.activitySummary?.dayCount ?? 0;
   const achievementRate = activeProfile?.activitySummary?.achievementRate ?? 0;
   const hasJoinedGroup = groups.length > 0;
@@ -343,14 +339,15 @@ export default function MyPageScreen() {
       name: m.displayName ?? '',
     })),
   }));
-  const daysUntilGoalChange =
-    memberProfile?.goalChangeAvailability?.remainingDays ?? 0;
+  const daysUntilGoalChange = memberProfile?.goalChangeAvailability?.remainingDays ?? 0;
 
   // 표시할 프로필 이미지: 친구 모드면 친구 응답, 본인 모드면 로컬 state(낙관적 업데이트 + 서버 응답)
   const displayProfileImageUri = isFriend
-    ? friendProfile?.profileImageUrl ?? null
+    ? (friendProfile?.profileImageUrl ?? null)
     : profileImageUri;
-  const hasProfileBackground = Boolean(displayProfileImageUri);
+  const isDefaultProfileImage =
+    displayProfileImageUri?.includes(DEFAULT_PROFILE_IMAGE_OBJECT_KEY) ?? false;
+  const hasProfileBackground = Boolean(displayProfileImageUri && !isDefaultProfileImage);
 
   return (
     <View style={styles.root}>
@@ -360,7 +357,7 @@ export default function MyPageScreen() {
         showsVerticalScrollIndicator={false}
       >
         <View style={styles.profileCard}>
-          {displayProfileImageUri ? (
+          {hasProfileBackground && displayProfileImageUri ? (
             <>
               <Image
                 source={{ uri: displayProfileImageUri }}
@@ -373,10 +370,10 @@ export default function MyPageScreen() {
           <SafeAreaView edges={['top']}>
             <View style={styles.header}>
               <Pressable onPress={handleBack} hitSlop={8} style={styles.headerLeft}>
-                <Image
-                  source={ICONS.caretLeft}
-                  style={[styles.headerIcon, hasProfileBackground && styles.photoHeaderIcon]}
-                  resizeMode="contain"
+                <Icon
+                  name="caretLeft"
+                  size={24}
+                  color={hasProfileBackground ? '#FFFFFF' : gray[800]}
                 />
                 <Text style={[styles.headerTitle, hasProfileBackground && styles.photoHeaderText]}>
                   {isFriend ? displayName : '마이페이지'}
@@ -384,10 +381,10 @@ export default function MyPageScreen() {
               </Pressable>
               {!isFriend && (
                 <Pressable onPress={handleSettings} hitSlop={8}>
-                  <Image
-                    source={ICONS.gearSix}
-                    style={[styles.headerIcon, hasProfileBackground && styles.photoHeaderIcon]}
-                    resizeMode="contain"
+                  <Icon
+                    name="gearSix"
+                    size={24}
+                    color={hasProfileBackground ? '#FFFFFF' : gray[800]}
                   />
                 </Pressable>
               )}
@@ -395,7 +392,7 @@ export default function MyPageScreen() {
           </SafeAreaView>
 
           <View style={styles.turtleWrap}>
-            {!displayProfileImageUri && (
+            {!hasProfileBackground && (
               <Image source={TURTLE_IMG} style={styles.turtle} resizeMode="contain" />
             )}
           </View>
@@ -412,10 +409,10 @@ export default function MyPageScreen() {
                 <Text style={[styles.nameText, hasProfileBackground && styles.photoNameText]}>
                   {displayName}
                 </Text>
-                <Image
-                  source={ICONS.pencil}
-                  style={[styles.smallIcon, hasProfileBackground && styles.photoHeaderIcon]}
-                  resizeMode="contain"
+                <Icon
+                  name="pencilSimple"
+                  size={16}
+                  color={hasProfileBackground ? '#FFFFFF' : gray[800]}
                 />
               </Pressable>
             )}
@@ -429,10 +426,13 @@ export default function MyPageScreen() {
                 <Pressable
                   onPress={handleEditProfileImage}
                   disabled={isUpdatingProfileImage}
-                  style={[styles.cameraButton, isUpdatingProfileImage && styles.cameraButtonDisabled]}
+                  style={[
+                    styles.cameraButton,
+                    isUpdatingProfileImage && styles.cameraButtonDisabled,
+                  ]}
                   hitSlop={8}
                 >
-                  <Image source={ICONS.camera} style={styles.cameraIcon} resizeMode="contain" />
+                  <Icon name="camera" size={20} color={gray[900]} />
                 </Pressable>
               )}
             </View>
@@ -584,13 +584,6 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     gap: spacing[16],
   },
-  headerIcon: {
-    width: 24,
-    height: 24,
-  },
-  photoHeaderIcon: {
-    tintColor: '#FFFFFF',
-  },
   headerTitle: {
     ...typography.accent.title2,
     color: gray[800],
@@ -623,10 +616,6 @@ const styles = StyleSheet.create({
   },
   photoNameText: {
     color: '#FFFFFF',
-  },
-  smallIcon: {
-    width: 16,
-    height: 16,
   },
   chipRow: {
     flexDirection: 'row',
@@ -663,10 +652,6 @@ const styles = StyleSheet.create({
   },
   cameraButtonDisabled: {
     opacity: 0.5,
-  },
-  cameraIcon: {
-    width: 20,
-    height: 20,
   },
   loadingWrap: {
     flex: 1,

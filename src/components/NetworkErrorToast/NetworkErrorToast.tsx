@@ -1,12 +1,11 @@
-import { Image, Pressable, StyleSheet, Text, View } from 'react-native';
+import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
+import { Icon } from '../Icon';
 import { useNetworkErrorToastStore } from '../../stores/networkErrorToastStore';
 import { primitiveColors, radius, spacing, typography } from '../../lib/token';
 
 const { system } = primitiveColors;
-
-const ICON = require('../../../assets/icons/fill/icon_fl_WarningCircle.png');
 
 const NETWORK_ERROR_MESSAGE = '네트워크 연결 상태 확인 후, 다시 시도해주세요';
 
@@ -20,13 +19,13 @@ export function NetworkErrorToast() {
   if (!visible) return null;
 
   // 네트워크 재시도 큐가 있으면 재시도 토스트, 없으면 일반 메시지 토스트
-  const text = hasRetryQueue ? NETWORK_ERROR_MESSAGE : message ?? '';
+  const text = hasRetryQueue ? NETWORK_ERROR_MESSAGE : (message ?? '');
 
   return (
     <SafeAreaView edges={['bottom']} pointerEvents="box-none" style={styles.safeArea}>
       <View style={styles.toast}>
         <View style={styles.messageGroup}>
-          <Image source={ICON} style={styles.icon} resizeMode="contain" />
+          <Icon name="warningCircle" size={16} weight="fill" color={system.red.opacity100} />
           <Text style={styles.message}>{text}</Text>
         </View>
         <View style={styles.actions}>
@@ -71,11 +70,6 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     gap: spacing[4],
     flexShrink: 1,
-  },
-  icon: {
-    width: 16,
-    height: 16,
-    tintColor: system.red.opacity100,
   },
   message: {
     ...typography.primary.body3R,

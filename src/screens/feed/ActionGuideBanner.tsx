@@ -1,6 +1,7 @@
 import { router } from 'expo-router';
 import { Image, StyleSheet, Text, View } from 'react-native';
 import { Button } from '../../components/Button';
+import { Icon } from '../../components/Icon';
 import { primitiveColors, spacing, typography } from '../../lib/token';
 
 const { brown, gray, system } = primitiveColors;
@@ -42,13 +43,7 @@ function GoalBanner() {
       </View>
       <Button
         label="목표 설정하기"
-        leadingIcon={
-          <Image
-            source={require('../../../assets/icons/regular/icon_rg_Target.png')}
-            style={styles.buttonIcon}
-            resizeMode="contain"
-          />
-        }
+        leadingIcon={<Icon name="target" size={20} color={WHITE} />}
         color="assistive"
         size="lg"
         onPress={() => router.push('/(group)/goal')}

@@ -2,27 +2,19 @@ import * as Clipboard from 'expo-clipboard';
 import { router, useLocalSearchParams } from 'expo-router';
 import * as SecureStore from 'expo-secure-store';
 import { useEffect, useState } from 'react';
-import {
-  ActivityIndicator,
-  Image,
-  Pressable,
-  Share,
-  StyleSheet,
-  Text,
-  View,
-} from 'react-native';
+import { ActivityIndicator, Image, Pressable, Share, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { getFeed } from '../../../api/generated/feed/feed';
 import { getGroup } from '../../../api/generated/group/group';
 import type { GroupMemberResponse } from '../../../api/generated/model';
+import { Icon } from '../../../components/Icon';
 import { primitiveColors, radius, spacing, typography } from '../../../lib/token';
 import { LeaveGroupAlert } from './LeaveGroupAlert';
 
 const { brown, gray } = primitiveColors;
 
 const ICONS = {
-  caretLeft: require('../../../../assets/icons/regular/icon_rg_CaretLeft.png'),
   copy: require('../../../../assets/onboarding-copy.png'),
   shareBlack: require('../../../../assets/onboarding-share-black.png'),
 } as const;
@@ -32,9 +24,7 @@ const TURTLE_AVATAR = require('../../../../assets/turtle-hi.png');
 export default function GroupInfoScreen() {
   const { groupId: groupIdParam } = useLocalSearchParams<{ groupId?: string }>();
 
-  const [groupId, setGroupId] = useState<number | null>(
-    groupIdParam ? Number(groupIdParam) : null,
-  );
+  const [groupId, setGroupId] = useState<number | null>(groupIdParam ? Number(groupIdParam) : null);
   const [groupName, setGroupName] = useState('');
   const [inviteCode, setInviteCode] = useState('');
   const [members, setMembers] = useState<GroupMemberResponse[]>([]);
@@ -140,7 +130,7 @@ export default function GroupInfoScreen() {
       <SafeAreaView edges={['top']}>
         <View style={styles.header}>
           <Pressable onPress={handleBack} hitSlop={8}>
-            <Image source={ICONS.caretLeft} style={styles.headerIcon} resizeMode="contain" />
+            <Icon name="caretLeft" size={24} color={gray[800]} />
           </Pressable>
           <Text style={styles.headerTitle} numberOfLines={1}>
             {groupName}
@@ -248,10 +238,6 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: spacing[16],
-  },
-  headerIcon: {
-    width: 24,
-    height: 24,
   },
   headerTitle: {
     ...typography.accent.title2,

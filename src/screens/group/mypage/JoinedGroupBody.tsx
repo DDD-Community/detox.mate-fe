@@ -1,16 +1,11 @@
-import { Image, Pressable, StyleSheet, Text, View } from 'react-native';
+import { Pressable, StyleSheet, Text, View } from 'react-native';
 
 import { Button } from '../../../components/Button';
+import { Icon } from '../../../components/Icon';
 import { primitiveColors, radius, spacing, typography } from '../../../lib/token';
 import { WeeklyStatusCard } from './WeeklyStatusCard';
 
 const { gray } = primitiveColors;
-
-const ICONS = {
-  caretRight: require('../../../../assets/icons/regular/icon_rg_CaretRight.png'),
-  info: require('../../../../assets/icons/regular/icon_rg_Info.png'),
-  infoFill: require('../../../../assets/icons/fill/icon_fl_Info.png'),
-} as const;
 
 export interface JoinedGroupItem {
   id?: number;
@@ -90,7 +85,7 @@ export function JoinedGroupBody({
               {group.name}
             </Text>
           </View>
-          <Image source={ICONS.caretRight} style={styles.caretIcon} resizeMode="contain" />
+          <Icon name="caretRight" size={24} color={gray[900]} />
         </Pressable>
       ))}
 
@@ -100,13 +95,13 @@ export function JoinedGroupBody({
           color="assistive"
           disabled={daysUntilGoalChange > 0}
           onPress={onGoalChangePress}
-          leadingIcon={<Image source={ICONS.info} style={styles.ctaIcon} resizeMode="contain" />}
-          trailingIcon={<Image source={ICONS.info} style={styles.ctaIcon} resizeMode="contain" />}
+          leadingIcon={<Icon name="info" size={16} color="#FFFFFF" />}
+          trailingIcon={<Icon name="info" size={16} color="#FFFFFF" />}
           style={styles.cta}
         />
         {daysUntilGoalChange > 0 ? (
           <View style={styles.changeHintRow}>
-            <Image source={ICONS.infoFill} style={styles.hintIcon} resizeMode="contain" />
+            <Icon name="info" size={18} weight="fill" color={gray[900]} />
             <Text style={styles.changeHintText}>{daysUntilGoalChange}일 뒤 변경 가능해요</Text>
           </View>
         ) : null}
@@ -163,17 +158,8 @@ const styles = StyleSheet.create({
     color: gray[400],
     flex: 1,
   },
-  caretIcon: {
-    width: 24,
-    height: 24,
-  },
   cta: {
     alignSelf: 'stretch',
-  },
-  ctaIcon: {
-    width: 16,
-    height: 16,
-    tintColor: '#FFFFFF',
   },
   changeHintRow: {
     flexDirection: 'row',
@@ -181,10 +167,6 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     gap: spacing[4],
     marginTop: spacing[12],
-  },
-  hintIcon: {
-    width: 18,
-    height: 18,
   },
   changeHintText: {
     ...typography.accent.body2,

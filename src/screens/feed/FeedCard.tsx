@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { Alert, Image, Pressable, StyleSheet, Text, View } from 'react-native';
+import { Icon } from '../../components/Icon';
 import { primitiveColors, radius, spacing, typography } from '../../lib/token';
 import type { GoalState } from './ActionGuideBanner';
 
@@ -138,11 +139,7 @@ export default function FeedCard({
               <Text style={styles.footerCount}>{item.reactionCount}</Text>
             </Pressable>
             <Pressable style={styles.footerButton} onPress={onBodyPress}>
-              <Image
-                source={require('../../../assets/icons/regular/icon_rg_Chat.png')}
-                style={styles.footerIcon}
-                resizeMode="contain"
-              />
+              <Icon name="chat" size={16} color={gray[500]} />
               <Text style={styles.footerCount}>{item.commentCount}</Text>
             </Pressable>
           </View>
@@ -200,11 +197,7 @@ export default function FeedCard({
 
       <View style={styles.footer}>
         <View style={styles.footerButton}>
-          <Image
-            source={require('../../../assets/icons/regular/icon_rg_Chat.png')}
-            style={styles.footerIcon}
-            resizeMode="contain"
-          />
+          <Icon name="chat" size={16} color={gray[500]} />
           <Text style={styles.footerCount}>{item.commentCount}</Text>
         </View>
       </View>
@@ -341,10 +334,6 @@ const styles = StyleSheet.create({
   impressionIcon: {
     width: 18,
     height: 18,
-  },
-  footerIcon: {
-    width: 16,
-    height: 16,
   },
   footerCount: {
     ...typography.primary.body3R,

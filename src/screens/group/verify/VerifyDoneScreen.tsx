@@ -1,6 +1,7 @@
 import { router, useLocalSearchParams } from 'expo-router';
 import { Image, Pressable, StyleSheet, Text, View } from 'react-native';
 import { Button } from '../../../components/Button';
+import { Icon } from '../../../components/Icon';
 import { submitTotalUsageActivityRecord } from '../../../features/activity-record/submitTotalUsageActivityRecord';
 import { primitiveColors } from '../../../lib/token/primitive/colors';
 import { typography } from '../../../lib/token/primitive/typography';
@@ -148,14 +149,11 @@ export default function VerifyDoneScreen() {
             </Text>
           </View>
           <View style={styles.goalCompareRow}>
-            <Image
-              source={
-                goalAchieved
-                  ? require('../../../../assets/icons/regular/icon_rg_CheckCircle.png')
-                  : require('../../../../assets/icons/fill/icon_fl_CheckCircle.png')
-              }
-              style={goalAchieved ? styles.goalCompareIcon : styles.goalCompareIconMissed}
-              resizeMode="contain"
+            <Icon
+              name="checkCircle"
+              size={20}
+              weight={goalAchieved ? 'regular' : 'fill'}
+              color={goalAchieved ? green[300] : system.red.opacity100}
             />
             <Text style={goalAchieved ? styles.goalCompareText : styles.goalCompareTextMissed}>
               {goalAchieved

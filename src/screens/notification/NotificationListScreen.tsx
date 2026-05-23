@@ -13,6 +13,7 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { getNotificationHistory } from '../../api/generated/notification-history/notification-history';
+import { Icon } from '../../components/Icon';
 import type {
   NotificationHistoryItemResponse,
   NotificationHistoryListResponse,
@@ -20,10 +21,6 @@ import type {
 import { primitiveColors, radius, spacing, typography } from '../../lib/token';
 
 const { brown, gray } = primitiveColors;
-
-const ICONS = {
-  caretLeft: require('../../../assets/icons/regular/icon_rg_CaretLeft.png'),
-} as const;
 
 const DEFAULT_AVATAR = require('../../../assets/turtle-hi.png');
 const EMPTY_IMAGE = require('../../../assets/onboarding-none-feed.png');
@@ -109,9 +106,10 @@ export default function NotificationListScreen() {
     (async () => {
       try {
         const userIdStr = await SecureStore.getItemAsync('currentUserId');
-        const response: NotificationHistoryListResponse = await getNotificationHistory().getMyNotifications({
-          currentUser: { id: userIdStr ? Number(userIdStr) : undefined },
-        });
+        const response: NotificationHistoryListResponse =
+          await getNotificationHistory().getMyNotifications({
+            currentUser: { id: userIdStr ? Number(userIdStr) : undefined },
+          });
         if (cancelled) return;
         const next: NotificationSection[] = (response.groups ?? []).map((g) => ({
           title: g.label ?? '',
@@ -151,7 +149,7 @@ export default function NotificationListScreen() {
       <SafeAreaView edges={['top']}>
         <View style={styles.header}>
           <Pressable onPress={handleBack} hitSlop={8}>
-            <Image source={ICONS.caretLeft} style={styles.headerIcon} resizeMode="contain" />
+            <Icon name="caretLeft" size={24} color={gray[800]} />
           </Pressable>
           <Text style={styles.headerTitle}>알림</Text>
         </View>
@@ -214,10 +212,6 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: spacing[16],
-  },
-  headerIcon: {
-    width: 24,
-    height: 24,
   },
   headerTitle: {
     ...typography.accent.title2,

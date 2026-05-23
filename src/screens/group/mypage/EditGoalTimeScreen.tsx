@@ -1,12 +1,13 @@
 import { router } from 'expo-router';
 import * as SecureStore from 'expo-secure-store';
 import { useEffect, useState } from 'react';
-import { ActivityIndicator, Image, Pressable, StyleSheet, Text, View } from 'react-native';
+import { ActivityIndicator, Pressable, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { getUserUsageGoalTime } from '../../../api/generated/user-usage-goal-time/user-usage-goal-time';
 import { UserUsageGoalTimeRequestUsageGoalType } from '../../../api/generated/model';
 import { Button } from '../../../components/Button';
+import { Icon } from '../../../components/Icon';
 import { primitiveColors, radius, spacing, typography } from '../../../lib/token';
 
 const { brown, gray, green } = primitiveColors;
@@ -14,12 +15,6 @@ const { brown, gray, green } = primitiveColors;
 const STEP_MINUTES = 10;
 const MIN_MINUTES = 30;
 const MAX_MINUTES = 24 * 60 - STEP_MINUTES;
-
-const ICONS = {
-  caretLeft: require('../../../../assets/icons/regular/icon_rg_CaretLeft.png'),
-  minusCircle: require('../../../../assets/icons/fill/icon_fl_MinusCircle.png'),
-  plusCircle: require('../../../../assets/icons/fill/icon_fl_PlusCircle.png'),
-} as const;
 
 const formatGoal = (totalMinutes: number) => {
   const hours = Math.floor(totalMinutes / 60);
@@ -43,11 +38,11 @@ export default function EditGoalTimeScreen() {
     (async () => {
       try {
         const response = await getUserUsageGoalTime().getCurrentGoalTimes(
-          await getCurrentUserParam(),
+          await getCurrentUserParam()
         );
         if (cancelled) return;
         const total = response.goals?.find(
-          (g) => g.usageGoalType === UserUsageGoalTimeRequestUsageGoalType.TOTAL_USAGE,
+          (g) => g.usageGoalType === UserUsageGoalTimeRequestUsageGoalType.TOTAL_USAGE
         );
         if (total?.goalMinutes != null) {
           setGoalMinutes(total.goalMinutes);
@@ -64,8 +59,7 @@ export default function EditGoalTimeScreen() {
 
   const canDecrease = goalMinutes - STEP_MINUTES >= MIN_MINUTES;
   const canIncrease = goalMinutes + STEP_MINUTES <= MAX_MINUTES;
-  const isUnchanged =
-    existingGoalMinutes != null && goalMinutes === existingGoalMinutes;
+  const isUnchanged = existingGoalMinutes != null && goalMinutes === existingGoalMinutes;
 
   const handleDecrease = () => {
     if (!canDecrease) return;
@@ -94,7 +88,7 @@ export default function EditGoalTimeScreen() {
             },
           ],
         },
-        await getCurrentUserParam(),
+        await getCurrentUserParam()
       );
       router.back();
     } finally {
@@ -107,7 +101,7 @@ export default function EditGoalTimeScreen() {
       <SafeAreaView edges={['top']}>
         <View style={styles.header}>
           <Pressable onPress={handleCancel} hitSlop={8}>
-            <Image source={ICONS.caretLeft} style={styles.headerIcon} resizeMode="contain" />
+            <Icon name="caretLeft" size={24} color={gray[800]} />
           </Pressable>
           <Text style={styles.headerTitle}>목표 설정</Text>
         </View>
@@ -129,46 +123,33 @@ export default function EditGoalTimeScreen() {
             <ActivityIndicator color={gray[400]} />
           </View>
         ) : (
-        <View style={styles.pickerWrap}>
-          <View style={styles.pickerRow}>
-            <Pressable
-              onPress={handleDecrease}
-              disabled={!canDecrease}
-              hitSlop={8}
-              style={!canDecrease && styles.disabledIcon}
-            >
-              <Image
-                source={ICONS.minusCircle}
-                style={styles.circleIcon}
-                resizeMode="contain"
-              />
-            </Pressable>
-            <Text style={styles.timeValue}>{formatGoal(goalMinutes)}</Text>
-            <Pressable
-              onPress={handleIncrease}
-              disabled={!canIncrease}
-              hitSlop={8}
-              style={!canIncrease && styles.disabledIcon}
-            >
-              <Image
-                source={ICONS.plusCircle}
-                style={styles.circleIcon}
-                resizeMode="contain"
-              />
-            </Pressable>
+          <View style={styles.pickerWrap}>
+            <View style={styles.pickerRow}>
+              <Pressable
+                onPress={handleDecrease}
+                disabled={!canDecrease}
+                hitSlop={8}
+                style={!canDecrease && styles.disabledIcon}
+              >
+                <Icon name="minusCircle" size={57} weight="fill" color={gray[900]} />
+              </Pressable>
+              <Text style={styles.timeValue}>{formatGoal(goalMinutes)}</Text>
+              <Pressable
+                onPress={handleIncrease}
+                disabled={!canIncrease}
+                hitSlop={8}
+                style={!canIncrease && styles.disabledIcon}
+              >
+                <Icon name="plusCircle" size={57} weight="fill" color={gray[900]} />
+              </Pressable>
+            </View>
+            <Text style={styles.unitLabel}>하루 기준</Text>
           </View>
-          <Text style={styles.unitLabel}>하루 기준</Text>
-        </View>
         )}
       </View>
 
       <SafeAreaView edges={['bottom']} style={styles.ctaWrap}>
-        <Button
-          label="취소"
-          color="assistive"
-          onPress={handleCancel}
-          style={styles.cancelButton}
-        />
+        <Button label="취소" color="assistive" onPress={handleCancel} style={styles.cancelButton} />
         <Button
           label="저장하기"
           color="primary"
@@ -192,10 +173,6 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: spacing[16],
-  },
-  headerIcon: {
-    width: 24,
-    height: 24,
   },
   headerTitle: {
     ...typography.accent.title2,
@@ -242,10 +219,6 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'space-between',
     width: '100%',
-  },
-  circleIcon: {
-    width: 57,
-    height: 57,
   },
   disabledIcon: {
     opacity: 0.3,

@@ -14,6 +14,7 @@ import {
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import apiClient from '../../api/client';
+import { Icon } from '../../components/Icon';
 import { pokeStore } from '../../lib/pokeStore';
 import { primitiveColors, radius, spacing, typography } from '../../lib/token';
 import type { GoalState } from './ActionGuideBanner';
@@ -42,7 +43,12 @@ type CommentItem = {
 
 type CommentAPIItem = {
   commentId: number;
-  author: { userId: number; displayName: string; profileImageUrl: string; isUserWithdrawn: boolean };
+  author: {
+    userId: number;
+    displayName: string;
+    profileImageUrl: string;
+    isUserWithdrawn: boolean;
+  };
   commentBody: string;
   createdAt: string;
 };
@@ -265,10 +271,9 @@ export default function FeedPostDetail() {
     setCommentCount((prev) => prev + 1);
     if (!feedItem.challengeRecordId) return;
     try {
-      await apiClient.post(
-        `/challenge-records/${feedItem.challengeRecordId}/comments`,
-        { commentBody: text }
-      );
+      await apiClient.post(`/challenge-records/${feedItem.challengeRecordId}/comments`, {
+        commentBody: text,
+      });
     } catch {}
   };
 
@@ -279,11 +284,7 @@ export default function FeedPostDetail() {
     >
       <View style={styles.header}>
         <Pressable onPress={() => router.back()} style={styles.backButton}>
-          <Image
-            source={require('../../../assets/icons/regular/icon_rg_CaretLeft.png')}
-            style={styles.backIcon}
-            resizeMode="contain"
-          />
+          <Icon name="caretLeft" size={20} color={gray[900]} />
         </Pressable>
         <Text style={styles.headerTitle}>게시물</Text>
       </View>
@@ -456,60 +457,59 @@ export default function FeedPostDetail() {
         </View>
       </ScrollView>
 
-      {state === 'authReady' && (showReactionPicker ? (
-        <View style={[styles.pickerBar, { paddingBottom: Math.max(insets.bottom, spacing[12]) }]}>
-          <Pressable style={styles.pickerCountCircle} onPress={() => setShowReactionPicker(false)}>
-            <Text style={styles.pickerCountText}>{reactions.length}</Text>
-          </Pressable>
-          {REACTION_EMOJIS.map((emoji) => (
+      {state === 'authReady' &&
+        (showReactionPicker ? (
+          <View style={[styles.pickerBar, { paddingBottom: Math.max(insets.bottom, spacing[12]) }]}>
             <Pressable
-              key={emoji}
-              style={[
-                styles.pickerEmojiBtn,
-                myReactionEmojis.includes(emoji) && styles.pickerEmojiBtnActive,
-              ]}
-              onPress={() => {
-                handleReact(emoji);
-                setShowReactionPicker(false);
-              }}
+              style={styles.pickerCountCircle}
+              onPress={() => setShowReactionPicker(false)}
             >
-              <Text style={styles.pickerEmojiText}>{emoji}</Text>
+              <Text style={styles.pickerCountText}>{reactions.length}</Text>
             </Pressable>
-          ))}
-        </View>
-      ) : (
-        <View style={[styles.inputBar, { paddingBottom: Math.max(insets.bottom, spacing[12]) }]}>
-          <TextInput
-            style={styles.textInput}
-            placeholder="응원 메시지를 남겨보세요"
-            placeholderTextColor={gray[400]}
-            value={commentText}
-            onChangeText={setCommentText}
-            returnKeyType="send"
-            onSubmitEditing={handleSendComment}
-          />
+            {REACTION_EMOJIS.map((emoji) => (
+              <Pressable
+                key={emoji}
+                style={[
+                  styles.pickerEmojiBtn,
+                  myReactionEmojis.includes(emoji) && styles.pickerEmojiBtnActive,
+                ]}
+                onPress={() => {
+                  handleReact(emoji);
+                  setShowReactionPicker(false);
+                }}
+              >
+                <Text style={styles.pickerEmojiText}>{emoji}</Text>
+              </Pressable>
+            ))}
+          </View>
+        ) : (
+          <View style={[styles.inputBar, { paddingBottom: Math.max(insets.bottom, spacing[12]) }]}>
+            <TextInput
+              style={styles.textInput}
+              placeholder="응원 메시지를 남겨보세요"
+              placeholderTextColor={gray[400]}
+              value={commentText}
+              onChangeText={setCommentText}
+              returnKeyType="send"
+              onSubmitEditing={handleSendComment}
+            />
 
-          {commentText.trim().length > 0 ? (
-            <Pressable style={styles.sendBtn} onPress={handleSendComment}>
-              <Image
-                source={require('../../../assets/icons/regular/icon_rg_PaperPlaneRight.png')}
-                style={styles.sendIcon}
-                resizeMode="contain"
-                tintColor={WHITE}
-              />
-            </Pressable>
-          ) : (
-            <Pressable style={styles.impressionBtn} onPress={() => setShowReactionPicker(true)}>
-              <Image
-                source={require('../../../assets/impressions.png')}
-                style={styles.impressionIcon}
-                resizeMode="contain"
-                tintColor={WHITE}
-              />
-            </Pressable>
-          )}
-        </View>
-      ))}
+            {commentText.trim().length > 0 ? (
+              <Pressable style={styles.sendBtn} onPress={handleSendComment}>
+                <Icon name="paperPlaneRight" size={20} color={WHITE} />
+              </Pressable>
+            ) : (
+              <Pressable style={styles.impressionBtn} onPress={() => setShowReactionPicker(true)}>
+                <Image
+                  source={require('../../../assets/impressions.png')}
+                  style={styles.impressionIcon}
+                  resizeMode="contain"
+                  tintColor={WHITE}
+                />
+              </Pressable>
+            )}
+          </View>
+        ))}
     </KeyboardAvoidingView>
   );
 }
@@ -530,10 +530,6 @@ const styles = StyleSheet.create({
   },
   backButton: {
     padding: spacing[4],
-  },
-  backIcon: {
-    width: 20,
-    height: 20,
   },
   headerTitle: {
     ...typography.primary.body1B,
@@ -773,10 +769,6 @@ const styles = StyleSheet.create({
     backgroundColor: green[300],
     alignItems: 'center',
     justifyContent: 'center',
-  },
-  sendIcon: {
-    width: 20,
-    height: 20,
   },
   // Reaction picker bar
   pickerBar: {

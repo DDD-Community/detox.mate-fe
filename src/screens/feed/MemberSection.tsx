@@ -1,5 +1,6 @@
 import { useRef, useState } from 'react';
 import { Image, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { Icon } from '../../components/Icon';
 import { primitiveColors, radius, spacing, typography } from '../../lib/token';
 
 const { gray, green, system } = primitiveColors;
@@ -72,11 +73,7 @@ function MemberAvatar({ member }: { member: MemberItem }) {
         {member.isGoalAchieved && <View style={styles.avatarRing} />}
         {member.isGoalAchieved && (
           <View style={styles.checkBadge}>
-            <Image
-              source={require('../../../assets/icons/regular/icon_rg_Check.png')}
-              style={styles.checkIcon}
-              resizeMode="contain"
-            />
+            <Icon name="check" size={10} color={WHITE} />
           </View>
         )}
         {!member.isGoalAchieved && member.badgeCount !== undefined && (
@@ -94,11 +91,7 @@ function InviteButton({ onPress }: { onPress: () => void }) {
   return (
     <Pressable style={styles.avatarItem} onPress={onPress}>
       <View style={styles.inviteCircle}>
-        <Image
-          source={require('../../../assets/icons/regular/icon_rg_Plus.png')}
-          style={styles.plusIcon}
-          resizeMode="contain"
-        />
+        <Icon name="plus" size={20} color={gray[900]} />
       </View>
       <Text style={styles.avatarName}>초대하기</Text>
     </Pressable>
@@ -174,11 +167,6 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
-  checkIcon: {
-    width: 10,
-    height: 10,
-    tintColor: WHITE,
-  },
   badge: {
     position: 'absolute',
     bottom: 0,
@@ -207,9 +195,5 @@ const styles = StyleSheet.create({
     borderColor: gray[200],
     alignItems: 'center',
     justifyContent: 'center',
-  },
-  plusIcon: {
-    width: 20,
-    height: 20,
   },
 });

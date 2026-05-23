@@ -4,6 +4,7 @@ import { router, useLocalSearchParams } from 'expo-router';
 import { useRef } from 'react';
 import { AppState, Image, StyleSheet, Text, View } from 'react-native';
 import { Button } from '../../../components/Button';
+import { Icon } from '../../../components/Icon';
 import { primitiveColors } from '../../../lib/token/primitive/colors';
 import { typography } from '../../../lib/token/primitive/typography';
 import { VerifyBottomSheet } from './VerifyBottomSheet';
@@ -66,26 +67,14 @@ export default function VerifyMethodScreen() {
             color="assistive"
             onPress={handleGallery}
             style={styles.button}
-            leadingIcon={
-              <Image
-                source={require('../../../../assets/icons/regular/icon_rg_ImageSquare.png')}
-                style={styles.icon}
-                resizeMode="contain"
-              />
-            }
+            leadingIcon={<Icon name="imageSquare" size={16} color="#FFFFFF" />}
           />
           <Button
             label="설정으로 캡쳐하러 가기"
             color="assistive"
             onPress={handleSettings}
             style={styles.button}
-            leadingIcon={
-              <Image
-                source={require('../../../../assets/icons/regular/icon_rg_GearSix.png')}
-                style={styles.icon}
-                resizeMode="contain"
-              />
-            }
+            leadingIcon={<Icon name="gearSix" size={16} color="#FFFFFF" />}
           />
         </View>
       </View>
@@ -115,10 +104,5 @@ const styles = StyleSheet.create({
   },
   button: {
     alignSelf: 'stretch',
-  },
-  icon: {
-    width: 16,
-    height: 16,
-    tintColor: '#FFFFFF',
   },
 });

@@ -3,7 +3,7 @@ import * as Notifications from 'expo-notifications';
 import { router, useFocusEffect } from 'expo-router';
 import * as SecureStore from 'expo-secure-store';
 import { useCallback, useEffect, useState } from 'react';
-import { AppState, Image, Pressable, StyleSheet, Switch, Text, View } from 'react-native';
+import { AppState, Pressable, StyleSheet, Switch, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { logout } from '../../../api/auth';
@@ -13,17 +13,13 @@ import {
   registerDevicePushToken,
   unregisterDevicePushToken,
 } from '../../../lib/fcmToken';
+import { Icon } from '../../../components/Icon';
 import { primitiveColors, radius, spacing, typography } from '../../../lib/token';
 import { LogoutConfirmAlert } from './LogoutConfirmAlert';
 import { NotificationPermissionAlert } from './NotificationPermissionAlert';
 import { WithdrawConfirmAlert } from './WithdrawConfirmAlert';
 
 const { brown, gray, green } = primitiveColors;
-
-const ICONS = {
-  caretLeft: require('../../../../assets/icons/regular/icon_rg_CaretLeft.png'),
-  caretRight: require('../../../../assets/icons/regular/icon_rg_CaretRight.png'),
-} as const;
 
 interface ToggleRowProps {
   label: string;
@@ -65,7 +61,7 @@ function LinkRow({ label, onPress, hasDivider }: LinkRowProps) {
       ]}
     >
       <Text style={styles.rowLabel}>{label}</Text>
-      <Image source={ICONS.caretRight} style={styles.caretIcon} resizeMode="contain" />
+      <Icon name="caretRight" size={24} color={gray[900]} />
     </Pressable>
   );
 }
@@ -121,7 +117,7 @@ export default function SettingsScreen() {
   const patchPushNotificationEnabled = async (enabled: boolean) => {
     await getUser().updatePushNotificationSetting(
       { pushNotificationEnabled: enabled },
-      await getCurrentUserParam(),
+      await getCurrentUserParam()
     );
   };
 
@@ -274,7 +270,7 @@ export default function SettingsScreen() {
       <SafeAreaView edges={['top']}>
         <View style={styles.header}>
           <Pressable onPress={handleBack} hitSlop={8}>
-            <Image source={ICONS.caretLeft} style={styles.headerIcon} resizeMode="contain" />
+            <Icon name="caretLeft" size={24} color={gray[800]} />
           </Pressable>
           <Text style={styles.headerTitle}>설정</Text>
         </View>
@@ -332,10 +328,6 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     gap: spacing[16],
   },
-  headerIcon: {
-    width: 24,
-    height: 24,
-  },
   headerTitle: {
     ...typography.accent.title2,
     color: gray[800],
@@ -374,10 +366,6 @@ const styles = StyleSheet.create({
   rowLabel: {
     ...typography.primary.body1R,
     color: gray[800],
-  },
-  caretIcon: {
-    width: 24,
-    height: 24,
   },
   withdrawWrap: {
     marginTop: spacing[4],
