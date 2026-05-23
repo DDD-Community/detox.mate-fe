@@ -37,7 +37,6 @@ export function LeaveGroupAlert({ visible, onClose, onConfirm, loading }: LeaveG
               <View style={styles.warningChip}>
                 <Icon name="info" size={16} color={RED} />
                 <Text style={styles.warningText}>삭제된 그룹은 복구될 수 없어요</Text>
-                <Icon name="info" size={16} color={RED} />
               </View>
             </View>
           </View>
@@ -103,10 +102,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   title: {
-    fontFamily: typography.primary.title1B.fontFamily,
-    fontSize: 20,
-    fontWeight: '800',
-    lineHeight: 30,
+    ...typography.primary.title1B,
     color: gray[800],
     textAlign: 'center',
   },
