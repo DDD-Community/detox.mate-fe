@@ -1,8 +1,6 @@
 import { useRouter } from 'expo-router';
 import React, { useEffect, useRef, useState } from 'react';
 import { AppState, Linking, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
-import { loginWithKakao } from '../../api/auth';
-import { registerDevicePushToken } from '../../lib/fcmToken';
 import { primitiveColors } from '../../lib/token/primitive/colors';
 import { typography } from '../../lib/token/primitive/typography';
 
@@ -116,16 +114,7 @@ export default function TermsAgreementScreen() {
 
           <TouchableOpacity
             style={[styles.confirmButton, allAgreed && styles.confirmButtonEnabled]}
-            onPress={async () => {
-              await loginWithKakao();
-              // 권한이 이미 허용된 경우에만 토큰이 등록됨. 거부된 상태면 SettingsScreen에서 토글 ON 시 등록.
-              try {
-                await registerDevicePushToken();
-              } catch {
-                // 토큰 등록 실패는 로그인 흐름을 막지 않음
-              }
-              router.replace('/onboarding');
-            }}
+            onPress={() => router.replace('/onboarding')}
             disabled={!allAgreed}
             activeOpacity={0.85}
           >

@@ -1,5 +1,7 @@
 import { useRouter } from 'expo-router';
 import { Image, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { loginWithKakao } from '../../api/auth';
+import { registerDevicePushToken } from '../../lib/fcmToken';
 import { primitiveColors } from '../../lib/token/primitive/colors';
 import { typography } from '../../lib/token/primitive/typography';
 
@@ -8,8 +10,22 @@ const { brown, gray } = primitiveColors;
 export default function LoginScreen() {
   const router = useRouter();
 
-  const handleKakaoLogin = () => {
-    router.replace('/terms-agreement');
+  const handleKakaoLogin = async () => {
+    try {
+      const data = await loginWithKakao();
+      try {
+        await registerDevicePushToken();
+      } catch {
+        // 토큰 등록 실패는 로그인 흐름을 막지 않음
+      }
+      if (data.isNewUser) {
+        router.replace('/terms-agreement');
+      } else {
+        router.replace('/(feed)/home');
+      }
+    } catch {
+      // TODO: 로그인 실패 에러 처리
+    }
   };
 
   return (
