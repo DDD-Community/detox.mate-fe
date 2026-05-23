@@ -6,6 +6,7 @@ import { ActivityIndicator, Image, Pressable, StyleSheet, Text, View } from 'rea
 import { getActivityRecord } from '../../../api/generated/activity-record/activity-record';
 import { ActivityRecordDetailRequestUsageGoalType } from '../../../api/generated/model';
 import { Button } from '../../../components/Button';
+import { Icon } from '../../../components/Icon';
 import { analyzeScreenTimeImage } from '../../../features/screen-time-analyze';
 import { primitiveColors } from '../../../lib/token/primitive/colors';
 import { typography } from '../../../lib/token/primitive/typography';
@@ -59,6 +60,14 @@ export default function VerifyUploadScreen() {
         return;
       }
 
+      if (mode !== 'verify') {
+        router.replace({
+          pathname: '/(group)/verify/done',
+          params: { value: result.value, ...forwardParams },
+        });
+        return;
+      }
+
       const userId = await SecureStore.getItemAsync('currentUserId');
       const { allAchieved } = await getActivityRecord().checkAchievement(
         {
@@ -106,11 +115,7 @@ export default function VerifyUploadScreen() {
           ) : (
             <Pressable style={styles.dropzone} onPress={handlePickImage}>
               <View style={styles.iconCircle}>
-                <Image
-                  source={require('../../../../assets/icons/regular/icon_rg_UploadSimple.png')}
-                  style={styles.uploadIcon}
-                  resizeMode="contain"
-                />
+                <Icon name="uploadSimple" size={23} color="#2B2F38" />
               </View>
               <View style={styles.dropzoneText}>
                 <Text style={styles.dropzoneTitle}>캡처 업로드</Text>
@@ -179,10 +184,6 @@ const styles = StyleSheet.create({
     backgroundColor: '#F3F4F6',
     alignItems: 'center',
     justifyContent: 'center',
-  },
-  uploadIcon: {
-    width: 23,
-    height: 23,
   },
   dropzoneText: {
     alignItems: 'center',

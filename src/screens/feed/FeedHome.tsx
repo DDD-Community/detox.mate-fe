@@ -15,6 +15,7 @@ import apiClient from '../../api/client';
 import { CurrentUsageGoalTimeResponseUsageGoalType } from '../../api/generated/model';
 import { getUserUsageGoalTime } from '../../api/generated/user-usage-goal-time/user-usage-goal-time';
 import { Button } from '../../components/Button';
+import { Icon } from '../../components/Icon';
 import { pokeStore } from '../../lib/pokeStore';
 import { primitiveColors, radius, spacing, typography } from '../../lib/token';
 import ActionGuideBanner, { type GoalState } from './ActionGuideBanner';
@@ -54,6 +55,11 @@ type ActivityDetail = {
   isAchieved: boolean;
 };
 
+type DailyGoal = {
+  usageGoalType?: string;
+  goalMinutes?: number;
+};
+
 type ActivityRecord = {
   submittedAt: string;
   activityImageUrl: string | null;
@@ -74,7 +80,7 @@ type TodayChallengeMember = {
   participantStatus: string;
   dailyStatus: string;
   includedInGroupResult: boolean;
-  goals: unknown[];
+  goals: DailyGoal[];
   challengeRecordId: number;
   activityRecord: ActivityRecord | null;
   reactionCount: number;
@@ -107,6 +113,13 @@ const formatMinutes = (minutes: number | null | undefined): string | undefined =
   return `${m}m`;
 };
 
+const formatMinutesAsHHMM = (minutes: number | null | undefined): string | undefined => {
+  if (minutes == null) return undefined;
+  const h = Math.floor(minutes / 60);
+  const m = minutes % 60;
+  return `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}`;
+};
+
 const isCreatedToday = (isoDate: string): boolean => {
   const created = new Date(isoDate);
   const now = new Date();
@@ -131,8 +144,10 @@ const mapMemberToFeedItem = (m: TodayChallengeMember): FeedItem => {
   const isVerified = m.activityRecord !== null;
   const isGoalAchieved = m.activityRecord?.allAchieved === true;
   const totalUsage = m.activityRecord?.details?.find((d) => d.usageGoalType === 'TOTAL_USAGE');
+  const totalGoal = m.goals?.find((goal) => goal.usageGoalType === 'TOTAL_USAGE');
   return {
     id: String(m.userId),
+    groupChallengeParticipantId: m.groupChallengeParticipantId,
     challengeRecordId: m.challengeRecordId,
     name: m.displayName,
     isMe: m.isMe,
@@ -152,6 +167,7 @@ const mapMemberToFeedItem = (m: TodayChallengeMember): FeedItem => {
     retroText:
       isVerified && !isGoalAchieved ? (m.activityRecord?.reflectionText ?? undefined) : undefined,
     screenTime: formatMinutes(totalUsage?.usedMinutes),
+    goal: formatMinutesAsHHMM(totalGoal?.goalMinutes),
     verifiedTimeAgo:
       isVerified && m.activityRecord?.submittedAt
         ? formatTimeAgo(m.activityRecord.submittedAt)
@@ -420,6 +436,7 @@ function ActiveFeed({
     ...m,
     isGoalAchieved: feedItems.some((f) => f.id === m.id && f.isVerified && f.isGoalAchieved),
   }));
+  const myFeedItem = feedItems.find((item) => item.isMe);
 
   return (
     <View style={styles.feedWrapper}>
@@ -428,7 +445,17 @@ function ActiveFeed({
         contentContainerStyle={styles.container}
         showsVerticalScrollIndicator={false}
       >
-        <ActionGuideBanner goalState={goalState} />
+        <ActionGuideBanner
+          goalState={goalState}
+          verifyParams={{
+            ...(myFeedItem?.goal ? { goal: myFeedItem.goal } : {}),
+            ...(myFeedItem?.groupChallengeParticipantId
+              ? {
+                  groupChallengeParticipantId: String(myFeedItem.groupChallengeParticipantId),
+                }
+              : {}),
+          }}
+        />
         <MemberSection members={enrichedMembers} onInvite={onInvite} />
         {feedItems.map((item) => (
           <FeedCard
@@ -459,11 +486,7 @@ function ActiveFeed({
         style={styles.fab}
         onPress={() => scrollRef.current?.scrollTo({ y: 0, animated: true })}
       >
-        <Image
-          source={require('../../../assets/icons/regular/icon_rg_ArrowUp.png')}
-          style={styles.fabIcon}
-          resizeMode="contain"
-        />
+        <Icon name="arrowUp" size={20} color={WHITE} />
       </Pressable>
     </View>
   );
@@ -484,13 +507,7 @@ function EmptyFeedCard({ onInvite }: { onInvite: () => void }) {
         label="친구 초대하기"
         color="primary"
         size="lg"
-        leadingIcon={
-          <Image
-            source={require('../../../assets/icons/regular/icon_rg_ShareFat.png')}
-            style={styles.buttonIcon}
-            resizeMode="contain"
-          />
-        }
+        leadingIcon={<Icon name="shareFat" size={20} color={WHITE} />}
         onPress={onInvite}
         style={{ alignSelf: 'stretch' }}
       />
@@ -535,11 +552,6 @@ const styles = StyleSheet.create({
     shadowRadius: 4,
     elevation: 4,
   },
-  fabIcon: {
-    width: 20,
-    height: 20,
-    tintColor: WHITE,
-  },
   emptyCard: {
     borderRadius: radius[16],
     padding: spacing[24],
@@ -555,9 +567,5 @@ const styles = StyleSheet.create({
     ...typography.primary.body2R,
     color: gray[500],
     textAlign: 'center',
-  },
-  buttonIcon: {
-    width: 20,
-    height: 20,
   },
 });

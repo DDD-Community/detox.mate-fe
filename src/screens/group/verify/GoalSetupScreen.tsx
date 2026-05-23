@@ -11,6 +11,7 @@ import {
   type GestureResponderEvent,
 } from 'react-native';
 import { Button } from '../../../components/Button';
+import { Icon } from '../../../components/Icon';
 import { getUserUsageGoalTime } from '../../../api/generated/user-usage-goal-time/user-usage-goal-time';
 import { UserUsageGoalTimeRequestUsageGoalType } from '../../../api/generated/model';
 import { primitiveColors } from '../../../lib/token/primitive/colors';
@@ -118,13 +119,13 @@ export default function GoalSetupScreen() {
 
       <View style={styles.body}>
         <View style={styles.textGroup}>
-          <Text style={styles.title}>개인 목표 스크린타임 설정</Text>
+          <Text style={styles.title}>개인 목표 스크린 타임 설정</Text>
           <Text style={styles.description}>마이페이지에서 2주에 한 번 변경할 수 있어요.</Text>
         </View>
 
         {screenTimeDisplay ? (
           <View style={styles.summary}>
-            <Text style={styles.summaryLabel}>내 스크린타임</Text>
+            <Text style={styles.summaryLabel}>내 스크린 타임</Text>
             <Text style={styles.summaryValue}>{screenTimeDisplay}</Text>
           </View>
         ) : null}
@@ -170,11 +171,6 @@ type StepButtonProps = {
 };
 
 function StepButton({ kind, onPressIn, onPressOut, disabled }: StepButtonProps) {
-  const source =
-    kind === 'plus'
-      ? require('../../../../assets/icons/regular/icon_rg_Plus.png')
-      : require('../../../../assets/icons/regular/icon_rg_Minus.png');
-
   return (
     <Pressable
       onPressIn={disabled ? undefined : onPressIn}
@@ -187,7 +183,7 @@ function StepButton({ kind, onPressIn, onPressOut, disabled }: StepButtonProps) 
       ]}
       accessibilityRole="button"
     >
-      <Image source={source} style={styles.stepIcon} resizeMode="contain" />
+      <Icon name={kind} size={28} color="#FFFFFF" />
     </Pressable>
   );
 }
@@ -279,11 +275,6 @@ const styles = StyleSheet.create({
   },
   stepBtnDisabled: {
     opacity: 0.4,
-  },
-  stepIcon: {
-    width: 28,
-    height: 28,
-    tintColor: '#FFFFFF',
   },
   cta: {
     paddingHorizontal: 16,

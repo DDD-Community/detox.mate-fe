@@ -3,6 +3,7 @@ import { extractScreenTimeSummary, isYesterdayLabel } from './parser';
 import { normalizeUsageTextToHHMM } from './normalizeUsageText';
 import { isSummaryDateLabelActualYesterday } from './summaryDate';
 import type { ScreenTimeImageAnalysisResult } from './types';
+import { getMockScreenTimeAnalysisResult } from './mockScreenTimeAnalysis';
 
 type AnalyzeScreenTimeImageDeps = {
   recognizeText?: (imageUri: string) => Promise<OCRResult>;
@@ -23,6 +24,11 @@ export async function analyzeScreenTimeImage(
   imageUri: string,
   deps: AnalyzeScreenTimeImageDeps = {}
 ): Promise<ScreenTimeImageAnalysisResult> {
+  const mockResult = getMockScreenTimeAnalysisResult();
+  if (mockResult) {
+    return mockResult;
+  }
+
   const runRecognizeText = deps.recognizeText ?? defaultRecognizeText;
   const now = deps.now ?? new Date();
   const timeZone = deps.timeZone;
@@ -72,7 +78,7 @@ export async function analyzeScreenTimeImage(
     };
   } catch (error) {
     const message =
-      error instanceof Error ? error.message : '스크린타임 이미지 분석에 실패했습니다.';
+      error instanceof Error ? error.message : '스크린 타임 이미지 분석에 실패했습니다.';
 
     return {
       ok: false,

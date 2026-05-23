@@ -20,6 +20,7 @@ export * from './activityRecordResponse';
 export * from './adminScreenTimeOcrErrorReportItemResponse';
 export * from './adminScreenTimeOcrErrorReportItemResponseStatus';
 export * from './adminScreenTimeOcrErrorReportListResponse';
+export * from './appleSocialLoginRequest';
 export * from './authLoginResponse';
 export * from './checkAchievementParams';
 export * from './commentAuthorInfo';

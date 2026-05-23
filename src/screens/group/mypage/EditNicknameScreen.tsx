@@ -1,20 +1,17 @@
 import { router } from 'expo-router';
 import * as SecureStore from 'expo-secure-store';
 import { useState } from 'react';
-import { Image, Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
+import { Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { getUser } from '../../../api/generated/user/user';
 import { Button } from '../../../components/Button';
+import { Icon } from '../../../components/Icon';
 import { primitiveColors, radius, spacing, typography } from '../../../lib/token';
 
 const { brown, gray } = primitiveColors;
 
 const NICKNAME_MAX_LENGTH = 10;
-
-const ICONS = {
-  caretLeft: require('../../../../assets/icons/regular/icon_rg_CaretLeft.png'),
-} as const;
 
 export default function EditNicknameScreen() {
   const [nickname, setNickname] = useState('');
@@ -38,7 +35,7 @@ export default function EditNicknameScreen() {
       const userIdStr = await SecureStore.getItemAsync('currentUserId');
       await getUser().updateMe(
         { displayName: nickname },
-        { currentUser: { id: userIdStr ? Number(userIdStr) : undefined } },
+        { currentUser: { id: userIdStr ? Number(userIdStr) : undefined } }
       );
       router.back();
     } finally {
@@ -51,7 +48,7 @@ export default function EditNicknameScreen() {
       <SafeAreaView edges={['top']}>
         <View style={styles.header}>
           <Pressable onPress={handleBack} hitSlop={8}>
-            <Image source={ICONS.caretLeft} style={styles.headerIcon} resizeMode="contain" />
+            <Icon name="caretLeft" size={24} color={gray[800]} />
           </Pressable>
           <Text style={styles.headerTitle}>닉네임 변경</Text>
         </View>
@@ -100,10 +97,6 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: spacing[16],
-  },
-  headerIcon: {
-    width: 24,
-    height: 24,
   },
   headerTitle: {
     ...typography.accent.title2,

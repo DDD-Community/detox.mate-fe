@@ -12,9 +12,10 @@ import { typography } from '../../../lib/token/primitive/typography';
 const { gray } = primitiveColors;
 
 export default function VerifyHowToScreen() {
-  const { mode, goal } = useLocalSearchParams<{
+  const { mode, goal, groupChallengeParticipantId } = useLocalSearchParams<{
     mode?: 'initial' | 'verify';
     goal?: string;
+    groupChallengeParticipantId?: string;
   }>();
   const isVerifyMode = mode === 'verify';
   const [ready, setReady] = useState(!isVerifyMode);
@@ -28,7 +29,11 @@ export default function VerifyHowToScreen() {
         router.replace({
           pathname: '/(group)/verify/method',
           params: isVerifyMode
-            ? { mode: 'verify', ...(goal ? { goal } : {}) }
+            ? {
+                mode: 'verify',
+                ...(goal ? { goal } : {}),
+                ...(groupChallengeParticipantId ? { groupChallengeParticipantId } : {}),
+              }
             : goal
               ? { goal }
               : undefined,
@@ -46,7 +51,11 @@ export default function VerifyHowToScreen() {
     router.replace({
       pathname: '/(group)/verify/method',
       params: isVerifyMode
-        ? { mode: 'verify', ...(goal ? { goal } : {}) }
+        ? {
+            mode: 'verify',
+            ...(goal ? { goal } : {}),
+            ...(groupChallengeParticipantId ? { groupChallengeParticipantId } : {}),
+          }
         : goal
           ? { goal }
           : undefined,
@@ -58,7 +67,11 @@ export default function VerifyHowToScreen() {
     router.replace({
       pathname: '/(group)/verify/method',
       params: isVerifyMode
-        ? { mode: 'verify', ...(goal ? { goal } : {}) }
+        ? {
+            mode: 'verify',
+            ...(goal ? { goal } : {}),
+            ...(groupChallengeParticipantId ? { groupChallengeParticipantId } : {}),
+          }
         : goal
           ? { goal }
           : undefined,
@@ -76,7 +89,7 @@ export default function VerifyHowToScreen() {
           <View style={styles.textGroup}>
             <Text style={styles.title}>이렇게 찍어주세요</Text>
             <Text style={styles.description}>
-              설정 - 스크린타임에서{'\n'}어제의 총 스크린타임이 보이도록 캡쳐해주세요
+              설정 - 스크린 타임에서{'\n'}어제의 총 스크린 타임이 보이도록 캡쳐해주세요
             </Text>
           </View>
 

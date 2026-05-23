@@ -9,6 +9,7 @@ import {
   TouchableOpacity,
   View,
 } from 'react-native';
+import { Icon } from '../../components/Icon';
 import apiClient from '../../api/client';
 import { primitiveColors, radius, spacing, typography } from '../../lib/token';
 import FeedCard, { type FeedItem, type PokeEntry, type ReactionEntry } from './FeedCard';
@@ -123,20 +124,12 @@ export default function CalendarHistoryScreen() {
       {/* Header */}
       <View style={styles.header}>
         <TouchableOpacity onPress={() => router.back()} style={styles.backBtn}>
-          <Image
-            source={require('../../../assets/icons/regular/icon_rg_CaretLeft.png')}
-            style={styles.navIcon}
-            resizeMode="contain"
-          />
+          <Icon name="caretLeft" size={20} color={gray[900]} />
         </TouchableOpacity>
 
         <View style={styles.dateNav}>
           <TouchableOpacity style={styles.arrowBtn} onPress={() => goTo(shiftDate(date, -1))}>
-            <Image
-              source={require('../../../assets/icons/regular/icon_rg_CaretLeft.png')}
-              style={styles.navIcon}
-              resizeMode="contain"
-            />
+            <Icon name="caretLeft" size={20} color={gray[900]} />
           </TouchableOpacity>
           <Text style={styles.dateText}>{formatDisplayDate(date)}</Text>
           <TouchableOpacity
@@ -144,11 +137,7 @@ export default function CalendarHistoryScreen() {
             disabled={isToday}
             onPress={() => goTo(shiftDate(date, 1))}
           >
-            <Image
-              source={require('../../../assets/icons/regular/icon_rg_CaretRight.png')}
-              style={[styles.navIcon, isToday && styles.iconDisabled]}
-              resizeMode="contain"
-            />
+            <Icon name="caretRight" size={20} color={gray[900]} />
           </TouchableOpacity>
         </View>
 
@@ -164,12 +153,7 @@ export default function CalendarHistoryScreen() {
       ) : (
         <View style={styles.feedList}>
           {items.map((item) => (
-            <FeedCard
-              key={item.id}
-              item={item}
-              goalState="authReady"
-              historyMode={true}
-            />
+            <FeedCard key={item.id} item={item} goalState="authReady" historyMode={true} />
           ))}
         </View>
       )}
@@ -208,13 +192,6 @@ const styles = StyleSheet.create({
   },
   arrowDisabled: {
     opacity: 0,
-  },
-  navIcon: {
-    width: 20,
-    height: 20,
-  },
-  iconDisabled: {
-    opacity: 0.3,
   },
   dateText: {
     ...typography.primary.body1B,

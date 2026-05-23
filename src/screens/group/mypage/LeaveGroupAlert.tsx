@@ -1,15 +1,11 @@
-import { Image, Modal, Pressable, StyleSheet, Text, View } from 'react-native';
+import { Modal, Pressable, StyleSheet, Text, View } from 'react-native';
 
+import { Icon } from '../../../components/Icon';
 import { primitiveColors, radius, spacing, typography } from '../../../lib/token';
 
 const { gray, system } = primitiveColors;
 const RED = system.red.opacity100;
 const RED_10 = system.red.opacity10;
-
-const ICONS = {
-  signOut: require('../../../../assets/icons/regular/icon_rg_SignOut.png'),
-  info: require('../../../../assets/icons/regular/icon_rg_Info.png'),
-} as const;
 
 interface LeaveGroupAlertProps {
   visible: boolean;
@@ -31,15 +27,16 @@ export function LeaveGroupAlert({ visible, onClose, onConfirm, loading }: LeaveG
         <Pressable onPress={(event) => event.stopPropagation()} style={styles.card}>
           <View style={styles.topSection}>
             <View style={styles.iconCircle}>
-              <Image source={ICONS.signOut} style={styles.signOutIcon} resizeMode="contain" />
+              <Icon name="signOut" size={32} color={RED} />
             </View>
             <Text style={styles.title}>그룹을 나가시나요?</Text>
             <View style={styles.descBlock}>
-              <Text style={styles.descText}>지금까지의 인증 기록과{'\n'}대화 내용이 모두 사라져요.</Text>
+              <Text style={styles.descText}>
+                지금까지의 인증 기록과{'\n'}대화 내용이 모두 사라져요.
+              </Text>
               <View style={styles.warningChip}>
-                <Image source={ICONS.info} style={styles.warningIcon} resizeMode="contain" />
+                <Icon name="info" size={16} color={RED} />
                 <Text style={styles.warningText}>삭제된 그룹은 복구될 수 없어요</Text>
-                <Image source={ICONS.info} style={styles.warningIcon} resizeMode="contain" />
               </View>
             </View>
           </View>
@@ -104,16 +101,8 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
-  signOutIcon: {
-    width: 32,
-    height: 32,
-    tintColor: RED,
-  },
   title: {
-    fontFamily: typography.primary.title1B.fontFamily,
-    fontSize: 20,
-    fontWeight: '800',
-    lineHeight: 30,
+    ...typography.primary.title1B,
     color: gray[800],
     textAlign: 'center',
   },
@@ -135,11 +124,6 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: spacing[4],
-  },
-  warningIcon: {
-    width: 16,
-    height: 16,
-    tintColor: RED,
   },
   warningText: {
     ...typography.primary.body2B,

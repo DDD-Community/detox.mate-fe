@@ -1,3 +1,4 @@
+import * as SecureStore from 'expo-secure-store';
 import { useRouter } from 'expo-router';
 import React, { useEffect, useRef, useState } from 'react';
 import { AppState, Linking, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
@@ -114,7 +115,10 @@ export default function TermsAgreementScreen() {
 
           <TouchableOpacity
             style={[styles.confirmButton, allAgreed && styles.confirmButtonEnabled]}
-            onPress={() => router.replace('/onboarding')}
+            onPress={async () => {
+              await SecureStore.setItemAsync('isNewUser', 'true');
+              router.replace('/login');
+            }}
             disabled={!allAgreed}
             activeOpacity={0.85}
           >

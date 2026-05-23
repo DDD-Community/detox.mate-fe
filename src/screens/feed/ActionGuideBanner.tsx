@@ -1,6 +1,7 @@
 import { router } from 'expo-router';
 import { Image, StyleSheet, Text, View } from 'react-native';
 import { Button } from '../../components/Button';
+import { Icon } from '../../components/Icon';
 import { primitiveColors, spacing, typography } from '../../lib/token';
 
 const { brown, gray, system } = primitiveColors;
@@ -10,13 +11,17 @@ export type GoalState = 'notSet' | 'setWaiting' | 'authReady';
 
 interface Props {
   goalState: GoalState;
+  verifyParams?: {
+    goal?: string;
+    groupChallengeParticipantId?: string;
+  };
 }
 
-export default function ActionGuideBanner({ goalState }: Props) {
+export default function ActionGuideBanner({ goalState, verifyParams }: Props) {
   const banner = {
     notSet: <GoalBanner />,
     setWaiting: <GoalSetWaitingBanner />,
-    authReady: <DailyAuthBanner />,
+    authReady: <DailyAuthBanner verifyParams={verifyParams} />,
   }[goalState];
 
   return banner;
@@ -28,7 +33,7 @@ function GoalBanner() {
       <View style={styles.topRow}>
         <View style={styles.textContainer}>
           <Text style={styles.goalTitle}>디톡스 첫날이신가요?</Text>
-          <Text style={styles.goalSubtitle}>내 평균 스크린타임을 업로드해보세요!</Text>
+          <Text style={styles.goalSubtitle}>내 평균 스크린 타임을 업로드해보세요!</Text>
         </View>
         <Image
           source={require('../../../assets/daily-calendar.png')}
@@ -38,13 +43,7 @@ function GoalBanner() {
       </View>
       <Button
         label="목표 설정하기"
-        leadingIcon={
-          <Image
-            source={require('../../../assets/icons/regular/icon_rg_Target.png')}
-            style={styles.buttonIcon}
-            resizeMode="contain"
-          />
-        }
+        leadingIcon={<Icon name="target" size={20} color={WHITE} />}
         color="assistive"
         size="lg"
         onPress={() => router.push('/(group)/goal')}
@@ -61,7 +60,7 @@ function GoalSetWaitingBanner() {
         <View style={styles.textContainer}>
           <Text style={styles.goalTitle}>지금 이 순간부터 시작됐어요</Text>
           <Text style={styles.goalSubtitle}>
-            {'내일부터 스크린타임을 인증할 수 있어요.\n오늘 하루를 버텨보세요!'}
+            {'내일부터 스크린 타임을 인증할 수 있어요.\n오늘 하루를 버텨보세요!'}
           </Text>
         </View>
         <Image
@@ -74,7 +73,7 @@ function GoalSetWaitingBanner() {
   );
 }
 
-function DailyAuthBanner() {
+function DailyAuthBanner({ verifyParams }: Pick<Props, 'verifyParams'>) {
   return (
     <View style={styles.dailyAuthBanner}>
       <View style={styles.topRow}>
@@ -99,13 +98,23 @@ function DailyAuthBanner() {
         }
         color="assistive"
         size="lg"
-        onPress={() => router.push('/(group)/verify')}
+        onPress={() =>
+          router.push({
+            pathname: '/(group)/verify',
+            params: {
+              mode: 'verify',
+              ...(verifyParams?.goal ? { goal: verifyParams.goal } : {}),
+              ...(verifyParams?.groupChallengeParticipantId
+                ? { groupChallengeParticipantId: verifyParams.groupChallengeParticipantId }
+                : {}),
+            },
+          })
+        }
         style={{ alignSelf: 'stretch' }}
       />
     </View>
   );
 }
-
 
 const styles = StyleSheet.create({
   goalBanner: {
