@@ -6,6 +6,8 @@ import { getFcmToken } from '../api/generated/fcm-token/fcm-token';
 import { RegisterFcmTokenRequestPlatform } from '../api/generated/model';
 
 const STORED_TOKEN_KEY = 'fcmDeviceTokenKey';
+let devicePushTokenRegistrationPromise: Promise<void> | null = null;
+const tokenRegistrationPromises = new Map<string, Promise<void>>();
 
 const getUserParam = async () => {
   const userIdStr = await SecureStore.getItemAsync('currentUserId');
@@ -18,26 +20,50 @@ const getPlatform = (): RegisterFcmTokenRequestPlatform => {
   return RegisterFcmTokenRequestPlatform.WEB;
 };
 
+const registerTokenIfNeeded = async (token: string): Promise<void> => {
+  const stored = await SecureStore.getItemAsync(STORED_TOKEN_KEY);
+  if (stored === token) return;
+
+  const existing = tokenRegistrationPromises.get(token);
+  if (existing) return existing;
+
+  const promise = (async () => {
+    await getFcmToken().register({ token, platform: getPlatform() }, await getUserParam());
+    await SecureStore.setItemAsync(STORED_TOKEN_KEY, token);
+  })().finally(() => {
+    tokenRegistrationPromises.delete(token);
+  });
+  tokenRegistrationPromises.set(token, promise);
+  return promise;
+};
+
 /**
  * 디바이스 푸시 토큰을 발급받아 서버에 등록.
  * 푸시 권한이 없거나 토큰 발급에 실패하면 조용히 종료.
  * 마지막으로 등록한 토큰은 unregister에 사용하기 위해 SecureStore에 보관.
  */
 export async function registerDevicePushToken(): Promise<void> {
-  const { status } = await Notifications.getPermissionsAsync();
-  if (status !== 'granted') return;
+  if (devicePushTokenRegistrationPromise) return devicePushTokenRegistrationPromise;
 
-  let token: string | undefined;
-  try {
-    const response = await Notifications.getDevicePushTokenAsync();
-    token = typeof response?.data === 'string' ? response.data : undefined;
-  } catch {
-    return;
-  }
-  if (!token) return;
+  devicePushTokenRegistrationPromise = (async () => {
+    const { status } = await Notifications.getPermissionsAsync();
+    if (status !== 'granted') return;
 
-  await getFcmToken().register({ token, platform: getPlatform() }, await getUserParam());
-  await SecureStore.setItemAsync(STORED_TOKEN_KEY, token);
+    let token: string | undefined;
+    try {
+      const response = await Notifications.getDevicePushTokenAsync();
+      token = typeof response?.data === 'string' ? response.data : undefined;
+    } catch {
+      return;
+    }
+    if (!token) return;
+
+    await registerTokenIfNeeded(token);
+  })().finally(() => {
+    devicePushTokenRegistrationPromise = null;
+  });
+
+  return devicePushTokenRegistrationPromise;
 }
 
 /**
@@ -45,6 +71,9 @@ export async function registerDevicePushToken(): Promise<void> {
  * 보관된 토큰이 없으면 noop.
  */
 export async function unregisterDevicePushToken(): Promise<void> {
+  await devicePushTokenRegistrationPromise?.catch(() => undefined);
+  await Promise.allSettled(Array.from(tokenRegistrationPromises.values()));
+
   const token = await SecureStore.getItemAsync(STORED_TOKEN_KEY);
   if (!token) return;
   try {
@@ -79,6 +108,5 @@ export async function handleNewDevicePushToken(token: string): Promise<void> {
   const stored = await SecureStore.getItemAsync(STORED_TOKEN_KEY);
   if (stored === token) return;
 
-  await getFcmToken().register({ token, platform: getPlatform() }, await getUserParam());
-  await SecureStore.setItemAsync(STORED_TOKEN_KEY, token);
+  await registerTokenIfNeeded(token);
 }
