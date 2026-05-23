@@ -19,7 +19,7 @@ const ICONS = {
   shareBlack: require('../../../../assets/onboarding-share-black.png'),
 } as const;
 
-const TURTLE_AVATAR = require('../../../../assets/turtle-hi.png');
+const DEFAULT_AVATAR = require('../../../../assets/basic-profile-turtle-hi.png');
 
 export default function GroupInfoScreen() {
   const { groupId: groupIdParam } = useLocalSearchParams<{ groupId?: string }>();
@@ -167,7 +167,7 @@ export default function GroupInfoScreen() {
               const content = (
                 <>
                   <Image
-                    source={m.profileImageUrl ? { uri: m.profileImageUrl } : TURTLE_AVATAR}
+                    source={m.profileImageUrl ? { uri: m.profileImageUrl } : DEFAULT_AVATAR}
                     style={styles.memberAvatar}
                     resizeMode="cover"
                   />

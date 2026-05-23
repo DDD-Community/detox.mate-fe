@@ -1,4 +1,4 @@
-import { Pressable, StyleSheet, Text, View } from 'react-native';
+import { Image, Pressable, StyleSheet, Text, View } from 'react-native';
 
 import { Button } from '../../../components/Button';
 import { Icon } from '../../../components/Icon';
@@ -6,11 +6,12 @@ import { primitiveColors, radius, spacing, typography } from '../../../lib/token
 import { WeeklyStatusCard } from './WeeklyStatusCard';
 
 const { gray } = primitiveColors;
+const DEFAULT_AVATAR = require('../../../../assets/basic-profile-turtle-hi.png');
 
 export interface JoinedGroupItem {
   id?: number;
   name: string;
-  members: { name: string }[];
+  members: { name: string; profileImageUrl?: string | null }[];
 }
 
 export interface JoinedGroupBodyProps {
@@ -28,12 +29,23 @@ export interface JoinedGroupBodyProps {
   onGoalChangePress?: () => void;
 }
 
-function MemberAvatar({ name, offset }: { name: string; offset: number }) {
+function MemberAvatar({
+  name,
+  profileImageUrl,
+  offset,
+}: {
+  name: string;
+  profileImageUrl?: string | null;
+  offset: number;
+}) {
   return (
     <View style={[styles.avatar, { left: offset }]}>
-      <Text style={styles.avatarText} numberOfLines={1}>
-        {name}
-      </Text>
+      <Image
+        source={profileImageUrl ? { uri: profileImageUrl } : DEFAULT_AVATAR}
+        style={styles.avatarImage}
+        resizeMode="cover"
+        accessibilityLabel={name ? `${name} 프로필 이미지` : '기본 프로필 이미지'}
+      />
     </View>
   );
 }
@@ -77,6 +89,7 @@ export function JoinedGroupBody({
                 <MemberAvatar
                   key={`${group.id ?? group.name}-${m.name}-${idx}`}
                   name={m.name}
+                  profileImageUrl={m.profileImageUrl}
                   offset={idx * 23}
                 />
               ))}
@@ -148,10 +161,11 @@ const styles = StyleSheet.create({
     borderColor: '#FFFFFF',
     alignItems: 'center',
     justifyContent: 'center',
+    overflow: 'hidden',
   },
-  avatarText: {
-    ...typography.primary.body3R,
-    color: gray[800],
+  avatarImage: {
+    width: '100%',
+    height: '100%',
   },
   groupName: {
     ...typography.primary.body1B,

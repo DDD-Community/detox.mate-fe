@@ -337,6 +337,7 @@ export default function MyPageScreen() {
     name: item.name ?? '',
     members: (item.members ?? []).map((m) => ({
       name: m.displayName ?? '',
+      profileImageUrl: m.profileImageUrl ?? null,
     })),
   }));
   const daysUntilGoalChange = memberProfile?.goalChangeAvailability?.remainingDays ?? 0;
