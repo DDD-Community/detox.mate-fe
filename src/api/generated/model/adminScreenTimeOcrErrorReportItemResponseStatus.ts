@@ -5,8 +5,8 @@
  * OpenAPI spec version: v0
  */
 
-export type AdminScreenTimeOcrErrorReportItemResponseStatus = typeof AdminScreenTimeOcrErrorReportItemResponseStatus[keyof typeof AdminScreenTimeOcrErrorReportItemResponseStatus];
-
+export type AdminScreenTimeOcrErrorReportItemResponseStatus =
+  (typeof AdminScreenTimeOcrErrorReportItemResponseStatus)[keyof typeof AdminScreenTimeOcrErrorReportItemResponseStatus];
 
 export const AdminScreenTimeOcrErrorReportItemResponseStatus = {
   PENDING: 'PENDING',

@@ -4,22 +4,19 @@
  * OpenAPI definition
  * OpenAPI spec version: v0
  */
-import type {
-  ActivityCalendarRichFixtureResponse
-} from '../model';
+import type { ActivityCalendarRichFixtureResponse } from '../model';
 
 import { customAxios } from '../../mutator';
 
-
-
-  export const getActivityCalendarSqlFixture = () => {
-const resetActivityCalendarRich = (
-
- ) => {
-      return customAxios<ActivityCalendarRichFixtureResponse>(
-      {url: `/dev/fixtures/activity-calendar-rich`, method: 'POST'
-    },
-      );
-    }
-  return {resetActivityCalendarRich}};
-export type ResetActivityCalendarRichResult = NonNullable<Awaited<ReturnType<ReturnType<typeof getActivityCalendarSqlFixture>['resetActivityCalendarRich']>>>
+export const getActivityCalendarSqlFixture = () => {
+  const resetActivityCalendarRich = () => {
+    return customAxios<ActivityCalendarRichFixtureResponse>({
+      url: `/dev/fixtures/activity-calendar-rich`,
+      method: 'POST',
+    });
+  };
+  return { resetActivityCalendarRich };
+};
+export type ResetActivityCalendarRichResult = NonNullable<
+  Awaited<ReturnType<ReturnType<typeof getActivityCalendarSqlFixture>['resetActivityCalendarRich']>>
+>;

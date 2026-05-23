@@ -9,56 +9,51 @@ import type {
   AuthLoginResponse,
   KakaoSocialLoginRequest,
   RefreshTokenRequest,
-  RefreshTokenResponse
+  RefreshTokenResponse,
 } from '../model';
 
 import { customAxios } from '../../mutator';
 
-
-
-  export const getAuth = () => {
-const kakaoAuth = (
-    kakaoSocialLoginRequest: KakaoSocialLoginRequest,
- ) => {
-      return customAxios<AuthLoginResponse>(
-      {url: `/auth/social/kakao`, method: 'POST',
-      headers: {'Content-Type': 'application/json', },
-      data: kakaoSocialLoginRequest
-    },
-      );
-    }
-  const appleAuth = (
-    appleSocialLoginRequest: AppleSocialLoginRequest,
- ) => {
-      return customAxios<AuthLoginResponse>(
-      {url: `/auth/social/apple`, method: 'POST',
-      headers: {'Content-Type': 'application/json', },
-      data: appleSocialLoginRequest
-    },
-      );
-    }
-  const refresh = (
-    refreshTokenRequest: RefreshTokenRequest,
- ) => {
-      return customAxios<RefreshTokenResponse>(
-      {url: `/auth/refresh`, method: 'POST',
-      headers: {'Content-Type': 'application/json', },
-      data: refreshTokenRequest
-    },
-      );
-    }
-  const logout = (
-    refreshTokenRequest: RefreshTokenRequest,
- ) => {
-      return customAxios<void>(
-      {url: `/auth/logout`, method: 'POST',
-      headers: {'Content-Type': 'application/json', },
-      data: refreshTokenRequest
-    },
-      );
-    }
-  return {kakaoAuth,appleAuth,refresh,logout}};
-export type KakaoAuthResult = NonNullable<Awaited<ReturnType<ReturnType<typeof getAuth>['kakaoAuth']>>>
-export type AppleAuthResult = NonNullable<Awaited<ReturnType<ReturnType<typeof getAuth>['appleAuth']>>>
-export type RefreshResult = NonNullable<Awaited<ReturnType<ReturnType<typeof getAuth>['refresh']>>>
-export type LogoutResult = NonNullable<Awaited<ReturnType<ReturnType<typeof getAuth>['logout']>>>
+export const getAuth = () => {
+  const kakaoAuth = (kakaoSocialLoginRequest: KakaoSocialLoginRequest) => {
+    return customAxios<AuthLoginResponse>({
+      url: `/auth/social/kakao`,
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      data: kakaoSocialLoginRequest,
+    });
+  };
+  const appleAuth = (appleSocialLoginRequest: AppleSocialLoginRequest) => {
+    return customAxios<AuthLoginResponse>({
+      url: `/auth/social/apple`,
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      data: appleSocialLoginRequest,
+    });
+  };
+  const refresh = (refreshTokenRequest: RefreshTokenRequest) => {
+    return customAxios<RefreshTokenResponse>({
+      url: `/auth/refresh`,
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      data: refreshTokenRequest,
+    });
+  };
+  const logout = (refreshTokenRequest: RefreshTokenRequest) => {
+    return customAxios<void>({
+      url: `/auth/logout`,
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      data: refreshTokenRequest,
+    });
+  };
+  return { kakaoAuth, appleAuth, refresh, logout };
+};
+export type KakaoAuthResult = NonNullable<
+  Awaited<ReturnType<ReturnType<typeof getAuth>['kakaoAuth']>>
+>;
+export type AppleAuthResult = NonNullable<
+  Awaited<ReturnType<ReturnType<typeof getAuth>['appleAuth']>>
+>;
+export type RefreshResult = NonNullable<Awaited<ReturnType<ReturnType<typeof getAuth>['refresh']>>>;
+export type LogoutResult = NonNullable<Awaited<ReturnType<ReturnType<typeof getAuth>['logout']>>>;

@@ -1,5 +1,4 @@
 import { router } from 'expo-router';
-import * as SecureStore from 'expo-secure-store';
 import { useEffect, useRef, useState } from 'react';
 import {
   ActivityIndicator,
@@ -105,11 +104,8 @@ export default function NotificationListScreen() {
     let cancelled = false;
     (async () => {
       try {
-        const userIdStr = await SecureStore.getItemAsync('currentUserId');
         const response: NotificationHistoryListResponse =
-          await getNotificationHistory().getMyNotifications({
-            currentUser: { id: userIdStr ? Number(userIdStr) : undefined },
-          });
+          await getNotificationHistory().getMyNotifications();
         if (cancelled) return;
         const next: NotificationSection[] = (response.groups ?? []).map((g) => ({
           title: g.label ?? '',
@@ -133,10 +129,7 @@ export default function NotificationListScreen() {
 
   const handlePressItem = async (item: NotificationHistoryItemResponse) => {
     if (!item.id) return;
-    const userIdStr = await SecureStore.getItemAsync('currentUserId');
-    const nav = await getNotificationHistory().getNotificationHistory(item.id, {
-      currentUser: { id: userIdStr ? Number(userIdStr) : undefined },
-    });
+    const nav = await getNotificationHistory().getNotificationHistory(item.id);
     if (!nav.navigable) {
       showToast(nav.reason ?? '이동할 수 없는 알림이에요');
       return;

@@ -5,8 +5,8 @@
  * OpenAPI spec version: v0
  */
 
-export type MemberDailyGoalResponseUsageGoalType = typeof MemberDailyGoalResponseUsageGoalType[keyof typeof MemberDailyGoalResponseUsageGoalType];
-
+export type MemberDailyGoalResponseUsageGoalType =
+  (typeof MemberDailyGoalResponseUsageGoalType)[keyof typeof MemberDailyGoalResponseUsageGoalType];
 
 export const MemberDailyGoalResponseUsageGoalType = {
   TOTAL_USAGE: 'TOTAL_USAGE',

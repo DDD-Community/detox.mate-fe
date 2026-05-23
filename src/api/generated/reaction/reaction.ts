@@ -4,42 +4,33 @@
  * OpenAPI definition
  * OpenAPI spec version: v0
  */
-import type {
-  CreateReactionParams,
-  CreateReactionRequest,
-  DeleteReactionParams,
-  ReactionResponse
-} from '../model';
+import type { CreateReactionRequest, ReactionResponse } from '../model';
 
 import { customAxios } from '../../mutator';
 
-
-
-  export const getReaction = () => {
-const createReaction = (
+export const getReaction = () => {
+  const createReaction = (
     challengeRecordId: number,
-    createReactionRequest: CreateReactionRequest,
-    params: CreateReactionParams,
- ) => {
-      return customAxios<ReactionResponse>(
-      {url: `/challenge-records/${challengeRecordId}/reactions`, method: 'POST',
-      headers: {'Content-Type': 'application/json', },
+    createReactionRequest: CreateReactionRequest
+  ) => {
+    return customAxios<ReactionResponse>({
+      url: `/challenge-records/${challengeRecordId}/reactions`,
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
       data: createReactionRequest,
-        params
-    },
-      );
-    }
-  const deleteReaction = (
-    challengeRecordId: number,
-    reactionId: number,
-    params: DeleteReactionParams,
- ) => {
-      return customAxios<void>(
-      {url: `/challenge-records/${challengeRecordId}/reactions/${reactionId}`, method: 'DELETE',
-        params
-    },
-      );
-    }
-  return {createReaction,deleteReaction}};
-export type CreateReactionResult = NonNullable<Awaited<ReturnType<ReturnType<typeof getReaction>['createReaction']>>>
-export type DeleteReactionResult = NonNullable<Awaited<ReturnType<ReturnType<typeof getReaction>['deleteReaction']>>>
+    });
+  };
+  const deleteReaction = (challengeRecordId: number, reactionId: number) => {
+    return customAxios<void>({
+      url: `/challenge-records/${challengeRecordId}/reactions/${reactionId}`,
+      method: 'DELETE',
+    });
+  };
+  return { createReaction, deleteReaction };
+};
+export type CreateReactionResult = NonNullable<
+  Awaited<ReturnType<ReturnType<typeof getReaction>['createReaction']>>
+>;
+export type DeleteReactionResult = NonNullable<
+  Awaited<ReturnType<ReturnType<typeof getReaction>['deleteReaction']>>
+>;

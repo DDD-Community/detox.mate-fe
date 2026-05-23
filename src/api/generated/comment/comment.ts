@@ -7,39 +7,33 @@
 import type {
   CommentListResponse,
   CommentResponse,
-  CreateCommentParams,
   CreateCommentRequest,
-  GetCommentsParams
+  GetCommentsParams,
 } from '../model';
 
 import { customAxios } from '../../mutator';
 
-
-
-  export const getComment = () => {
-const getComments = (
-    challengeRecordId: number,
-    params: GetCommentsParams,
- ) => {
-      return customAxios<CommentListResponse>(
-      {url: `/challenge-records/${challengeRecordId}/comments`, method: 'GET',
-        params
-    },
-      );
-    }
-  const createComment = (
-    challengeRecordId: number,
-    createCommentRequest: CreateCommentRequest,
-    params: CreateCommentParams,
- ) => {
-      return customAxios<CommentResponse>(
-      {url: `/challenge-records/${challengeRecordId}/comments`, method: 'POST',
-      headers: {'Content-Type': 'application/json', },
+export const getComment = () => {
+  const getComments = (challengeRecordId: number, params?: GetCommentsParams) => {
+    return customAxios<CommentListResponse>({
+      url: `/challenge-records/${challengeRecordId}/comments`,
+      method: 'GET',
+      params,
+    });
+  };
+  const createComment = (challengeRecordId: number, createCommentRequest: CreateCommentRequest) => {
+    return customAxios<CommentResponse>({
+      url: `/challenge-records/${challengeRecordId}/comments`,
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
       data: createCommentRequest,
-        params
-    },
-      );
-    }
-  return {getComments,createComment}};
-export type GetCommentsResult = NonNullable<Awaited<ReturnType<ReturnType<typeof getComment>['getComments']>>>
-export type CreateCommentResult = NonNullable<Awaited<ReturnType<ReturnType<typeof getComment>['createComment']>>>
+    });
+  };
+  return { getComments, createComment };
+};
+export type GetCommentsResult = NonNullable<
+  Awaited<ReturnType<ReturnType<typeof getComment>['getComments']>>
+>;
+export type CreateCommentResult = NonNullable<
+  Awaited<ReturnType<ReturnType<typeof getComment>['createComment']>>
+>;

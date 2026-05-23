@@ -1,6 +1,5 @@
 import * as ImagePicker from 'expo-image-picker';
 import { router, useFocusEffect, useLocalSearchParams } from 'expo-router';
-import * as SecureStore from 'expo-secure-store';
 import { useCallback, useState } from 'react';
 import {
   ActivityIndicator,
@@ -110,27 +109,17 @@ export default function MyPageScreen() {
   const [profileImageUri, setProfileImageUri] = useState<string | null>(null);
   const [isUpdatingProfileImage, setIsUpdatingProfileImage] = useState(false);
 
-  const getCurrentUserParam = async () => {
-    const userIdStr = await SecureStore.getItemAsync('currentUserId');
-    return { currentUser: { id: userIdStr ? Number(userIdStr) : undefined } };
-  };
-
   // 첫 진입 시에만 ActivityIndicator를 노출. 화면 복귀 시(refresh)는 백그라운드로 갱신.
   useFocusEffect(
     useCallback(() => {
       let cancelled = false;
       (async () => {
         try {
-          const userParam = await getCurrentUserParam();
           if (isFriend) {
             const groupIdNum = friendGroupId ? Number(friendGroupId) : NaN;
             const memberIdNum = memberId ? Number(memberId) : NaN;
             if (Number.isFinite(groupIdNum) && Number.isFinite(memberIdNum)) {
-              const data = await getGroupMember().getGroupMemberProfile(
-                groupIdNum,
-                memberIdNum,
-                userParam
-              );
+              const data = await getGroupMember().getGroupMemberProfile(groupIdNum, memberIdNum);
               if (cancelled) return;
               setFriendProfile(data);
             }
@@ -138,9 +127,9 @@ export default function MyPageScreen() {
           }
 
           const [me, goalsResponse, myGroups] = await Promise.all([
-            getUser().getMe(userParam),
-            getUserUsageGoalTime().getCurrentGoalTimes(userParam),
-            getGroup().getMyGroups(userParam),
+            getUser().getMe(),
+            getUserUsageGoalTime().getCurrentGoalTimes(),
+            getGroup().getMyGroups(),
           ]);
           if (cancelled) return;
 
@@ -152,7 +141,7 @@ export default function MyPageScreen() {
             .map((item) => item.id)
             .filter((id): id is number => id != null);
           const groupDetails = await Promise.all(
-            groupIds.map((groupId) => getGroup().getGroup(groupId, userParam))
+            groupIds.map((groupId) => getGroup().getGroup(groupId))
           );
           if (cancelled) return;
           setGroups(groupDetails);
@@ -174,8 +163,7 @@ export default function MyPageScreen() {
 
           const profileData = await getGroupMember().getGroupMemberProfile(
             firstGroup.id,
-            myMember.id,
-            userParam
+            myMember.id
           );
           if (cancelled) return;
           setMemberProfile(profileData);
@@ -212,10 +200,9 @@ export default function MyPageScreen() {
     setProfileImageUri(null);
     setIsUpdatingProfileImage(true);
     try {
-      const response = await getUser().updateMe(
-        { profileImageObjectKey: DEFAULT_PROFILE_IMAGE_OBJECT_KEY },
-        await getCurrentUserParam()
-      );
+      const response = await getUser().updateMe({
+        profileImageObjectKey: DEFAULT_PROFILE_IMAGE_OBJECT_KEY,
+      });
       // eslint-disable-next-line no-console
       console.log('[default-image] response', response);
       setProfileImageUri(response.profileImageUrl ?? null);
@@ -260,10 +247,7 @@ export default function MyPageScreen() {
         mimeType: asset.mimeType,
         fileSize: asset.fileSize,
       });
-      const response = await getUser().updateMe(
-        { profileImageObjectKey: objectKey },
-        await getCurrentUserParam()
-      );
+      const response = await getUser().updateMe({ profileImageObjectKey: objectKey });
       setProfileImageUri(response.profileImageUrl ?? asset.uri);
     } catch (e) {
       setProfileImageUri(previous);
@@ -304,11 +288,7 @@ export default function MyPageScreen() {
     }
     setIsPoking(true);
     try {
-      await getPoke().pokeUser(
-        Number(challengeRecordId),
-        Number(friendUserId),
-        await getCurrentUserParam()
-      );
+      await getPoke().pokeUser(Number(challengeRecordId), Number(friendUserId));
     } finally {
       setIsPoking(false);
     }

@@ -5,8 +5,8 @@
  * OpenAPI spec version: v0
  */
 
-export type FeedDetailResponseGoalStatus = typeof FeedDetailResponseGoalStatus[keyof typeof FeedDetailResponseGoalStatus];
-
+export type FeedDetailResponseGoalStatus =
+  (typeof FeedDetailResponseGoalStatus)[keyof typeof FeedDetailResponseGoalStatus];
 
 export const FeedDetailResponseGoalStatus = {
   SUCCESS: 'SUCCESS',

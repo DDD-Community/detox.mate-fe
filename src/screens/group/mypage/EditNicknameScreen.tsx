@@ -1,5 +1,4 @@
 import { router } from 'expo-router';
-import * as SecureStore from 'expo-secure-store';
 import { useState } from 'react';
 import { Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -32,11 +31,7 @@ export default function EditNicknameScreen() {
     if (!isValid || isSubmitting) return;
     setIsSubmitting(true);
     try {
-      const userIdStr = await SecureStore.getItemAsync('currentUserId');
-      await getUser().updateMe(
-        { displayName: nickname },
-        { currentUser: { id: userIdStr ? Number(userIdStr) : undefined } }
-      );
+      await getUser().updateMe({ displayName: nickname });
       router.back();
     } finally {
       setIsSubmitting(false);

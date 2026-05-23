@@ -5,8 +5,8 @@
  * OpenAPI spec version: v0
  */
 
-export type UsageGoalTimeResponseUsageGoalType = typeof UsageGoalTimeResponseUsageGoalType[keyof typeof UsageGoalTimeResponseUsageGoalType];
-
+export type UsageGoalTimeResponseUsageGoalType =
+  (typeof UsageGoalTimeResponseUsageGoalType)[keyof typeof UsageGoalTimeResponseUsageGoalType];
 
 export const UsageGoalTimeResponseUsageGoalType = {
   TOTAL_USAGE: 'TOTAL_USAGE',

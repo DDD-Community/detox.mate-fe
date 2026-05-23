@@ -4,24 +4,14 @@
  * OpenAPI definition
  * OpenAPI spec version: v0
  */
-import type {
-  DeleteGroupParams
-} from '../model';
-
 import { customAxios } from '../../mutator';
 
-
-
-  export const getGroupDev = () => {
-const deleteGroup = (
-    id: number,
-    params: DeleteGroupParams,
- ) => {
-      return customAxios<void>(
-      {url: `/groups/${id}`, method: 'DELETE',
-        params
-    },
-      );
-    }
-  return {deleteGroup}};
-export type DeleteGroupResult = NonNullable<Awaited<ReturnType<ReturnType<typeof getGroupDev>['deleteGroup']>>>
+export const getGroupDev = () => {
+  const deleteGroup = (id: number) => {
+    return customAxios<void>({ url: `/groups/${id}`, method: 'DELETE' });
+  };
+  return { deleteGroup };
+};
+export type DeleteGroupResult = NonNullable<
+  Awaited<ReturnType<ReturnType<typeof getGroupDev>['deleteGroup']>>
+>;

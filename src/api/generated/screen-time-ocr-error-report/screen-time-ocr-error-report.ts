@@ -5,27 +5,23 @@
  * OpenAPI spec version: v0
  */
 import type {
-  CreateParams,
   ScreenTimeOcrErrorReportCreateRequest,
-  ScreenTimeOcrErrorReportCreateResponse
+  ScreenTimeOcrErrorReportCreateResponse,
 } from '../model';
 
 import { customAxios } from '../../mutator';
 
-
-
-  export const getScreenTimeOcrErrorReport = () => {
-const create = (
-    screenTimeOcrErrorReportCreateRequest: ScreenTimeOcrErrorReportCreateRequest,
-    params: CreateParams,
- ) => {
-      return customAxios<ScreenTimeOcrErrorReportCreateResponse>(
-      {url: `/screen-time-ocr-error-reports`, method: 'POST',
-      headers: {'Content-Type': 'application/json', },
+export const getScreenTimeOcrErrorReport = () => {
+  const create = (screenTimeOcrErrorReportCreateRequest: ScreenTimeOcrErrorReportCreateRequest) => {
+    return customAxios<ScreenTimeOcrErrorReportCreateResponse>({
+      url: `/screen-time-ocr-error-reports`,
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
       data: screenTimeOcrErrorReportCreateRequest,
-        params
-    },
-      );
-    }
-  return {create}};
-export type CreateResult = NonNullable<Awaited<ReturnType<ReturnType<typeof getScreenTimeOcrErrorReport>['create']>>>
+    });
+  };
+  return { create };
+};
+export type CreateResult = NonNullable<
+  Awaited<ReturnType<ReturnType<typeof getScreenTimeOcrErrorReport>['create']>>
+>;

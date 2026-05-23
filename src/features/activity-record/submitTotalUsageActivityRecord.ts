@@ -1,5 +1,3 @@
-import * as SecureStore from 'expo-secure-store';
-
 import { getActivityRecord } from '../../api/generated/activity-record/activity-record';
 import { ActivityRecordDetailRequestUsageGoalType } from '../../api/generated/model';
 
@@ -34,20 +32,15 @@ export async function submitTotalUsageActivityRecord({
     throw new Error('인증 기록 등록에 필요한 참여자 정보가 없습니다.');
   }
 
-  const userId = await SecureStore.getItemAsync('currentUserId');
-
-  return getActivityRecord().create1(
-    {
-      groupChallengeParticipantId: participantId,
-      reflectionText,
-      details: [
-        {
-          usageGoalType: ActivityRecordDetailRequestUsageGoalType.TOTAL_USAGE,
-          usedMinutes: parseScreenTimeValueToMinutes(value),
-        },
-      ],
-      activityImageObjectKey,
-    },
-    { currentUser: { id: userId ? Number(userId) : undefined } }
-  );
+  return getActivityRecord().create1({
+    groupChallengeParticipantId: participantId,
+    reflectionText,
+    details: [
+      {
+        usageGoalType: ActivityRecordDetailRequestUsageGoalType.TOTAL_USAGE,
+        usedMinutes: parseScreenTimeValueToMinutes(value),
+      },
+    ],
+    activityImageObjectKey,
+  });
 }

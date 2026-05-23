@@ -5,8 +5,8 @@
  * OpenAPI spec version: v0
  */
 
-export type GroupMemberUsageGoalResponseUsageGoalType = typeof GroupMemberUsageGoalResponseUsageGoalType[keyof typeof GroupMemberUsageGoalResponseUsageGoalType];
-
+export type GroupMemberUsageGoalResponseUsageGoalType =
+  (typeof GroupMemberUsageGoalResponseUsageGoalType)[keyof typeof GroupMemberUsageGoalResponseUsageGoalType];
 
 export const GroupMemberUsageGoalResponseUsageGoalType = {
   TOTAL_USAGE: 'TOTAL_USAGE',

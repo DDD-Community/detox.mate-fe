@@ -106,16 +106,11 @@ export default function SettingsScreen() {
     }
   }, []);
 
-  const getCurrentUserParam = async () => {
-    const userIdStr = await SecureStore.getItemAsync('currentUserId');
-    return { currentUser: { id: userIdStr ? Number(userIdStr) : undefined } };
-  };
-
   // 마운트 시 서버의 푸시 알림 동의 상태 가져오기
   useEffect(() => {
     let cancelled = false;
     (async () => {
-      const me = await getUser().getMe(await getCurrentUserParam());
+      const me = await getUser().getMe();
       if (cancelled) return;
       updateUserPushPreference(me.pushNotificationEnabled ?? true);
     })();
@@ -132,10 +127,7 @@ export default function SettingsScreen() {
   }, [isPushUpdating, systemGranted, userPushPreference]);
 
   const patchPushNotificationEnabled = async (enabled: boolean) => {
-    await getUser().updatePushNotificationSetting(
-      { pushNotificationEnabled: enabled },
-      await getCurrentUserParam()
-    );
+    await getUser().updatePushNotificationSetting({ pushNotificationEnabled: enabled });
   };
 
   // 화면 진입 + 설정 앱에서 돌아왔을 때 권한 상태 재동기화
@@ -274,10 +266,7 @@ export default function SettingsScreen() {
       } catch {
         // ignore
       }
-      const userId = await SecureStore.getItemAsync('currentUserId');
-      await getUser().withdraw({
-        currentUser: { id: userId ? Number(userId) : undefined },
-      });
+      await getUser().withdraw();
       await SecureStore.deleteItemAsync('refreshTokenKey');
       await SecureStore.deleteItemAsync('accessTokenKey');
       await SecureStore.deleteItemAsync('currentUserId');

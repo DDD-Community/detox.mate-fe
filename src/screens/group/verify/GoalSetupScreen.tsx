@@ -1,5 +1,4 @@
 import { router, useLocalSearchParams } from 'expo-router';
-import * as SecureStore from 'expo-secure-store';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import {
   Image,
@@ -87,18 +86,14 @@ export default function GoalSetupScreen() {
   const handleSave = async () => {
     setIsSaving(true);
     try {
-      const userId = await SecureStore.getItemAsync('currentUserId');
-      await getUserUsageGoalTime().setGoalTimes(
-        {
-          goals: [
-            {
-              usageGoalType: UserUsageGoalTimeRequestUsageGoalType.TOTAL_USAGE,
-              goalMinutes: minutes,
-            },
-          ],
-        },
-        { currentUser: { id: userId ? Number(userId) : undefined } }
-      );
+      await getUserUsageGoalTime().setGoalTimes({
+        goals: [
+          {
+            usageGoalType: UserUsageGoalTimeRequestUsageGoalType.TOTAL_USAGE,
+            goalMinutes: minutes,
+          },
+        ],
+      });
       router.replace('/(feed)/home');
     } finally {
       setIsSaving(false);

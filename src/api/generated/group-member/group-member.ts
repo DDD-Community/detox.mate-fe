@@ -4,26 +4,19 @@
  * OpenAPI definition
  * OpenAPI spec version: v0
  */
-import type {
-  GetGroupMemberProfileParams,
-  GroupMemberProfileResponse
-} from '../model';
+import type { GroupMemberProfileResponse } from '../model';
 
 import { customAxios } from '../../mutator';
 
-
-
-  export const getGroupMember = () => {
-const getGroupMemberProfile = (
-    groupId: number,
-    groupMemberId: number,
-    params: GetGroupMemberProfileParams,
- ) => {
-      return customAxios<GroupMemberProfileResponse>(
-      {url: `/groups/${groupId}/members/${groupMemberId}`, method: 'GET',
-        params
-    },
-      );
-    }
-  return {getGroupMemberProfile}};
-export type GetGroupMemberProfileResult = NonNullable<Awaited<ReturnType<ReturnType<typeof getGroupMember>['getGroupMemberProfile']>>>
+export const getGroupMember = () => {
+  const getGroupMemberProfile = (groupId: number, groupMemberId: number) => {
+    return customAxios<GroupMemberProfileResponse>({
+      url: `/groups/${groupId}/members/${groupMemberId}`,
+      method: 'GET',
+    });
+  };
+  return { getGroupMemberProfile };
+};
+export type GetGroupMemberProfileResult = NonNullable<
+  Awaited<ReturnType<ReturnType<typeof getGroupMember>['getGroupMemberProfile']>>
+>;

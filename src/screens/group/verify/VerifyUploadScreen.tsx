@@ -1,6 +1,5 @@
 import * as ImagePicker from 'expo-image-picker';
 import { router, useLocalSearchParams } from 'expo-router';
-import * as SecureStore from 'expo-secure-store';
 import { useState } from 'react';
 import { ActivityIndicator, Image, Pressable, StyleSheet, Text, View } from 'react-native';
 import { getActivityRecord } from '../../../api/generated/activity-record/activity-record';
@@ -68,18 +67,14 @@ export default function VerifyUploadScreen() {
         return;
       }
 
-      const userId = await SecureStore.getItemAsync('currentUserId');
-      const { allAchieved } = await getActivityRecord().checkAchievement(
-        {
-          details: [
-            {
-              usageGoalType: ActivityRecordDetailRequestUsageGoalType.TOTAL_USAGE,
-              usedMinutes: parseValueToMinutes(result.value),
-            },
-          ],
-        },
-        { currentUser: { id: userId ? Number(userId) : undefined } }
-      );
+      const { allAchieved } = await getActivityRecord().checkAchievement({
+        details: [
+          {
+            usageGoalType: ActivityRecordDetailRequestUsageGoalType.TOTAL_USAGE,
+            usedMinutes: parseValueToMinutes(result.value),
+          },
+        ],
+      });
 
       router.replace({
         pathname: '/(group)/verify/done',

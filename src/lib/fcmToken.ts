@@ -9,11 +9,6 @@ const STORED_TOKEN_KEY = 'fcmDeviceTokenKey';
 let devicePushTokenRegistrationPromise: Promise<void> | null = null;
 const tokenRegistrationPromises = new Map<string, Promise<void>>();
 
-const getUserParam = async () => {
-  const userIdStr = await SecureStore.getItemAsync('currentUserId');
-  return { user: { id: userIdStr ? Number(userIdStr) : undefined } };
-};
-
 const getPlatform = (): RegisterFcmTokenRequestPlatform => {
   if (Platform.OS === 'ios') return RegisterFcmTokenRequestPlatform.IOS;
   if (Platform.OS === 'android') return RegisterFcmTokenRequestPlatform.ANDROID;
@@ -28,7 +23,7 @@ const registerTokenIfNeeded = async (token: string): Promise<void> => {
   if (existing) return existing;
 
   const promise = (async () => {
-    await getFcmToken().register({ token, platform: getPlatform() }, await getUserParam());
+    await getFcmToken().register({ token, platform: getPlatform() });
     await SecureStore.setItemAsync(STORED_TOKEN_KEY, token);
   })().finally(() => {
     tokenRegistrationPromises.delete(token);
@@ -77,7 +72,7 @@ export async function unregisterDevicePushToken(): Promise<void> {
   const token = await SecureStore.getItemAsync(STORED_TOKEN_KEY);
   if (!token) return;
   try {
-    await getFcmToken().remove({ token }, await getUserParam());
+    await getFcmToken().remove({ token });
   } finally {
     await SecureStore.deleteItemAsync(STORED_TOKEN_KEY);
   }

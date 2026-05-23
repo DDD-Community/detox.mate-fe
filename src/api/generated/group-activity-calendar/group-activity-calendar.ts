@@ -4,25 +4,19 @@
  * OpenAPI definition
  * OpenAPI spec version: v0
  */
-import type {
-  GetActivityCalendarParams,
-  GroupActivityCalendarResponse
-} from '../model';
+import type { GroupActivityCalendarResponse } from '../model';
 
 import { customAxios } from '../../mutator';
 
-
-
-  export const getGroupActivityCalendar = () => {
-const getActivityCalendar = (
-    groupChallengeId: number,
-    params: GetActivityCalendarParams,
- ) => {
-      return customAxios<GroupActivityCalendarResponse>(
-      {url: `/group-challenges/${groupChallengeId}/activity-calendar`, method: 'GET',
-        params
-    },
-      );
-    }
-  return {getActivityCalendar}};
-export type GetActivityCalendarResult = NonNullable<Awaited<ReturnType<ReturnType<typeof getGroupActivityCalendar>['getActivityCalendar']>>>
+export const getGroupActivityCalendar = () => {
+  const getActivityCalendar = (groupChallengeId: number) => {
+    return customAxios<GroupActivityCalendarResponse>({
+      url: `/group-challenges/${groupChallengeId}/activity-calendar`,
+      method: 'GET',
+    });
+  };
+  return { getActivityCalendar };
+};
+export type GetActivityCalendarResult = NonNullable<
+  Awaited<ReturnType<ReturnType<typeof getGroupActivityCalendar>['getActivityCalendar']>>
+>;
