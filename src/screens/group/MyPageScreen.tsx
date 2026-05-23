@@ -218,9 +218,9 @@ export default function MyPageScreen() {
     setProfileImageUri(null);
     setIsUpdatingProfileImage(true);
     try {
-      // 기본 이미지 복귀: objectKey를 null로 명시해 클리어. 서버가 응답에 기본 S3 URL을 채워 내려줌.
+      // 기본 이미지 복귀: 빈 objectKey로 사용자 업로드 이미지를 클리어한다.
       const response = await getUser().updateMe(
-        { profileImageObjectKey: null as unknown as string },
+        { profileImageObjectKey: '' },
         await getCurrentUserParam()
       );
       // eslint-disable-next-line no-console
