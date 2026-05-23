@@ -108,7 +108,7 @@ export default function VerifyDoneScreen() {
           </View>
 
           <View style={styles.summary}>
-            <Text style={styles.summaryLabel}>내 스크린타임</Text>
+            <Text style={styles.summaryLabel}>내 스크린 타임</Text>
             <Text style={styles.summaryValue}>{display}</Text>
           </View>
 
@@ -140,7 +140,7 @@ export default function VerifyDoneScreen() {
             <Text
               style={goalAchieved ? styles.verifySummaryLabel : styles.verifySummaryLabelMissed}
             >
-              내 스크린타임
+              내 스크린 타임
             </Text>
             <Text
               style={goalAchieved ? styles.verifySummaryValue : styles.verifySummaryValueMissed}

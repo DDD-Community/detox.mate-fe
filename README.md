@@ -36,7 +36,7 @@ pnpm web
 
 ## 개발용 Mock
 
-스크린타임 이미지 분석을 항상 성공시키려면 개발 서버 실행 시 아래 env를 켜면 됩니다.
+스크린 타임 이미지 분석을 항상 성공시키려면 개발 서버 실행 시 아래 env를 켜면 됩니다.
 
 ```bash
 EXPO_PUBLIC_MOCK_SCREEN_TIME_ANALYSIS=true pnpm start

@@ -119,13 +119,13 @@ export default function GoalSetupScreen() {
 
       <View style={styles.body}>
         <View style={styles.textGroup}>
-          <Text style={styles.title}>개인 목표 스크린타임 설정</Text>
+          <Text style={styles.title}>개인 목표 스크린 타임 설정</Text>
           <Text style={styles.description}>마이페이지에서 2주에 한 번 변경할 수 있어요.</Text>
         </View>
 
         {screenTimeDisplay ? (
           <View style={styles.summary}>
-            <Text style={styles.summaryLabel}>내 스크린타임</Text>
+            <Text style={styles.summaryLabel}>내 스크린 타임</Text>
             <Text style={styles.summaryValue}>{screenTimeDisplay}</Text>
           </View>
         ) : null}

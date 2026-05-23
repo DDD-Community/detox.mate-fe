@@ -346,7 +346,7 @@ export default function FeedPostDetail() {
                       !feedItem.isGoalAchieved && { color: gray[500] },
                     ]}
                   >
-                    스크린타임
+                    스크린 타임
                   </Text>
                   <Text
                     style={[

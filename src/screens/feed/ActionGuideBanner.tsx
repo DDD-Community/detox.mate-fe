@@ -33,7 +33,7 @@ function GoalBanner() {
       <View style={styles.topRow}>
         <View style={styles.textContainer}>
           <Text style={styles.goalTitle}>디톡스 첫날이신가요?</Text>
-          <Text style={styles.goalSubtitle}>내 평균 스크린타임을 업로드해보세요!</Text>
+          <Text style={styles.goalSubtitle}>내 평균 스크린 타임을 업로드해보세요!</Text>
         </View>
         <Image
           source={require('../../../assets/daily-calendar.png')}
@@ -60,7 +60,7 @@ function GoalSetWaitingBanner() {
         <View style={styles.textContainer}>
           <Text style={styles.goalTitle}>지금 이 순간부터 시작됐어요</Text>
           <Text style={styles.goalSubtitle}>
-            {'내일부터 스크린타임을 인증할 수 있어요.\n오늘 하루를 버텨보세요!'}
+            {'내일부터 스크린 타임을 인증할 수 있어요.\n오늘 하루를 버텨보세요!'}
           </Text>
         </View>
         <Image

@@ -10,7 +10,7 @@ type ScreenTimeAnalyzeTestScreenProps = {
 function formatRejectReason(reason: string): string {
   switch (reason) {
     case 'screen_not_matched':
-      return '스크린타임 화면을 찾지 못했습니다.';
+      return '스크린 타임 화면을 찾지 못했습니다.';
     case 'date_not_yesterday':
       return '요약 날짜가 어제가 아닙니다.';
     case 'summary_date_not_actual_yesterday':
@@ -53,7 +53,7 @@ export function ScreenTimeAnalyzeTestScreen({ onClose }: ScreenTimeAnalyzeTestSc
         <View style={styles.card}>
           <Text style={styles.cardTitle}>실사용 테스트 화면</Text>
           <Text style={styles.helper}>
-            유저가 업로드한 스크린타임 이미지를 분석하고, `어제` 단어만이 아니라 실제 어제 날짜까지
+            유저가 업로드한 스크린 타임 이미지를 분석하고, `어제` 단어만이 아니라 실제 어제 날짜까지
             맞을 때만 성공으로 처리합니다.
           </Text>
           <View style={styles.controls}>

@@ -525,7 +525,7 @@ export default function MyPageScreen() {
 
             <SafeAreaView edges={['bottom']} style={styles.ctaWrap}>
               <Button
-                label="목표 스크린타임 설정"
+                label="목표 스크린 타임 설정"
                 color="assistive"
                 onPress={handleSetGoal}
                 style={styles.cta}

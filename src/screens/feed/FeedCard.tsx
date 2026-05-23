@@ -115,7 +115,7 @@ export default function FeedCard({
             ]}
           >
             <Text style={[styles.screentimeLabel, !item.isGoalAchieved && { color: gray[500] }]}>
-              스크린타임
+              스크린 타임
             </Text>
             <Text style={[styles.screentimeValue, !item.isGoalAchieved && { color: gray[500] }]}>
               {item.screenTime}
