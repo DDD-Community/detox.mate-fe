@@ -60,31 +60,63 @@ export async function loginWithNewTestUser(): Promise<OAuthLoginResponse> {
 
 export async function refreshAccessToken(): Promise<ServerResponseTokens> {
   const refreshToken = await SecureStore.getItemAsync('refreshTokenKey');
+  if (!refreshToken) {
+    await clearAuthSession();
+    throw new Error('다시 로그인해 주세요.');
+  }
 
   try {
-    const { data } = await apiClient.post<ServerResponseTokens>('/auth/refresh', {
-      refreshToken: refreshToken,
-    });
+    const { data } = await apiClient.post<ServerResponseTokens>(
+      '/auth/refresh',
+      {
+        refreshToken,
+      },
+      {
+        skipAuth: true,
+        skipAuthRefresh: true,
+      }
+    );
 
     const { accessToken, refreshToken: updatedRefreshToken } = data;
+    if (!accessToken || !updatedRefreshToken) {
+      throw new Error('토큰 재발급 응답이 올바르지 않습니다.');
+    }
+
     await SecureStore.setItemAsync('accessTokenKey', accessToken);
     await SecureStore.setItemAsync('refreshTokenKey', updatedRefreshToken);
 
     return data;
   } catch (error) {
-    await logout();
+    await clearAuthSession();
     throw new Error('다시 로그인해 주세요.');
   }
+}
+
+export async function clearAuthSession(): Promise<void> {
+  await SecureStore.deleteItemAsync('refreshTokenKey');
+  await SecureStore.deleteItemAsync('accessTokenKey');
+  await SecureStore.deleteItemAsync('currentUserId');
 }
 
 export async function logout(): Promise<void> {
   const refreshToken = await SecureStore.getItemAsync('refreshTokenKey');
 
-  await apiClient.post('/auth/logout', {
-    refreshToken,
-  });
-
-  await SecureStore.deleteItemAsync('refreshTokenKey');
-  await SecureStore.deleteItemAsync('accessTokenKey');
-  await SecureStore.deleteItemAsync('currentUserId');
+  try {
+    if (refreshToken) {
+      await apiClient.post(
+        '/auth/logout',
+        {
+          refreshToken,
+        },
+        {
+          skipAuth: true,
+          skipAuthRefresh: true,
+        }
+      );
+    }
+  } catch {
+    // 서버 로그아웃 실패와 무관하게 기기 내 세션은 정리한다.
+  } finally {
+    await clearAuthSession();
+  }
 }
