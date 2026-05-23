@@ -8,7 +8,6 @@
     "orientation": "portrait",
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "light",
-    "newArchEnabled": true,
     "splash": {
       "image": "./assets/splash-icon.png",
       "resizeMode": "contain",
@@ -29,7 +28,6 @@
         "foregroundImage": "./assets/adaptive-icon.png",
         "backgroundColor": "#ffffff"
       },
-      "edgeToEdgeEnabled": true,
       "predictiveBackGestureEnabled": false,
       "package": "com.detoxmate.fe"
     },
@@ -50,7 +48,10 @@
         }
       ],
       "expo-router",
-      "expo-notifications"
+      "expo-notifications",
+      "@react-native-community/datetimepicker",
+      "expo-font",
+      "./plugins/with-sdk55-app-delegate-fixes"
     ],
     "extra": {
       "router": {},

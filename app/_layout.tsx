@@ -2,16 +2,17 @@ import { useFonts } from 'expo-font';
 import * as Notifications from 'expo-notifications';
 import { Stack } from 'expo-router';
 import * as SplashScreen from 'expo-splash-screen';
-import { useEffect } from 'react';
+import { useEffect, type ComponentType } from 'react';
 import { fontSources } from '../src/lib/token/primitive/fonts';
 import { NetworkErrorToast } from '../src/components/NetworkErrorToast';
 import { handleNewDevicePushToken } from '../src/lib/fcmToken';
 
-import StorybookUIRoot from '../.storybook';
-
 SplashScreen.preventAutoHideAsync();
 
 const STORYBOOK_ENABLED = process.env.EXPO_PUBLIC_STORYBOOK === 'true';
+const StorybookUIRoot = STORYBOOK_ENABLED
+  ? (require('../.storybook').default as ComponentType)
+  : undefined;
 
 export default function RootLayout() {
   const [fontsLoaded, fontError] = useFonts(fontSources);
@@ -36,7 +37,7 @@ export default function RootLayout() {
 
   if (!fontsLoaded && !fontError) return null;
 
-  if (STORYBOOK_ENABLED) {
+  if (StorybookUIRoot) {
     return <StorybookUIRoot />;
   }
 
