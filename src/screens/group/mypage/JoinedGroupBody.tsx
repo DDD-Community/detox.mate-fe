@@ -95,13 +95,13 @@ export function JoinedGroupBody({
           color="assistive"
           disabled={daysUntilGoalChange > 0}
           onPress={onGoalChangePress}
-          leadingIcon={<Icon name="info" size={16} color="#FFFFFF" />}
-          trailingIcon={<Icon name="info" size={16} color="#FFFFFF" />}
+          leadingIcon={<Icon name="info" size={20} weight="fill" color="#FFFFFF" />}
+          trailingIcon={<Icon name="info" size={20} weight="fill" color="#FFFFFF" />}
           style={styles.cta}
         />
         {daysUntilGoalChange > 0 ? (
           <View style={styles.changeHintRow}>
-            <Icon name="info" size={18} weight="fill" color={gray[900]} />
+            <Icon name="info" size={18} weight="fill" color={gray[500]} />
             <Text style={styles.changeHintText}>{daysUntilGoalChange}일 뒤 변경 가능해요</Text>
           </View>
         ) : null}
