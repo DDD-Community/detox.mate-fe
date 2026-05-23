@@ -108,8 +108,6 @@ export function JoinedGroupBody({
           color="assistive"
           disabled={daysUntilGoalChange > 0}
           onPress={onGoalChangePress}
-          leadingIcon={<Icon name="info" size={20} weight="fill" color="#FFFFFF" />}
-          trailingIcon={<Icon name="info" size={20} weight="fill" color="#FFFFFF" />}
           style={styles.cta}
         />
         {daysUntilGoalChange > 0 ? (
