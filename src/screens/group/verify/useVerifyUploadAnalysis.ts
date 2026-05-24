@@ -3,9 +3,9 @@ import { useState } from 'react';
 
 import { ActivityRecordDetailRequestUsageGoalType, getActivityRecord } from '@/api';
 import { analyzeScreenTimeImage } from '@/features/screen-time-analyze';
+import { parseHHMMToMinutes } from '@/lib/formatDuration';
 import { pickImageFromLibrary } from './useImageLibraryPicker';
 import { buildVerifyFlowParams, type VerifyFlowParams, type VerifyMode } from './verifyFlowParams';
-import { parseHHMMToMinutes } from './verifyTime';
 
 interface UseVerifyUploadAnalysisOptions extends VerifyFlowParams {
   imageUri?: string;

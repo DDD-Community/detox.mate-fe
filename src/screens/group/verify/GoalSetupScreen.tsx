@@ -12,10 +12,10 @@ import {
 import LOGO_DETOXMATE_BLACK from '@assets/logo-detoxmate-black.png';
 
 import { Button, Icon } from '@/components';
+import { formatHHMMToDisplay, formatMinutesAsHourMinute } from '@/lib/formatDuration';
 import { primitiveColors, typography } from '@/lib/token';
 import { useGoalTimeSave } from './useGoalTimeSave';
 import { useGoalTimeStepper } from './useGoalTimeStepper';
-import { formatHHMMToDisplay, formatMinutesAsGoal } from './verifyTime';
 
 const { gray, brown, green } = primitiveColors;
 
@@ -54,7 +54,7 @@ export default function GoalSetupScreen() {
               onPressOut={clearHold}
               disabled={!canDecrease}
             />
-            <Text style={styles.stepperValue}>{formatMinutesAsGoal(minutes)}</Text>
+            <Text style={styles.stepperValue}>{formatMinutesAsHourMinute(minutes)}</Text>
             <StepButton
               kind="plus"
               onPressIn={startIncrease}

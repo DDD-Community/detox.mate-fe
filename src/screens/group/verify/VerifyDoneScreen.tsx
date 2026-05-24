@@ -5,10 +5,14 @@ import ONBOARDING_CHECK_IMAGE from '@assets/onboarding-check.png';
 
 import { Button, Icon } from '@/components';
 import { submitTotalUsageActivityRecord } from '@/features/activity-record/submitTotalUsageActivityRecord';
+import {
+  formatHHMMToDisplay,
+  formatMinutesDiffText,
+  parseHHMMToMinutes,
+} from '@/lib/formatDuration';
 import { primitiveColors, typography } from '@/lib/token';
 import { VerifyBottomSheet } from './VerifyBottomSheet';
 import { buildVerifyValueParams, type VerifyMode } from './verifyFlowParams';
-import { formatHHMMToDisplay, formatMinutesDiff, parseHHMMToMinutes } from './verifyTime';
 
 const { gray, brown, green, system } = primitiveColors;
 
@@ -25,7 +29,8 @@ export default function VerifyDoneScreen() {
   const goalMinutes = parseHHMMToMinutes(goal);
   const hasGoal = goalMinutes !== null && valueMinutes !== null;
   const goalAchieved = hasGoal ? valueMinutes! <= goalMinutes! : true;
-  const diffText = hasGoal && goalAchieved ? formatMinutesDiff(goalMinutes! - valueMinutes!) : '';
+  const diffText =
+    hasGoal && goalAchieved ? formatMinutesDiffText(goalMinutes! - valueMinutes!) : '';
 
   const handleSetGoal = () => {
     router.replace({
