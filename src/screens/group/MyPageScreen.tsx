@@ -13,9 +13,9 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { getPoke } from '../../api/generated/poke/poke';
 import { Button } from '../../components/Button';
-import { Icon } from '../../components/Icon';
 import { primitiveColors, radius, spacing, typography } from '../../lib/token';
 import { JoinedGroupBody } from './mypage/JoinedGroupBody';
+import { MyPageProfileHeader } from './mypage/MyPageProfileHeader';
 import { ProfileImageBottomSheet } from './mypage/ProfileImageBottomSheet';
 import { WeeklyStatusCard } from './mypage/WeeklyStatusCard';
 import { buildMyPageViewModel } from './mypage/myPageViewModel';
@@ -29,23 +29,8 @@ import { useMyPageParams } from './mypage/useMyPageParams';
 import CALENDAR_IMG from '../../../assets/mypage-calender.png';
 import GROUP_INVITE_IMG from '../../../assets/onboarding-group-invite.png';
 import GROUP_PLUS_IMG from '../../../assets/onboarding-group-plus.png';
-import TURTLE_IMG from '../../../assets/turtle-hi.png';
 
-const { brown, gray, green } = primitiveColors;
-
-interface ProfileChipProps {
-  label: string;
-}
-
-function ProfileChip({ label }: ProfileChipProps) {
-  return (
-    <View style={styles.chip}>
-      <Text style={styles.chipText} numberOfLines={1}>
-        {label}
-      </Text>
-    </View>
-  );
-}
+const { brown, gray } = primitiveColors;
 
 interface GroupActionCardProps {
   image: number;
@@ -183,88 +168,19 @@ export default function MyPageScreen() {
         contentContainerStyle={styles.screenContent}
         showsVerticalScrollIndicator={false}
       >
-        <View style={styles.profileCard}>
-          {hasProfileBackground && displayProfileImageUri ? (
-            <>
-              <Image
-                source={{ uri: displayProfileImageUri }}
-                style={styles.profileBackgroundImage}
-                resizeMode="cover"
-              />
-              <View style={styles.profileBackgroundDim} />
-            </>
-          ) : null}
-          <SafeAreaView edges={['top']}>
-            <View style={styles.header}>
-              <Pressable onPress={handleBack} hitSlop={8} style={styles.headerLeft}>
-                <Icon
-                  name="caretLeft"
-                  size={24}
-                  color={hasProfileBackground ? '#FFFFFF' : gray[800]}
-                />
-                <Text style={[styles.headerTitle, hasProfileBackground && styles.photoHeaderText]}>
-                  {isFriend ? displayName : '마이페이지'}
-                </Text>
-              </Pressable>
-              {!isFriend && (
-                <Pressable onPress={handleSettings} hitSlop={8}>
-                  <Icon
-                    name="gearSix"
-                    size={24}
-                    color={hasProfileBackground ? '#FFFFFF' : gray[800]}
-                  />
-                </Pressable>
-              )}
-            </View>
-          </SafeAreaView>
-
-          <View style={styles.turtleWrap}>
-            {!hasProfileBackground && (
-              <Image source={TURTLE_IMG} style={styles.turtle} resizeMode="contain" />
-            )}
-          </View>
-
-          <View style={styles.profileMeta}>
-            {isFriend ? (
-              <View style={styles.nameRow}>
-                <Text style={[styles.nameText, hasProfileBackground && styles.photoNameText]}>
-                  {displayName}
-                </Text>
-              </View>
-            ) : (
-              <Pressable onPress={handleEditName} style={styles.nameRow} hitSlop={8}>
-                <Text style={[styles.nameText, hasProfileBackground && styles.photoNameText]}>
-                  {displayName}
-                </Text>
-                <Icon
-                  name="pencilSimple"
-                  size={16}
-                  color={hasProfileBackground ? '#FFFFFF' : gray[800]}
-                />
-              </Pressable>
-            )}
-
-            <View style={styles.chipRow}>
-              <View style={styles.chipGroup}>
-                <ProfileChip label={`D+${dayCount}`} />
-                <ProfileChip label={`달성률 ${String(achievementRate).padStart(2, '0')}%`} />
-              </View>
-              {!isFriend && (
-                <Pressable
-                  onPress={handleEditProfileImage}
-                  disabled={isUpdatingProfileImage}
-                  style={[
-                    styles.cameraButton,
-                    isUpdatingProfileImage && styles.cameraButtonDisabled,
-                  ]}
-                  hitSlop={8}
-                >
-                  <Icon name="camera" size={20} color={gray[900]} />
-                </Pressable>
-              )}
-            </View>
-          </View>
-        </View>
+        <MyPageProfileHeader
+          isFriend={isFriend}
+          displayName={displayName}
+          dayCount={dayCount}
+          achievementRate={achievementRate}
+          displayProfileImageUri={displayProfileImageUri}
+          hasProfileBackground={hasProfileBackground}
+          isUpdatingProfileImage={isUpdatingProfileImage}
+          onBack={handleBack}
+          onSettings={handleSettings}
+          onEditName={handleEditName}
+          onEditProfileImage={handleEditProfileImage}
+        />
 
         {isFriend && isLoading ? (
           <View style={styles.loadingWrap}>
@@ -382,103 +298,6 @@ const styles = StyleSheet.create({
   screenContent: {
     flexGrow: 1,
     paddingBottom: spacing[24],
-  },
-  profileCard: {
-    backgroundColor: brown[100],
-    borderBottomLeftRadius: spacing[20],
-    borderBottomRightRadius: spacing[20],
-    paddingBottom: spacing[16],
-    overflow: 'hidden',
-  },
-  profileBackgroundImage: {
-    ...StyleSheet.absoluteFillObject,
-    width: '100%',
-    height: '100%',
-  },
-  profileBackgroundDim: {
-    ...StyleSheet.absoluteFillObject,
-    backgroundColor: 'rgba(0, 0, 0, 0.32)',
-  },
-  header: {
-    height: 54,
-    paddingHorizontal: spacing[16],
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-  },
-  headerLeft: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: spacing[16],
-  },
-  headerTitle: {
-    ...typography.accent.title2,
-    color: gray[800],
-  },
-  photoHeaderText: {
-    color: '#FFFFFF',
-  },
-  turtleWrap: {
-    height: 232,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  turtle: {
-    width: 174,
-    height: 232,
-  },
-  profileMeta: {
-    paddingHorizontal: spacing[16],
-    gap: spacing[8],
-  },
-  nameRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: spacing[8],
-    alignSelf: 'flex-start',
-  },
-  nameText: {
-    ...typography.accent.h2,
-    color: gray[800],
-  },
-  photoNameText: {
-    color: '#FFFFFF',
-  },
-  chipRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-  },
-  chipGroup: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: spacing[8],
-  },
-  chip: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: spacing[4],
-    height: 36,
-    paddingHorizontal: spacing[12],
-    backgroundColor: '#FFFFFF',
-    borderRadius: radius.full,
-  },
-  chipText: {
-    ...typography.primary.body2B,
-    color: green[300],
-  },
-  cameraButton: {
-    width: 36,
-    height: 36,
-    alignItems: 'center',
-    justifyContent: 'center',
-    backgroundColor: '#FFFFFF',
-    borderWidth: 1,
-    borderColor: gray[100],
-    borderRadius: radius.full,
-  },
-  cameraButtonDisabled: {
-    opacity: 0.5,
   },
   loadingWrap: {
     flex: 1,
