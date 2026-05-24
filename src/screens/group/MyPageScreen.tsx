@@ -25,6 +25,7 @@ import type {
 import { PresignedUrlRequestUploadPurpose } from '../../api/generated/model';
 import { Button } from '../../components/Button';
 import { Icon } from '../../components/Icon';
+import { formatMinutesAsHourMinute } from '../../lib/formatDuration';
 import { uploadImage } from '../../lib/uploadImage';
 import { primitiveColors, radius, spacing, typography } from '../../lib/token';
 import { JoinedGroupBody } from './mypage/JoinedGroupBody';
@@ -73,14 +74,6 @@ function GroupActionCard({ image, imageWidth, imageHeight, label, onPress }: Gro
     </Pressable>
   );
 }
-
-const formatMinutes = (m?: number) => {
-  if (m == null) return '0h 00m';
-  const safe = Math.max(0, m);
-  const h = Math.floor(safe / 60);
-  const min = safe % 60;
-  return `${h}h ${String(min).padStart(2, '0')}m`;
-};
 
 export default function MyPageScreen() {
   // memberId가 있으면 친구 프로필 모드, 없으면 내 마이페이지 모드
@@ -306,8 +299,8 @@ export default function MyPageScreen() {
   const hasJoinedGroup = groups.length > 0;
 
   const weekly = activeProfile?.weeklySummary;
-  const avgScreenTime = formatMinutes(weekly?.averageUsedMinutes);
-  const goalScreenTime = formatMinutes(weekly?.goalMinutes);
+  const avgScreenTime = formatMinutesAsHourMinute(weekly?.averageUsedMinutes);
+  const goalScreenTime = formatMinutesAsHourMinute(weekly?.goalMinutes);
   const diffMinutes = weekly?.differenceMinutes ?? 0;
   const certifiedDays = weekly?.certifiedDays ?? 0;
   const totalVerifyDays = weekly?.totalDays ?? 7;

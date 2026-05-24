@@ -7,6 +7,7 @@ import { getUserUsageGoalTime } from '../../../api/generated/user-usage-goal-tim
 import { UserUsageGoalTimeRequestUsageGoalType } from '../../../api/generated/model';
 import { Button } from '../../../components/Button';
 import { Icon } from '../../../components/Icon';
+import { formatMinutesAsHourMinute } from '../../../lib/formatDuration';
 import { primitiveColors, radius, spacing, typography } from '../../../lib/token';
 
 const { brown, gray, green } = primitiveColors;
@@ -14,12 +15,6 @@ const { brown, gray, green } = primitiveColors;
 const STEP_MINUTES = 10;
 const MIN_MINUTES = 30;
 const MAX_MINUTES = 24 * 60 - STEP_MINUTES;
-
-const formatGoal = (totalMinutes: number) => {
-  const hours = Math.floor(totalMinutes / 60);
-  const minutes = totalMinutes % 60;
-  return `${hours}h ${String(minutes).padStart(2, '0')}m`;
-};
 
 export default function EditGoalTimeScreen() {
   const [goalMinutes, setGoalMinutes] = useState(120);
@@ -103,7 +98,7 @@ export default function EditGoalTimeScreen() {
         <View style={styles.myCard}>
           <Text style={styles.myCardLabel}>기존 목표</Text>
           <Text style={styles.myCardValue}>
-            {existingGoalMinutes != null ? formatGoal(existingGoalMinutes) : '-'}
+            {existingGoalMinutes != null ? formatMinutesAsHourMinute(existingGoalMinutes) : '-'}
           </Text>
         </View>
 
@@ -122,7 +117,7 @@ export default function EditGoalTimeScreen() {
               >
                 <Icon name="minusCircle" size={57} weight="fill" color={gray[900]} />
               </Pressable>
-              <Text style={styles.timeValue}>{formatGoal(goalMinutes)}</Text>
+              <Text style={styles.timeValue}>{formatMinutesAsHourMinute(goalMinutes)}</Text>
               <Pressable
                 onPress={handleIncrease}
                 disabled={!canIncrease}
