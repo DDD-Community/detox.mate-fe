@@ -61,6 +61,14 @@ const config: ExpoConfig = {
     ],
     '@react-native-firebase/app',
     '@react-native-firebase/messaging',
+    [
+      'expo-build-properties',
+      {
+        ios: {
+          useFrameworks: 'static',
+        },
+      },
+    ],
     'expo-router',
     'expo-notifications',
     '@react-native-community/datetimepicker',
