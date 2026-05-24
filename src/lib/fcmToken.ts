@@ -1,3 +1,9 @@
+import {
+  getMessaging,
+  getToken,
+  onTokenRefresh,
+  registerDeviceForRemoteMessages,
+} from '@react-native-firebase/messaging';
 import * as Notifications from 'expo-notifications';
 import * as SecureStore from 'expo-secure-store';
 import { Platform } from 'react-native';
@@ -6,6 +12,8 @@ import { getFcmToken } from '../api/generated/fcm-token/fcm-token';
 import { RegisterFcmTokenRequestPlatform } from '../api/generated/model';
 
 const STORED_TOKEN_KEY = 'fcmDeviceTokenKey';
+const STORED_TOKEN_PROVIDER_KEY = 'fcmDeviceTokenProviderKey';
+const FIREBASE_MESSAGING_PROVIDER = 'firebase-messaging';
 let devicePushTokenRegistrationPromise: Promise<void> | null = null;
 const tokenRegistrationPromises = new Map<string, Promise<void>>();
 
@@ -15,9 +23,21 @@ const getPlatform = (): RegisterFcmTokenRequestPlatform => {
   return RegisterFcmTokenRequestPlatform.WEB;
 };
 
+const getFirebaseMessaging = () => getMessaging();
+
+const getFcmRegistrationToken = async (): Promise<string | undefined> => {
+  if (Platform.OS === 'web') return undefined;
+
+  const messaging = getFirebaseMessaging();
+  await registerDeviceForRemoteMessages(messaging);
+  const token = await getToken(messaging);
+  return token || undefined;
+};
+
 const registerTokenIfNeeded = async (token: string): Promise<void> => {
   const stored = await SecureStore.getItemAsync(STORED_TOKEN_KEY);
-  if (stored === token) return;
+  const storedProvider = await SecureStore.getItemAsync(STORED_TOKEN_PROVIDER_KEY);
+  if (stored === token && storedProvider === FIREBASE_MESSAGING_PROVIDER) return;
 
   const existing = tokenRegistrationPromises.get(token);
   if (existing) return existing;
@@ -25,6 +45,12 @@ const registerTokenIfNeeded = async (token: string): Promise<void> => {
   const promise = (async () => {
     await getFcmToken().register({ token, platform: getPlatform() });
     await SecureStore.setItemAsync(STORED_TOKEN_KEY, token);
+    await SecureStore.setItemAsync(STORED_TOKEN_PROVIDER_KEY, FIREBASE_MESSAGING_PROVIDER);
+    if (stored && stored !== token) {
+      await getFcmToken()
+        .remove({ token: stored })
+        .catch(() => undefined);
+    }
   })().finally(() => {
     tokenRegistrationPromises.delete(token);
   });
@@ -33,7 +59,7 @@ const registerTokenIfNeeded = async (token: string): Promise<void> => {
 };
 
 /**
- * 디바이스 푸시 토큰을 발급받아 서버에 등록.
+ * Firebase Cloud Messaging registration token을 발급받아 서버에 등록.
  * 푸시 권한이 없거나 토큰 발급에 실패하면 조용히 종료.
  * 마지막으로 등록한 토큰은 unregister에 사용하기 위해 SecureStore에 보관.
  */
@@ -44,16 +70,13 @@ export async function registerDevicePushToken(): Promise<void> {
     const { status } = await Notifications.getPermissionsAsync();
     if (status !== 'granted') return;
 
-    let token: string | undefined;
     try {
-      const response = await Notifications.getDevicePushTokenAsync();
-      token = typeof response?.data === 'string' ? response.data : undefined;
+      const token = await getFcmRegistrationToken();
+      if (!token) return;
+      await registerTokenIfNeeded(token);
     } catch {
       return;
     }
-    if (!token) return;
-
-    await registerTokenIfNeeded(token);
   })().finally(() => {
     devicePushTokenRegistrationPromise = null;
   });
@@ -75,6 +98,7 @@ export async function unregisterDevicePushToken(): Promise<void> {
     await getFcmToken().remove({ token });
   } finally {
     await SecureStore.deleteItemAsync(STORED_TOKEN_KEY);
+    await SecureStore.deleteItemAsync(STORED_TOKEN_PROVIDER_KEY);
   }
 }
 
@@ -84,12 +108,13 @@ export async function unregisterDevicePushToken(): Promise<void> {
  */
 export async function ensureDevicePushTokenRegistered(): Promise<void> {
   const stored = await SecureStore.getItemAsync(STORED_TOKEN_KEY);
-  if (stored) return;
+  const storedProvider = await SecureStore.getItemAsync(STORED_TOKEN_PROVIDER_KEY);
+  if (stored && storedProvider === FIREBASE_MESSAGING_PROVIDER) return;
   await registerDevicePushToken();
 }
 
 /**
- * 푸시 토큰 리스너가 발급해준 새 토큰을 처리.
+ * FCM 토큰 리스너가 발급해준 새 토큰을 처리.
  * 로그인 상태가 아니거나, 권한이 없거나, 보관된 토큰과 동일하면 noop.
  */
 export async function handleNewDevicePushToken(token: string): Promise<void> {
@@ -101,7 +126,18 @@ export async function handleNewDevicePushToken(token: string): Promise<void> {
   if (status !== 'granted') return;
 
   const stored = await SecureStore.getItemAsync(STORED_TOKEN_KEY);
-  if (stored === token) return;
+  const storedProvider = await SecureStore.getItemAsync(STORED_TOKEN_PROVIDER_KEY);
+  if (stored === token && storedProvider === FIREBASE_MESSAGING_PROVIDER) return;
 
   await registerTokenIfNeeded(token);
+}
+
+export function subscribeToDevicePushTokenRefresh(): () => void {
+  if (Platform.OS === 'web') return () => undefined;
+
+  return onTokenRefresh(getFirebaseMessaging(), (token) => {
+    handleNewDevicePushToken(token).catch(() => {
+      // 갱신 실패는 다음 갱신 또는 SettingsScreen 진입 시점에 재시도됨
+    });
+  });
 }
