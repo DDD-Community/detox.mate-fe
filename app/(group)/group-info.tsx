@@ -1,1 +1,1 @@
-export { default } from '../../src/screens/group/mypage/GroupInfoScreen';
+export { default } from '@/screens/group/mypage/GroupInfoScreen';

@@ -1,1 +1,1 @@
-export { default } from '../../src/screens/group/mypage/EditGoalTimeScreen';
+export { default } from '@/screens/group/mypage/EditGoalTimeScreen';
