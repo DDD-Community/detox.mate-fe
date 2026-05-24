@@ -14,11 +14,11 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { getPoke } from '../../api/generated/poke/poke';
 import { Button } from '../../components/Button';
 import { Icon } from '../../components/Icon';
-import { formatMinutesAsHourMinute } from '../../lib/formatDuration';
 import { primitiveColors, radius, spacing, typography } from '../../lib/token';
 import { JoinedGroupBody } from './mypage/JoinedGroupBody';
 import { ProfileImageBottomSheet } from './mypage/ProfileImageBottomSheet';
 import { WeeklyStatusCard } from './mypage/WeeklyStatusCard';
+import { buildMyPageViewModel } from './mypage/myPageViewModel';
 import { useMyPageData } from './mypage/useMyPageData';
 import {
   DEFAULT_PROFILE_IMAGE_OBJECT_KEY,
@@ -146,41 +146,35 @@ export default function MyPageScreen() {
     }
   };
 
-  // 현재 모드에 따른 데이터 소스
-  const activeProfile = isFriend ? friendProfile : memberProfile;
-  const isFriendGoalSet = (friendProfile?.currentGoals?.length ?? 0) > 0;
-
-  const displayName = isFriend
-    ? (friendProfile?.displayName ?? friendName ?? '친구')
-    : (profile?.displayName ?? '');
-  const dayCount = activeProfile?.activitySummary?.dayCount ?? 0;
-  const achievementRate = activeProfile?.activitySummary?.achievementRate ?? 0;
-  const hasJoinedGroup = groups.length > 0;
-
-  const weekly = activeProfile?.weeklySummary;
-  const avgScreenTime = formatMinutesAsHourMinute(weekly?.averageUsedMinutes);
-  const goalScreenTime = formatMinutesAsHourMinute(weekly?.goalMinutes);
-  const diffMinutes = weekly?.differenceMinutes ?? 0;
-  const certifiedDays = weekly?.certifiedDays ?? 0;
-  const totalVerifyDays = weekly?.totalDays ?? 7;
-  const achievedDays = weekly?.achievedDays ?? 0;
-  const joinedGroups = groups.map((item) => ({
-    id: item.id,
-    name: item.name ?? '',
-    members: (item.members ?? []).map((m) => ({
-      name: m.displayName ?? '',
-      profileImageUrl: m.profileImageUrl ?? null,
-    })),
-  }));
-  const daysUntilGoalChange = memberProfile?.goalChangeAvailability?.remainingDays ?? 0;
-
-  // 표시할 프로필 이미지: 친구 모드면 친구 응답, 본인 모드면 로컬 state(낙관적 업데이트 + 서버 응답)
-  const displayProfileImageUri = isFriend
-    ? (friendProfile?.profileImageUrl ?? null)
-    : profileImageUri;
-  const isDefaultProfileImage =
-    displayProfileImageUri?.includes(DEFAULT_PROFILE_IMAGE_OBJECT_KEY) ?? false;
-  const hasProfileBackground = Boolean(displayProfileImageUri && !isDefaultProfileImage);
+  const {
+    displayName,
+    dayCount,
+    achievementRate,
+    hasJoinedGroup,
+    isFriendGoalSet,
+    weeklyStatus,
+    joinedGroups,
+    daysUntilGoalChange,
+    displayProfileImageUri,
+    hasProfileBackground,
+  } = buildMyPageViewModel({
+    isFriend,
+    friendName,
+    profile,
+    memberProfile,
+    friendProfile,
+    groups,
+    profileImageUri,
+    defaultProfileImageObjectKey: DEFAULT_PROFILE_IMAGE_OBJECT_KEY,
+  });
+  const {
+    avgScreenTime,
+    goalScreenTime,
+    diffMinutes,
+    certifiedDays,
+    totalVerifyDays,
+    achievedDays,
+  } = weeklyStatus;
 
   return (
     <View style={styles.root}>
