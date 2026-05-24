@@ -1,1 +1,1 @@
-export { default } from '../../src/screens/group/mypage/EditNicknameScreen';
+export { default } from '@/screens/group/mypage/EditNicknameScreen';

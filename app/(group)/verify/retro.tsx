@@ -1,1 +1,1 @@
-export { default } from '../../../src/screens/group/verify/RetroScreen';
+export { default } from '@/screens/group/verify/RetroScreen';

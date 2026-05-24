@@ -1,6 +1,4 @@
-import * as ImagePicker from 'expo-image-picker';
 import { router, useLocalSearchParams } from 'expo-router';
-import { useState } from 'react';
 import {
   ActivityIndicator,
   Image,
@@ -13,11 +11,10 @@ import {
   TextInput,
   View,
 } from 'react-native';
-import { Icon } from '../../../components/Icon';
-import { submitTotalUsageActivityRecord } from '../../../features/activity-record/submitTotalUsageActivityRecord';
-import { uploadImage } from '../../../lib/uploadImage';
-import { primitiveColors } from '../../../lib/token/primitive/colors';
-import { typography } from '../../../lib/token/primitive/typography';
+
+import { Icon } from '@/components';
+import { primitiveColors, typography } from '@/lib/token';
+import { useRetroForm } from './useRetroForm';
 
 const { gray, brown, green, system } = primitiveColors;
 
@@ -26,48 +23,11 @@ export default function RetroScreen() {
     value?: string;
     groupChallengeParticipantId?: string;
   }>();
-
-  const [imageAsset, setImageAsset] = useState<ImagePicker.ImagePickerAsset | undefined>();
-  const [text, setText] = useState('');
-  const [submitting, setSubmitting] = useState(false);
-  const participantId = groupChallengeParticipantId
-    ? Number(groupChallengeParticipantId)
-    : undefined;
-  const hasValidParticipantId = participantId != null && !Number.isNaN(participantId);
-
-  const canSubmit = text.trim().length > 0 && hasValidParticipantId && !submitting;
-
-  const handlePickImage = async () => {
-    const result = await ImagePicker.launchImageLibraryAsync({
-      mediaTypes: ['images'],
-      quality: 1,
+  const { canSubmit, handlePickImage, handleSubmit, imageAsset, setText, submitting, text } =
+    useRetroForm({
+      value,
+      groupChallengeParticipantId,
     });
-    if (result.canceled || !result.assets[0]) return;
-    setImageAsset(result.assets[0]);
-  };
-
-  const handleSubmit = async () => {
-    if (!canSubmit) return;
-    setSubmitting(true);
-    try {
-      const objectKey = imageAsset
-        ? await uploadImage(imageAsset.uri, {
-            fileName: imageAsset.fileName,
-            mimeType: imageAsset.mimeType,
-            fileSize: imageAsset.fileSize,
-          })
-        : undefined;
-      await submitTotalUsageActivityRecord({
-        value,
-        groupChallengeParticipantId: participantId,
-        reflectionText: text,
-        activityImageObjectKey: objectKey,
-      });
-      router.replace('/(group)/verify/complete');
-    } finally {
-      setSubmitting(false);
-    }
-  };
 
   return (
     <SafeAreaView style={styles.root}>

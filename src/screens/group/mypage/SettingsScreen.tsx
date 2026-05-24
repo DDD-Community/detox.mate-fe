@@ -6,15 +6,15 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import { AppState, Pressable, StyleSheet, Switch, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
-import { logout } from '../../../api/auth';
-import { getUser } from '../../../api/generated/user/user';
+import { logout } from '@/api/auth';
+import { getUser } from '@/api';
 import {
   ensureDevicePushTokenRegistered,
   registerDevicePushToken,
   unregisterDevicePushToken,
-} from '../../../lib/fcmToken';
-import { Icon } from '../../../components/Icon';
-import { primitiveColors, radius, spacing, typography } from '../../../lib/token';
+} from '@/lib/fcmToken';
+import { Icon } from '@/components';
+import { primitiveColors, radius, spacing, typography } from '@/lib/token';
 import { LogoutConfirmAlert } from './LogoutConfirmAlert';
 import { NotificationPermissionAlert } from './NotificationPermissionAlert';
 import { WithdrawConfirmAlert } from './WithdrawConfirmAlert';

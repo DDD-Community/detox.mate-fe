@@ -1,20 +1,11 @@
-import * as ImagePicker from 'expo-image-picker';
 import { router, useLocalSearchParams } from 'expo-router';
-import { useState } from 'react';
 import { ActivityIndicator, Image, Pressable, StyleSheet, Text, View } from 'react-native';
-import { getActivityRecord } from '../../../api/generated/activity-record/activity-record';
-import { ActivityRecordDetailRequestUsageGoalType } from '../../../api/generated/model';
-import { Button } from '../../../components/Button';
-import { Icon } from '../../../components/Icon';
-import { analyzeScreenTimeImage } from '../../../features/screen-time-analyze';
-import { primitiveColors } from '../../../lib/token/primitive/colors';
-import { typography } from '../../../lib/token/primitive/typography';
-import { VerifyBottomSheet } from './VerifyBottomSheet';
 
-function parseValueToMinutes(value: string): number {
-  const [hStr, mStr] = value.split(':');
-  return Number(hStr ?? 0) * 60 + Number(mStr ?? 0);
-}
+import { Button, Icon } from '@/components';
+import { primitiveColors, typography } from '@/lib/token';
+import { useVerifyUploadAnalysis } from './useVerifyUploadAnalysis';
+import { VerifyBottomSheet } from './VerifyBottomSheet';
+import type { VerifyMode } from './verifyFlowParams';
 
 const { gray } = primitiveColors;
 
@@ -26,67 +17,24 @@ export default function VerifyUploadScreen() {
     groupChallengeParticipantId,
   } = useLocalSearchParams<{
     imageUri?: string;
-    mode?: 'initial' | 'verify';
+    mode?: VerifyMode;
     goal?: string;
     groupChallengeParticipantId?: string;
   }>();
-  const [imageUri, setImageUri] = useState<string | undefined>(paramImageUri);
-  const forwardParams = {
-    ...(mode ? { mode } : {}),
-    ...(goal ? { goal } : {}),
-    ...(groupChallengeParticipantId ? { groupChallengeParticipantId } : {}),
-  };
-  const hasImage = Boolean(imageUri);
-  const [isAnalyzing, setIsAnalyzing] = useState(false);
-
-  const handlePickImage = async () => {
-    const result = await ImagePicker.launchImageLibraryAsync({
-      mediaTypes: ['images'],
-      quality: 1,
-    });
-    if (result.canceled || !result.assets[0]) return;
-    setImageUri(result.assets[0].uri);
-  };
-
-  const handleAnalyze = async () => {
-    if (!imageUri) return;
-    setIsAnalyzing(true);
-    try {
-      const result = await analyzeScreenTimeImage(imageUri);
-
-      if (!result.ok) {
-        router.replace({ pathname: '/(group)/verify/error', params: forwardParams });
-        return;
-      }
-
-      if (mode !== 'verify') {
-        router.replace({
-          pathname: '/(group)/verify/done',
-          params: { value: result.value, ...forwardParams },
-        });
-        return;
-      }
-
-      const { allAchieved } = await getActivityRecord().checkAchievement({
-        details: [
-          {
-            usageGoalType: ActivityRecordDetailRequestUsageGoalType.TOTAL_USAGE,
-            usedMinutes: parseValueToMinutes(result.value),
-          },
-        ],
-      });
-
-      router.replace({
-        pathname: '/(group)/verify/done',
-        params: { value: result.value, achieved: String(allAchieved ?? false), ...forwardParams },
-      });
-    } finally {
-      setIsAnalyzing(false);
-    }
-  };
-
-  const buttonLabel = isAnalyzing ? '분석중이에요...' : '분석하기';
-  const buttonDisabled = !hasImage || isAnalyzing;
+  const {
+    buttonDisabled,
+    buttonLabel,
+    handleAnalyze,
+    handlePickImage,
+    hasImage,
+    imageUri,
+    isAnalyzing,
+  } = useVerifyUploadAnalysis({
+    imageUri: paramImageUri,
+    mode,
+    goal,
+    groupChallengeParticipantId,
+  });
 
   return (
     <VerifyBottomSheet onDismiss={() => router.back()} dismissDisabled={isAnalyzing}>

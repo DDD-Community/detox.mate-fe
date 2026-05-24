@@ -1,8 +1,7 @@
 import { Image, Pressable, StyleSheet, Text, View } from 'react-native';
 
-import { Button } from '../../../components/Button';
-import { Icon } from '../../../components/Icon';
-import { primitiveColors, radius, spacing, typography } from '../../../lib/token';
+import { Button, Icon } from '@/components';
+import { primitiveColors, radius, spacing, typography } from '@/lib/token';
 import { WeeklyStatusCard } from './WeeklyStatusCard';
 
 const { gray } = primitiveColors;

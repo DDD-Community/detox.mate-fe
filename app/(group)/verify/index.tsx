@@ -1,1 +1,1 @@
-export { default } from '../../../src/screens/group/verify/VerifyHowToScreen';
+export { default } from '@/screens/group/verify/VerifyHowToScreen';

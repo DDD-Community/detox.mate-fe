@@ -1,55 +1,23 @@
-import * as SecureStore from 'expo-secure-store';
-import { useRouter } from 'expo-router';
-import React, { useEffect, useRef, useState } from 'react';
-import { AppState, Linking, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
-import { primitiveColors } from '../../lib/token/primitive/colors';
-import { typography } from '../../lib/token/primitive/typography';
+import { StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+
+import { Icon } from '@/components';
+import { primitiveColors, spacing, typography } from '@/lib/token';
+import { TermsAgreementRow } from './TermsAgreementRow';
+import { useTermsAgreement } from './useTermsAgreement';
 
 const { green, gray } = primitiveColors;
 
 export default function TermsAgreementScreen() {
-  const router = useRouter();
-  const [privacyAgreed, setPrivacyAgreed] = useState(false);
-  const [termsAgreed, setTermsAgreed] = useState(false);
-
-  // AppState 콜백은 mount 시 한 번만 등록되므로 useState 대신 ref로 추적 (stale closure 방지)
-  const privacyLinkOpenedRef = useRef(false);
-  const termsLinkOpenedRef = useRef(false);
-
-  // 브라우저 방문 여부는 감지 불가 — "링크 탭 후 앱 복귀"를 동의 의사 표현으로 간주
-  useEffect(() => {
-    const subscription = AppState.addEventListener('change', (nextState) => {
-      if (nextState === 'active') {
-        if (privacyLinkOpenedRef.current) {
-          setPrivacyAgreed(true);
-          privacyLinkOpenedRef.current = false;
-        }
-        if (termsLinkOpenedRef.current) {
-          setTermsAgreed(true);
-          termsLinkOpenedRef.current = false;
-        }
-      }
-    });
-    return () => subscription.remove();
-  }, []);
-
-  const allAgreed = privacyAgreed && termsAgreed;
-
-  const handleAllAgree = () => {
-    const next = !allAgreed;
-    setPrivacyAgreed(next);
-    setTermsAgreed(next);
-  };
-
-  const openPrivacyUrl = () => {
-    privacyLinkOpenedRef.current = true;
-    Linking.openURL('https://happysisyphe.notion.site/342ad7a38ce580e1ba8ac09e06c96dca?pvs=73');
-  };
-
-  const openTermsUrl = () => {
-    termsLinkOpenedRef.current = true;
-    Linking.openURL('https://happysisyphe.notion.site/342ad7a38ce58022b466ffec4ca39482');
-  };
+  const {
+    allAgreed,
+    confirmAgreements,
+    handleAllAgree,
+    openAgreementUrl,
+    privacyAgreed,
+    setPrivacyAgreed,
+    setTermsAgreed,
+    termsAgreed,
+  } = useTermsAgreement();
 
   return (
     <View style={styles.root}>
@@ -67,58 +35,33 @@ export default function TermsAgreementScreen() {
           <View style={styles.gap28} />
 
           <TouchableOpacity style={styles.allAgreeRow} onPress={handleAllAgree} activeOpacity={0.7}>
-            <Text style={[styles.allCheckmark, allAgreed && styles.allCheckmarkActive]}>✓</Text>
+            <Icon name="check" size={20} color={allAgreed ? green[500] : gray[400]} />
             <Text style={styles.allAgreeText}>전체 동의</Text>
           </TouchableOpacity>
 
           <View style={styles.gap16} />
 
-          <View style={styles.agreeRow}>
-            <TouchableOpacity
-              style={[styles.checkbox, privacyAgreed && styles.checkboxChecked]}
-              onPress={() => setPrivacyAgreed((v) => !v)}
-              activeOpacity={0.7}
-            >
-              {privacyAgreed && <Text style={styles.checkIcon}>✓</Text>}
-            </TouchableOpacity>
-            <TouchableOpacity
-              style={styles.agreeRowRight}
-              onPress={openPrivacyUrl}
-              activeOpacity={0.7}
-            >
-              <Text style={styles.agreeText}>개인정보처리 방침 동의</Text>
-              <Text style={styles.chevron}>›</Text>
-            </TouchableOpacity>
-          </View>
+          <TermsAgreementRow
+            checked={privacyAgreed}
+            label="개인정보처리 방침 동의"
+            onChange={setPrivacyAgreed}
+            onOpen={() => openAgreementUrl('privacy')}
+          />
 
           <View style={styles.gap12} />
 
-          <View style={styles.agreeRow}>
-            <TouchableOpacity
-              style={[styles.checkbox, termsAgreed && styles.checkboxChecked]}
-              onPress={() => setTermsAgreed((v) => !v)}
-              activeOpacity={0.7}
-            >
-              {termsAgreed && <Text style={styles.checkIcon}>✓</Text>}
-            </TouchableOpacity>
-            <TouchableOpacity
-              style={styles.agreeRowRight}
-              onPress={openTermsUrl}
-              activeOpacity={0.7}
-            >
-              <Text style={styles.agreeText}>서비스 이용 약관 동의</Text>
-              <Text style={styles.chevron}>›</Text>
-            </TouchableOpacity>
-          </View>
+          <TermsAgreementRow
+            checked={termsAgreed}
+            label="서비스 이용 약관 동의"
+            onChange={setTermsAgreed}
+            onOpen={() => openAgreementUrl('terms')}
+          />
 
           <View style={styles.gap32} />
 
           <TouchableOpacity
             style={[styles.confirmButton, allAgreed && styles.confirmButtonEnabled]}
-            onPress={async () => {
-              await SecureStore.setItemAsync('isNewUser', 'true');
-              router.replace('/login');
-            }}
+            onPress={confirmAgreements}
             disabled={!allAgreed}
             activeOpacity={0.85}
           >
@@ -173,67 +116,15 @@ const styles = StyleSheet.create({
   allAgreeRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 8,
+    gap: spacing[8],
     backgroundColor: gray[50],
     borderRadius: 12,
     paddingVertical: 14,
     paddingHorizontal: 16,
   },
-  allCheckmark: {
-    fontSize: 16,
-    fontFamily: 'NanumSquareRoundB',
-    color: gray[400],
-    lineHeight: 20,
-  },
-  allCheckmarkActive: {
-    color: green[500],
-  },
   allAgreeText: {
     ...typography.primary.body1M,
     color: gray[900],
-  },
-  agreeRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 12,
-  },
-  checkbox: {
-    width: 24,
-    height: 24,
-    borderRadius: 8,
-    borderWidth: 1.5,
-    borderColor: gray[200],
-    backgroundColor: '#FFFFFF',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  checkboxChecked: {
-    backgroundColor: green[500],
-    borderColor: green[500],
-  },
-  checkIcon: {
-    color: '#FFFFFF',
-    fontSize: 12,
-    fontFamily: 'NanumSquareRoundEB',
-    lineHeight: 16,
-    includeFontPadding: false,
-  },
-  // 텍스트 + 화살표를 묶은 탭 영역 — URL 이동 & 자동 체크 트리거
-  agreeRowRight: {
-    flex: 1,
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
-  agreeText: {
-    flex: 1,
-    ...typography.primary.body2M,
-    color: gray[900],
-  },
-  chevron: {
-    fontSize: 22,
-    color: gray[400],
-    lineHeight: 26,
-    paddingLeft: 8,
   },
   confirmButton: {
     borderRadius: 100,

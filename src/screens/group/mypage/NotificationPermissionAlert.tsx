@@ -1,6 +1,6 @@
 import { Modal, Pressable, StyleSheet, Text, View } from 'react-native';
 
-import { primitiveColors, spacing, typography } from '../../../lib/token';
+import { primitiveColors, spacing, typography } from '@/lib/token';
 
 const { gray, green } = primitiveColors;
 
@@ -33,19 +33,13 @@ export function NotificationPermissionAlert({
           <View style={styles.actions}>
             <Pressable
               onPress={onConfirm}
-              style={({ pressed }) => [
-                styles.primaryButton,
-                pressed && styles.primaryPressed,
-              ]}
+              style={({ pressed }) => [styles.primaryButton, pressed && styles.primaryPressed]}
             >
               <Text style={styles.primaryText}>설정으로 가기</Text>
             </Pressable>
             <Pressable
               onPress={onClose}
-              style={({ pressed }) => [
-                styles.secondaryButton,
-                pressed && styles.secondaryPressed,
-              ]}
+              style={({ pressed }) => [styles.secondaryButton, pressed && styles.secondaryPressed]}
             >
               <Text style={styles.secondaryText}>취소</Text>
             </Pressable>
