@@ -1,4 +1,4 @@
-import { router, useFocusEffect, useLocalSearchParams } from 'expo-router';
+import { router, useFocusEffect } from 'expo-router';
 import { useCallback, useState } from 'react';
 import {
   ActivityIndicator,
@@ -32,6 +32,7 @@ import {
   DEFAULT_PROFILE_IMAGE_OBJECT_KEY,
   useProfileImageUpdater,
 } from './mypage/useProfileImageUpdater';
+import { useMyPageParams } from './mypage/useMyPageParams';
 
 import CALENDAR_IMG from '../../../assets/mypage-calender.png';
 import GROUP_INVITE_IMG from '../../../assets/onboarding-group-invite.png';
@@ -76,16 +77,13 @@ function GroupActionCard({ image, imageWidth, imageHeight, label, onPress }: Gro
 }
 
 export default function MyPageScreen() {
-  // memberId가 있으면 친구 프로필 모드, 없으면 내 마이페이지 모드
-  const { memberId, friendName, friendUserId, challengeRecordId, friendGroupId } =
-    useLocalSearchParams<{
-      memberId?: string;
-      friendName?: string;
-      friendUserId?: string;
-      challengeRecordId?: string;
-      friendGroupId?: string;
-    }>();
-  const isFriend = !!memberId;
+  const myPageParams = useMyPageParams();
+  const isFriend = myPageParams.mode === 'friend';
+  const memberId = isFriend ? myPageParams.memberId : undefined;
+  const friendName = isFriend ? myPageParams.friendName : undefined;
+  const friendUserId = isFriend ? myPageParams.friendUserId : undefined;
+  const challengeRecordId = isFriend ? myPageParams.challengeRecordId : undefined;
+  const friendGroupId = isFriend ? myPageParams.friendGroupId : undefined;
 
   const [profile, setProfile] = useState<MyProfileResponse | null>(null);
   const [hasGoalSet, setHasGoalSet] = useState(false);
