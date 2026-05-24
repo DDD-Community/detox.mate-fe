@@ -1,4 +1,3 @@
-import * as ImagePicker from 'expo-image-picker';
 import { router, useFocusEffect, useLocalSearchParams } from 'expo-router';
 import { useCallback, useState } from 'react';
 import {
@@ -22,15 +21,17 @@ import type {
   GroupResponse,
   MyProfileResponse,
 } from '../../api/generated/model';
-import { PresignedUrlRequestUploadPurpose } from '../../api/generated/model';
 import { Button } from '../../components/Button';
 import { Icon } from '../../components/Icon';
 import { formatMinutesAsHourMinute } from '../../lib/formatDuration';
-import { uploadImage } from '../../lib/uploadImage';
 import { primitiveColors, radius, spacing, typography } from '../../lib/token';
 import { JoinedGroupBody } from './mypage/JoinedGroupBody';
 import { ProfileImageBottomSheet } from './mypage/ProfileImageBottomSheet';
 import { WeeklyStatusCard } from './mypage/WeeklyStatusCard';
+import {
+  DEFAULT_PROFILE_IMAGE_OBJECT_KEY,
+  useProfileImageUpdater,
+} from './mypage/useProfileImageUpdater';
 
 import CALENDAR_IMG from '../../../assets/mypage-calender.png';
 import GROUP_INVITE_IMG from '../../../assets/onboarding-group-invite.png';
@@ -38,7 +39,6 @@ import GROUP_PLUS_IMG from '../../../assets/onboarding-group-plus.png';
 import TURTLE_IMG from '../../../assets/turtle-hi.png';
 
 const { brown, gray, green } = primitiveColors;
-const DEFAULT_PROFILE_IMAGE_OBJECT_KEY = 'static/turtle-hi.png';
 
 interface ProfileChipProps {
   label: string;
@@ -97,10 +97,16 @@ export default function MyPageScreen() {
 
   const [isPoking, setIsPoking] = useState(false);
 
-  const [isImageSheetOpen, setIsImageSheetOpen] = useState(false);
-  // null이면 로컬 기본 이미지, 그 외엔 서버 URL/로컬 URI
-  const [profileImageUri, setProfileImageUri] = useState<string | null>(null);
-  const [isUpdatingProfileImage, setIsUpdatingProfileImage] = useState(false);
+  const {
+    isImageSheetOpen,
+    profileImageUri,
+    isUpdatingProfileImage,
+    setProfileImageUri,
+    openImageSheet,
+    closeImageSheet,
+    selectDefaultImage,
+    selectGalleryImage,
+  } = useProfileImageUpdater();
 
   // 첫 진입 시에만 ActivityIndicator를 노출. 화면 복귀 시(refresh)는 백그라운드로 갱신.
   useFocusEffect(
@@ -183,71 +189,7 @@ export default function MyPageScreen() {
   };
 
   const handleEditProfileImage = () => {
-    setIsImageSheetOpen(true);
-  };
-
-  const handleSelectDefaultImage = async () => {
-    setIsImageSheetOpen(false);
-    if (isUpdatingProfileImage) return;
-    const previous = profileImageUri;
-    setProfileImageUri(null);
-    setIsUpdatingProfileImage(true);
-    try {
-      const response = await getUser().updateMe({
-        profileImageObjectKey: DEFAULT_PROFILE_IMAGE_OBJECT_KEY,
-      });
-      // eslint-disable-next-line no-console
-      console.log('[default-image] response', response);
-      setProfileImageUri(response.profileImageUrl ?? null);
-    } catch (e) {
-      // eslint-disable-next-line no-console
-      console.log(
-        '[default-image] failed',
-        (e as { response?: { data?: unknown } })?.response?.data ?? e
-      );
-      setProfileImageUri(previous);
-      // TODO: 에러 토스트
-    } finally {
-      setIsUpdatingProfileImage(false);
-    }
-  };
-
-  const handleSelectGalleryImage = async () => {
-    setIsImageSheetOpen(false);
-    // iOS Modal dismiss animation이 끝나기 전에 native picker를 띄우면
-    // presentation 충돌로 picker가 즉시 닫혀버림. 짧게 대기.
-    await new Promise<void>((resolve) => setTimeout(resolve, 300));
-
-    const permission = await ImagePicker.requestMediaLibraryPermissionsAsync();
-    if (!permission.granted) return;
-
-    const result = await ImagePicker.launchImageLibraryAsync({
-      mediaTypes: ['images'],
-      quality: 1,
-      allowsEditing: true,
-    });
-    if (result.canceled || !result.assets[0]) return;
-    if (isUpdatingProfileImage) return;
-
-    const asset = result.assets[0];
-    const previous = profileImageUri;
-    setProfileImageUri(asset.uri);
-    setIsUpdatingProfileImage(true);
-    try {
-      const objectKey = await uploadImage(asset.uri, {
-        uploadPurpose: PresignedUrlRequestUploadPurpose.PROFILE_IMAGE,
-        fileName: asset.fileName,
-        mimeType: asset.mimeType,
-        fileSize: asset.fileSize,
-      });
-      const response = await getUser().updateMe({ profileImageObjectKey: objectKey });
-      setProfileImageUri(response.profileImageUrl ?? asset.uri);
-    } catch (e) {
-      setProfileImageUri(previous);
-      // TODO: 에러 토스트
-    } finally {
-      setIsUpdatingProfileImage(false);
-    }
+    openImageSheet();
   };
 
   const handleSetGoal = () => {
@@ -510,9 +452,9 @@ export default function MyPageScreen() {
 
       <ProfileImageBottomSheet
         visible={isImageSheetOpen}
-        onClose={() => setIsImageSheetOpen(false)}
-        onSelectDefault={handleSelectDefaultImage}
-        onSelectGallery={handleSelectGalleryImage}
+        onClose={closeImageSheet}
+        onSelectDefault={selectDefaultImage}
+        onSelectGallery={selectGalleryImage}
       />
     </View>
   );
