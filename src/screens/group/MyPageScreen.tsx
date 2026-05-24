@@ -1,7 +1,7 @@
 import { router } from 'expo-router';
 import { ScrollView, StyleSheet, View } from 'react-native';
 
-import { primitiveColors, spacing } from '../../lib/token';
+import { primitiveColors, spacing } from '@/lib/token';
 import { MyPageBody } from './mypage/MyPageBody';
 import { MyPageProfileHeader } from './mypage/MyPageProfileHeader';
 import { ProfileImageBottomSheet } from './mypage/ProfileImageBottomSheet';

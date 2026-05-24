@@ -1,6 +1,6 @@
 import { Modal, Pressable, StyleSheet, Text, View } from 'react-native';
 
-import { primitiveColors, spacing, typography } from '../../../lib/token';
+import { primitiveColors, spacing, typography } from '@/lib/token';
 
 const { gray, green } = primitiveColors;
 

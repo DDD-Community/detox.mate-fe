@@ -1,7 +1,7 @@
 import { Modal, Pressable, StyleSheet, Text, View } from 'react-native';
 
-import { Icon } from '../../../components/Icon';
-import { primitiveColors, radius, spacing, typography } from '../../../lib/token';
+import { Icon } from '@/components/Icon';
+import { primitiveColors, radius, spacing, typography } from '@/lib/token';
 
 const { gray, system } = primitiveColors;
 const RED = system.red.opacity100;

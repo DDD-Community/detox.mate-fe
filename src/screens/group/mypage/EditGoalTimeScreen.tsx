@@ -3,12 +3,12 @@ import { useEffect, useState } from 'react';
 import { ActivityIndicator, Pressable, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
-import { getUserUsageGoalTime } from '../../../api/generated/user-usage-goal-time/user-usage-goal-time';
-import { UserUsageGoalTimeRequestUsageGoalType } from '../../../api/generated/model';
-import { Button } from '../../../components/Button';
-import { Icon } from '../../../components/Icon';
-import { formatMinutesAsHourMinute } from '../../../lib/formatDuration';
-import { primitiveColors, radius, spacing, typography } from '../../../lib/token';
+import { getUserUsageGoalTime } from '@/api/generated/user-usage-goal-time/user-usage-goal-time';
+import { UserUsageGoalTimeRequestUsageGoalType } from '@/api/generated/model';
+import { Button } from '@/components/Button';
+import { Icon } from '@/components/Icon';
+import { formatMinutesAsHourMinute } from '@/lib/formatDuration';
+import { primitiveColors, radius, spacing, typography } from '@/lib/token';
 
 const { brown, gray, green } = primitiveColors;
 

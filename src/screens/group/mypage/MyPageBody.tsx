@@ -1,8 +1,8 @@
 import { ActivityIndicator, Image, Pressable, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
-import { Button } from '../../../components/Button';
-import { primitiveColors, radius, spacing, typography } from '../../../lib/token';
+import { Button } from '@/components/Button';
+import { primitiveColors, radius, spacing, typography } from '@/lib/token';
 import { JoinedGroupBody, type JoinedGroupItem } from './JoinedGroupBody';
 import { WeeklyStatusCard } from './WeeklyStatusCard';
 

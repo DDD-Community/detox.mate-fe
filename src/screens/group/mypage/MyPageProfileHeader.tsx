@@ -1,8 +1,8 @@
 import { Image, Pressable, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
-import { Icon } from '../../../components/Icon';
-import { primitiveColors, radius, spacing, typography } from '../../../lib/token';
+import { Icon } from '@/components/Icon';
+import { primitiveColors, radius, spacing, typography } from '@/lib/token';
 
 import TURTLE_IMG from '../../../../assets/turtle-hi.png';
 

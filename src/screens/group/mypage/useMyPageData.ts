@@ -1,15 +1,15 @@
 import { useFocusEffect } from 'expo-router';
 import { useCallback, useState } from 'react';
 
-import { getGroup } from '../../../api/generated/group/group';
-import { getGroupMember } from '../../../api/generated/group-member/group-member';
+import { getGroup } from '@/api/generated/group/group';
+import { getGroupMember } from '@/api/generated/group-member/group-member';
 import type {
   GroupMemberProfileResponse,
   GroupResponse,
   MyProfileResponse,
-} from '../../../api/generated/model';
-import { getUser } from '../../../api/generated/user/user';
-import { getUserUsageGoalTime } from '../../../api/generated/user-usage-goal-time/user-usage-goal-time';
+} from '@/api/generated/model';
+import { getUser } from '@/api/generated/user/user';
+import { getUserUsageGoalTime } from '@/api/generated/user-usage-goal-time/user-usage-goal-time';
 import type { MyPageParams } from './useMyPageParams';
 
 interface UseMyPageDataOptions {

@@ -5,11 +5,11 @@ import { useEffect, useState } from 'react';
 import { ActivityIndicator, Image, Pressable, Share, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
-import { getFeed } from '../../../api/generated/feed/feed';
-import { getGroup } from '../../../api/generated/group/group';
-import type { GroupMemberResponse } from '../../../api/generated/model';
-import { Icon } from '../../../components/Icon';
-import { primitiveColors, radius, spacing, typography } from '../../../lib/token';
+import { getFeed } from '@/api/generated/feed/feed';
+import { getGroup } from '@/api/generated/group/group';
+import type { GroupMemberResponse } from '@/api/generated/model';
+import { Icon } from '@/components/Icon';
+import { primitiveColors, radius, spacing, typography } from '@/lib/token';
 import { LeaveGroupAlert } from './LeaveGroupAlert';
 
 const { brown, gray } = primitiveColors;

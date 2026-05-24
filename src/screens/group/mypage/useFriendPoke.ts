@@ -1,6 +1,6 @@
 import { useState } from 'react';
 
-import { getPoke } from '../../../api/generated/poke/poke';
+import { getPoke } from '@/api/generated/poke/poke';
 
 interface UseFriendPokeOptions {
   challengeRecordId?: string;

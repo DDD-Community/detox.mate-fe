@@ -1,7 +1,7 @@
 import { Modal, Pressable, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
-import { primitiveColors, radius, spacing, typography } from '../../../lib/token';
+import { primitiveColors, radius, spacing, typography } from '@/lib/token';
 
 const { gray } = primitiveColors;
 

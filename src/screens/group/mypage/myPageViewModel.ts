@@ -2,8 +2,8 @@ import type {
   GroupMemberProfileResponse,
   GroupResponse,
   MyProfileResponse,
-} from '../../../api/generated/model';
-import { formatMinutesAsHourMinute } from '../../../lib/formatDuration';
+} from '@/api/generated/model';
+import { formatMinutesAsHourMinute } from '@/lib/formatDuration';
 
 interface BuildMyPageViewModelOptions {
   isFriend: boolean;
