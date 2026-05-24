@@ -3,10 +3,8 @@ import { useEffect, useState } from 'react';
 import { ActivityIndicator, Pressable, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
-import { getUserUsageGoalTime } from '@/api/generated/user-usage-goal-time/user-usage-goal-time';
-import { UserUsageGoalTimeRequestUsageGoalType } from '@/api/generated/model';
-import { Button } from '@/components/Button';
-import { Icon } from '@/components/Icon';
+import { getUserUsageGoalTime, UserUsageGoalTimeRequestUsageGoalType } from '@/api';
+import { Button, Icon } from '@/components';
 import { formatMinutesAsHourMinute } from '@/lib/formatDuration';
 import { primitiveColors, radius, spacing, typography } from '@/lib/token';
 

@@ -1,8 +1,7 @@
 import * as ImagePicker from 'expo-image-picker';
 import { useState } from 'react';
 
-import { PresignedUrlRequestUploadPurpose } from '@/api/generated/model';
-import { getUser } from '@/api/generated/user/user';
+import { getUser, PresignedUrlRequestUploadPurpose } from '@/api';
 import { uploadImage } from '@/lib/uploadImage';
 
 export const DEFAULT_PROFILE_IMAGE_OBJECT_KEY = 'static/turtle-hi.png';

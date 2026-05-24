@@ -3,9 +3,8 @@ import { useState } from 'react';
 import { Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
-import { getUser } from '@/api/generated/user/user';
-import { Button } from '@/components/Button';
-import { Icon } from '@/components/Icon';
+import { getUser } from '@/api';
+import { Button, Icon } from '@/components';
 import { primitiveColors, radius, spacing, typography } from '@/lib/token';
 
 const { brown, gray } = primitiveColors;

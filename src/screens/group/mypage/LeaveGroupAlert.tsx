@@ -1,6 +1,6 @@
 import { Modal, Pressable, StyleSheet, Text, View } from 'react-native';
 
-import { Icon } from '@/components/Icon';
+import { Icon } from '@/components';
 import { primitiveColors, radius, spacing, typography } from '@/lib/token';
 
 const { gray, system } = primitiveColors;

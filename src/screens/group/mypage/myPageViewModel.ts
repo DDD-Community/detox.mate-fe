@@ -1,8 +1,4 @@
-import type {
-  GroupMemberProfileResponse,
-  GroupResponse,
-  MyProfileResponse,
-} from '@/api/generated/model';
+import type { GroupMemberProfileResponse, GroupResponse, MyProfileResponse } from '@/api';
 import { formatMinutesAsHourMinute } from '@/lib/formatDuration';
 
 interface BuildMyPageViewModelOptions {
