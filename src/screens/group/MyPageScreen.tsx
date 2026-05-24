@@ -1,13 +1,12 @@
 import { router } from 'expo-router';
-import { useState } from 'react';
 import { ScrollView, StyleSheet, View } from 'react-native';
 
-import { getPoke } from '../../api/generated/poke/poke';
 import { primitiveColors, spacing } from '../../lib/token';
 import { MyPageBody } from './mypage/MyPageBody';
 import { MyPageProfileHeader } from './mypage/MyPageProfileHeader';
 import { ProfileImageBottomSheet } from './mypage/ProfileImageBottomSheet';
 import { buildMyPageViewModel } from './mypage/myPageViewModel';
+import { useFriendPoke } from './mypage/useFriendPoke';
 import { useMyPageData } from './mypage/useMyPageData';
 import {
   DEFAULT_PROFILE_IMAGE_OBJECT_KEY,
@@ -23,8 +22,7 @@ export default function MyPageScreen() {
   const friendName = isFriend ? myPageParams.friendName : undefined;
   const friendUserId = isFriend ? myPageParams.friendUserId : undefined;
   const challengeRecordId = isFriend ? myPageParams.challengeRecordId : undefined;
-
-  const [isPoking, setIsPoking] = useState(false);
+  const { isPoking, poke } = useFriendPoke({ challengeRecordId, friendUserId });
 
   const {
     isImageSheetOpen,
@@ -79,20 +77,6 @@ export default function MyPageScreen() {
 
   const handleChangeGoal = () => {
     router.push('/(group)/goal-time-edit');
-  };
-
-  const handlePoke = async () => {
-    if (isPoking) return;
-    if (!challengeRecordId || !friendUserId) {
-      // 콕 찌르기에 필요한 정보가 없으면 무시 (라우팅하는 쪽에서 채워주어야 함)
-      return;
-    }
-    setIsPoking(true);
-    try {
-      await getPoke().pokeUser(Number(challengeRecordId), Number(friendUserId));
-    } finally {
-      setIsPoking(false);
-    }
   };
 
   const {
@@ -161,7 +145,7 @@ export default function MyPageScreen() {
           achievedDays={achievedDays}
           joinedGroups={joinedGroups}
           daysUntilGoalChange={daysUntilGoalChange}
-          onPoke={handlePoke}
+          onPoke={poke}
           onSetGoal={handleSetGoal}
           onCreateGroup={handleCreateGroup}
           onEnterInviteCode={handleEnterInviteCode}
