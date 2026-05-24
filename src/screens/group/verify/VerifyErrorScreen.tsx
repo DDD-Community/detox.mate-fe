@@ -1,12 +1,14 @@
 import { router, useLocalSearchParams } from 'expo-router';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
-import { primitiveColors } from '../../../lib/token/primitive/colors';
+
+import { primitiveColors } from '@/lib/token';
+import { buildVerifyFlowParams, type VerifyMode } from './verifyFlowParams';
 
 const { green } = primitiveColors;
 
 export default function VerifyErrorScreen() {
   const { mode, goal, groupChallengeParticipantId } = useLocalSearchParams<{
-    mode?: 'initial' | 'verify';
+    mode?: VerifyMode;
     goal?: string;
     groupChallengeParticipantId?: string;
   }>();
@@ -14,11 +16,7 @@ export default function VerifyErrorScreen() {
   const handleRetake = () => {
     router.replace({
       pathname: '/(group)/verify/method',
-      params: {
-        ...(mode ? { mode } : {}),
-        ...(goal ? { goal } : {}),
-        ...(groupChallengeParticipantId ? { groupChallengeParticipantId } : {}),
-      },
+      params: buildVerifyFlowParams({ mode, goal, groupChallengeParticipantId }),
     });
   };
 

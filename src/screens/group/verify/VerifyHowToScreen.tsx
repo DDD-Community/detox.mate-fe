@@ -1,82 +1,26 @@
 import { router, useLocalSearchParams } from 'expo-router';
-import { useEffect, useState } from 'react';
 import { Image, Pressable, StyleSheet, Text, View } from 'react-native';
-import { Button } from '../../../components/Button';
-import {
-  isVerifyHowToHidden,
-  setVerifyHowToHidden,
-} from '../../../features/verify-how-to/howToPreference';
-import { primitiveColors } from '../../../lib/token/primitive/colors';
-import { typography } from '../../../lib/token/primitive/typography';
+
+import SCREEN_TIME_REF_IMAGE from '@assets/screen_time_ref.png';
+
+import { Button } from '@/components';
+import { primitiveColors, typography } from '@/lib/token';
+import { useVerifyHowToGate } from './useVerifyHowToGate';
+import type { VerifyMode } from './verifyFlowParams';
 
 const { gray } = primitiveColors;
 
 export default function VerifyHowToScreen() {
   const { mode, goal, groupChallengeParticipantId } = useLocalSearchParams<{
-    mode?: 'initial' | 'verify';
+    mode?: VerifyMode;
     goal?: string;
     groupChallengeParticipantId?: string;
   }>();
-  const isVerifyMode = mode === 'verify';
-  const [ready, setReady] = useState(!isVerifyMode);
-
-  useEffect(() => {
-    if (!isVerifyMode) return;
-    let active = true;
-    isVerifyHowToHidden().then((hidden) => {
-      if (!active) return;
-      if (hidden) {
-        router.replace({
-          pathname: '/(group)/verify/method',
-          params: isVerifyMode
-            ? {
-                mode: 'verify',
-                ...(goal ? { goal } : {}),
-                ...(groupChallengeParticipantId ? { groupChallengeParticipantId } : {}),
-              }
-            : goal
-              ? { goal }
-              : undefined,
-        });
-      } else {
-        setReady(true);
-      }
-    });
-    return () => {
-      active = false;
-    };
-  }, [isVerifyMode]);
-
-  const handleConfirm = () => {
-    router.replace({
-      pathname: '/(group)/verify/method',
-      params: isVerifyMode
-        ? {
-            mode: 'verify',
-            ...(goal ? { goal } : {}),
-            ...(groupChallengeParticipantId ? { groupChallengeParticipantId } : {}),
-          }
-        : goal
-          ? { goal }
-          : undefined,
-    });
-  };
-
-  const handleHideForever = async () => {
-    await setVerifyHowToHidden();
-    router.replace({
-      pathname: '/(group)/verify/method',
-      params: isVerifyMode
-        ? {
-            mode: 'verify',
-            ...(goal ? { goal } : {}),
-            ...(groupChallengeParticipantId ? { groupChallengeParticipantId } : {}),
-          }
-        : goal
-          ? { goal }
-          : undefined,
-    });
-  };
+  const { handleConfirm, handleHideForever, isVerifyMode, ready } = useVerifyHowToGate({
+    mode,
+    goal,
+    groupChallengeParticipantId,
+  });
 
   if (!ready) {
     return <View style={styles.overlay} />;
@@ -94,7 +38,7 @@ export default function VerifyHowToScreen() {
           </View>
 
           <Image
-            source={require('../../../../assets/screen_time_ref.png')}
+            source={SCREEN_TIME_REF_IMAGE}
             style={styles.imagePlaceholder}
             resizeMode="contain"
           />

@@ -9,7 +9,8 @@ import {
   type GestureResponderEvent,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { primitiveColors } from '../../../lib/token/primitive/colors';
+
+import { primitiveColors } from '@/lib/token';
 
 const { gray, brown } = primitiveColors;
 

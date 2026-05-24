@@ -1,5 +1,4 @@
-import { router, useLocalSearchParams } from 'expo-router';
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useLocalSearchParams } from 'expo-router';
 import {
   Image,
   Pressable,
@@ -9,107 +8,29 @@ import {
   View,
   type GestureResponderEvent,
 } from 'react-native';
-import { Button } from '../../../components/Button';
-import { Icon } from '../../../components/Icon';
-import { getUserUsageGoalTime } from '../../../api/generated/user-usage-goal-time/user-usage-goal-time';
-import { UserUsageGoalTimeRequestUsageGoalType } from '../../../api/generated/model';
-import { primitiveColors } from '../../../lib/token/primitive/colors';
-import { typography } from '../../../lib/token/primitive/typography';
+
+import LOGO_DETOXMATE_BLACK from '@assets/logo-detoxmate-black.png';
+
+import { Button, Icon } from '@/components';
+import { primitiveColors, typography } from '@/lib/token';
+import { useGoalTimeSave } from './useGoalTimeSave';
+import { useGoalTimeStepper } from './useGoalTimeStepper';
+import { formatHHMMToDisplay, formatMinutesAsGoal } from './verifyTime';
 
 const { gray, brown, green } = primitiveColors;
 
-const STEP_MINUTES = 10;
-const MIN_MINUTES = 0;
-const MAX_MINUTES = 24 * 60;
-const INITIAL_MINUTES = 2 * 60;
-const HOLD_DELAY_MS = 400;
-const HOLD_INTERVAL_MS = 80;
-
-function formatHHMMToDisplay(value: string | undefined): string {
-  if (!value) return '';
-  const [hStr, mStr] = value.split(':');
-  return `${Number(hStr ?? 0)}h ${Number(mStr ?? 0)}m`;
-}
-
-function formatMinutes(totalMinutes: number): string {
-  const h = Math.floor(totalMinutes / 60);
-  const m = totalMinutes % 60;
-  return `${h}h ${m.toString().padStart(2, '0')}m`;
-}
-
 export default function GoalSetupScreen() {
   const { value } = useLocalSearchParams<{ value?: string }>();
-  const [minutes, setMinutes] = useState(INITIAL_MINUTES);
-  const [isSaving, setIsSaving] = useState(false);
-
-  const minutesRef = useRef(minutes);
-  useEffect(() => {
-    minutesRef.current = minutes;
-  }, [minutes]);
-
-  const holdTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const holdIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
-
-  const clearHold = useCallback(() => {
-    if (holdTimeoutRef.current) {
-      clearTimeout(holdTimeoutRef.current);
-      holdTimeoutRef.current = null;
-    }
-    if (holdIntervalRef.current) {
-      clearInterval(holdIntervalRef.current);
-      holdIntervalRef.current = null;
-    }
-  }, []);
-
-  useEffect(() => clearHold, [clearHold]);
-
-  const apply = useCallback((delta: number) => {
-    setMinutes((prev) => {
-      const next = prev + delta;
-      if (next < MIN_MINUTES) return MIN_MINUTES;
-      if (next > MAX_MINUTES) return MAX_MINUTES;
-      return next;
-    });
-  }, []);
-
-  const startHold = useCallback(
-    (delta: number) => {
-      clearHold();
-      apply(delta);
-      holdTimeoutRef.current = setTimeout(() => {
-        holdIntervalRef.current = setInterval(() => apply(delta), HOLD_INTERVAL_MS);
-      }, HOLD_DELAY_MS);
-    },
-    [apply, clearHold]
-  );
-
-  const handleSave = async () => {
-    setIsSaving(true);
-    try {
-      await getUserUsageGoalTime().setGoalTimes({
-        goals: [
-          {
-            usageGoalType: UserUsageGoalTimeRequestUsageGoalType.TOTAL_USAGE,
-            goalMinutes: minutes,
-          },
-        ],
-      });
-      router.replace('/(feed)/home');
-    } finally {
-      setIsSaving(false);
-    }
-  };
+  const { canDecrease, canIncrease, clearHold, minutes, startDecrease, startIncrease } =
+    useGoalTimeStepper();
+  const { handleSave, isSaving } = useGoalTimeSave(minutes);
 
   const screenTimeDisplay = formatHHMMToDisplay(value);
 
   return (
     <SafeAreaView style={styles.root}>
       <View style={styles.header}>
-        <Image
-          source={require('../../../../assets/logo-detoxmate-black.png')}
-          style={styles.logo}
-          resizeMode="contain"
-        />
+        <Image source={LOGO_DETOXMATE_BLACK} style={styles.logo} resizeMode="contain" />
       </View>
 
       <View style={styles.body}>
@@ -129,16 +50,16 @@ export default function GoalSetupScreen() {
           <View style={styles.stepper}>
             <StepButton
               kind="minus"
-              onPressIn={() => startHold(-STEP_MINUTES)}
+              onPressIn={startDecrease}
               onPressOut={clearHold}
-              disabled={minutes <= MIN_MINUTES}
+              disabled={!canDecrease}
             />
-            <Text style={styles.stepperValue}>{formatMinutes(minutes)}</Text>
+            <Text style={styles.stepperValue}>{formatMinutesAsGoal(minutes)}</Text>
             <StepButton
               kind="plus"
-              onPressIn={() => startHold(STEP_MINUTES)}
+              onPressIn={startIncrease}
               onPressOut={clearHold}
-              disabled={minutes >= MAX_MINUTES}
+              disabled={!canIncrease}
             />
           </View>
           <Text style={styles.stepperCaption}>하루 기준</Text>

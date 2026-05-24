@@ -1,7 +1,9 @@
 import { router } from 'expo-router';
 import { Image, Pressable, StyleSheet, Text, View } from 'react-native';
-import { primitiveColors } from '../../../lib/token/primitive/colors';
-import { typography } from '../../../lib/token/primitive/typography';
+
+import ONBOARDING_CHECK_IMAGE from '@assets/onboarding-check.png';
+
+import { primitiveColors, typography } from '@/lib/token';
 import { VerifyBottomSheet } from './VerifyBottomSheet';
 
 const { green } = primitiveColors;
@@ -15,11 +17,7 @@ export default function VerifyCompleteScreen() {
     <VerifyBottomSheet onDismiss={() => router.back()}>
       <View style={styles.content}>
         <View style={styles.heading}>
-          <Image
-            source={require('../../../../assets/onboarding-check.png')}
-            style={styles.checkIcon}
-            resizeMode="contain"
-          />
+          <Image source={ONBOARDING_CHECK_IMAGE} style={styles.checkIcon} resizeMode="contain" />
           <Text style={styles.title}>{'인증 완료 !\n오늘도 잘 해냈어요 !'}</Text>
         </View>
 

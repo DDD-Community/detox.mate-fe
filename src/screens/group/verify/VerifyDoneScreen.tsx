@@ -1,44 +1,21 @@
 import { router, useLocalSearchParams } from 'expo-router';
 import { Image, Pressable, StyleSheet, Text, View } from 'react-native';
-import { Button } from '../../../components/Button';
-import { Icon } from '../../../components/Icon';
-import { submitTotalUsageActivityRecord } from '../../../features/activity-record/submitTotalUsageActivityRecord';
-import { primitiveColors } from '../../../lib/token/primitive/colors';
-import { typography } from '../../../lib/token/primitive/typography';
+
+import ONBOARDING_CHECK_IMAGE from '@assets/onboarding-check.png';
+
+import { Button, Icon } from '@/components';
+import { submitTotalUsageActivityRecord } from '@/features/activity-record/submitTotalUsageActivityRecord';
+import { primitiveColors, typography } from '@/lib/token';
 import { VerifyBottomSheet } from './VerifyBottomSheet';
+import { buildVerifyValueParams, type VerifyMode } from './verifyFlowParams';
+import { formatHHMMToDisplay, formatMinutesDiff, parseHHMMToMinutes } from './verifyTime';
 
 const { gray, brown, green, system } = primitiveColors;
-
-function parseHHMMToMinutes(value: string | undefined): number | null {
-  if (!value) return null;
-  const [hStr, mStr] = value.split(':');
-  const h = Number(hStr ?? 0);
-  const m = Number(mStr ?? 0);
-  if (Number.isNaN(h) || Number.isNaN(m)) return null;
-  return h * 60 + m;
-}
-
-function formatHHMMToDisplay(value: string | undefined): string {
-  if (!value) return '';
-  const [hStr, mStr] = value.split(':');
-  const h = Number(hStr ?? 0);
-  const m = Number(mStr ?? 0);
-  return `${h}h ${m}m`;
-}
-
-function formatMinutesDiff(minutes: number): string {
-  const abs = Math.abs(minutes);
-  const h = Math.floor(abs / 60);
-  const m = abs % 60;
-  if (h && m) return `${h}시간 ${m}분`;
-  if (h) return `${h}시간`;
-  return `${m}분`;
-}
 
 export default function VerifyDoneScreen() {
   const { value, mode, goal, groupChallengeParticipantId } = useLocalSearchParams<{
     value?: string;
-    mode?: 'initial' | 'verify';
+    mode?: VerifyMode;
     goal?: string;
     groupChallengeParticipantId?: string;
   }>();
@@ -70,10 +47,7 @@ export default function VerifyDoneScreen() {
   const handlePostFeed = () => {
     router.replace({
       pathname: '/(group)/post',
-      params: {
-        ...(value ? { value } : {}),
-        ...(groupChallengeParticipantId ? { groupChallengeParticipantId } : {}),
-      },
+      params: buildVerifyValueParams({ value, groupChallengeParticipantId }),
     });
   };
 
@@ -87,10 +61,7 @@ export default function VerifyDoneScreen() {
   const handleRecordRetro = () => {
     router.replace({
       pathname: '/(group)/verify/retro',
-      params: {
-        ...(value ? { value } : {}),
-        ...(groupChallengeParticipantId ? { groupChallengeParticipantId } : {}),
-      },
+      params: buildVerifyValueParams({ value, groupChallengeParticipantId }),
     });
   };
 
@@ -99,11 +70,7 @@ export default function VerifyDoneScreen() {
       <VerifyBottomSheet onDismiss={() => router.back()}>
         <View style={styles.content}>
           <View style={styles.heading}>
-            <Image
-              source={require('../../../../assets/onboarding-check.png')}
-              style={styles.checkIcon}
-              resizeMode="contain"
-            />
+            <Image source={ONBOARDING_CHECK_IMAGE} style={styles.checkIcon} resizeMode="contain" />
             <Text style={styles.title}>분석 완료 !</Text>
           </View>
 
@@ -127,11 +94,7 @@ export default function VerifyDoneScreen() {
     <VerifyBottomSheet onDismiss={() => router.back()}>
       <View style={styles.verifyContent}>
         <View style={styles.heading}>
-          <Image
-            source={require('../../../../assets/onboarding-check.png')}
-            style={styles.checkIcon}
-            resizeMode="contain"
-          />
+          <Image source={ONBOARDING_CHECK_IMAGE} style={styles.checkIcon} resizeMode="contain" />
           <Text style={styles.verifyTitle}>{'어제의 스크린 타임\n분석 완료 !'}</Text>
         </View>
 

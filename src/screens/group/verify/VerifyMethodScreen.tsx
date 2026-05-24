@@ -1,55 +1,25 @@
-import * as ImagePicker from 'expo-image-picker';
-import * as Linking from 'expo-linking';
 import { router, useLocalSearchParams } from 'expo-router';
-import { useRef } from 'react';
-import { AppState, Image, StyleSheet, Text, View } from 'react-native';
-import { Button } from '../../../components/Button';
-import { Icon } from '../../../components/Icon';
-import { primitiveColors } from '../../../lib/token/primitive/colors';
-import { typography } from '../../../lib/token/primitive/typography';
+import { StyleSheet, Text, View } from 'react-native';
+
+import { Button, Icon } from '@/components';
+import { primitiveColors, typography } from '@/lib/token';
+import { useVerifyMethodNavigation } from './useVerifyMethodNavigation';
 import { VerifyBottomSheet } from './VerifyBottomSheet';
+import type { VerifyMode } from './verifyFlowParams';
 
 const { gray } = primitiveColors;
 
 export default function VerifyMethodScreen() {
   const { mode, goal, groupChallengeParticipantId } = useLocalSearchParams<{
-    mode?: 'initial' | 'verify';
+    mode?: VerifyMode;
     goal?: string;
     groupChallengeParticipantId?: string;
   }>();
-  const awaitingReturnRef = useRef(false);
-
-  const forwardParams = {
-    ...(mode ? { mode } : {}),
-    ...(goal ? { goal } : {}),
-    ...(groupChallengeParticipantId ? { groupChallengeParticipantId } : {}),
-  };
-
-  const handleGallery = async () => {
-    const result = await ImagePicker.launchImageLibraryAsync({
-      mediaTypes: ['images'],
-      quality: 1,
-    });
-    if (result.canceled || !result.assets[0]) return;
-    router.replace({
-      pathname: '/(group)/verify/upload',
-      params: { imageUri: result.assets[0].uri, ...forwardParams },
-    });
-  };
-
-  const handleSettings = async () => {
-    awaitingReturnRef.current = true;
-    const subscription = AppState.addEventListener('change', (state) => {
-      if (state !== 'active' || !awaitingReturnRef.current) return;
-      awaitingReturnRef.current = false;
-      subscription.remove();
-      router.replace({
-        pathname: '/(group)/verify/upload',
-        params: forwardParams,
-      });
-    });
-    await Linking.openURL('App-Prefs:');
-  };
+  const { handleGallery, handleSettings } = useVerifyMethodNavigation({
+    mode,
+    goal,
+    groupChallengeParticipantId,
+  });
 
   return (
     <VerifyBottomSheet onDismiss={() => router.back()}>
