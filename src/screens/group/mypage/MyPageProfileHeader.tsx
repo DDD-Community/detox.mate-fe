@@ -4,7 +4,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { Icon } from '@/components/Icon';
 import { primitiveColors, radius, spacing, typography } from '@/lib/token';
 
-import TURTLE_IMG from '../../../../assets/turtle-hi.png';
+import TURTLE_IMG from '@assets/turtle-hi.png';
 
 const { brown, gray, green } = primitiveColors;
 

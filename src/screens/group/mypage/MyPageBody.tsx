@@ -6,9 +6,9 @@ import { primitiveColors, radius, spacing, typography } from '@/lib/token';
 import { JoinedGroupBody, type JoinedGroupItem } from './JoinedGroupBody';
 import { WeeklyStatusCard } from './WeeklyStatusCard';
 
-import CALENDAR_IMG from '../../../../assets/mypage-calender.png';
-import GROUP_INVITE_IMG from '../../../../assets/onboarding-group-invite.png';
-import GROUP_PLUS_IMG from '../../../../assets/onboarding-group-plus.png';
+import CALENDAR_IMG from '@assets/mypage-calender.png';
+import GROUP_INVITE_IMG from '@assets/onboarding-group-invite.png';
+import GROUP_PLUS_IMG from '@assets/onboarding-group-plus.png';
 
 const { brown, gray } = primitiveColors;
 
