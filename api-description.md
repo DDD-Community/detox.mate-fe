@@ -437,3 +437,38 @@
   "status": 403
 }
 ```
+
+## Dev Auth
+
+1. `POST` /dev/auth/test-login : local/dev 환경에서 테스트 유저의 서비스 access token과 refresh token을 발급한다.
+
+- Request Body
+
+```
+{
+  "testUserKey": "unknown"
+}
+```
+
+- 응답 형태 (200)
+
+```
+{
+  "id": 1,
+  "displayName": "프론트 테스트 A",
+  "profileImageUrl": null,
+  "accessToken": "access-token",
+  "refreshToken": "refresh-token",
+  "isNewUser": false
+}
+```
+
+- 응답 형태 (400)
+
+```
+{
+  "code": "INVALID_REQUEST",
+  "message": "Invalid request",
+  "status": 400
+}
+```

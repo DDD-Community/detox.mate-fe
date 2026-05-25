@@ -178,6 +178,7 @@ const mapMemberToFeedItem = (m: TodayChallengeMember): FeedItem => {
 const mapMemberToMemberItem = (m: TodayChallengeMember): MemberItem => ({
   id: String(m.userId),
   name: m.displayName,
+  isMe: m.isMe,
   avatarSource: m.profileImageUrl ? { uri: m.profileImageUrl } : AVATAR_SRC,
   badgeCount: m.pokeCount > 0 ? m.pokeCount : undefined,
   isGoalAchieved: m.activityRecord?.allAchieved === true,

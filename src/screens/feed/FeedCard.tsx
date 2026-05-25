@@ -172,7 +172,7 @@ export default function FeedCard({
     <Pressable style={[styles.card, showPicker && styles.cardFront]} onPress={onBodyPress}>
       <View style={styles.header}>
         <Image source={item.avatarSource} style={styles.avatar} resizeMode="cover" />
-        <Text style={styles.memberName}>{item.name}</Text>
+        <Text style={styles.memberName}>{item.isMe ? '나' : item.name}</Text>
       </View>
 
       <View style={styles.body}>
