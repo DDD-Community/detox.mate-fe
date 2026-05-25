@@ -278,7 +278,7 @@ export default function FeedHome() {
     });
   };
 
-  const handlePoke = async (memberId: string) => {
+  const handlePoke = async (memberId: string, challengeRecordId?: number) => {
     pokeStore.add(memberId);
     setPokedMemberIds((prev) => [...prev, memberId]);
     setMembers((prev) =>
@@ -292,9 +292,9 @@ export default function FeedHome() {
         return { ...item, pokeCount: item.pokeCount + 1, pokes: [myPokeEntry, ...filteredPokes] };
       })
     );
-    if (!group) return;
+    if (!challengeRecordId) return;
     try {
-      await apiClient.post(`/me/groups/${group.id}/members/${memberId}/poke`);
+      await apiClient.post(`/challenge-records/${challengeRecordId}/pokes/${memberId}`);
     } catch {
       // 임시 연결 — 에러 무시
     }
@@ -416,7 +416,7 @@ function ActiveFeed({
   groupChallengeId,
 }: {
   onInvite: () => void;
-  onPoke: (memberId: string) => void;
+  onPoke: (memberId: string, challengeRecordId?: number) => void;
   onReact: (itemId: string, emoji: string) => void;
   feedItems: FeedItem[];
   members: MemberItem[];

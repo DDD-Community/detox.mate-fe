@@ -62,7 +62,7 @@ export default function FeedCard({
 }: {
   item: FeedItem;
   goalState: GoalState;
-  onPoke?: (memberId: string) => void;
+  onPoke?: (memberId: string, challengeRecordId?: number) => void;
   onBodyPress?: () => void;
   isPoked?: boolean;
   myReactions?: string[];
@@ -185,7 +185,7 @@ export default function FeedCard({
           disabled={isPoked}
           onPress={() => {
             Alert.alert(`${item.name}님을 콕 찔렀어요!`);
-            onPoke?.(item.id);
+            onPoke?.(item.id, item.challengeRecordId);
           }}
         >
           <Text>👉</Text>

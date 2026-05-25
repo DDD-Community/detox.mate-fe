@@ -135,6 +135,7 @@ export default function FeedPostDetail() {
     .map((emoji) => ({ userId: 'me', name: '나', avatarSource: AVATAR_SOURCE as number, emoji }));
 
   const [isPoked, setIsPoked] = useState(isPokedParam === '1');
+  const [pokeCount, setPokeCount] = useState(feedItem.pokeCount);
   const [comments, setComments] = useState<CommentItem[]>([]);
   const [reactions, setReactions] = useState<ReactionEntry[]>([
     ...ownEntry,
@@ -199,10 +200,10 @@ export default function FeedPostDetail() {
           name: u.displayName,
           avatarSource: u.profileImageUrl ? { uri: u.profileImageUrl } : (AVATAR_SOURCE as number),
         }));
-        // Note: pokes are stored in feedItem, but we can update displayPokes from detail
-        // Currently displayPokes is derived from feedItem.pokes which is [] from API
-        // Store fetched pokes in a ref-like state via a local variable (used in render below)
-        setFetchedPokes(mappedPokes);
+        setFetchedPokes((prev) => {
+          const myOptimistic = prev.filter((p) => p.userId === 'me');
+          return [...myOptimistic, ...mappedPokes];
+        });
       } catch {
         // keep existing state on error
       }
@@ -372,10 +373,29 @@ export default function FeedPostDetail() {
                 <Pressable
                   style={[styles.pokeButton, isPoked && styles.pokeButtonDisabled]}
                   disabled={isPoked}
-                  onPress={() => {
+                  onPress={async () => {
                     Alert.alert(`${feedItem.name}님을 콕 찔렀어요!`);
                     pokeStore.add(feedItem.id);
                     setIsPoked(true);
+                    setFetchedPokes((prev) => {
+                      if (prev.some((p) => p.userId === 'me')) return prev;
+                      const myEntry: PokeEntry = {
+                        userId: 'me',
+                        name: '나',
+                        avatarSource: AVATAR_SOURCE as number,
+                      };
+                      return [myEntry, ...prev];
+                    });
+                    setPokeCount((prev) => prev + 1);
+                    if (feedItem.challengeRecordId) {
+                      try {
+                        await apiClient.post(
+                          `/challenge-records/${feedItem.challengeRecordId}/pokes/${feedItem.id}`
+                        );
+                      } catch {
+                        // 에러 무시
+                      }
+                    }
                   }}
                 >
                   <Text>👉</Text>
@@ -413,7 +433,7 @@ export default function FeedPostDetail() {
           </View>
         ) : (
           <View style={styles.section}>
-            <Text style={styles.sectionTitle}>콕 찌름 {feedItem.pokeCount}</Text>
+            <Text style={styles.sectionTitle}>콕 찌름 {pokeCount}</Text>
             {displayPokes.length > 0 && (
               <ScrollView
                 horizontal

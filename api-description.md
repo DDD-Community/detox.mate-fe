@@ -361,3 +361,12 @@
     "resetCount": 3
   }
 ```
+
+## Poke
+
+1. `POST` /challenge-records/{challengeRecordId}/pokes/{receiverUserId} : 오늘 인증 전 챌린지 기록에서 대상 유저를 콕 찌른다. 같은 대상에게는 한 번만 콕 찌르기 가능하다.
+
+- Parameters
+  - ChallengeRecordId
+  - receiverUserId
+- 응답 형태 예시 (204)
