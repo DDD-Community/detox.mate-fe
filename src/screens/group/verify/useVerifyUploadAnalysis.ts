@@ -38,7 +38,14 @@ export function useVerifyUploadAnalysis({
       const result = await analyzeScreenTimeImage(imageUri);
 
       if (!result.ok) {
-        router.replace({ pathname: '/(group)/verify/error', params: forwardParams });
+        router.replace({
+          pathname: '/(group)/verify/error',
+          params: {
+            ...forwardParams,
+            reason: result.reason,
+            ...(result.dateLabel ? { dateLabel: result.dateLabel } : {}),
+          },
+        });
         return;
       }
 
