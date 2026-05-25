@@ -3,6 +3,7 @@ type MemberInfo = {
   groupId: number;
   challengeRecordId: number;
   displayName: string;
+  profileImageUrl?: string;
 };
 
 // userId(number) → MemberInfo 매핑
@@ -15,6 +16,7 @@ export const memberStore = {
       groupMemberId: number;
       challengeRecordId: number;
       displayName: string;
+      profileImageUrl?: string;
     }>,
     groupId: number
   ) {
@@ -24,10 +26,17 @@ export const memberStore = {
         groupId,
         challengeRecordId: m.challengeRecordId,
         displayName: m.displayName,
+        profileImageUrl: m.profileImageUrl,
       })
     );
   },
   get(userId: number): MemberInfo | undefined {
     return _map.get(userId);
+  },
+  getByDisplayName(displayName: string): MemberInfo | undefined {
+    for (const info of _map.values()) {
+      if (info.displayName === displayName) return info;
+    }
+    return undefined;
   },
 };

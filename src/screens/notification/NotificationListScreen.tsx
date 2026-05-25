@@ -11,12 +11,13 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
-import { getNotificationHistory } from '../../api/generated/notification-history/notification-history';
-import { Icon } from '../../components/Icon';
 import type {
   NotificationHistoryItemResponse,
   NotificationHistoryListResponse,
 } from '../../api/generated/model';
+import { getNotificationHistory } from '../../api/generated/notification-history/notification-history';
+import { Icon } from '../../components/Icon';
+import { memberStore } from '../../lib/memberStore';
 import { primitiveColors, radius, spacing, typography } from '../../lib/token';
 
 const { brown, gray } = primitiveColors;
@@ -47,6 +48,19 @@ const formatRelativeTime = (iso?: string): string => {
 const formatMessage = (item: NotificationHistoryItemResponse): string => {
   if (item.title && item.message) return `${item.title}\n${item.message}`;
   return item.title ?? item.message ?? '';
+};
+
+// "강슬빈님이 댓글을 남겼습니다" 형태 메시지에서 발신자 이름 추출
+const extractSenderName = (message?: string): string | undefined => {
+  if (!message) return undefined;
+  const match = message.match(/^(.+?)님이|^(.+?)님께서/);
+  return match?.[1] ?? match?.[2];
+};
+
+const getSenderAvatarSource = (item: NotificationHistoryItemResponse): number | { uri: string } => {
+  const name = extractSenderName(item.message);
+  const profileImageUrl = name ? memberStore.getByDisplayName(name)?.profileImageUrl : undefined;
+  return profileImageUrl ? { uri: profileImageUrl } : DEFAULT_AVATAR;
 };
 
 const TOAST_DURATION_MS = 2500;
@@ -172,7 +186,11 @@ export default function NotificationListScreen() {
               onPress={() => handlePressItem(item)}
               style={({ pressed }) => [styles.row, pressed && styles.rowPressed]}
             >
-              <Image source={DEFAULT_AVATAR} style={styles.avatar} resizeMode="cover" />
+              <Image
+                source={getSenderAvatarSource(item)}
+                style={styles.avatar}
+                resizeMode="cover"
+              />
               <View style={styles.rowBody}>
                 <Text style={styles.message}>{formatMessage(item)}</Text>
                 <Text style={styles.timeLabel}>{formatRelativeTime(item.createdAt)}</Text>

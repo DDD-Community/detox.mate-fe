@@ -229,6 +229,7 @@ export default function FeedHome() {
           groupMemberId: m.groupMemberId,
           challengeRecordId: m.challengeRecordId,
           displayName: m.displayName,
+          profileImageUrl: m.profileImageUrl,
         })),
         groupId
       );
