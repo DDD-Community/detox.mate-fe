@@ -41,7 +41,7 @@
     },
     "production": {
       "ios": {
-        "ascAppId": "6762039576",
+        "ascAppId": "6771277684",
         "bundleIdentifier": "com.detoxmate.app"
       }
     }
