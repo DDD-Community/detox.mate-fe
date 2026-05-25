@@ -15,6 +15,7 @@ import {
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import apiClient from '../../api/client';
 import { Icon } from '../../components/Icon';
+import { memberStore } from '../../lib/memberStore';
 import { pokeStore } from '../../lib/pokeStore';
 import { primitiveColors, radius, spacing, typography } from '../../lib/token';
 import type { GoalState } from './ActionGuideBanner';
@@ -213,6 +214,22 @@ export default function FeedPostDetail() {
 
   const displayPokes: PokeEntry[] = fetchedPokes.length > 0 ? fetchedPokes : (feedItem.pokes ?? []);
   const sortedComments = [...comments].sort((a, b) => a.createdAt - b.createdAt);
+
+  const navigateToProfile = (userId: string) => {
+    if (userId === 'me') return;
+    const info = memberStore.get(Number(userId));
+    if (!info) return;
+    router.push({
+      pathname: '/(group)/mypage',
+      params: {
+        memberId: String(info.groupMemberId),
+        friendName: info.displayName,
+        friendUserId: userId,
+        friendGroupId: String(info.groupId),
+        challengeRecordId: String(info.challengeRecordId),
+      },
+    });
+  };
 
   const handleReact = async (emoji: string) => {
     const hasThis = myReactionEmojis.includes(emoji);
@@ -418,7 +435,11 @@ export default function FeedPostDetail() {
                 contentContainerStyle={styles.pokeRow}
               >
                 {reactions.map((r) => (
-                  <View key={`${r.userId}-${r.emoji}`} style={styles.pokeAvatarItem}>
+                  <Pressable
+                    key={`${r.userId}-${r.emoji}`}
+                    style={styles.pokeAvatarItem}
+                    onPress={() => navigateToProfile(r.userId)}
+                  >
                     <View style={styles.pokeAvatarWrapper}>
                       <Image source={r.avatarSource} style={styles.pokeAvatar} resizeMode="cover" />
                       <View style={styles.pokeEmoji}>
@@ -426,7 +447,7 @@ export default function FeedPostDetail() {
                       </View>
                     </View>
                     <Text style={styles.pokeAvatarName}>{r.name}</Text>
-                  </View>
+                  </Pressable>
                 ))}
               </ScrollView>
             )}
@@ -441,7 +462,11 @@ export default function FeedPostDetail() {
                 contentContainerStyle={styles.pokeRow}
               >
                 {displayPokes.map((p) => (
-                  <View key={p.userId} style={styles.pokeAvatarItem}>
+                  <Pressable
+                    key={p.userId}
+                    style={styles.pokeAvatarItem}
+                    onPress={() => navigateToProfile(p.userId)}
+                  >
                     <View style={styles.pokeAvatarWrapper}>
                       <Image source={p.avatarSource} style={styles.pokeAvatar} resizeMode="cover" />
                       <View style={styles.pokeEmoji}>
@@ -449,7 +474,7 @@ export default function FeedPostDetail() {
                       </View>
                     </View>
                     <Text style={styles.pokeAvatarName}>{p.name}</Text>
-                  </View>
+                  </Pressable>
                 ))}
               </ScrollView>
             )}

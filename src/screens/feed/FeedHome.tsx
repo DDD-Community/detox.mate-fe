@@ -15,6 +15,7 @@ import { CurrentUsageGoalTimeResponseUsageGoalType } from '../../api/generated/m
 import { getUserUsageGoalTime } from '../../api/generated/user-usage-goal-time/user-usage-goal-time';
 import { Button } from '../../components/Button';
 import { Icon } from '../../components/Icon';
+import { memberStore } from '../../lib/memberStore';
 import { pokeStore } from '../../lib/pokeStore';
 import { primitiveColors, radius, spacing, typography } from '../../lib/token';
 import ActionGuideBanner, { type GoalState } from './ActionGuideBanner';
@@ -219,9 +220,18 @@ export default function FeedHome() {
       const res = await apiClient.get<TodayFeedResponse>(
         `/group-challenges/${gcId}/challenge-records/today`
       );
-      const { members: apiMembers } = res.data;
+      const { members: apiMembers, groupId } = res.data;
       setFeedItems(apiMembers.map(mapMemberToFeedItem));
       setMembers(apiMembers.map(mapMemberToMemberItem));
+      memberStore.setAll(
+        apiMembers.map((m) => ({
+          userId: m.userId,
+          groupMemberId: m.groupMemberId,
+          challengeRecordId: m.challengeRecordId,
+          displayName: m.displayName,
+        })),
+        groupId
+      );
       const pokedIds = apiMembers.filter((m) => m.isPoked).map((m) => String(m.userId));
       setPokedMemberIds(pokedIds);
       pokedIds.forEach((id) => pokeStore.add(id));
