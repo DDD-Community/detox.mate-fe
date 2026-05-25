@@ -10,6 +10,7 @@ const AVATAR_SIZE = 52;
 export type MemberItem = {
   id: string;
   name: string;
+  isMe: boolean;
   avatarSource: number | { uri: string };
   badgeCount?: number;
   isGoalAchieved?: boolean;
@@ -82,7 +83,12 @@ function MemberAvatar({ member }: { member: MemberItem }) {
           </View>
         )}
       </View>
-      <Text style={styles.avatarName}>{member.name}</Text>
+      <Text style={styles.avatarName}>
+        {(() => {
+          const label = member.isMe ? '나' : member.name;
+          return label.length >= 4 ? `${label.slice(0, 3)}...` : label;
+        })()}
+      </Text>
     </View>
   );
 }
