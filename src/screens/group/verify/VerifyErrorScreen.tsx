@@ -6,11 +6,30 @@ import { buildVerifyFlowParams, type VerifyMode } from './verifyFlowParams';
 
 const { green } = primitiveColors;
 
+type ErrorContent = {
+  title: string;
+  description: string;
+};
+
+function getErrorContent(reason?: string): ErrorContent {
+  if (reason === 'date_not_yesterday') {
+    return {
+      title: '사진의 날짜가 오늘입니다.',
+      description: '어제의 스크린 타임을 캡쳐해 주세요.',
+    };
+  }
+  return {
+    title: '날짜를 인식할 수 없습니다.',
+    description: '날짜가 포함되게 캡쳐해 주세요.',
+  };
+}
+
 export default function VerifyErrorScreen() {
-  const { mode, goal, groupChallengeParticipantId } = useLocalSearchParams<{
+  const { mode, goal, groupChallengeParticipantId, reason } = useLocalSearchParams<{
     mode?: VerifyMode;
     goal?: string;
     groupChallengeParticipantId?: string;
+    reason?: string;
   }>();
 
   const handleRetake = () => {
@@ -20,12 +39,14 @@ export default function VerifyErrorScreen() {
     });
   };
 
+  const { title, description } = getErrorContent(reason);
+
   return (
     <View style={styles.overlay}>
       <View style={styles.alert}>
         <View style={styles.textGroup}>
-          <Text style={styles.title}>날짜를 인식할 수 없습니다.</Text>
-          <Text style={styles.description}>날짜가 포함되게 캡쳐해주세요.</Text>
+          <Text style={styles.title}>{title}</Text>
+          <Text style={styles.description}>{description}</Text>
         </View>
         <Pressable style={styles.button} onPress={handleRetake}>
           <Text style={styles.buttonLabel}>다시 캡쳐하러 가기</Text>
