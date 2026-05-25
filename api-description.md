@@ -370,3 +370,70 @@
   - ChallengeRecordId
   - receiverUserId
 - 응답 형태 예시 (204)
+
+## Group Member
+
+1. `POST` /groups/{groupId}/members/{groupMemberId} : 같은 그룹의 활성 멤버 프로필, 현재 목표, D-day, 달성 통계를 조회한다.
+
+- Parameters
+  - groupId
+  - groupMemberId
+  - Authorization
+- 응답 형태 예시
+
+```
+{
+  "groupMemberId": 100,
+  "userId": 1,
+  "groupId": 1,
+  "displayName": "의진",
+  "profileImageUrl": "https://example.com/profile.png",
+  "role": "MEMBER",
+  "memberStatus": "ACTIVE",
+  "joinedAt": "2026-05-01T23:50:00",
+  "goalStatus": "SET",
+  "isUserWithdrawn": false,
+  "currentGoals": [
+    {
+      "id": 101,
+      "usageGoalType": "TOTAL_USAGE",
+      "goalMinutes": 120,
+      "createdAt": "2026-05-01T10:00:00"
+    },
+    {
+      "id": 102,
+      "usageGoalType": "INSTAGRAM",
+      "goalMinutes": 30,
+      "createdAt": "2026-05-01T10:00:00"
+    }
+  ],
+  "goalChangeAvailability": {
+    "canChange": false,
+    "nextChangeAvailableDate": "2026-05-15",
+    "remainingDays": 1
+  },
+  "activitySummary": {
+    "firstCertifiedDate": "2026-05-05",
+    "dayCount": 8,
+    "achievementRate": 75
+  },
+  "weeklySummary": {
+    "startDate": "2026-05-06",
+    "endDate": "2026-05-12",
+    "totalDays": 7,
+    "averageUsedMinutes": 90,
+    "goalMinutes": 120,
+    "differenceMinutes": 30,
+    "certifiedDays": 5,
+    "achievedDays": 3
+  }
+}
+```
+
+```
+{
+  "code": "FORBIDDEN",
+  "message": "Forbidden",
+  "status": 403
+}
+```
