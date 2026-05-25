@@ -1,6 +1,7 @@
 import type * as ImagePicker from 'expo-image-picker';
 import { router } from 'expo-router';
 import { useState } from 'react';
+import { Alert } from 'react-native';
 
 import { submitTotalUsageActivityRecord } from '@/features/activity-record/submitTotalUsageActivityRecord';
 import { uploadImage } from '@/lib/uploadImage';
@@ -46,6 +47,9 @@ export function useRetroForm({ value, groupChallengeParticipantId }: UseRetroFor
         activityImageObjectKey: objectKey,
       });
       router.replace('/(group)/verify/complete');
+    } catch (error) {
+      const message = error instanceof Error ? error.message : '게시에 실패했어요. 다시 시도해 주세요.';
+      Alert.alert('게시 실패', message);
     } finally {
       setSubmitting(false);
     }
