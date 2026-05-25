@@ -1,19 +1,40 @@
-import { Image, StyleSheet, Text, View } from 'react-native';
+import { useState } from 'react';
+import { Image, Modal, Pressable, StyleSheet, Text, View } from 'react-native';
 
 import LOGO_APPLE_LOGIN from '@assets/logo-apple-login.png';
 import LOGO_DETOXMATE_BLACK from '@assets/logo-detoxmate-black.png';
 import LOGO_KAKAO_LOGIN from '@assets/logo-kakao-login.png';
 import TURTLE_HI_IMAGE from '@assets/turtle-hi.png';
 
+import { env } from '@/config/env';
 import { primitiveColors, typography } from '@/lib/token';
 import { AuthLoginButton } from './AuthLoginButton';
-import { useAuthLogin } from './useAuthLogin';
+import { TEST_USER_KEYS, TestUserKey, useAuthLogin } from './useAuthLogin';
 
 const { brown, gray } = primitiveColors;
 
 export default function LoginScreen() {
   const { handleKakaoLogin, handleTestLogin, pendingProvider } = useAuthLogin();
+  const [testKeyModalVisible, setTestKeyModalVisible] = useState(false);
   const loginPending = Boolean(pendingProvider);
+  const showTestLoginButton = env.appEnv === 'development';
+
+  const handleOpenTestKeyModal = () => {
+    if (loginPending) return;
+
+    setTestKeyModalVisible(true);
+  };
+
+  const handleCloseTestKeyModal = () => {
+    if (loginPending) return;
+
+    setTestKeyModalVisible(false);
+  };
+
+  const handleSelectTestKey = (testUserKey: TestUserKey) => {
+    setTestKeyModalVisible(false);
+    handleTestLogin(testUserKey);
+  };
 
   return (
     <View style={styles.root}>
@@ -39,16 +60,20 @@ export default function LoginScreen() {
 
         <View style={styles.buttonGap} />
 
-        <AuthLoginButton
-          variant="test"
-          label="새 테스트 계정으로 시작하기"
-          pendingLabel="테스트 계정 생성 중..."
-          onPress={handleTestLogin}
-          pending={pendingProvider === 'test'}
-          disabled={loginPending}
-        />
+        {showTestLoginButton ? (
+          <>
+            <AuthLoginButton
+              variant="test"
+              label="테스트 계정으로 시작하기"
+              pendingLabel="테스트 로그인 중..."
+              onPress={handleOpenTestKeyModal}
+              pending={pendingProvider === 'test'}
+              disabled={loginPending}
+            />
 
-        <View style={styles.buttonGap} />
+            <View style={styles.buttonGap} />
+          </>
+        ) : null}
 
         <AuthLoginButton
           variant="apple"
@@ -57,6 +82,33 @@ export default function LoginScreen() {
           disabled={loginPending}
         />
       </View>
+
+      {showTestLoginButton ? (
+        <Modal
+          visible={testKeyModalVisible}
+          transparent
+          animationType="fade"
+          onRequestClose={handleCloseTestKeyModal}
+        >
+          <Pressable style={styles.modalBackdrop} onPress={handleCloseTestKeyModal}>
+            <Pressable style={styles.modalSheet} onPress={(event) => event.stopPropagation()}>
+              <Text style={styles.modalTitle}>테스트 계정 선택</Text>
+              <View style={styles.testKeyList}>
+                {TEST_USER_KEYS.map((testUserKey) => (
+                  <Pressable
+                    key={testUserKey}
+                    style={styles.testKeyButton}
+                    onPress={() => handleSelectTestKey(testUserKey)}
+                    disabled={loginPending}
+                  >
+                    <Text style={styles.testKeyButtonText}>{testUserKey}</Text>
+                  </Pressable>
+                ))}
+              </View>
+            </Pressable>
+          </Pressable>
+        </Modal>
+      ) : null}
     </View>
   );
 }
@@ -91,5 +143,39 @@ const styles = StyleSheet.create({
   },
   buttonGap: {
     height: 12,
+  },
+  modalBackdrop: {
+    flex: 1,
+    justifyContent: 'flex-end',
+    backgroundColor: 'rgba(0, 0, 0, 0.35)',
+  },
+  modalSheet: {
+    borderTopLeftRadius: 24,
+    borderTopRightRadius: 24,
+    backgroundColor: '#FFFFFF',
+    paddingHorizontal: 24,
+    paddingTop: 24,
+    paddingBottom: 36,
+  },
+  modalTitle: {
+    ...typography.primary.body1B,
+    color: gray[900],
+    textAlign: 'center',
+  },
+  testKeyList: {
+    marginTop: 20,
+    gap: 10,
+  },
+  testKeyButton: {
+    alignItems: 'center',
+    borderRadius: 14,
+    borderWidth: 1,
+    borderColor: gray[200],
+    backgroundColor: gray[50],
+    paddingVertical: 14,
+  },
+  testKeyButtonText: {
+    ...typography.primary.body1B,
+    color: gray[800],
   },
 });

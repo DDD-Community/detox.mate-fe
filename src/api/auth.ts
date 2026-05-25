@@ -1,5 +1,6 @@
 import { KakaoOAuthToken, login } from '@react-native-seoul/kakao-login';
 import * as SecureStore from 'expo-secure-store';
+import { env } from '@/config/env';
 import apiClient from './client';
 import { getDevAuth } from './generated/dev-auth/dev-auth';
 import type { AuthLoginResponse } from './generated/model';
@@ -51,8 +52,11 @@ export async function loginWithKakao(): Promise<OAuthLoginResponse> {
   return persistLoginResponse(data);
 }
 
-export async function loginWithNewTestUser(): Promise<OAuthLoginResponse> {
-  const testUserKey = `qa-${Date.now()}-${Math.floor(Math.random() * 1000000)}`;
+export async function loginWithTestUser(testUserKey: string): Promise<OAuthLoginResponse> {
+  if (env.appEnv !== 'development') {
+    throw new Error('테스트 로그인은 개발 환경에서만 사용할 수 있습니다.');
+  }
+
   const data = await getDevAuth().testLogin({ testUserKey });
 
   return persistLoginResponse(data);

@@ -66,6 +66,7 @@ const config: ExpoConfig = {
       {
         ios: {
           useFrameworks: 'static',
+          forceStaticLinking: ['RNFBApp', 'RNFBMessaging'],
         },
       },
     ],
