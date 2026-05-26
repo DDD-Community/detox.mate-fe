@@ -1,5 +1,5 @@
-import { router, useFocusEffect } from 'expo-router';
-import { useCallback, useRef, useState } from 'react';
+import { router, useFocusEffect, useLocalSearchParams } from 'expo-router';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import {
   ActivityIndicator,
   Image,
@@ -185,6 +185,10 @@ const mapMemberToMemberItem = (m: TodayChallengeMember): MemberItem => ({
 });
 
 export default function FeedHome() {
+  const { groupChallengeId: routeGroupChallengeId, challengeRecordId } = useLocalSearchParams<{
+    groupChallengeId?: string;
+    challengeRecordId?: string;
+  }>();
   const [group, setGroup] = useState<GroupInfo | null>(null);
   const [groupChallengeId, setGroupChallengeId] = useState<string | null>(null);
   const [isGroupActive, setIsGroupActive] = useState(false);
@@ -262,7 +266,9 @@ export default function FeedHome() {
       }
 
       const challenges = challengeRes.data;
-      const gcId = challenges.length > 0 ? challenges[0].id : null;
+      const routeGcId =
+        routeGroupChallengeId && routeGroupChallengeId.length > 0 ? routeGroupChallengeId : null;
+      const gcId = routeGcId ?? (challenges.length > 0 ? challenges[0].id : null);
       setGroupChallengeId(gcId);
       if (gcId) {
         await fetchFeedData(gcId);
@@ -273,7 +279,7 @@ export default function FeedHome() {
         initialLoadDone.current = true;
       }
     }
-  }, [fetchFeedData]);
+  }, [fetchFeedData, routeGroupChallengeId]);
 
   useFocusEffect(
     useCallback(() => {
@@ -398,6 +404,7 @@ export default function FeedHome() {
           pokedMemberIds={pokedMemberIds}
           goalState={goalState}
           groupChallengeId={groupChallengeId}
+          targetChallengeRecordId={challengeRecordId}
         />
       ) : (
         <InactiveFeed onInvite={handleInvite} />
@@ -426,6 +433,7 @@ function ActiveFeed({
   pokedMemberIds,
   goalState,
   groupChallengeId,
+  targetChallengeRecordId,
 }: {
   onInvite: () => void;
   onPoke: (memberId: string, challengeRecordId?: number) => void;
@@ -436,14 +444,44 @@ function ActiveFeed({
   pokedMemberIds: string[];
   goalState: GoalState;
   groupChallengeId: string | null;
+  targetChallengeRecordId?: string;
 }) {
   const scrollRef = useRef<ScrollView>(null);
+  const openedTargetRef = useRef<string | null>(null);
 
   const enrichedMembers = members.map((m) => ({
     ...m,
     isGoalAchieved: feedItems.some((f) => f.id === m.id && f.isVerified && f.isGoalAchieved),
   }));
   const myFeedItem = feedItems.find((item) => item.isMe);
+
+  const openPostDetail = useCallback(
+    (item: FeedItem) => {
+      router.push({
+        pathname: '/(feed)/post-detail',
+        params: {
+          item: JSON.stringify(item),
+          goalState,
+          isPoked: pokedMemberIds.includes(item.id) ? '1' : '0',
+          myReaction: (myReactions[item.id] ?? []).join(','),
+          groupChallengeId: groupChallengeId ?? '',
+        },
+      });
+    },
+    [goalState, groupChallengeId, myReactions, pokedMemberIds]
+  );
+
+  useEffect(() => {
+    if (!targetChallengeRecordId || openedTargetRef.current === targetChallengeRecordId) return;
+
+    const targetItem = feedItems.find(
+      (item) => String(item.challengeRecordId) === targetChallengeRecordId
+    );
+    if (!targetItem) return;
+
+    openedTargetRef.current = targetChallengeRecordId;
+    openPostDetail(targetItem);
+  }, [feedItems, openPostDetail, targetChallengeRecordId]);
 
   return (
     <View style={styles.feedWrapper}>
@@ -473,18 +511,7 @@ function ActiveFeed({
             onReact={onReact}
             isPoked={pokedMemberIds.includes(item.id)}
             myReactions={myReactions[item.id]}
-            onBodyPress={() =>
-              router.push({
-                pathname: '/(feed)/post-detail',
-                params: {
-                  item: JSON.stringify(item),
-                  goalState,
-                  isPoked: pokedMemberIds.includes(item.id) ? '1' : '0',
-                  myReaction: (myReactions[item.id] ?? []).join(','),
-                  groupChallengeId: groupChallengeId ?? '',
-                },
-              })
-            }
+            onBodyPress={() => openPostDetail(item)}
           />
         ))}
       </ScrollView>
