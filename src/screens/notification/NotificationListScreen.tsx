@@ -65,7 +65,7 @@ const getSenderAvatarSource = (item: NotificationHistoryItemResponse): number | 
 
 const TOAST_DURATION_MS = 2500;
 
-const routeByTarget = (type?: string, id?: number) => {
+const routeByTarget = (type?: string, id?: number, fallbackType?: string, fallbackId?: number) => {
   // 백엔드 enum 기준 라우팅.
   switch (type) {
     case 'FEED':
@@ -76,10 +76,15 @@ const routeByTarget = (type?: string, id?: number) => {
       });
       return;
     case 'FEED_DETAIL':
-      // targetId: challengeRecordId — 별도 상세 화면이 없어 피드로 보내며 파라미터 전달
+      // targetId: challengeRecordId. FeedHome opens the matching post detail after loading.
       router.push({
         pathname: '/(feed)/home',
-        params: id != null ? { challengeRecordId: String(id) } : undefined,
+        params: {
+          ...(id != null ? { challengeRecordId: String(id) } : {}),
+          ...(fallbackType === 'FEED' && fallbackId != null
+            ? { groupChallengeId: String(fallbackId) }
+            : {}),
+        },
       });
       return;
     case 'GROUP':
@@ -148,7 +153,7 @@ export default function NotificationListScreen() {
       showToast(nav.reason ?? '이동할 수 없는 알림이에요');
       return;
     }
-    routeByTarget(nav.targetType, nav.targetId);
+    routeByTarget(nav.targetType, nav.targetId, nav.fallbackTargetType, nav.fallbackTargetId);
   };
 
   return (
