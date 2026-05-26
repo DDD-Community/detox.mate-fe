@@ -30,7 +30,7 @@ export default function SplashScreen() {
   return (
     <View style={styles.container}>
       <Image
-        source={require('../../assets/images/splash.png')}
+        source={require('../../assets/splash_logo.png')}
         style={styles.image}
         resizeMode="contain"
       />
@@ -41,11 +41,12 @@ export default function SplashScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
+    backgroundColor: '#1D9E75',
     alignItems: 'center',
     justifyContent: 'center',
   },
   image: {
-    width: '100%',
-    height: '100%',
+    width: 152,
+    height: 152,
   },
 });
