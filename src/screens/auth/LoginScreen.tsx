@@ -14,7 +14,7 @@ import { TEST_USER_KEYS, TestUserKey, useAuthLogin } from './useAuthLogin';
 const { brown, gray } = primitiveColors;
 
 export default function LoginScreen() {
-  const { handleKakaoLogin, handleTestLogin, pendingProvider } = useAuthLogin();
+  const { handleKakaoLogin, handleAppleLogin, handleTestLogin, pendingProvider } = useAuthLogin();
   const [testKeyModalVisible, setTestKeyModalVisible] = useState(false);
   const loginPending = Boolean(pendingProvider);
   const showTestLoginButton = env.appEnv === 'development';
@@ -78,7 +78,10 @@ export default function LoginScreen() {
         <AuthLoginButton
           variant="apple"
           label="애플로 시작하기"
+          pendingLabel="애플 로그인 중..."
           iconSource={LOGO_APPLE_LOGIN}
+          onPress={handleAppleLogin}
+          pending={pendingProvider === 'apple'}
           disabled={loginPending}
         />
       </View>

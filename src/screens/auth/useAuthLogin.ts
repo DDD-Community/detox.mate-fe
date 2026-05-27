@@ -2,10 +2,10 @@ import { useRouter } from 'expo-router';
 import { useState } from 'react';
 import { Alert } from 'react-native';
 
-import { loginWithKakao, loginWithTestUser } from '@/api/auth';
+import { loginWithApple, loginWithKakao, loginWithTestUser } from '@/api/auth';
 import { registerDevicePushToken } from '@/lib/fcmToken';
 
-export type LoginProvider = 'kakao' | 'test';
+export type LoginProvider = 'kakao' | 'apple' | 'test';
 
 type LoginAction = () => Promise<unknown>;
 export type TestUserKey = 'front-a' | 'front-b' | 'front-c' | 'server-a' | 'server-b' | 'server-c';
@@ -46,12 +46,17 @@ export function useAuthLogin() {
     completeLogin('kakao', loginWithKakao);
   };
 
+  const handleAppleLogin = () => {
+    completeLogin('apple', loginWithApple);
+  };
+
   const handleTestLogin = (testUserKey: TestUserKey) => {
     completeLogin('test', () => loginWithTestUser(testUserKey));
   };
 
   return {
     handleKakaoLogin,
+    handleAppleLogin,
     handleTestLogin,
     pendingProvider,
   };
