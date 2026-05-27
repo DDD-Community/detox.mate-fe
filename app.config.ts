@@ -27,6 +27,7 @@ const config: ExpoConfig = {
     googleServicesFile: iosGoogleServicesFile,
     entitlements: {
       'aps-environment': 'production',
+      'com.apple.developer.applesignin': ['Default'],
     },
     infoPlist: {
       LSApplicationQueriesSchemes: ['kakaokompassauth', 'storykompassauth', 'kakaolink'],
@@ -71,6 +72,7 @@ const config: ExpoConfig = {
       },
     ],
     'expo-router',
+    'expo-apple-authentication',
     'expo-notifications',
     '@react-native-community/datetimepicker',
     'expo-font',

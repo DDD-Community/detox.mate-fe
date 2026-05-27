@@ -1,4 +1,7 @@
 import { KakaoOAuthToken, login } from '@react-native-seoul/kakao-login';
+import * as AppleAuthentication from 'expo-apple-authentication';
+import { sha256 } from '@noble/hashes/sha256';
+import { bytesToHex } from '@noble/hashes/utils';
 import * as SecureStore from 'expo-secure-store';
 import { env } from '@/config/env';
 import apiClient from './client';
@@ -41,6 +44,49 @@ const persistLoginResponse = async (data: AuthLoginResponse): Promise<OAuthLogin
     isNewUser: data.isNewUser ?? false,
   };
 };
+
+function generateNonce(length = 32): string {
+  const charset = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-._~';
+  let nonce = '';
+  for (let i = 0; i < length; i++) {
+    nonce += charset[Math.floor(Math.random() * charset.length)];
+  }
+  return nonce;
+}
+
+export async function loginWithApple(): Promise<OAuthLoginResponse> {
+  const isAvailable = await AppleAuthentication.isAvailableAsync();
+  if (!isAvailable) {
+    throw new Error('Apple 로그인은 iOS 기기에서만 사용할 수 있습니다.');
+  }
+
+  const rawNonce = generateNonce();
+  const hashedNonce = bytesToHex(sha256(rawNonce));
+
+  const credential = await AppleAuthentication.signInAsync({
+    requestedScopes: [
+      AppleAuthentication.AppleAuthenticationScope.FULL_NAME,
+      AppleAuthentication.AppleAuthenticationScope.EMAIL,
+    ],
+    nonce: hashedNonce,
+  });
+
+  if (!credential.identityToken) {
+    throw new Error('Apple 로그인에 실패했습니다. identity token을 받지 못했어요.');
+  }
+
+  const familyName = credential.fullName?.familyName ?? '';
+  const givenName = credential.fullName?.givenName ?? '';
+  const displayName = (familyName + givenName).trim() || undefined;
+
+  const { data } = await apiClient.post<AuthLoginResponse>('/auth/social/apple', {
+    identityToken: credential.identityToken,
+    rawNonce,
+    displayName,
+  });
+
+  return persistLoginResponse(data);
+}
 
 export async function loginWithKakao(): Promise<OAuthLoginResponse> {
   const kakaoToken: KakaoOAuthToken = await login();
