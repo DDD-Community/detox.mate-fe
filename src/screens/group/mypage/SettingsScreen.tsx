@@ -270,6 +270,7 @@ export default function SettingsScreen() {
       await SecureStore.deleteItemAsync('refreshTokenKey');
       await SecureStore.deleteItemAsync('accessTokenKey');
       await SecureStore.deleteItemAsync('currentUserId');
+      await SecureStore.deleteItemAsync('isNewUser');
       setIsWithdrawAlertOpen(false);
       router.replace('/(auth)/login');
     } finally {
