@@ -75,6 +75,10 @@ export async function loginWithApple(): Promise<OAuthLoginResponse> {
     throw new Error('Apple 로그인에 실패했습니다. identity token을 받지 못했어요.');
   }
 
+  if (!credential.authorizationCode) {
+    throw new Error('Apple 로그인에 실패했습니다. authorization code를 받지 못했어요.');
+  }
+
   const familyName = credential.fullName?.familyName ?? '';
   const givenName = credential.fullName?.givenName ?? '';
   const displayName = (familyName + givenName).trim() || undefined;
@@ -82,6 +86,7 @@ export async function loginWithApple(): Promise<OAuthLoginResponse> {
   const { data } = await apiClient.post<AuthLoginResponse>('/auth/social/apple', {
     identityToken: credential.identityToken,
     rawNonce,
+    authorizationCode: credential.authorizationCode,
     displayName,
   });
 
