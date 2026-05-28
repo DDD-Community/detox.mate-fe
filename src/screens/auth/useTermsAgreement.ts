@@ -52,7 +52,14 @@ export function useTermsAgreement() {
 
   const confirmAgreements = async () => {
     await SecureStore.setItemAsync('isNewUser', 'true');
-    router.replace('/login');
+    // 탈퇴 후 앱 미종료 재가입 경우 이미 로그인된 상태일 수 있으므로
+    // 액세스 토큰 유무로 다음 라우팅 결정
+    const accessToken = await SecureStore.getItemAsync('accessTokenKey');
+    if (accessToken) {
+      router.replace('/(group)/home');
+    } else {
+      router.replace('/login');
+    }
   };
 
   return {
