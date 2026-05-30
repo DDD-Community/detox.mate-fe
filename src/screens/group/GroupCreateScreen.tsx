@@ -2,12 +2,13 @@ import * as Clipboard from 'expo-clipboard';
 import { useRouter } from 'expo-router';
 import React, { useState } from 'react';
 import { Image, Share, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import apiClient from '../../api/client';
 import { Icon } from '../../components/Icon';
-import { primitiveColors } from '../../lib/token/primitive/colors';
-import { typography } from '../../lib/token/primitive/typography';
+import { primitiveColors, radius, spacing, typography } from '../../lib/token';
 
 const { green, gray, brown } = primitiveColors;
+const GROUP_NAME_MAX_LENGTH = 12;
 
 export default function GroupCreateScreen() {
   const router = useRouter();
@@ -18,7 +19,7 @@ export default function GroupCreateScreen() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const canComplete = groupName.trim().length > 0 && groupName.length <= 12;
+  const canComplete = groupName.trim().length > 0 && groupName.length <= GROUP_NAME_MAX_LENGTH;
 
   const handleComplete = async () => {
     if (!canComplete || loading) return;
@@ -66,47 +67,42 @@ export default function GroupCreateScreen() {
 
   return (
     <View style={styles.root}>
-      <View style={styles.progressRow}>
-        <View style={[styles.segment, styles.segmentActive]} />
-        <View
-          style={[styles.segment, step === 2 ? styles.segmentActive : styles.segmentInactive]}
-        />
-      </View>
-      <Text style={styles.stepLabel}>{step}/2</Text>
+      <SafeAreaView edges={['top']} style={styles.topArea}>
+        <View style={styles.progressRow}>
+          <View style={[styles.segment, styles.segmentActive]} />
+          <View
+            style={[styles.segment, step === 2 ? styles.segmentActive : styles.segmentInactive]}
+          />
+        </View>
+      </SafeAreaView>
 
       {step === 1 ? (
         <View style={styles.content}>
+          <Text style={styles.stepLabel}>{step}/2</Text>
           <Text style={styles.title}>함께할 그룹 이름을{'\n'}정해볼게요</Text>
           <Text style={styles.subtitle}>친구들이 알아볼 수 있는 이름으로 만들어요</Text>
-
-          <View style={styles.gap24} />
 
           <View style={styles.inputWrapper}>
             <TextInput
               style={styles.input}
               value={groupName}
               onChangeText={(t) => {
-                setGroupName(t.slice(0, 12));
+                setGroupName(t.slice(0, GROUP_NAME_MAX_LENGTH));
                 setError(null);
               }}
-              placeholder="그룹 이름을 입력해 주세요"
+              placeholder="그룹 이름을 입력해주세요"
               placeholderTextColor={gray[300]}
-              maxLength={12}
+              maxLength={GROUP_NAME_MAX_LENGTH}
             />
-          </View>
-
-          <View style={styles.hintRow}>
-            <Image
-              source={require('../../../assets/onboarding-info.png')}
-              style={styles.hintIcon}
-              resizeMode="contain"
-            />
-            <Text style={styles.hint}>띄어쓰기 포함 12자 이내로 작성해 주세요</Text>
+            <Text style={styles.counter}>
+              {groupName.length}/{GROUP_NAME_MAX_LENGTH}
+            </Text>
           </View>
           {error && <Text style={styles.errorText}>{error}</Text>}
         </View>
       ) : (
         <View style={styles.content}>
+          <Text style={styles.stepLabel}>{step}/2</Text>
           <Image
             source={require('../../../assets/onboarding-check.png')}
             style={styles.checkImage}
@@ -148,7 +144,7 @@ export default function GroupCreateScreen() {
         </View>
       )}
 
-      <View style={styles.buttonRow}>
+      <SafeAreaView edges={['bottom']} style={styles.buttonRow}>
         <TouchableOpacity
           style={styles.prevButton}
           onPress={() => router.back()}
@@ -157,14 +153,17 @@ export default function GroupCreateScreen() {
           <Text style={styles.prevText}>이전</Text>
         </TouchableOpacity>
         <TouchableOpacity
-          style={[styles.nextButton, step === 1 && !canComplete && styles.nextButtonDisabled]}
+          style={[
+            styles.nextButton,
+            step === 1 && (!canComplete || loading) && styles.nextButtonDisabled,
+          ]}
           onPress={step === 1 ? handleComplete : handleGoToFeed}
-          disabled={step === 1 && !canComplete}
+          disabled={step === 1 && (!canComplete || loading)}
           activeOpacity={0.85}
         >
           <Text style={styles.nextText}>{step === 1 ? '완료' : '그룹 피드로 가기'}</Text>
         </TouchableOpacity>
-      </View>
+      </SafeAreaView>
     </View>
   );
 }
@@ -174,61 +173,60 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: brown[50],
   },
+  topArea: {
+    paddingTop: 35,
+  },
   progressRow: {
     flexDirection: 'row',
-    gap: 6,
-    paddingHorizontal: 24,
-    paddingTop: 64,
+    gap: spacing[2],
+    paddingHorizontal: spacing[16],
   },
   segment: {
     flex: 1,
-    height: 4,
-    borderRadius: 2,
+    height: 2,
+    borderRadius: radius.full,
   },
   segmentActive: {
-    backgroundColor: green[400],
+    backgroundColor: brown[900],
   },
   segmentInactive: {
-    backgroundColor: green[75],
+    backgroundColor: brown[900],
+    opacity: 0.1,
   },
   stepLabel: {
-    ...typography.primary.caption,
+    ...typography.primary.body2R,
     color: gray[400],
-    paddingHorizontal: 24,
-    marginTop: 8,
+    marginBottom: spacing[8],
   },
   content: {
     flex: 1,
-    paddingHorizontal: 24,
-    paddingTop: 24,
+    paddingHorizontal: spacing[16],
+    paddingTop: spacing[32],
   },
-  gap24: { height: 24 },
+  gap24: { height: spacing[24] },
   title: {
-    ...typography.primary.h2,
+    ...typography.accent.h3,
     color: gray[900],
-    marginBottom: 8,
+    marginBottom: spacing[12],
   },
   subtitle: {
     ...typography.primary.body2R,
-    color: gray[600],
+    color: gray[400],
+    marginBottom: spacing[40],
   },
   inputWrapper: {
+    flexDirection: 'row',
+    alignItems: 'center',
     backgroundColor: '#FFFFFF',
-    borderRadius: 12,
-    paddingHorizontal: 16,
-    paddingVertical: 14,
+    borderRadius: radius[12],
+    height: 50,
+    paddingHorizontal: spacing[16],
   },
   input: {
+    flex: 1,
     ...typography.primary.body1R,
     color: gray[900],
     padding: 0,
-  },
-  hintRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 4,
-    marginTop: 8,
-    paddingHorizontal: 4,
   },
   hintIcon: {
     width: 14,
@@ -241,8 +239,13 @@ const styles = StyleSheet.create({
   errorText: {
     ...typography.primary.caption,
     color: '#E53935',
-    paddingHorizontal: 4,
-    marginTop: 4,
+    paddingHorizontal: spacing[4],
+    marginTop: spacing[8],
+  },
+  counter: {
+    ...typography.primary.body3R,
+    color: gray[300],
+    marginLeft: spacing[8],
   },
   checkImage: {
     width: 100,
@@ -305,16 +308,19 @@ const styles = StyleSheet.create({
   },
   buttonRow: {
     flexDirection: 'row',
-    gap: 8,
-    paddingHorizontal: 24,
-    paddingTop: 24,
-    paddingBottom: 48,
+    gap: spacing[8],
+    paddingHorizontal: spacing[16],
+    paddingTop: spacing[16],
+    paddingBottom: 26,
+    backgroundColor: brown[50],
   },
   prevButton: {
-    flex: 2,
-    backgroundColor: gray[700],
-    borderRadius: 100,
-    paddingVertical: 16,
+    width: 108,
+    minWidth: 88,
+    height: 50,
+    backgroundColor: brown[900],
+    borderRadius: 18,
+    paddingHorizontal: spacing[16],
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -323,15 +329,17 @@ const styles = StyleSheet.create({
     color: '#FFFFFF',
   },
   nextButton: {
-    flex: 3,
+    flex: 1,
+    minWidth: 88,
+    height: 50,
     backgroundColor: green[400],
-    borderRadius: 100,
-    paddingVertical: 16,
+    borderRadius: 18,
+    paddingHorizontal: spacing[16],
     alignItems: 'center',
     justifyContent: 'center',
   },
   nextButtonDisabled: {
-    backgroundColor: gray[200],
+    opacity: 0.3,
   },
   nextText: {
     ...typography.primary.body1B,
