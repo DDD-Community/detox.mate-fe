@@ -6,6 +6,7 @@ import { CaretLeftIcon } from 'phosphor-react-native/src/icons/CaretLeft';
 import { CaretRightIcon } from 'phosphor-react-native/src/icons/CaretRight';
 import { CaretUpIcon } from 'phosphor-react-native/src/icons/CaretUp';
 import { ChatIcon } from 'phosphor-react-native/src/icons/Chat';
+import { ChatTeardropIcon } from 'phosphor-react-native/src/icons/ChatTeardrop';
 import { CheckIcon } from 'phosphor-react-native/src/icons/Check';
 import { CheckCircleIcon } from 'phosphor-react-native/src/icons/CheckCircle';
 import { CopyIcon } from 'phosphor-react-native/src/icons/Copy';
@@ -20,6 +21,7 @@ import { PlusIcon } from 'phosphor-react-native/src/icons/Plus';
 import { PlusCircleIcon } from 'phosphor-react-native/src/icons/PlusCircle';
 import { ShareFatIcon } from 'phosphor-react-native/src/icons/ShareFat';
 import { SignOutIcon } from 'phosphor-react-native/src/icons/SignOut';
+import { SmileyStickerIcon } from 'phosphor-react-native/src/icons/SmileySticker';
 import { TargetIcon } from 'phosphor-react-native/src/icons/Target';
 import { UploadSimpleIcon } from 'phosphor-react-native/src/icons/UploadSimple';
 import { WarningCircleIcon } from 'phosphor-react-native/src/icons/WarningCircle';
@@ -32,6 +34,7 @@ export const iconComponents = {
   caretRight: CaretRightIcon,
   caretUp: CaretUpIcon,
   chat: ChatIcon,
+  chatTeardrop: ChatTeardropIcon,
   check: CheckIcon,
   checkCircle: CheckCircleIcon,
   copy: CopyIcon,
@@ -46,6 +49,7 @@ export const iconComponents = {
   plusCircle: PlusCircleIcon,
   shareFat: ShareFatIcon,
   signOut: SignOutIcon,
+  smileySticker: SmileyStickerIcon,
   target: TargetIcon,
   uploadSimple: UploadSimpleIcon,
   warningCircle: WarningCircleIcon,

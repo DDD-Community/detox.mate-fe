@@ -34,14 +34,11 @@ export default function FeedHeader({ groupName, groupChallengeId }: FeedHeaderPr
         <TouchableOpacity style={styles.iconButton} onPress={handleCalendarPress}>
           <Image
             source={require('../../../assets/onboarding-calendar.png')}
-            style={styles.icon}
+            style={[styles.icon, styles.calendarIcon]}
             resizeMode="contain"
           />
         </TouchableOpacity>
-        <TouchableOpacity
-          style={styles.iconButton}
-          onPress={() => router.push('/(group)/mypage')}
-        >
+        <TouchableOpacity style={styles.iconButton} onPress={() => router.push('/(group)/mypage')}>
           <Image
             source={require('../../../assets/onboarding-rg-user.png')}
             style={styles.icon}
@@ -55,29 +52,32 @@ export default function FeedHeader({ groupName, groupChallengeId }: FeedHeaderPr
 
 const styles = StyleSheet.create({
   header: {
-    paddingTop: spacing[64],
-    paddingHorizontal: spacing[24],
-    paddingBottom: spacing[16],
+    height: 113,
+    paddingTop: 59,
+    paddingHorizontal: spacing[16],
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
   },
   title: {
-    ...typography.primary.title2B,
-    color: gray[900],
+    ...typography.accent.title2,
+    color: gray[800],
   },
   icons: {
     flexDirection: 'row',
-    gap: spacing[2],
+    gap: spacing[12],
   },
   iconButton: {
-    width: 36,
-    height: 36,
+    width: 24,
+    height: 24,
     alignItems: 'center',
     justifyContent: 'center',
   },
   icon: {
     width: 24,
     height: 24,
+  },
+  calendarIcon: {
+    opacity: 0.3,
   },
 });

@@ -24,6 +24,7 @@ import type { FeedItem, PokeEntry, ReactionEntry } from './FeedCard';
 const { gray, green, brown, system } = primitiveColors;
 const WHITE = '#FFFFFF';
 const AVATAR_SOURCE = require('../../../assets/basic-profile-turtle-hi.png');
+const POCK_ICON = require('../../../assets/pock.png');
 const REACTION_EMOJIS = ['👍', '🔥', '💪', '🐢', '🥹'] as const;
 const EMOJI_TO_CODE: Record<string, string> = {
   '👍': 'THUMBSUP',
@@ -415,7 +416,7 @@ export default function FeedPostDetail() {
                     }
                   }}
                 >
-                  <Text>👉</Text>
+                  <Image source={POCK_ICON} style={styles.pockIcon} resizeMode="contain" />
                   <Text style={[styles.pokeButtonText, isPoked && styles.pokeButtonTextDisabled]}>
                     콕 찌르기
                   </Text>
@@ -470,7 +471,11 @@ export default function FeedPostDetail() {
                     <View style={styles.pokeAvatarWrapper}>
                       <Image source={p.avatarSource} style={styles.pokeAvatar} resizeMode="cover" />
                       <View style={styles.pokeEmoji}>
-                        <Text style={styles.pokeEmojiText}>👉</Text>
+                        <Image
+                          source={POCK_ICON}
+                          style={styles.pokeEmojiImage}
+                          resizeMode="contain"
+                        />
                       </View>
                     </View>
                     <Text style={styles.pokeAvatarName}>{p.name}</Text>
@@ -545,12 +550,7 @@ export default function FeedPostDetail() {
               </Pressable>
             ) : (
               <Pressable style={styles.impressionBtn} onPress={() => setShowReactionPicker(true)}>
-                <Image
-                  source={require('../../../assets/impressions.png')}
-                  style={styles.impressionIcon}
-                  resizeMode="contain"
-                  tintColor={WHITE}
-                />
+                <Icon name="smileySticker" size={20} color={WHITE} />
               </Pressable>
             )}
           </View>
@@ -698,6 +698,10 @@ const styles = StyleSheet.create({
   pokeButtonTextDisabled: {
     color: gray[400],
   },
+  pockIcon: {
+    width: 22,
+    height: 17,
+  },
   section: {
     backgroundColor: WHITE,
     borderRadius: radius[16],
@@ -735,6 +739,10 @@ const styles = StyleSheet.create({
     backgroundColor: WHITE,
     alignItems: 'center',
     justifyContent: 'center',
+  },
+  pokeEmojiImage: {
+    width: 16,
+    height: 13,
   },
   pokeEmojiText: {
     fontSize: 12,
@@ -793,10 +801,6 @@ const styles = StyleSheet.create({
     backgroundColor: green[300],
     alignItems: 'center',
     justifyContent: 'center',
-  },
-  impressionIcon: {
-    width: 20,
-    height: 20,
   },
   textInput: {
     flex: 1,

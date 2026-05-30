@@ -5,7 +5,7 @@ import { primitiveColors, radius, spacing, typography } from '../../lib/token';
 
 const { gray, green, system } = primitiveColors;
 const WHITE = '#FFFFFF';
-const AVATAR_SIZE = 52;
+const AVATAR_SIZE = 48;
 
 export type MemberItem = {
   id: string;
@@ -106,15 +106,16 @@ function InviteButton({ onPress }: { onPress: () => void }) {
 
 const styles = StyleSheet.create({
   container: {
-    backgroundColor: WHITE,
-    borderRadius: radius[16],
-    padding: spacing[16],
-    gap: spacing[12],
+    minHeight: 127,
+    paddingHorizontal: spacing[16],
+    paddingTop: spacing[20],
+    paddingBottom: spacing[28],
+    gap: spacing[16],
   },
   header: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: spacing[8],
+    gap: spacing[12],
   },
   title: {
     ...typography.primary.body2B,
@@ -126,16 +127,16 @@ const styles = StyleSheet.create({
     gap: spacing[4],
   },
   dot: {
-    width: 7,
-    height: 7,
+    width: 6,
+    height: 6,
     borderRadius: radius.full,
   },
   legendText: {
-    ...typography.primary.body3R,
-    color: gray[500],
+    ...typography.primary.caption2,
+    color: gray[900],
   },
   avatarRow: {
-    gap: spacing[16],
+    gap: spacing[12],
   },
   avatarItem: {
     alignItems: 'center',
@@ -190,8 +191,9 @@ const styles = StyleSheet.create({
     color: WHITE,
   },
   avatarName: {
-    ...typography.primary.body3R,
-    color: gray[700],
+    ...typography.accent.body3,
+    color: gray[900],
+    textAlign: 'center',
   },
   inviteCircle: {
     width: AVATAR_SIZE,

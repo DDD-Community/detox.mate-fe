@@ -9,6 +9,7 @@ import { WeeklyStatusCard } from './WeeklyStatusCard';
 import CALENDAR_IMG from '@assets/mypage-calender.png';
 import GROUP_INVITE_IMG from '@assets/onboarding-group-invite.png';
 import GROUP_PLUS_IMG from '@assets/onboarding-group-plus.png';
+import POCK_IMG from '@assets/pock.png';
 
 const { brown, gray } = primitiveColors;
 
@@ -99,6 +100,7 @@ export function MyPageBody({
           <Button
             label="콕 찌르기"
             color="primary"
+            leadingIcon={<Image source={POCK_IMG} style={styles.pockIcon} resizeMode="contain" />}
             disabled={isPoking}
             onPress={onPoke}
             style={styles.pokeCta}
@@ -283,5 +285,9 @@ const styles = StyleSheet.create({
   pokeCta: {
     width: 311,
     alignSelf: 'center',
+  },
+  pockIcon: {
+    width: 22,
+    height: 17,
   },
 });

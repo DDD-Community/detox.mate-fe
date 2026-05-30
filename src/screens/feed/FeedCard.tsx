@@ -6,7 +6,8 @@ import type { GoalState } from './ActionGuideBanner';
 
 const { gray, green, system } = primitiveColors;
 const WHITE = '#FFFFFF';
-const AVATAR_SIZE = 36;
+const AVATAR_SIZE = 40;
+const POCK_ICON = require('../../../assets/pock.png');
 const REACTION_EMOJIS = ['👍', '🔥', '💪', '🐢', '🥹'] as const;
 
 export type ReactionEntry = {
@@ -131,15 +132,11 @@ export default function FeedCard({
               disabled={goalState === 'notSet'}
               onPress={() => setShowPicker((v) => !v)}
             >
-              <Image
-                source={require('../../../assets/impressions.png')}
-                style={styles.impressionIcon}
-                resizeMode="contain"
-              />
+              <Icon name="smileySticker" size={24} color={gray[800]} />
               <Text style={styles.footerCount}>{item.reactionCount}</Text>
             </Pressable>
             <Pressable style={styles.footerButton} onPress={onBodyPress}>
-              <Icon name="chat" size={16} color={gray[500]} />
+              <Icon name="chatTeardrop" size={24} color={gray[800]} />
               <Text style={styles.footerCount}>{item.commentCount}</Text>
             </Pressable>
           </View>
@@ -169,7 +166,15 @@ export default function FeedCard({
   const unverifiedBodyText = historyMode ? '인증하지 않았어요' : BODY_TEXT[goalState];
 
   return (
-    <Pressable style={[styles.card, showPicker && styles.cardFront]} onPress={onBodyPress}>
+    <Pressable
+      style={[
+        styles.card,
+        styles.unverifiedCard,
+        showPokeButton && styles.unverifiedCardWithPoke,
+        showPicker && styles.cardFront,
+      ]}
+      onPress={onBodyPress}
+    >
       <View style={styles.header}>
         <Image source={item.avatarSource} style={styles.avatar} resizeMode="cover" />
         <Text style={styles.memberName}>{item.isMe ? '나' : item.name}</Text>
@@ -188,7 +193,7 @@ export default function FeedCard({
             onPoke?.(item.id, item.challengeRecordId);
           }}
         >
-          <Text>👉</Text>
+          <Image source={POCK_ICON} style={styles.pockIcon} resizeMode="contain" />
           <Text style={[styles.pokeButtonText, isPoked && styles.pokeButtonTextDisabled]}>
             콕 찌르기
           </Text>
@@ -197,7 +202,7 @@ export default function FeedCard({
 
       <View style={styles.footer}>
         <View style={styles.footerButton}>
-          <Icon name="chat" size={16} color={gray[500]} />
+          <Icon name="chatTeardrop" size={24} color={gray[800]} />
           <Text style={styles.footerCount}>{item.commentCount}</Text>
         </View>
       </View>
@@ -208,10 +213,17 @@ export default function FeedCard({
 const styles = StyleSheet.create({
   card: {
     backgroundColor: WHITE,
-    borderRadius: radius[16],
+    borderRadius: 24,
     padding: spacing[16],
     gap: spacing[24],
     overflow: 'visible',
+  },
+  unverifiedCard: {
+    minHeight: 180,
+    gap: spacing[24],
+  },
+  unverifiedCardWithPoke: {
+    minHeight: 246,
   },
   cardFront: {
     zIndex: 10,
@@ -247,7 +259,7 @@ const styles = StyleSheet.create({
     color: WHITE,
   },
   memberName: {
-    ...typography.primary.body2B,
+    ...typography.accent.body1,
     color: gray[900],
   },
   timeAgo: {
@@ -301,6 +313,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: spacing[16],
+    minHeight: 36,
   },
   reactionPicker: {
     position: 'absolute',
@@ -327,26 +340,22 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: spacing[4],
+    minHeight: 36,
   },
   footerButtonDisabled: {
     opacity: 0.35,
   },
-  impressionIcon: {
-    width: 18,
-    height: 18,
-  },
   footerCount: {
-    ...typography.primary.body3R,
-    color: gray[500],
+    ...typography.primary.body2R,
+    color: gray[800],
   },
   // Unverified-only styles
   body: {
     alignItems: 'center',
-    paddingVertical: spacing[8],
   },
   bodyText: {
-    ...typography.primary.body2R,
-    color: gray[500],
+    ...typography.accent.body1,
+    color: gray[400],
     textAlign: 'center',
   },
   pokeButton: {
@@ -354,19 +363,23 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     alignSelf: 'center',
     backgroundColor: green[300],
-    borderRadius: radius.full,
-    paddingVertical: spacing[8],
-    paddingHorizontal: spacing[16],
+    borderRadius: 18,
+    minHeight: 44,
+    paddingHorizontal: spacing[12],
     gap: spacing[4],
   },
   pokeButtonDisabled: {
     backgroundColor: gray[200],
   },
   pokeButtonText: {
-    ...typography.primary.body3B,
+    ...typography.primary.body2B,
     color: WHITE,
   },
   pokeButtonTextDisabled: {
     color: gray[400],
+  },
+  pockIcon: {
+    width: 22,
+    height: 17,
   },
 });

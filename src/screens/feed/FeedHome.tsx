@@ -487,7 +487,7 @@ function ActiveFeed({
     <View style={styles.feedWrapper}>
       <ScrollView
         ref={scrollRef}
-        contentContainerStyle={styles.container}
+        contentContainerStyle={styles.activeContainer}
         showsVerticalScrollIndicator={false}
       >
         <ActionGuideBanner
@@ -501,19 +501,23 @@ function ActiveFeed({
               : {}),
           }}
         />
-        <MemberSection members={enrichedMembers} onInvite={onInvite} />
-        {feedItems.map((item) => (
-          <FeedCard
-            key={item.id}
-            item={item}
-            goalState={goalState}
-            onPoke={onPoke}
-            onReact={onReact}
-            isPoked={pokedMemberIds.includes(item.id)}
-            myReactions={myReactions[item.id]}
-            onBodyPress={() => openPostDetail(item)}
-          />
-        ))}
+        <View style={styles.feedSheet}>
+          <MemberSection members={enrichedMembers} onInvite={onInvite} />
+          <View style={styles.feedCardList}>
+            {feedItems.map((item) => (
+              <FeedCard
+                key={item.id}
+                item={item}
+                goalState={goalState}
+                onPoke={onPoke}
+                onReact={onReact}
+                isPoked={pokedMemberIds.includes(item.id)}
+                myReactions={myReactions[item.id]}
+                onBodyPress={() => openPostDetail(item)}
+              />
+            ))}
+          </View>
+        </View>
       </ScrollView>
 
       <Pressable
@@ -529,21 +533,23 @@ function ActiveFeed({
 function EmptyFeedCard({ onInvite }: { onInvite: () => void }) {
   return (
     <View style={styles.emptyCard}>
-      <Image
-        source={require('../../../assets/onboarding-none-feed.png')}
-        style={styles.emptyImage}
-        resizeMode="contain"
-      />
-      <Text style={styles.emptySubtitle}>
-        피드가 없어요{'\n'} 친구를 초대하여 함께 디톡스를 시작해 보세요
-      </Text>
+      <View style={styles.emptyContent}>
+        <Image
+          source={require('../../../assets/onboarding-none-feed.png')}
+          style={styles.emptyImage}
+          resizeMode="contain"
+        />
+        <Text style={styles.emptySubtitle}>
+          피드가 없어요{'\n'} 친구를 초대하여 함께 디톡스를 시작해보세요
+        </Text>
+      </View>
       <Button
         label="친구 초대하기"
         color="primary"
-        size="lg"
-        leadingIcon={<Icon name="shareFat" size={20} color={WHITE} />}
+        size="sm"
+        leadingIcon={<Icon name="shareFat" size={16} color={WHITE} />}
         onPress={onInvite}
-        style={{ alignSelf: 'stretch' }}
+        style={styles.emptyInviteButton}
       />
     </View>
   );
@@ -562,6 +568,21 @@ const styles = StyleSheet.create({
     paddingTop: spacing[16],
     paddingBottom: spacing[96],
     gap: spacing[12],
+  },
+  activeContainer: {
+    paddingBottom: spacing[96],
+  },
+  feedSheet: {
+    marginTop: -62,
+    backgroundColor: brown[50],
+    borderTopLeftRadius: 24,
+    borderTopRightRadius: 24,
+    overflow: 'hidden',
+  },
+  feedCardList: {
+    paddingHorizontal: spacing[16],
+    paddingTop: spacing[28],
+    gap: spacing[20],
   },
   centered: {
     flex: 1,
@@ -591,15 +612,23 @@ const styles = StyleSheet.create({
     padding: spacing[24],
     paddingTop: 150,
     alignItems: 'center',
+    gap: spacing[20],
+  },
+  emptyContent: {
+    alignItems: 'center',
     gap: spacing[12],
   },
   emptyImage: {
-    width: 120,
-    height: 120,
+    width: 87,
+    height: 88,
   },
   emptySubtitle: {
-    ...typography.primary.body2R,
-    color: gray[500],
+    ...typography.accent.body2,
+    color: gray[400],
     textAlign: 'center',
+  },
+  emptyInviteButton: {
+    alignSelf: 'center',
+    width: 140,
   },
 });

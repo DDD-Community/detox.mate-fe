@@ -4,8 +4,9 @@ import { Button } from '../../components/Button';
 import { Icon } from '../../components/Icon';
 import { primitiveColors, spacing, typography } from '../../lib/token';
 
-const { brown, gray, system } = primitiveColors;
+const { brown, gray } = primitiveColors;
 const WHITE = '#FFFFFF';
+const DAILY_AUTH_BG = '#D5441BCC';
 
 export type GoalState = 'notSet' | 'setWaiting' | 'authReady';
 
@@ -43,11 +44,11 @@ function GoalBanner() {
       </View>
       <Button
         label="목표 설정하기"
-        leadingIcon={<Icon name="target" size={20} color={WHITE} />}
+        leadingIcon={<Icon name="target" size={16} color={WHITE} />}
         color="assistive"
-        size="lg"
+        size="sm"
         onPress={() => router.push('/(group)/goal')}
-        style={{ alignSelf: 'stretch' }}
+        style={styles.bannerButton}
       />
     </View>
   );
@@ -97,7 +98,7 @@ function DailyAuthBanner({ verifyParams }: Pick<Props, 'verifyParams'>) {
           />
         }
         color="assistive"
-        size="lg"
+        size="sm"
         onPress={() =>
           router.push({
             pathname: '/(group)/verify',
@@ -110,7 +111,7 @@ function DailyAuthBanner({ verifyParams }: Pick<Props, 'verifyParams'>) {
             },
           })
         }
-        style={{ alignSelf: 'stretch' }}
+        style={styles.bannerButton}
       />
     </View>
   );
@@ -119,13 +120,19 @@ function DailyAuthBanner({ verifyParams }: Pick<Props, 'verifyParams'>) {
 const styles = StyleSheet.create({
   goalBanner: {
     backgroundColor: brown[100],
-    padding: spacing[20],
-    gap: spacing[12],
+    minHeight: 233,
+    paddingHorizontal: spacing[16],
+    paddingTop: spacing[32],
+    paddingBottom: spacing[20],
+    gap: 18,
   },
   dailyAuthBanner: {
-    backgroundColor: system.red.opacity100,
-    padding: spacing[28],
-    gap: spacing[12],
+    backgroundColor: DAILY_AUTH_BG,
+    minHeight: 233,
+    paddingHorizontal: spacing[16],
+    paddingTop: spacing[32],
+    paddingBottom: spacing[20],
+    gap: 18,
   },
   topRow: {
     flexDirection: 'row',
@@ -138,27 +145,30 @@ const styles = StyleSheet.create({
     gap: spacing[4],
   },
   goalTitle: {
-    ...typography.primary.body1B,
+    ...typography.accent.title2,
     color: gray[900],
   },
   goalSubtitle: {
-    ...typography.primary.body2R,
+    ...typography.primary.body3R,
     color: gray[600],
   },
   dailyAuthTitle: {
-    ...typography.primary.body1B,
+    ...typography.accent.title2,
     color: WHITE,
   },
   dailyAuthSubtitle: {
-    ...typography.primary.body2R,
+    ...typography.primary.body3R,
     color: WHITE,
   },
   bannerImage: {
     width: 64,
-    height: 64,
+    height: 58,
   },
   buttonIcon: {
-    width: 20,
-    height: 20,
+    width: 16,
+    height: 16,
+  },
+  bannerButton: {
+    alignSelf: 'stretch',
   },
 });
