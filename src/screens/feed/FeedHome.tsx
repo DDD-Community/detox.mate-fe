@@ -22,6 +22,7 @@ import ActionGuideBanner, { type GoalState } from './ActionGuideBanner';
 import FeedCard, { type FeedItem, type PokeEntry, type ReactionEntry } from './FeedCard';
 import FeedHeader from './FeedHeader';
 import MemberSection, { type MemberItem } from './MemberSection';
+import { isSameReaction, normalizeReactionCode, type ReactionCode } from './ReactionPicker';
 
 const { brown, gray, green } = primitiveColors;
 const WHITE = '#FFFFFF';
@@ -36,16 +37,6 @@ type GroupInfo = {
 
 type GroupChallenge = {
   id: string;
-};
-
-type ReactionCode = 'THUMBSUP' | 'FIGHTING' | 'MUSCLE' | 'TURTLE' | 'GLOOMY';
-
-const EMOJI_TO_CODE: Record<string, ReactionCode> = {
-  '👍': 'THUMBSUP',
-  '🔥': 'FIGHTING',
-  '💪': 'MUSCLE',
-  '🐢': 'TURTLE',
-  '🥹': 'GLOOMY',
 };
 
 type ActivityDetail = {
@@ -318,9 +309,12 @@ export default function FeedHome() {
     }
   };
 
-  const handleReact = async (itemId: string, emoji: string) => {
+  const handleReact = async (itemId: string, reaction: string) => {
+    const reactionCode = normalizeReactionCode(reaction);
+    if (!reactionCode) return;
+
     const userEmojis = myReactions[itemId] ?? [];
-    const hasThisEmoji = userEmojis.includes(emoji);
+    const hasThisEmoji = userEmojis.some((current) => isSameReaction(current, reactionCode));
 
     setFeedItems((prev) =>
       prev.map((item) => {
@@ -329,14 +323,16 @@ export default function FeedHome() {
           return {
             ...item,
             reactionCount: Math.max(0, item.reactionCount - 1),
-            reactions: item.reactions.filter((r) => !(r.userId === 'me' && r.emoji === emoji)),
+            reactions: item.reactions.filter(
+              (r) => !(r.userId === 'me' && isSameReaction(r.emoji, reactionCode))
+            ),
           };
         }
         const myEntry: ReactionEntry = {
           userId: 'me',
           name: '나',
           avatarSource: AVATAR_SRC,
-          emoji,
+          emoji: reactionCode,
         };
         return {
           ...item,
@@ -349,25 +345,25 @@ export default function FeedHome() {
       const current = prev[itemId] ?? [];
       return {
         ...prev,
-        [itemId]: hasThisEmoji ? current.filter((e) => e !== emoji) : [...current, emoji],
+        [itemId]: hasThisEmoji
+          ? current.filter((e) => !isSameReaction(e, reactionCode))
+          : [...current, reactionCode],
       };
     });
 
     const targetItem = feedItems.find((f) => f.id === itemId);
     if (!targetItem?.challengeRecordId) return;
-    const reactionCode = EMOJI_TO_CODE[emoji];
-    if (!reactionCode) return;
 
     try {
       if (hasThisEmoji) {
-        const reactionId = myReactionIds[itemId]?.[emoji];
+        const reactionId = myReactionIds[itemId]?.[reactionCode];
         if (reactionId) {
           await apiClient.delete(
             `/challenge-records/${targetItem.challengeRecordId}/reactions/${reactionId}`
           );
           setMyReactionIds((prev) => {
             const copy = { ...(prev[itemId] ?? {}) };
-            delete copy[emoji];
+            delete copy[reactionCode];
             return { ...prev, [itemId]: copy };
           });
         }
@@ -378,7 +374,7 @@ export default function FeedHome() {
         );
         setMyReactionIds((prev) => ({
           ...prev,
-          [itemId]: { ...(prev[itemId] ?? {}), [emoji]: res.data.reactionId },
+          [itemId]: { ...(prev[itemId] ?? {}), [reactionCode]: res.data.reactionId },
         }));
       }
     } catch {

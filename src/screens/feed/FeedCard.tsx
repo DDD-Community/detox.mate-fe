@@ -3,12 +3,12 @@ import { Alert, Image, Pressable, StyleSheet, Text, View } from 'react-native';
 import { Icon } from '../../components/Icon';
 import { primitiveColors, radius, spacing, typography } from '../../lib/token';
 import type { GoalState } from './ActionGuideBanner';
+import ReactionPicker from './ReactionPicker';
 
 const { gray, green, system } = primitiveColors;
 const WHITE = '#FFFFFF';
 const AVATAR_SIZE = 40;
 const POCK_ICON = require('../../../assets/pock.png');
-const REACTION_EMOJIS = ['👍', '🔥', '💪', '🐢', '🥹'] as const;
 
 export type ReactionEntry = {
   userId: string;
@@ -141,20 +141,14 @@ export default function FeedCard({
             </Pressable>
           </View>
           {showPicker && (
-            <View style={styles.reactionPicker}>
-              {REACTION_EMOJIS.map((emoji) => (
-                <Pressable
-                  key={emoji}
-                  style={styles.reactionOption}
-                  onPress={() => {
-                    onReact?.(item.id, emoji);
-                    setShowPicker(false);
-                  }}
-                >
-                  <Text style={styles.reactionOptionText}>{emoji}</Text>
-                </Pressable>
-              ))}
-            </View>
+            <ReactionPicker
+              selectedReactions={myReactions}
+              style={styles.reactionPicker}
+              onSelect={(reactionCode) => {
+                onReact?.(item.id, reactionCode);
+                setShowPicker(false);
+              }}
+            />
           )}
         </View>
       </Pressable>
@@ -320,21 +314,7 @@ const styles = StyleSheet.create({
     top: 32,
     left: 0,
     zIndex: 100,
-    flexDirection: 'row',
-    backgroundColor: WHITE,
-    borderRadius: radius.full,
-    paddingHorizontal: spacing[12],
-    paddingVertical: spacing[8],
-    gap: spacing[8],
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.12,
-    shadowRadius: 8,
-    elevation: 4,
-  },
-  reactionOption: {},
-  reactionOptionText: {
-    fontSize: 22,
+    width: 312,
   },
   footerButton: {
     flexDirection: 'row',
