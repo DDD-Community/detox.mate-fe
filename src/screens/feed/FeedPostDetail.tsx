@@ -564,16 +564,22 @@ export default function FeedPostDetail() {
 
       {state === 'authReady' &&
         (showReactionPicker ? (
-          <View style={[styles.pickerBar, { paddingBottom: Math.max(insets.bottom, spacing[12]) }]}>
-            <ReactionPicker
-              selectedReactions={myReactionEmojis}
-              style={styles.bottomReactionPicker}
-              onSelect={(reactionCode) => {
-                handleReact(reactionCode);
-                setShowReactionPicker(false);
-              }}
+          <>
+            <Pressable
+              style={styles.pickerOverlay}
+              onPress={() => setShowReactionPicker(false)}
             />
-          </View>
+            <View style={[styles.pickerBar, { paddingBottom: Math.max(insets.bottom, spacing[12]) }]}>
+              <ReactionPicker
+                selectedReactions={myReactionEmojis}
+                style={styles.bottomReactionPicker}
+                onSelect={(reactionCode) => {
+                  handleReact(reactionCode);
+                  setShowReactionPicker(false);
+                }}
+              />
+            </View>
+          </>
         ) : (
           <View style={[styles.inputBar, { paddingBottom: Math.max(insets.bottom, spacing[12]) }]}>
             <TextInput
@@ -905,6 +911,13 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   // Reaction picker bar
+  pickerOverlay: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+  },
   pickerBar: {
     flexDirection: 'row',
     alignItems: 'center',
