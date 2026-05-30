@@ -30,7 +30,7 @@ const { gray, green, brown, system } = primitiveColors;
 const WHITE = '#FFFFFF';
 const AVATAR_SOURCE = require('../../../assets/basic-profile-turtle-hi.png');
 const POCK_ICON = require('../../../assets/pock.png');
-const IMPRESSION_ICON = require('../../../assets/impressions.png');
+const IMPRESSION_ICON = require('../../../assets/feed_emotion.png');
 
 type CommentItem = {
   id: string;
@@ -885,8 +885,8 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   impressionIcon: {
-    width: 20,
-    height: 20,
+    width: 26,
+    height: 26,
   },
   textInput: {
     flex: 1,
