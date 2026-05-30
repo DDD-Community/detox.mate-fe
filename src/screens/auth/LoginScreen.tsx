@@ -2,10 +2,10 @@ import { useState } from 'react';
 import { Image, Modal, Pressable, StyleSheet, Text, View } from 'react-native';
 
 import LOGO_APPLE_LOGIN from '@assets/logo-apple-login.png';
-import LOGO_DETOXMATE_BLACK from '@assets/logo-detoxmate-black.png';
 import LOGO_KAKAO_LOGIN from '@assets/logo-kakao-login.png';
 import TURTLE_HI_IMAGE from '@assets/turtle-hi.png';
 
+import { AppLogo } from '@/components';
 import { env } from '@/config/env';
 import { primitiveColors, typography } from '@/lib/token';
 import { AuthLoginButton } from './AuthLoginButton';
@@ -39,7 +39,7 @@ export default function LoginScreen() {
   return (
     <View style={styles.root}>
       <View style={styles.topSection}>
-        <Image source={LOGO_DETOXMATE_BLACK} />
+        <AppLogo scale={1.4} />
         <Text style={styles.tagline}>매일 디지털 디톡스를 하며{'\n'}친구들과 함께 성장해요</Text>
       </View>
 

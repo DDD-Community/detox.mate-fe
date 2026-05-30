@@ -9,8 +9,10 @@ import {
   TouchableOpacity,
   View,
 } from 'react-native';
+import { AppLogo } from '@/components';
 import { getGroup } from '../../api/generated/group/group';
 import { primitiveColors } from '../../lib/token/primitive/colors';
+import { radius } from '../../lib/token/primitive/radius';
 import { typography } from '../../lib/token/primitive/typography';
 
 const { brown, gray } = primitiveColors;
@@ -52,33 +54,47 @@ export default function GroupHomeScreen() {
   return (
     <View style={styles.root}>
       <View style={styles.header}>
-        <View style={styles.headerLeft}>
-          <Image source={require('../../../assets/logo-detoxmate-black.png')} />
-          <Text style={styles.headerTitle}>디톡스 메이트</Text>
-        </View>
+        <AppLogo />
         <View style={styles.headerIcons}>
-          <Pressable hitSlop={8} onPress={() => router.push('/(group)/notifications')}>
-            <Image source={require('../../../assets/onboarding-rg-bell.png')} />
+          <Pressable
+            style={styles.iconButton}
+            hitSlop={8}
+            onPress={() => router.push('/(group)/notifications')}
+          >
+            <Image
+              source={require('../../../assets/onboarding-rg-bell.png')}
+              style={styles.headerIcon}
+              resizeMode="contain"
+            />
           </Pressable>
-          <View style={{ gap: 50 }} />
-          <Pressable hitSlop={8} onPress={() => router.push('/(group)/mypage')}>
-            <Image source={require('../../../assets/onboarding-rg-user.png')} />
+          <Pressable
+            style={styles.iconButton}
+            hitSlop={8}
+            onPress={() => router.push('/(group)/mypage')}
+          >
+            <Image
+              source={require('../../../assets/onboarding-rg-user.png')}
+              style={styles.headerIcon}
+              resizeMode="contain"
+            />
           </Pressable>
         </View>
       </View>
 
       {isCheckingGroups ? (
-        <View style={styles.body}>
+        <View style={styles.loadingBody}>
           <ActivityIndicator color={gray[400]} />
         </View>
       ) : (
-        <>
-          <View style={styles.body}>
+        <View style={styles.content}>
+          <View style={styles.illustration}>
             <Image
               source={require('../../../assets/turtle-fall.png')}
               style={styles.turtle}
               resizeMode="contain"
             />
+          </View>
+          <View style={styles.copyFrame}>
             <Text style={styles.title}>아직 그룹이 없어요</Text>
             <Text style={styles.subtitle}>새 그룹을 만들거나 친구가 만든 그룹에 입장해요</Text>
           </View>
@@ -91,7 +107,7 @@ export default function GroupHomeScreen() {
             >
               <Image
                 source={require('../../../assets/onboarding-group-plus.png')}
-                style={styles.cardIcon}
+                style={styles.plusCardIcon}
                 resizeMode="contain"
               />
               <Text style={styles.cardLabel}>새 그룹 만들기</Text>
@@ -103,13 +119,13 @@ export default function GroupHomeScreen() {
             >
               <Image
                 source={require('../../../assets/onboarding-group-invite.png')}
-                style={styles.cardIcon}
+                style={styles.inviteCardIcon}
                 resizeMode="contain"
               />
               <Text style={styles.cardLabel}>초대 코드 입력</Text>
             </TouchableOpacity>
           </View>
-        </>
+        </View>
       )}
     </View>
   );
@@ -121,81 +137,87 @@ const styles = StyleSheet.create({
     backgroundColor: brown[50],
   },
   header: {
-    paddingTop: 64,
-    paddingHorizontal: 24,
-    paddingBottom: 16,
+    height: 113,
+    paddingTop: 59,
+    paddingHorizontal: 16,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
   },
-  headerLeft: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 10,
-  },
-  headerTitle: {
-    ...typography.primary.title2B,
-    color: gray[900],
-  },
   headerIcons: {
     flexDirection: 'row',
-    gap: 6,
+    gap: 12,
   },
   iconButton: {
-    width: 36,
-    height: 36,
+    width: 24,
+    height: 24,
     alignItems: 'center',
     justifyContent: 'center',
   },
-  iconPlaceholder: {
-    width: 22,
-    height: 22,
-    borderRadius: 11,
-    borderWidth: 1.5,
-    borderColor: gray[400],
+  headerIcon: {
+    width: 24,
+    height: 24,
   },
-  body: {
+  loadingBody: {
     flex: 1,
     alignItems: 'center',
     justifyContent: 'center',
-    paddingHorizontal: 24,
-    gap: 10,
+  },
+  content: {
+    flex: 1,
+    justifyContent: 'center',
+    paddingHorizontal: 16,
+  },
+  illustration: {
+    alignItems: 'center',
   },
   turtle: {
-    width: 240,
-    height: 240,
-    marginBottom: 8,
+    width: 236,
+    height: 218,
+  },
+  copyFrame: {
+    alignItems: 'center',
+    marginTop: 40,
   },
   title: {
-    ...typography.primary.title1B,
+    ...typography.accent.h3,
     color: gray[900],
+    letterSpacing: -0.52,
   },
   subtitle: {
     ...typography.primary.body2R,
-    color: gray[600],
+    color: gray[400],
     textAlign: 'center',
+    letterSpacing: -0.28,
+    marginTop: 12,
   },
   cardRow: {
     flexDirection: 'row',
-    gap: 12,
-    paddingHorizontal: 24,
-    paddingBottom: 100,
+    gap: 8,
+    marginTop: 58,
   },
   card: {
     flex: 1,
-    backgroundColor: '#FFFFFF',
-    borderRadius: 16,
-    paddingVertical: 40,
+    height: 164,
+    backgroundColor: brown[50],
+    borderRadius: radius[12],
+    borderWidth: 1,
+    borderColor: gray[100],
     alignItems: 'center',
     justifyContent: 'center',
-    gap: 12,
+    gap: 16,
   },
-  cardIcon: {
-    width: 36,
-    height: 36,
+  plusCardIcon: {
+    width: 30,
+    height: 29,
+  },
+  inviteCardIcon: {
+    width: 42,
+    height: 29,
   },
   cardLabel: {
-    ...typography.primary.body2M,
-    color: gray[900],
+    ...typography.accent.body1,
+    color: gray[500],
+    letterSpacing: -0.36,
   },
 });

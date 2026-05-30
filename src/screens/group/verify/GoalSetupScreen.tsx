@@ -1,6 +1,5 @@
 import { useLocalSearchParams } from 'expo-router';
 import {
-  Image,
   Pressable,
   SafeAreaView,
   StyleSheet,
@@ -9,9 +8,7 @@ import {
   type GestureResponderEvent,
 } from 'react-native';
 
-import LOGO_DETOXMATE_BLACK from '@assets/logo-detoxmate-black.png';
-
-import { Button, Icon } from '@/components';
+import { AppLogo, Button, Icon } from '@/components';
 import { formatHHMMToDisplay, formatMinutesAsHourMinute } from '@/lib/formatDuration';
 import { primitiveColors, typography } from '@/lib/token';
 import { useGoalTimeSave } from './useGoalTimeSave';
@@ -30,7 +27,7 @@ export default function GoalSetupScreen() {
   return (
     <SafeAreaView style={styles.root}>
       <View style={styles.header}>
-        <Image source={LOGO_DETOXMATE_BLACK} style={styles.logo} resizeMode="contain" />
+        <AppLogo />
       </View>
 
       <View style={styles.body}>
@@ -113,10 +110,6 @@ const styles = StyleSheet.create({
     height: 54,
     paddingHorizontal: 16,
     justifyContent: 'center',
-  },
-  logo: {
-    width: 110,
-    height: 18,
   },
   body: {
     flex: 1,
