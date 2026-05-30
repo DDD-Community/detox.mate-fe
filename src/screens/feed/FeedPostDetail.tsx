@@ -311,7 +311,7 @@ export default function FeedPostDetail() {
       style={styles.root}
       behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
     >
-      <View style={styles.header}>
+      <View style={[styles.header, { paddingTop: insets.top + spacing[14] }]}>
         <Pressable onPress={() => router.back()} style={styles.backButton}>
           <Icon name="caretLeft" size={20} color={gray[900]} />
         </Pressable>
@@ -614,8 +614,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     paddingHorizontal: spacing[16],
-    paddingTop: spacing[56],
-    paddingBottom: spacing[12],
+    paddingBottom: spacing[14],
     gap: spacing[8],
     backgroundColor: brown[50],
   },
