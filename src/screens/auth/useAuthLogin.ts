@@ -16,7 +16,7 @@ import { APP_ACCESS_PERMISSION_GUIDE_SEEN_KEY, TERMS_ACCEPTED_KEY } from './auth
 export type LoginProvider = 'kakao' | 'apple' | 'test';
 
 type LoginAction = () => Promise<OAuthLoginResponse>;
-export type TestUserKey = 'front-a' | 'front-b' | 'front-c' | 'server-a' | 'server-b' | 'server-c';
+export type TestUserKey = string;
 
 export const TEST_USER_KEYS: TestUserKey[] = [
   'front-a',
