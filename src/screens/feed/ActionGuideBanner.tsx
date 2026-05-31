@@ -49,8 +49,8 @@ function GoalBanner() {
         size="sm"
         onPress={() =>
           router.push({
-            pathname: '/verify',
-            params: { mode: 'initial', verifyRoot: 'root' },
+            pathname: '/(feed)/verify',
+            params: { mode: 'initial', verifyRoot: 'feed' },
           })
         }
         style={styles.bannerButton}
@@ -106,10 +106,10 @@ function DailyAuthBanner({ verifyParams }: Pick<Props, 'verifyParams'>) {
         size="sm"
         onPress={() =>
           router.push({
-            pathname: '/verify',
+            pathname: '/(feed)/verify',
             params: {
               mode: 'verify',
-              verifyRoot: 'root',
+              verifyRoot: 'feed',
               ...(verifyParams?.goal ? { goal: verifyParams.goal } : {}),
               ...(verifyParams?.groupChallengeParticipantId
                 ? { groupChallengeParticipantId: verifyParams.groupChallengeParticipantId }

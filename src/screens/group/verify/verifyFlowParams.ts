@@ -1,5 +1,5 @@
 export type VerifyMode = 'initial' | 'verify';
-export type VerifyRoot = 'root';
+export type VerifyRoot = 'feed';
 export type VerifyScreen =
   | 'method'
   | 'upload'
@@ -45,24 +45,24 @@ export const parseParticipantId = (groupChallengeParticipantId?: string) => {
 };
 
 export const getVerifyPath = (screen: VerifyScreen | undefined, verifyRoot?: VerifyRoot) => {
-  if (verifyRoot === 'root') {
+  if (verifyRoot === 'feed') {
     switch (screen) {
       case 'method':
-        return '/verify/method';
+        return '/(feed)/verify/method';
       case 'upload':
-        return '/verify/upload';
+        return '/(feed)/verify/upload';
       case 'done':
-        return '/verify/done';
+        return '/(feed)/verify/done';
       case 'error':
-        return '/verify/error';
+        return '/(feed)/verify/error';
       case 'complete':
-        return '/verify/complete';
+        return '/(feed)/verify/complete';
       case 'wrong-time':
-        return '/verify/wrong-time';
+        return '/(feed)/verify/wrong-time';
       case 'retro':
-        return '/verify/retro';
+        return '/(feed)/verify/retro';
       default:
-        return '/verify';
+        return '/(feed)/verify';
     }
   }
 
