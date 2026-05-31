@@ -10,7 +10,7 @@ import { primitiveColors, radius, spacing } from '../../lib/token';
 
 const { gray } = primitiveColors;
 
-export type ReactionCode = 'HEART' | 'CLAP' | 'FIRE' | 'MUSCLE' | 'HAMMER' | 'SURPRISED';
+export type ReactionCode = 'CLAP' | 'LIKED' | 'FIRE' | 'MUSCLE' | 'HAMMER' | 'SURPRISED';
 
 export type ReactionOption = {
   code: ReactionCode;
@@ -18,8 +18,8 @@ export type ReactionOption = {
 };
 
 export const REACTION_OPTIONS: ReactionOption[] = [
-  { code: 'HEART', source: require('../../../assets/reaction-heart.png') },
   { code: 'CLAP', source: require('../../../assets/reaction-clap.png') },
+  { code: 'LIKED', source: require('../../../assets/reaction-heart.png') },
   { code: 'FIRE', source: require('../../../assets/reaction-fire.png') },
   { code: 'MUSCLE', source: require('../../../assets/reaction-strength.png') },
   { code: 'HAMMER', source: require('../../../assets/reaction-hammer.png') },
@@ -32,21 +32,22 @@ const REACTION_SOURCE_BY_CODE = REACTION_OPTIONS.reduce(
 );
 
 const LEGACY_REACTION_MAP: Record<string, ReactionCode> = {
-  HEART: 'HEART',
+  HEART: 'LIKED',
   CLAP: 'CLAP',
+  LIKED: 'LIKED',
   FIRE: 'FIRE',
   FIGHTING: 'FIRE',
   MUSCLE: 'MUSCLE',
   HAMMER: 'HAMMER',
   SURPRISED: 'SURPRISED',
   THUMBSUP: 'CLAP',
-  TURTLE: 'HEART',
+  TURTLE: 'LIKED',
   GLOOMY: 'SURPRISED',
   '👍': 'CLAP',
   '👏': 'CLAP',
   '🔥': 'FIRE',
   '💪': 'MUSCLE',
-  '🐢': 'HEART',
+  '🐢': 'LIKED',
   '🥹': 'SURPRISED',
 };
 
