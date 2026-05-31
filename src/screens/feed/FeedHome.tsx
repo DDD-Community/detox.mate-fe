@@ -1,5 +1,5 @@
 import { router, useFocusEffect, useLocalSearchParams } from 'expo-router';
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
   ActivityIndicator,
   Image,
@@ -19,7 +19,10 @@ import { Icon } from '../../components/Icon';
 import { memberStore } from '../../lib/memberStore';
 import { pokeStore } from '../../lib/pokeStore';
 import { primitiveColors, radius, spacing, typography } from '../../lib/token';
-import ActionGuideBanner, { type GoalState } from './ActionGuideBanner';
+import ActionGuideBanner, {
+  type ActionGuideBannerState,
+  type GoalState,
+} from './ActionGuideBanner';
 import FeedCard, { type FeedItem, type PokeEntry, type ReactionEntry } from './FeedCard';
 import FeedHeader from './FeedHeader';
 import MemberSection, { type MemberItem } from './MemberSection';
@@ -126,6 +129,35 @@ const isCreatedToday = (isoDate: string): boolean => {
   );
 };
 
+const hasTotalUsageGoal = (member: TodayChallengeMember): boolean =>
+  member.goals?.some((goal) => goal.usageGoalType === 'TOTAL_USAGE' && goal.goalMinutes != null) ??
+  false;
+
+const getMinutesUntilTomorrow = (now: Date): number => {
+  const tomorrow = new Date(now);
+  tomorrow.setHours(24, 0, 0, 0);
+  return Math.max(0, Math.ceil((tomorrow.getTime() - now.getTime()) / 60000));
+};
+
+const getActionGuideBannerState = ({
+  goalState,
+  goalSetMemberCount,
+  isMyVerified,
+  now,
+}: {
+  goalState: GoalState;
+  goalSetMemberCount: number;
+  isMyVerified: boolean;
+  now: Date;
+}): ActionGuideBannerState => {
+  if (goalState === 'notSet') return 'notSet';
+  if (goalSetMemberCount < 2) return 'waitingForMembers';
+  if (goalState === 'setWaiting') return 'setWaiting';
+  if (isMyVerified) return 'verified';
+  if (getMinutesUntilTomorrow(now) <= 60) return 'deadlineSoon';
+  return 'authReady';
+};
+
 const formatTimeAgo = (isoDate: string): string => {
   const diff = Date.now() - new Date(isoDate).getTime();
   const minutes = Math.floor(diff / 60000);
@@ -166,6 +198,8 @@ const mapMemberToFeedItem = (m: TodayChallengeMember): FeedItem => {
       isVerified && !isGoalAchieved ? (m.activityRecord?.reflectionText ?? undefined) : undefined,
     screenTime: formatMinutes(totalUsage?.usedMinutes),
     goal: formatMinutesAsHHMM(totalGoal?.goalMinutes),
+    usedMinutes: totalUsage?.usedMinutes,
+    goalMinutes: totalGoal?.goalMinutes,
     verifiedTimeAgo:
       isVerified && m.activityRecord?.submittedAt
         ? formatTimeAgo(m.activityRecord.submittedAt)
@@ -216,9 +250,9 @@ export default function FeedHome() {
   }>();
   const [group, setGroup] = useState<GroupInfo | null>(null);
   const [groupChallengeId, setGroupChallengeId] = useState<string | null>(null);
-  const [isGroupActive, setIsGroupActive] = useState(false);
   const [loading, setLoading] = useState(true);
   const [goalState, setGoalState] = useState<GoalState>('notSet');
+  const [goalSetMemberCount, setGoalSetMemberCount] = useState(0);
   const [members, setMembers] = useState<MemberItem[]>([]);
   const [feedItems, setFeedItems] = useState<FeedItem[]>([]);
   const [myReactions, setMyReactions] = useState<Record<string, string[]>>({});
@@ -254,6 +288,7 @@ export default function FeedHome() {
       const sortedMembers = [...apiMembers].sort(compareChallengeMembers);
       setFeedItems(sortedMembers.map(mapMemberToFeedItem));
       setMembers(sortedMembers.map(mapMemberToMemberItem));
+      setGoalSetMemberCount(apiMembers.filter(hasTotalUsageGoal).length);
       memberStore.setAll(
         sortedMembers.map((m) => ({
           userId: m.userId,
@@ -285,10 +320,8 @@ export default function FeedHome() {
       if (groups.length > 0) {
         const g = groups[0];
         setGroup(g);
-        setIsGroupActive(g.members.length >= 2);
       } else {
         setGroup(null);
-        setIsGroupActive(false);
       }
 
       const challenges = challengeRes.data;
@@ -431,7 +464,7 @@ export default function FeedHome() {
         <View style={styles.centered}>
           <ActivityIndicator color={gray[400]} />
         </View>
-      ) : isGroupActive ? (
+      ) : group && groupChallengeId ? (
         <ActiveFeed
           onInvite={handleInvite}
           onPoke={handlePoke}
@@ -441,6 +474,7 @@ export default function FeedHome() {
           myReactions={myReactions}
           pokedMemberIds={pokedMemberIds}
           goalState={goalState}
+          goalSetMemberCount={goalSetMemberCount}
           groupChallengeId={groupChallengeId}
           targetChallengeRecordId={challengeRecordId}
           scrollChallengeRecordId={scrollChallengeRecordId}
@@ -452,7 +486,7 @@ export default function FeedHome() {
   );
 }
 
-// isGroupActive = false 일 때 렌더링
+// 그룹 또는 챌린지가 없을 때 렌더링
 function InactiveFeed({ onInvite }: { onInvite: () => void }) {
   return (
     <View style={styles.container}>
@@ -461,7 +495,7 @@ function InactiveFeed({ onInvite }: { onInvite: () => void }) {
   );
 }
 
-// isGroupActive = true 일 때 렌더링
+// 오늘 피드가 있는 그룹일 때 렌더링
 function ActiveFeed({
   onInvite,
   onPoke,
@@ -471,6 +505,7 @@ function ActiveFeed({
   myReactions,
   pokedMemberIds,
   goalState,
+  goalSetMemberCount,
   groupChallengeId,
   targetChallengeRecordId,
   scrollChallengeRecordId,
@@ -483,6 +518,7 @@ function ActiveFeed({
   myReactions: Record<string, string[]>;
   pokedMemberIds: string[];
   goalState: GoalState;
+  goalSetMemberCount: number;
   groupChallengeId: string | null;
   targetChallengeRecordId?: string;
   scrollChallengeRecordId?: string;
@@ -495,6 +531,8 @@ function ActiveFeed({
   const feedCardListYRef = useRef(0);
   const feedCardYByMemberIdRef = useRef<Record<string, number>>({});
   const [reactionPickerItem, setReactionPickerItem] = useState<FeedItem | null>(null);
+  const [isRestoringScroll, setIsRestoringScroll] = useState(() => !!scrollChallengeRecordId);
+  const [now, setNow] = useState(() => new Date());
 
   const enrichedMembers = members.map((m) => ({
     ...m,
@@ -502,13 +540,28 @@ function ActiveFeed({
     isGoalAchieved: feedItems.some((f) => f.id === m.id && f.isVerified && f.isGoalAchieved),
   }));
   const myFeedItem = feedItems.find((item) => item.isMe);
+  const bannerState = useMemo(
+    () =>
+      getActionGuideBannerState({
+        goalState,
+        goalSetMemberCount,
+        isMyVerified: myFeedItem?.isVerified === true,
+        now,
+      }),
+    [goalSetMemberCount, goalState, myFeedItem?.isVerified, now]
+  );
 
-  const scrollToFeedItem = useCallback((memberId: string) => {
+  useEffect(() => {
+    const interval = setInterval(() => setNow(new Date()), 60000);
+    return () => clearInterval(interval);
+  }, []);
+
+  const scrollToFeedItem = useCallback((memberId: string, animated = true) => {
     const cardY = feedCardYByMemberIdRef.current[memberId];
     if (cardY == null) return false;
 
     const y = Math.max(0, feedSheetYRef.current + feedCardListYRef.current + cardY - spacing[16]);
-    scrollRef.current?.scrollTo({ y, animated: true });
+    scrollRef.current?.scrollTo({ y, animated });
     return true;
   }, []);
 
@@ -634,7 +687,7 @@ function ActiveFeed({
         showsVerticalScrollIndicator={false}
       >
         <ActionGuideBanner
-          goalState={goalState}
+          bannerState={bannerState}
           verifyParams={{
             ...(myFeedItem?.goal ? { goal: myFeedItem.goal } : {}),
             ...(myFeedItem?.groupChallengeParticipantId
@@ -642,6 +695,10 @@ function ActiveFeed({
                   groupChallengeParticipantId: String(myFeedItem.groupChallengeParticipantId),
                 }
               : {}),
+          }}
+          summary={{
+            usedMinutes: myFeedItem?.usedMinutes,
+            goalMinutes: myFeedItem?.goalMinutes,
           }}
         />
         <View

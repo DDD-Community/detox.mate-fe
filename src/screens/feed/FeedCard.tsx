@@ -41,6 +41,8 @@ export type FeedItem = {
   retroText?: string;
   screenTime?: string;
   goal?: string;
+  usedMinutes?: number;
+  goalMinutes?: number;
 };
 
 const BODY_TEXT: Record<GoalState, string> = {
