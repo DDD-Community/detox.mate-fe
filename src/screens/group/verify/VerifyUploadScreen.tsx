@@ -1,5 +1,16 @@
 import { router, useLocalSearchParams } from 'expo-router';
-import { ActivityIndicator, Image, Pressable, StyleSheet, Text, View } from 'react-native';
+import { useState } from 'react';
+import {
+  ActivityIndicator,
+  Image,
+  Pressable,
+  StyleSheet,
+  Text,
+  View,
+  type ImageLoadEvent,
+  type ImageStyle,
+  type LayoutChangeEvent,
+} from 'react-native';
 
 import { Button, Icon } from '@/components';
 import { primitiveColors, typography } from '@/lib/token';
@@ -8,8 +19,44 @@ import { VerifyBottomSheet } from './VerifyBottomSheet';
 import type { VerifyMode, VerifyRoot } from './verifyFlowParams';
 
 const { gray } = primitiveColors;
+const PREVIEW_HEIGHT = 259;
+
+type Size = {
+  width: number;
+  height: number;
+};
+
+function getTopAlignedCoverStyle(
+  containerSize: Size,
+  imageSize: Size | null
+): ImageStyle | undefined {
+  if (!imageSize || containerSize.width <= 0 || containerSize.height <= 0) {
+    return undefined;
+  }
+
+  const imageAspectRatio = imageSize.width / imageSize.height;
+  const containerAspectRatio = containerSize.width / containerSize.height;
+
+  if (imageAspectRatio > containerAspectRatio) {
+    const width = containerSize.height * imageAspectRatio;
+
+    return {
+      width,
+      height: containerSize.height,
+      left: (containerSize.width - width) / 2,
+    };
+  }
+
+  return {
+    width: containerSize.width,
+    height: containerSize.width / imageAspectRatio,
+    left: 0,
+  };
+}
 
 export default function VerifyUploadScreen() {
+  const [previewWidth, setPreviewWidth] = useState(0);
+  const [imageSize, setImageSize] = useState<Size | null>(null);
   const {
     imageUri: paramImageUri,
     mode,
@@ -38,6 +85,20 @@ export default function VerifyUploadScreen() {
     groupChallengeParticipantId,
     verifyRoot,
   });
+  const previewImageStyle = getTopAlignedCoverStyle(
+    { width: previewWidth, height: PREVIEW_HEIGHT },
+    imageSize
+  );
+
+  const handlePreviewLayout = (event: LayoutChangeEvent) => {
+    setPreviewWidth(event.nativeEvent.layout.width);
+  };
+
+  const handlePreviewLoad = (event: ImageLoadEvent) => {
+    const { width, height } = event.nativeEvent.source;
+
+    setImageSize({ width, height });
+  };
 
   return (
     <VerifyBottomSheet onDismiss={() => router.back()} dismissDisabled={isAnalyzing}>
@@ -55,8 +116,13 @@ export default function VerifyUploadScreen() {
           </View>
 
           {hasImage ? (
-            <View style={styles.previewBox}>
-              <Image source={{ uri: imageUri }} style={styles.preview} resizeMode="cover" />
+            <View style={styles.previewBox} onLayout={handlePreviewLayout}>
+              <Image
+                source={{ uri: imageUri }}
+                style={[styles.preview, previewImageStyle ?? styles.previewFallback]}
+                resizeMode="cover"
+                onLoad={handlePreviewLoad}
+              />
             </View>
           ) : (
             <Pressable style={styles.dropzone} onPress={handlePickImage}>
@@ -116,7 +182,7 @@ const styles = StyleSheet.create({
     overflow: 'hidden',
   },
   previewBox: {
-    height: 259,
+    height: PREVIEW_HEIGHT,
     borderRadius: 13,
     borderWidth: 1,
     borderColor: gray[100],
@@ -146,8 +212,12 @@ const styles = StyleSheet.create({
     letterSpacing: -0.22,
   },
   preview: {
-    flex: 1,
+    position: 'absolute',
+    top: 0,
+  },
+  previewFallback: {
     width: '100%',
+    height: '100%',
   },
   button: {
     alignSelf: 'stretch',
