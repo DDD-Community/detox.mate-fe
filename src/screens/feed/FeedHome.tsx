@@ -575,6 +575,7 @@ function ActiveFeed({
           isPoked: pokedMemberIds.includes(item.id) ? '1' : '0',
           myReaction: (myReactions[item.id] ?? []).join(','),
           groupChallengeId: groupChallengeId ?? '',
+          fromFeedHome: '1',
         },
       });
     },
@@ -648,26 +649,49 @@ function ActiveFeed({
   }, [feedItems, openPostDetail, targetChallengeRecordId]);
 
   useEffect(() => {
-    if (!scrollChallengeRecordId || scrolledTargetRef.current === scrollChallengeRecordId) return;
+    if (!scrollChallengeRecordId) {
+      setIsRestoringScroll(false);
+      return;
+    }
+
+    if (scrolledTargetRef.current === scrollChallengeRecordId) {
+      setIsRestoringScroll(false);
+      return;
+    }
 
     const targetItem = feedItems.find(
       (item) => String(item.challengeRecordId) === scrollChallengeRecordId
     );
-    if (!targetItem) return;
+    if (!targetItem) {
+      if (feedItems.length > 0) {
+        setIsRestoringScroll(false);
+      }
+      return;
+    }
 
     let cancelled = false;
     let attempt = 0;
     let timeout: ReturnType<typeof setTimeout>;
+    let revealFrame: number | null = null;
+
+    setIsRestoringScroll(true);
 
     const tryScroll = () => {
       if (cancelled) return;
-      if (scrollToFeedItem(targetItem.id)) {
+      if (scrollToFeedItem(targetItem.id, false)) {
         scrolledTargetRef.current = scrollChallengeRecordId;
+        revealFrame = requestAnimationFrame(() => {
+          if (!cancelled) {
+            setIsRestoringScroll(false);
+          }
+        });
         return;
       }
       attempt += 1;
       if (attempt < 5) {
         timeout = setTimeout(tryScroll, 80);
+      } else {
+        setIsRestoringScroll(false);
       }
     };
 
@@ -676,6 +700,9 @@ function ActiveFeed({
     return () => {
       cancelled = true;
       clearTimeout(timeout);
+      if (revealFrame != null) {
+        cancelAnimationFrame(revealFrame);
+      }
     };
   }, [feedItems, scrollChallengeRecordId, scrollToFeedItem]);
 
@@ -683,7 +710,9 @@ function ActiveFeed({
     <View style={styles.feedWrapper}>
       <ScrollView
         ref={scrollRef}
+        style={isRestoringScroll ? styles.restoringScroll : undefined}
         contentContainerStyle={styles.activeContainer}
+        pointerEvents={isRestoringScroll ? 'none' : 'auto'}
         showsVerticalScrollIndicator={false}
       >
         <ActionGuideBanner
@@ -740,7 +769,7 @@ function ActiveFeed({
         </View>
       </ScrollView>
 
-      {reactionPickerItem ? (
+      {isRestoringScroll ? null : reactionPickerItem ? (
         <>
           <Pressable
             style={styles.reactionPickerOverlay}
@@ -801,6 +830,9 @@ const styles = StyleSheet.create({
   },
   feedWrapper: {
     flex: 1,
+  },
+  restoringScroll: {
+    opacity: 0,
   },
   container: {
     paddingHorizontal: spacing[16],

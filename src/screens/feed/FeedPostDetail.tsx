@@ -115,12 +115,14 @@ export default function FeedPostDetail() {
     isPoked: isPokedParam,
     myReaction,
     groupChallengeId,
+    fromFeedHome,
   } = useLocalSearchParams<{
     item: string;
     goalState: GoalState;
     isPoked: string;
     myReaction: string;
     groupChallengeId: string;
+    fromFeedHome?: string;
   }>();
 
   const insets = useSafeAreaInsets();
@@ -243,6 +245,11 @@ export default function FeedPostDetail() {
   const sortedComments = [...comments].sort((a, b) => a.createdAt - b.createdAt);
 
   const handleHeaderBack = () => {
+    if (fromFeedHome === '1' && router.canGoBack()) {
+      router.back();
+      return;
+    }
+
     router.replace({
       pathname: '/(feed)/home',
       params: {
