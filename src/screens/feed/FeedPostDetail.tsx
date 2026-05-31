@@ -126,6 +126,25 @@ export default function FeedPostDetail() {
   const insets = useSafeAreaInsets();
   const feedItem = JSON.parse(itemJson as string) as FeedItem;
   const state: GoalState = goalState ?? 'authReady';
+  const hasFailurePhoto =
+    feedItem.isVerified === true && !feedItem.isGoalAchieved && feedItem.photoSource != null;
+  const usesPostLayout = feedItem.isGoalAchieved || hasFailurePhoto;
+  const postText = feedItem.postText ?? feedItem.retroText;
+  const statusLabelColor = feedItem.isGoalAchieved
+    ? system.green.opacity100
+    : hasFailurePhoto
+      ? system.red.opacity100
+      : gray[400];
+  const screentimeAccentColor = feedItem.isGoalAchieved
+    ? system.green.opacity100
+    : hasFailurePhoto
+      ? system.red.opacity100
+      : gray[500];
+  const screentimeBackgroundColor = feedItem.isGoalAchieved
+    ? system.green.opacity10
+    : hasFailurePhoto
+      ? system.red.opacity10
+      : gray[50];
 
   const ownInList = (feedItem.reactions ?? [])
     .filter((r) => r.userId === 'me')
@@ -223,6 +242,18 @@ export default function FeedPostDetail() {
   const displayPokes: PokeEntry[] = fetchedPokes.length > 0 ? fetchedPokes : (feedItem.pokes ?? []);
   const sortedComments = [...comments].sort((a, b) => a.createdAt - b.createdAt);
 
+  const handleHeaderBack = () => {
+    router.replace({
+      pathname: '/(feed)/home',
+      params: {
+        ...(groupChallengeId ? { groupChallengeId } : {}),
+        ...(feedItem.challengeRecordId
+          ? { scrollChallengeRecordId: String(feedItem.challengeRecordId) }
+          : {}),
+      },
+    });
+  };
+
   const navigateToProfile = (userId: string) => {
     if (userId === 'me') return;
     const info = memberStore.get(Number(userId));
@@ -312,10 +343,10 @@ export default function FeedPostDetail() {
       behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
     >
       <View style={[styles.header, { paddingTop: insets.top + spacing[14] }]}>
-        <Pressable onPress={() => router.back()} style={styles.backButton}>
+        <Pressable onPress={handleHeaderBack} style={styles.headerBackButton}>
           <Icon name="caretLeft" size={20} color={gray[900]} />
+          <Text style={styles.headerTitle}>게시물</Text>
         </Pressable>
-        <Text style={styles.headerTitle}>게시물</Text>
       </View>
 
       <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
@@ -331,16 +362,7 @@ export default function FeedPostDetail() {
                       resizeMode="cover"
                     />
                     <View style={styles.statusLabelAnchor}>
-                      <View
-                        style={[
-                          styles.statusLabel,
-                          {
-                            backgroundColor: feedItem.isGoalAchieved
-                              ? system.green.opacity100
-                              : gray[400],
-                          },
-                        ]}
-                      >
+                      <View style={[styles.statusLabel, { backgroundColor: statusLabelColor }]}>
                         <Text style={styles.statusLabelText}>
                           {feedItem.isGoalAchieved ? '목표 성공' : '목표 실패'}
                         </Text>
@@ -353,7 +375,7 @@ export default function FeedPostDetail() {
                   )}
                 </View>
 
-                {feedItem.isGoalAchieved ? (
+                {usesPostLayout ? (
                   <>
                     {feedItem.photoSource != null && (
                       <Image
@@ -362,9 +384,7 @@ export default function FeedPostDetail() {
                         resizeMode="cover"
                       />
                     )}
-                    {feedItem.postText != null && (
-                      <Text style={styles.postText}>{feedItem.postText}</Text>
-                    )}
+                    {postText != null && <Text style={styles.postText}>{postText}</Text>}
                   </>
                 ) : (
                   <View style={styles.retroCard}>
@@ -375,29 +395,12 @@ export default function FeedPostDetail() {
 
                 {feedItem.screenTime != null && (
                   <View
-                    style={[
-                      styles.screentimeRow,
-                      {
-                        backgroundColor: feedItem.isGoalAchieved
-                          ? system.green.opacity10
-                          : gray[50],
-                      },
-                    ]}
+                    style={[styles.screentimeRow, { backgroundColor: screentimeBackgroundColor }]}
                   >
-                    <Text
-                      style={[
-                        styles.screentimeLabel,
-                        !feedItem.isGoalAchieved && { color: gray[500] },
-                      ]}
-                    >
+                    <Text style={[styles.screentimeLabel, { color: screentimeAccentColor }]}>
                       내 스크린타임
                     </Text>
-                    <Text
-                      style={[
-                        styles.screentimeValue,
-                        !feedItem.isGoalAchieved && { color: gray[500] },
-                      ]}
-                    >
+                    <Text style={[styles.screentimeValue, { color: screentimeAccentColor }]}>
                       {feedItem.screenTime}
                     </Text>
                   </View>
@@ -565,11 +568,10 @@ export default function FeedPostDetail() {
       {state === 'authReady' &&
         (showReactionPicker ? (
           <>
-            <Pressable
-              style={styles.pickerOverlay}
-              onPress={() => setShowReactionPicker(false)}
-            />
-            <View style={[styles.pickerBar, { paddingBottom: Math.max(insets.bottom, spacing[12]) }]}>
+            <Pressable style={styles.pickerOverlay} onPress={() => setShowReactionPicker(false)} />
+            <View
+              style={[styles.pickerBar, { paddingBottom: Math.max(insets.bottom, spacing[12]) }]}
+            >
               <ReactionPicker
                 selectedReactions={myReactionEmojis}
                 style={styles.bottomReactionPicker}
@@ -624,11 +626,11 @@ const styles = StyleSheet.create({
     gap: spacing[8],
     backgroundColor: brown[50],
   },
-  backButton: {
-    width: 24,
-    height: 24,
+  headerBackButton: {
+    minHeight: 24,
+    flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'center',
+    gap: spacing[8],
   },
   headerTitle: {
     ...typography.accent.title2,

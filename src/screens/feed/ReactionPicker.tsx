@@ -87,6 +87,7 @@ export default function ReactionPicker({
           <Pressable
             key={option.code}
             style={[styles.option, selected && styles.optionSelected]}
+            hitSlop={8}
             onPress={() => onSelect(option.code)}
           >
             <Image source={option.source} style={styles.icon} resizeMode="contain" />
@@ -113,8 +114,8 @@ const styles = StyleSheet.create({
     elevation: 4,
   },
   option: {
-    width: 32,
-    height: 32,
+    width: 26,
+    height: 26,
     borderRadius: radius.full,
     alignItems: 'center',
     justifyContent: 'center',

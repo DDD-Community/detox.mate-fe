@@ -10,6 +10,7 @@ import {
   Text,
   View,
 } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import apiClient from '../../api/client';
 import { CurrentUsageGoalTimeResponseUsageGoalType } from '../../api/generated/model';
 import { getUserUsageGoalTime } from '../../api/generated/user-usage-goal-time/user-usage-goal-time';
@@ -22,7 +23,11 @@ import ActionGuideBanner, { type GoalState } from './ActionGuideBanner';
 import FeedCard, { type FeedItem, type PokeEntry, type ReactionEntry } from './FeedCard';
 import FeedHeader from './FeedHeader';
 import MemberSection, { type MemberItem } from './MemberSection';
-import { isSameReaction, normalizeReactionCode, type ReactionCode } from './ReactionPicker';
+import ReactionPicker, {
+  isSameReaction,
+  normalizeReactionCode,
+  type ReactionCode,
+} from './ReactionPicker';
 
 const { brown, gray, green } = primitiveColors;
 const WHITE = '#FFFFFF';
@@ -134,6 +139,8 @@ const formatTimeAgo = (isoDate: string): string => {
 const mapMemberToFeedItem = (m: TodayChallengeMember): FeedItem => {
   const isVerified = m.activityRecord !== null;
   const isGoalAchieved = m.activityRecord?.allAchieved === true;
+  const activityImageUrl = m.activityRecord?.activityImageUrl;
+  const hasActivityImage = activityImageUrl != null && activityImageUrl.length > 0;
   const totalUsage = m.activityRecord?.details?.find((d) => d.usageGoalType === 'TOTAL_USAGE');
   const totalGoal = m.goals?.find((goal) => goal.usageGoalType === 'TOTAL_USAGE');
   return {
@@ -150,11 +157,11 @@ const mapMemberToFeedItem = (m: TodayChallengeMember): FeedItem => {
     pokes: [],
     isVerified,
     isGoalAchieved: isVerified ? isGoalAchieved : undefined,
-    photoSource:
-      isGoalAchieved && m.activityRecord?.activityImageUrl
-        ? { uri: m.activityRecord.activityImageUrl }
+    photoSource: hasActivityImage && activityImageUrl ? { uri: activityImageUrl } : undefined,
+    postText:
+      isGoalAchieved || hasActivityImage
+        ? (m.activityRecord?.reflectionText ?? undefined)
         : undefined,
-    postText: isGoalAchieved ? (m.activityRecord?.reflectionText ?? undefined) : undefined,
     retroText:
       isVerified && !isGoalAchieved ? (m.activityRecord?.reflectionText ?? undefined) : undefined,
     screenTime: formatMinutes(totalUsage?.usedMinutes),
@@ -198,9 +205,14 @@ const mapMemberToMemberItem = (m: TodayChallengeMember): MemberItem => ({
 });
 
 export default function FeedHome() {
-  const { groupChallengeId: routeGroupChallengeId, challengeRecordId } = useLocalSearchParams<{
+  const {
+    groupChallengeId: routeGroupChallengeId,
+    challengeRecordId,
+    scrollChallengeRecordId,
+  } = useLocalSearchParams<{
     groupChallengeId?: string;
     challengeRecordId?: string;
+    scrollChallengeRecordId?: string;
   }>();
   const [group, setGroup] = useState<GroupInfo | null>(null);
   const [groupChallengeId, setGroupChallengeId] = useState<string | null>(null);
@@ -431,6 +443,7 @@ export default function FeedHome() {
           goalState={goalState}
           groupChallengeId={groupChallengeId}
           targetChallengeRecordId={challengeRecordId}
+          scrollChallengeRecordId={scrollChallengeRecordId}
         />
       ) : (
         <InactiveFeed onInvite={handleInvite} />
@@ -460,6 +473,7 @@ function ActiveFeed({
   goalState,
   groupChallengeId,
   targetChallengeRecordId,
+  scrollChallengeRecordId,
 }: {
   onInvite: () => void;
   onPoke: (memberId: string, challengeRecordId?: number) => void;
@@ -471,12 +485,16 @@ function ActiveFeed({
   goalState: GoalState;
   groupChallengeId: string | null;
   targetChallengeRecordId?: string;
+  scrollChallengeRecordId?: string;
 }) {
+  const insets = useSafeAreaInsets();
   const scrollRef = useRef<ScrollView>(null);
   const openedTargetRef = useRef<string | null>(null);
+  const scrolledTargetRef = useRef<string | null>(null);
   const feedSheetYRef = useRef(0);
   const feedCardListYRef = useRef(0);
   const feedCardYByMemberIdRef = useRef<Record<string, number>>({});
+  const [reactionPickerItem, setReactionPickerItem] = useState<FeedItem | null>(null);
 
   const enrichedMembers = members.map((m) => ({
     ...m,
@@ -487,10 +505,11 @@ function ActiveFeed({
 
   const scrollToFeedItem = useCallback((memberId: string) => {
     const cardY = feedCardYByMemberIdRef.current[memberId];
-    if (cardY == null) return;
+    if (cardY == null) return false;
 
     const y = Math.max(0, feedSheetYRef.current + feedCardListYRef.current + cardY - spacing[16]);
     scrollRef.current?.scrollTo({ y, animated: true });
+    return true;
   }, []);
 
   const openPostDetail = useCallback(
@@ -549,6 +568,20 @@ function ActiveFeed({
     [feedItems, goalState, onPoke, pokedMemberIds, scrollToFeedItem]
   );
 
+  const handleReactionPress = useCallback((item: FeedItem) => {
+    setReactionPickerItem((current) => (current?.id === item.id ? null : item));
+  }, []);
+
+  const handleReactionSelect = useCallback(
+    (reactionCode: ReactionCode) => {
+      if (!reactionPickerItem) return;
+
+      onReact(reactionPickerItem.id, reactionCode);
+      setReactionPickerItem(null);
+    },
+    [onReact, reactionPickerItem]
+  );
+
   useEffect(() => {
     if (!targetChallengeRecordId || openedTargetRef.current === targetChallengeRecordId) return;
 
@@ -560,6 +593,38 @@ function ActiveFeed({
     openedTargetRef.current = targetChallengeRecordId;
     openPostDetail(targetItem);
   }, [feedItems, openPostDetail, targetChallengeRecordId]);
+
+  useEffect(() => {
+    if (!scrollChallengeRecordId || scrolledTargetRef.current === scrollChallengeRecordId) return;
+
+    const targetItem = feedItems.find(
+      (item) => String(item.challengeRecordId) === scrollChallengeRecordId
+    );
+    if (!targetItem) return;
+
+    let cancelled = false;
+    let attempt = 0;
+    let timeout: ReturnType<typeof setTimeout>;
+
+    const tryScroll = () => {
+      if (cancelled) return;
+      if (scrollToFeedItem(targetItem.id)) {
+        scrolledTargetRef.current = scrollChallengeRecordId;
+        return;
+      }
+      attempt += 1;
+      if (attempt < 5) {
+        timeout = setTimeout(tryScroll, 80);
+      }
+    };
+
+    timeout = setTimeout(tryScroll, 80);
+
+    return () => {
+      cancelled = true;
+      clearTimeout(timeout);
+    };
+  }, [feedItems, scrollChallengeRecordId, scrollToFeedItem]);
 
   return (
     <View style={styles.feedWrapper}>
@@ -607,11 +672,10 @@ function ActiveFeed({
                   item={item}
                   goalState={goalState}
                   onPoke={onPoke}
-                  onReact={onReact}
                   isPoked={pokedMemberIds.includes(item.id)}
-                  myReactions={myReactions[item.id]}
                   onBodyPress={() => openPostDetail(item)}
                   onProfilePress={() => openMemberProfile(item)}
+                  onReactionPress={handleReactionPress}
                 />
               </View>
             ))}
@@ -619,12 +683,31 @@ function ActiveFeed({
         </View>
       </ScrollView>
 
-      <Pressable
-        style={styles.fab}
-        onPress={() => scrollRef.current?.scrollTo({ y: 0, animated: true })}
-      >
-        <Icon name="arrowUp" size={20} color={WHITE} />
-      </Pressable>
+      {reactionPickerItem ? (
+        <>
+          <Pressable
+            style={styles.reactionPickerOverlay}
+            onPress={() => setReactionPickerItem(null)}
+          />
+          <View
+            pointerEvents="box-none"
+            style={[styles.feedReactionPickerAnchor, { bottom: Math.max(insets.bottom + 12, 20) }]}
+          >
+            <ReactionPicker
+              selectedReactions={myReactions[reactionPickerItem.id]}
+              style={styles.feedReactionPicker}
+              onSelect={handleReactionSelect}
+            />
+          </View>
+        </>
+      ) : (
+        <Pressable
+          style={styles.fab}
+          onPress={() => scrollRef.current?.scrollTo({ y: 0, animated: true })}
+        >
+          <Icon name="arrowUp" size={20} color={WHITE} />
+        </Pressable>
+      )}
     </View>
   );
 }
@@ -705,6 +788,18 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.15,
     shadowRadius: 4,
     elevation: 4,
+  },
+  reactionPickerOverlay: {
+    ...StyleSheet.absoluteFillObject,
+  },
+  feedReactionPickerAnchor: {
+    position: 'absolute',
+    left: 0,
+    right: 0,
+    alignItems: 'center',
+  },
+  feedReactionPicker: {
+    width: 311,
   },
   emptyCard: {
     borderRadius: radius[16],

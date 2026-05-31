@@ -1,9 +1,7 @@
-import { useState } from 'react';
 import { Alert, Image, Pressable, StyleSheet, Text, View } from 'react-native';
 import { Icon } from '../../components/Icon';
 import { primitiveColors, radius, spacing, typography } from '../../lib/token';
 import type { GoalState } from './ActionGuideBanner';
-import ReactionPicker from './ReactionPicker';
 
 const { gray, green, system } = primitiveColors;
 const WHITE = '#FFFFFF';
@@ -58,8 +56,7 @@ export default function FeedCard({
   onBodyPress,
   onProfilePress,
   isPoked = false,
-  myReactions,
-  onReact,
+  onReactionPress,
   historyMode = false,
 }: {
   item: FeedItem;
@@ -68,18 +65,32 @@ export default function FeedCard({
   onBodyPress?: () => void;
   onProfilePress?: () => void;
   isPoked?: boolean;
-  myReactions?: string[];
-  onReact?: (itemId: string, emoji: string) => void;
+  onReactionPress?: (item: FeedItem) => void;
   historyMode?: boolean;
 }) {
-  const [showPicker, setShowPicker] = useState(false);
-
   if (item.isVerified) {
-    const labelBg = item.isGoalAchieved ? green[300] : gray[400];
+    const hasFailurePhoto = !item.isGoalAchieved && item.photoSource != null;
+    const usesPostLayout = item.isGoalAchieved || hasFailurePhoto;
+    const postText = item.postText ?? item.retroText;
+    const labelBg = item.isGoalAchieved
+      ? green[300]
+      : hasFailurePhoto
+        ? system.red.opacity100
+        : gray[400];
     const labelText = item.isGoalAchieved ? '목표 성공' : '목표 실패';
+    const screentimeAccentColor = item.isGoalAchieved
+      ? system.green.opacity100
+      : hasFailurePhoto
+        ? system.red.opacity100
+        : gray[500];
+    const screentimeBackgroundColor = item.isGoalAchieved
+      ? system.green.opacity10
+      : hasFailurePhoto
+        ? system.red.opacity10
+        : gray[50];
 
     return (
-      <Pressable style={[styles.card, showPicker && styles.cardFront]} onPress={onBodyPress}>
+      <Pressable style={styles.card} onPress={onBodyPress}>
         {/* Header */}
         <View style={styles.header}>
           <Pressable style={styles.profileButton} onPress={onProfilePress}>
@@ -98,12 +109,12 @@ export default function FeedCard({
         </View>
 
         {/* Content */}
-        {item.isGoalAchieved ? (
+        {usesPostLayout ? (
           <>
             {item.photoSource != null && (
               <Image source={item.photoSource} style={styles.photo} resizeMode="cover" />
             )}
-            {item.postText != null && <Text style={styles.postText}>{item.postText}</Text>}
+            {postText != null && <Text style={styles.postText}>{postText}</Text>}
           </>
         ) : (
           <View style={styles.retroCard}>
@@ -114,28 +125,23 @@ export default function FeedCard({
 
         {/* Screentime */}
         {item.screenTime != null && (
-          <View
-            style={[
-              styles.screentimeRow,
-              { backgroundColor: item.isGoalAchieved ? system.green.opacity10 : gray[50] },
-            ]}
-          >
-            <Text style={[styles.screentimeLabel, !item.isGoalAchieved && { color: gray[500] }]}>
+          <View style={[styles.screentimeRow, { backgroundColor: screentimeBackgroundColor }]}>
+            <Text style={[styles.screentimeLabel, { color: screentimeAccentColor }]}>
               스크린 타임
             </Text>
-            <Text style={[styles.screentimeValue, !item.isGoalAchieved && { color: gray[500] }]}>
+            <Text style={[styles.screentimeValue, { color: screentimeAccentColor }]}>
               {item.screenTime}
             </Text>
           </View>
         )}
 
-        {/* Footer + reaction picker (absolute, below footer) */}
+        {/* Footer */}
         <View style={styles.footerWrapper}>
           <View style={styles.footer}>
             <Pressable
               style={[styles.footerButton, goalState === 'notSet' && styles.footerButtonDisabled]}
               disabled={goalState === 'notSet'}
-              onPress={() => setShowPicker((v) => !v)}
+              onPress={() => onReactionPress?.(item)}
             >
               <Icon name="smileySticker" size={24} color={gray[800]} />
               <Text style={styles.footerCount}>{item.reactionCount}</Text>
@@ -145,16 +151,6 @@ export default function FeedCard({
               <Text style={styles.footerCount}>{item.commentCount}</Text>
             </Pressable>
           </View>
-          {showPicker && (
-            <ReactionPicker
-              selectedReactions={myReactions}
-              style={styles.reactionPicker}
-              onSelect={(reactionCode) => {
-                onReact?.(item.id, reactionCode);
-                setShowPicker(false);
-              }}
-            />
-          )}
         </View>
       </Pressable>
     );
@@ -166,12 +162,7 @@ export default function FeedCard({
 
   return (
     <Pressable
-      style={[
-        styles.card,
-        styles.unverifiedCard,
-        showPokeButton && styles.unverifiedCardWithPoke,
-        showPicker && styles.cardFront,
-      ]}
+      style={[styles.card, styles.unverifiedCard, showPokeButton && styles.unverifiedCardWithPoke]}
       onPress={onBodyPress}
     >
       <View style={styles.header}>
@@ -194,10 +185,10 @@ export default function FeedCard({
             onPoke?.(item.id, item.challengeRecordId);
           }}
         >
-          <Image source={POCK_ICON} style={styles.pockIcon} resizeMode="contain" />
           <Text style={[styles.pokeButtonText, isPoked && styles.pokeButtonTextDisabled]}>
             콕 찌르기
           </Text>
+          <Image source={POCK_ICON} style={styles.pockIcon} resizeMode="contain" />
         </Pressable>
       )}
 
@@ -225,10 +216,6 @@ const styles = StyleSheet.create({
   },
   unverifiedCardWithPoke: {
     minHeight: 246,
-  },
-  cardFront: {
-    zIndex: 10,
-    elevation: 10,
   },
   header: {
     flexDirection: 'row',
@@ -324,13 +311,6 @@ const styles = StyleSheet.create({
     gap: spacing[16],
     minHeight: 36,
   },
-  reactionPicker: {
-    position: 'absolute',
-    top: 32,
-    left: 0,
-    zIndex: 100,
-    width: 312,
-  },
   footerButton: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -364,14 +344,14 @@ const styles = StyleSheet.create({
     gap: spacing[4],
   },
   pokeButtonDisabled: {
-    backgroundColor: gray[200],
+    opacity: 0.3,
   },
   pokeButtonText: {
     ...typography.primary.body2B,
     color: WHITE,
   },
   pokeButtonTextDisabled: {
-    color: gray[400],
+    color: WHITE,
   },
   pockIcon: {
     width: 22,
