@@ -23,6 +23,11 @@ type CalendarResponse = {
   };
 };
 
+type GroupChallengeResponse = {
+  startAt?: string | null;
+  endAt?: string | null;
+};
+
 type CalendarDay = {
   date: Date;
   day: number;
@@ -45,7 +50,7 @@ function formatDateParam(date: Date): string {
 
 function parseDateParam(dateStr?: string): Date | null {
   if (!dateStr) return null;
-  const [year, month, day] = dateStr.split('-').map(Number);
+  const [year, month, day] = dateStr.split('T')[0].split('-').map(Number);
   if (!year || !month || !day) return null;
 
   const date = new Date(year, month - 1, day);
@@ -75,6 +80,10 @@ function isAfterDate(a: Date, b: Date): boolean {
 
 function isBeforeDate(a: Date, b: Date): boolean {
   return a.getTime() < b.getTime();
+}
+
+function earlierDate(a: Date, b: Date): Date {
+  return isBeforeDate(a, b) ? a : b;
 }
 
 function clampDate(date: Date, minDate: Date, maxDate: Date): Date {
@@ -123,24 +132,30 @@ export default function CalendarScreen() {
   const [selectedDate, setSelectedDate] = useState(yesterday);
   const [visibleMonth, setVisibleMonth] = useState(startOfMonth(yesterday));
   const [firstActiveDate, setFirstActiveDate] = useState<Date | null>(null);
+  const [lastActiveDate, setLastActiveDate] = useState(yesterday);
 
   useEffect(() => {
     if (!groupChallengeId) return;
     const fetch = async () => {
       try {
-        const res = await apiClient.get<CalendarResponse>(
-          `/group-challenges/${groupChallengeId}/activity-calendar`
-        );
+        const [res, challengeRes] = await Promise.all([
+          apiClient.get<CalendarResponse>(
+            `/group-challenges/${groupChallengeId}/activity-calendar`
+          ),
+          apiClient
+            .get<GroupChallengeResponse>(`/group-challenges/${groupChallengeId}`)
+            .catch(() => null),
+        ]);
         setCalendarData(res.data);
-        const startDate = parseDateParam(res.data.summary?.startDate);
-        const endDate = parseDateParam(res.data.summary?.endDate);
-        const minDate = startDate ?? yesterday;
-        const maxDate = isAfterDate(endDate ?? yesterday, yesterday)
-          ? yesterday
-          : (endDate ?? yesterday);
-        const nextSelectedDate = clampDate(maxDate, minDate, yesterday);
+        const challengeStartDate = parseDateParam(challengeRes?.data.startAt ?? undefined);
+        const summaryStartDate = parseDateParam(res.data.summary?.startDate);
+        const challengeEndDate = parseDateParam(challengeRes?.data.endAt ?? undefined);
+        const minDate = challengeStartDate ?? summaryStartDate ?? yesterday;
+        const maxDate = challengeEndDate ? earlierDate(challengeEndDate, yesterday) : yesterday;
+        const nextSelectedDate = clampDate(maxDate, minDate, maxDate);
 
         setFirstActiveDate(minDate);
+        setLastActiveDate(maxDate);
         if (nextSelectedDate) {
           setSelectedDate(nextSelectedDate);
           setVisibleMonth(startOfMonth(nextSelectedDate));
@@ -155,7 +170,11 @@ export default function CalendarScreen() {
   }, [groupChallengeId]);
 
   const handleDatePress = (date: Date) => {
-    if (!firstActiveDate || isBeforeDate(date, firstActiveDate) || isAfterDate(date, yesterday)) {
+    if (
+      !firstActiveDate ||
+      isBeforeDate(date, firstActiveDate) ||
+      isAfterDate(date, lastActiveDate)
+    ) {
       return;
     }
 
@@ -165,6 +184,8 @@ export default function CalendarScreen() {
       params: {
         date: formatDateParam(date),
         groupChallengeId: groupChallengeId ?? '',
+        startDate: formatDateParam(firstActiveDate),
+        endDate: formatDateParam(lastActiveDate),
       },
     });
   };
@@ -175,7 +196,7 @@ export default function CalendarScreen() {
   const canGoPreviousMonth = firstActiveDate
     ? !isBeforeDate(previousMonth, startOfMonth(firstActiveDate))
     : true;
-  const canGoNextMonth = !isAfterDate(nextMonth, startOfMonth(yesterday));
+  const canGoNextMonth = !isAfterDate(nextMonth, startOfMonth(lastActiveDate));
 
   return (
     <View style={styles.root}>
@@ -270,7 +291,7 @@ export default function CalendarScreen() {
                       const disabled =
                         !firstActiveDate ||
                         isBeforeDate(day.date, firstActiveDate) ||
-                        isAfterDate(day.date, yesterday);
+                        isAfterDate(day.date, lastActiveDate);
                       const selected = !disabled && isSameDate(day.date, selectedDate);
 
                       return (
