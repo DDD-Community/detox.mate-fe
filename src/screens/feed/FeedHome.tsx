@@ -467,6 +467,27 @@ function ActiveFeed({
     [goalState, groupChallengeId, myReactions, pokedMemberIds]
   );
 
+  const openMemberProfile = useCallback((item: FeedItem) => {
+    if (item.isMe) {
+      router.push('/(group)/mypage');
+      return;
+    }
+
+    const info = memberStore.get(Number(item.id));
+    if (!info) return;
+
+    router.push({
+      pathname: '/(group)/mypage',
+      params: {
+        memberId: String(info.groupMemberId),
+        friendName: info.displayName,
+        friendUserId: item.id,
+        friendGroupId: String(info.groupId),
+        challengeRecordId: String(info.challengeRecordId),
+      },
+    });
+  }, []);
+
   useEffect(() => {
     if (!targetChallengeRecordId || openedTargetRef.current === targetChallengeRecordId) return;
 
@@ -510,6 +531,7 @@ function ActiveFeed({
                 isPoked={pokedMemberIds.includes(item.id)}
                 myReactions={myReactions[item.id]}
                 onBodyPress={() => openPostDetail(item)}
+                onProfilePress={() => openMemberProfile(item)}
               />
             ))}
           </View>

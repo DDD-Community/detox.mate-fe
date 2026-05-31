@@ -56,6 +56,7 @@ export default function FeedCard({
   goalState,
   onPoke,
   onBodyPress,
+  onProfilePress,
   isPoked = false,
   myReactions,
   onReact,
@@ -65,6 +66,7 @@ export default function FeedCard({
   goalState: GoalState;
   onPoke?: (memberId: string, challengeRecordId?: number) => void;
   onBodyPress?: () => void;
+  onProfilePress?: () => void;
   isPoked?: boolean;
   myReactions?: string[];
   onReact?: (itemId: string, emoji: string) => void;
@@ -80,15 +82,18 @@ export default function FeedCard({
       <Pressable style={[styles.card, showPicker && styles.cardFront]} onPress={onBodyPress}>
         {/* Header */}
         <View style={styles.header}>
-          <View style={styles.avatarWithLabel}>
-            <Image source={item.avatarSource} style={styles.avatar} resizeMode="cover" />
-            <View style={styles.statusLabelAnchor}>
-              <View style={[styles.statusLabel, { backgroundColor: labelBg }]}>
-                <Text style={styles.statusLabelText}>{labelText}</Text>
+          <Pressable style={styles.profileButton} onPress={onProfilePress}>
+            <View style={styles.avatarWithLabel}>
+              <Image source={item.avatarSource} style={styles.avatar} resizeMode="cover" />
+              <View style={styles.statusLabelAnchor}>
+                <View style={[styles.statusLabel, { backgroundColor: labelBg }]}>
+                  <Text style={styles.statusLabelText}>{labelText}</Text>
+                </View>
               </View>
             </View>
-          </View>
-          <Text style={[styles.memberName, { flex: 1 }]}>{item.name}</Text>
+            <Text style={styles.memberName}>{item.name}</Text>
+          </Pressable>
+          <View style={styles.headerSpacer} />
           <Text style={styles.timeAgo}>{item.verifiedTimeAgo}</Text>
         </View>
 
@@ -170,8 +175,10 @@ export default function FeedCard({
       onPress={onBodyPress}
     >
       <View style={styles.header}>
-        <Image source={item.avatarSource} style={styles.avatar} resizeMode="cover" />
-        <Text style={styles.memberName}>{item.isMe ? '나' : item.name}</Text>
+        <Pressable style={styles.profileButton} onPress={onProfilePress}>
+          <Image source={item.avatarSource} style={styles.avatar} resizeMode="cover" />
+          <Text style={styles.memberName}>{item.isMe ? '나' : item.name}</Text>
+        </Pressable>
       </View>
 
       <View style={styles.body}>
@@ -227,6 +234,14 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: spacing[8],
+  },
+  profileButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing[8],
+  },
+  headerSpacer: {
+    flex: 1,
   },
   avatarWithLabel: {
     alignItems: 'center',
