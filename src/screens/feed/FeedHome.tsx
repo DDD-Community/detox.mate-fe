@@ -790,8 +790,10 @@ function ActiveFeed({
         <Pressable
           style={styles.fab}
           onPress={() => scrollRef.current?.scrollTo({ y: 0, animated: true })}
+          accessibilityRole="button"
+          accessibilityLabel="맨 위로 이동"
         >
-          <Icon name="arrowUp" size={20} color={WHITE} />
+          <Icon name="arrowUp" size={16} color={gray[500]} />
         </Pressable>
       )}
     </View>
@@ -808,7 +810,7 @@ function EmptyFeedCard({ onInvite }: { onInvite: () => void }) {
           resizeMode="contain"
         />
         <Text style={styles.emptySubtitle}>
-          피드가 없어요{'\n'} 친구를 초대하여 함께 디톡스를 시작해보세요
+          피드가 없어요{'\n'}친구를 초대하여 함께 디톡스를 시작해보세요
         </Text>
       </View>
       <Button
@@ -865,18 +867,20 @@ const styles = StyleSheet.create({
   fab: {
     position: 'absolute',
     bottom: spacing[32],
-    right: spacing[24],
+    right: spacing[16],
     width: 44,
     height: 44,
     borderRadius: radius.full,
-    backgroundColor: green[300],
+    backgroundColor: WHITE,
+    borderWidth: 1,
+    borderColor: gray[100],
     alignItems: 'center',
     justifyContent: 'center',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.15,
-    shadowRadius: 4,
-    elevation: 4,
+    shadowColor: gray[900],
+    shadowOffset: { width: 0, height: 0 },
+    shadowOpacity: 0.1,
+    shadowRadius: 6,
+    elevation: 3,
   },
   reactionPickerOverlay: {
     ...StyleSheet.absoluteFillObject,
@@ -909,6 +913,7 @@ const styles = StyleSheet.create({
     ...typography.accent.body2,
     color: gray[400],
     textAlign: 'center',
+    letterSpacing: -0.32,
   },
   emptyInviteButton: {
     alignSelf: 'center',

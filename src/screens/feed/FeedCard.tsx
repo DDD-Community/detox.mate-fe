@@ -45,6 +45,15 @@ export type FeedItem = {
   goalMinutes?: number;
 };
 
+function ProfileAvatar({ source }: { source: FeedItem['avatarSource'] }) {
+  return (
+    <View style={styles.avatarFrame}>
+      <Image source={source} style={styles.avatar} resizeMode="cover" />
+      <View pointerEvents="none" style={styles.avatarBorder} />
+    </View>
+  );
+}
+
 const BODY_TEXT: Record<GoalState, string> = {
   notSet: '개인 목표를 설정해야 해요',
   setWaiting: '내일부터 인증 가능해요',
@@ -75,7 +84,7 @@ export default function FeedCard({
     const usesPostLayout = item.isGoalAchieved || hasFailurePhoto;
     const postText = item.postText ?? item.retroText;
     const labelBg = item.isGoalAchieved
-      ? green[300]
+      ? system.green.opacity100
       : hasFailurePhoto
         ? system.red.opacity100
         : gray[400];
@@ -95,19 +104,22 @@ export default function FeedCard({
       <Pressable style={styles.card} onPress={onBodyPress}>
         {/* Header */}
         <View style={styles.header}>
-          <Pressable style={styles.profileButton} onPress={onProfilePress}>
-            <View style={styles.avatarWithLabel}>
-              <Image source={item.avatarSource} style={styles.avatar} resizeMode="cover" />
-              <View style={styles.statusLabelAnchor}>
-                <View style={[styles.statusLabel, { backgroundColor: labelBg }]}>
-                  <Text style={styles.statusLabelText}>{labelText}</Text>
+          <View style={styles.verifiedHeaderContent}>
+            <Pressable style={styles.profileButton} onPress={onProfilePress}>
+              <View style={styles.avatarWithLabel}>
+                <ProfileAvatar source={item.avatarSource} />
+                <View style={styles.statusLabelAnchor}>
+                  <View style={[styles.statusLabel, { backgroundColor: labelBg }]}>
+                    <Text style={styles.statusLabelText}>{labelText}</Text>
+                  </View>
                 </View>
               </View>
-            </View>
-            <Text style={styles.memberName}>{item.name}</Text>
-          </Pressable>
-          <View style={styles.headerSpacer} />
-          <Text style={styles.timeAgo}>{item.verifiedTimeAgo}</Text>
+              <Text style={styles.memberName}>{item.name}</Text>
+            </Pressable>
+            {item.verifiedTimeAgo != null && (
+              <Text style={styles.timeAgo}>{item.verifiedTimeAgo}</Text>
+            )}
+          </View>
         </View>
 
         {/* Content */}
@@ -169,7 +181,7 @@ export default function FeedCard({
     >
       <View style={styles.header}>
         <Pressable style={styles.profileButton} onPress={onProfilePress}>
-          <Image source={item.avatarSource} style={styles.avatar} resizeMode="cover" />
+          <ProfileAvatar source={item.avatarSource} />
           <Text style={styles.memberName}>{item.isMe ? '나' : item.name}</Text>
         </Pressable>
       </View>
@@ -229,16 +241,32 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     gap: spacing[8],
   },
-  headerSpacer: {
-    flex: 1,
+  verifiedHeaderContent: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing[12],
   },
   avatarWithLabel: {
     alignItems: 'center',
+  },
+  avatarFrame: {
+    width: AVATAR_SIZE,
+    height: AVATAR_SIZE,
   },
   avatar: {
     width: AVATAR_SIZE,
     height: AVATAR_SIZE,
     borderRadius: radius.full,
+  },
+  avatarBorder: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    borderRadius: radius.full,
+    borderWidth: 1,
+    borderColor: gray[200],
   },
   statusLabelAnchor: {
     position: 'absolute',
@@ -261,8 +289,8 @@ const styles = StyleSheet.create({
     color: gray[900],
   },
   timeAgo: {
-    ...typography.primary.caption,
-    color: gray[400],
+    ...typography.accent.body3,
+    color: gray[300],
   },
   photo: {
     width: '100%',

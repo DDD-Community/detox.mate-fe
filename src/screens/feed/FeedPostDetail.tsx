@@ -14,7 +14,7 @@ import {
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import apiClient from '../../api/client';
-import { Icon } from '../../components/Icon';
+import { HeaderAction, Icon } from '../../components';
 import { memberStore } from '../../lib/memberStore';
 import { pokeStore } from '../../lib/pokeStore';
 import { primitiveColors, radius, spacing, typography } from '../../lib/token';
@@ -58,6 +58,36 @@ type CommentsResponse = {
   items: CommentAPIItem[];
   nextCursor: string | null;
 };
+
+type ProfileAvatarVariant = 'post' | 'engagement' | 'comment';
+
+function ProfileAvatar({
+  source,
+  variant = 'post',
+}: {
+  source: number | { uri: string };
+  variant?: ProfileAvatarVariant;
+}) {
+  const frameStyle =
+    variant === 'comment'
+      ? styles.commentAvatarFrame
+      : variant === 'engagement'
+        ? styles.pokeAvatarFrame
+        : styles.avatarFrame;
+  const imageStyle =
+    variant === 'comment'
+      ? styles.commentAvatar
+      : variant === 'engagement'
+        ? styles.pokeAvatar
+        : styles.avatar;
+
+  return (
+    <View style={frameStyle}>
+      <Image source={source} style={imageStyle} resizeMode="cover" />
+      <View pointerEvents="none" style={styles.profileAvatarBorder} />
+    </View>
+  );
+}
 
 type ReactionSummaryItem = {
   reactionBody: string;
@@ -350,10 +380,15 @@ export default function FeedPostDetail() {
       behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
     >
       <View style={[styles.header, { paddingTop: insets.top + spacing[14] }]}>
-        <Pressable onPress={handleHeaderBack} style={styles.headerBackButton}>
-          <Icon name="caretLeft" size={20} color={gray[900]} />
-          <Text style={styles.headerTitle}>게시물</Text>
-        </Pressable>
+        <HeaderAction
+          label="게시물"
+          onPress={handleHeaderBack}
+          iconSize={20}
+          iconColor={gray[900]}
+          style={styles.headerBackButton}
+          textStyle={styles.headerTitle}
+          accessibilityLabel="뒤로가기"
+        />
       </View>
 
       <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
@@ -363,11 +398,7 @@ export default function FeedPostDetail() {
               <>
                 <View style={styles.verifiedHeader}>
                   <View style={styles.avatarWithLabel}>
-                    <Image
-                      source={feedItem.avatarSource}
-                      style={styles.avatar}
-                      resizeMode="cover"
-                    />
+                    <ProfileAvatar source={feedItem.avatarSource} />
                     <View style={styles.statusLabelAnchor}>
                       <View style={[styles.statusLabel, { backgroundColor: statusLabelColor }]}>
                         <Text style={styles.statusLabelText}>
@@ -405,7 +436,7 @@ export default function FeedPostDetail() {
                     style={[styles.screentimeRow, { backgroundColor: screentimeBackgroundColor }]}
                   >
                     <Text style={[styles.screentimeLabel, { color: screentimeAccentColor }]}>
-                      내 스크린타임
+                      {feedItem.isMe ? '내 스크린 타임' : '스크린 타임'}
                     </Text>
                     <Text style={[styles.screentimeValue, { color: screentimeAccentColor }]}>
                       {feedItem.screenTime}
@@ -416,7 +447,7 @@ export default function FeedPostDetail() {
             ) : (
               <>
                 <View style={styles.memberRow}>
-                  <Image source={feedItem.avatarSource} style={styles.avatar} resizeMode="cover" />
+                  <ProfileAvatar source={feedItem.avatarSource} />
                   <Text style={styles.memberName}>{feedItem.name}</Text>
                 </View>
 
@@ -481,11 +512,7 @@ export default function FeedPostDetail() {
                         onPress={() => navigateToProfile(r.userId)}
                       >
                         <View style={styles.pokeAvatarWrapper}>
-                          <Image
-                            source={r.avatarSource}
-                            style={styles.pokeAvatar}
-                            resizeMode="cover"
-                          />
+                          <ProfileAvatar source={r.avatarSource} variant="engagement" />
                           <View style={styles.pokeEmoji}>
                             {reactionSource ? (
                               <Image
@@ -521,11 +548,7 @@ export default function FeedPostDetail() {
                       onPress={() => navigateToProfile(p.userId)}
                     >
                       <View style={styles.pokeAvatarWrapper}>
-                        <Image
-                          source={p.avatarSource}
-                          style={styles.pokeAvatar}
-                          resizeMode="cover"
-                        />
+                        <ProfileAvatar source={p.avatarSource} variant="engagement" />
                         <View style={styles.pokeEmoji}>
                           <Image
                             source={POCK_ICON}
@@ -553,11 +576,7 @@ export default function FeedPostDetail() {
                     index < sortedComments.length - 1 && styles.commentDivider,
                   ]}
                 >
-                  <Image
-                    source={comment.avatarSource}
-                    style={styles.commentAvatar}
-                    resizeMode="cover"
-                  />
+                  <ProfileAvatar source={comment.avatarSource} variant="comment" />
                   <View style={styles.commentContent}>
                     <View style={styles.commentMeta}>
                       <Text style={styles.commentAuthor}>{comment.authorName}</Text>
@@ -664,10 +683,24 @@ const styles = StyleSheet.create({
   avatarWithLabel: {
     alignItems: 'center',
   },
+  avatarFrame: {
+    width: 40,
+    height: 40,
+  },
   avatar: {
     width: 40,
     height: 40,
     borderRadius: radius.full,
+  },
+  profileAvatarBorder: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    borderRadius: radius.full,
+    borderWidth: 1,
+    borderColor: gray[200],
   },
   statusLabelAnchor: {
     position: 'absolute',
@@ -758,10 +791,10 @@ const styles = StyleSheet.create({
     color: WHITE,
   },
   pokeButtonDisabled: {
-    backgroundColor: gray[200],
+    opacity: 0.3,
   },
   pokeButtonTextDisabled: {
-    color: gray[400],
+    color: WHITE,
   },
   pockIcon: {
     width: 22,
@@ -803,6 +836,10 @@ const styles = StyleSheet.create({
     width: 48,
   },
   pokeAvatarWrapper: {
+    width: 48,
+    height: 48,
+  },
+  pokeAvatarFrame: {
     width: 48,
     height: 48,
   },
@@ -856,6 +893,11 @@ const styles = StyleSheet.create({
     width: 32,
     height: 32,
     borderRadius: radius.full,
+    flexShrink: 0,
+  },
+  commentAvatarFrame: {
+    width: 32,
+    height: 32,
     flexShrink: 0,
   },
   commentContent: {

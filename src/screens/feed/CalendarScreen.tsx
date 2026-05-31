@@ -2,7 +2,7 @@ import { router, useLocalSearchParams } from 'expo-router';
 import { useEffect, useState } from 'react';
 import { ActivityIndicator, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { Icon } from '../../components/Icon';
+import { HeaderAction, Icon } from '../../components';
 import apiClient from '../../api/client';
 import { primitiveColors, radius, spacing, typography } from '../../lib/token';
 
@@ -202,10 +202,12 @@ export default function CalendarScreen() {
     <View style={styles.root}>
       <SafeAreaView edges={['top']}>
         <View style={styles.header}>
-          <Pressable onPress={() => router.back()} hitSlop={8} style={styles.backBtn}>
-            <Icon name="caretLeft" size={24} color={gray[800]} />
-          </Pressable>
-          <Text style={styles.headerTitle}>캘린더</Text>
+          <HeaderAction
+            label="캘린더"
+            onPress={() => router.back()}
+            accessibilityLabel="뒤로가기"
+            textStyle={styles.headerTitle}
+          />
         </View>
       </SafeAreaView>
 
@@ -339,17 +341,9 @@ const styles = StyleSheet.create({
   },
   header: {
     height: 54,
-    flexDirection: 'row',
-    alignItems: 'center',
     paddingHorizontal: spacing[16],
-    gap: spacing[16],
-    backgroundColor: brown[50],
-  },
-  backBtn: {
-    width: 24,
-    height: 24,
-    alignItems: 'center',
     justifyContent: 'center',
+    backgroundColor: brown[50],
   },
   headerTitle: {
     ...typography.accent.title2,

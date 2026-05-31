@@ -70,20 +70,18 @@ function GoalBanner() {
 
 function WaitingForMembersBanner() {
   return (
-    <View style={styles.goalBanner}>
-      <View style={styles.topRow}>
-        <View style={styles.textContainer}>
-          <Text style={styles.goalTitle}>멤버를 기다려주세요</Text>
-          <Text style={styles.goalSubtitle}>
-            {'멤버 2명 이상 목표 설정을 해야만\n시작할 수 있어요'}
-          </Text>
-        </View>
-        <Image
-          source={require('../../../assets/feed_bar_chart.png')}
-          style={styles.bannerImage}
-          resizeMode="contain"
-        />
+    <View style={styles.waitingMembersBanner}>
+      <View style={styles.waitingMembersTextContainer}>
+        <Text style={styles.waitingMembersTitle}>멤버를 기다려주세요</Text>
+        <Text style={styles.waitingMembersSubtitle}>
+          {'멤버 2명 이상 목표 설정을 해야만\n시작할 수 있어요'}
+        </Text>
       </View>
+      <Image
+        source={require('../../../assets/feed_hourglass.png')}
+        style={styles.waitingMembersImage}
+        resizeMode="contain"
+      />
     </View>
   );
 }
@@ -181,7 +179,7 @@ function VerifiedBanner({ summary }: Pick<Props, 'summary'>) {
     <View style={styles.verifiedBanner}>
       <View style={styles.verifiedHeadingRow}>
         <View>
-          <Text style={styles.verifiedLabel}>스크린타임</Text>
+          <Text style={styles.verifiedLabel}>스크린 타임</Text>
           <Text style={styles.verifiedValue}>총 {formatMinutesForSummary(usedMinutes)}</Text>
         </View>
         {showCompare && (
@@ -234,6 +232,12 @@ const styles = StyleSheet.create({
     paddingBottom: spacing[20],
     gap: 18,
   },
+  waitingMembersBanner: {
+    backgroundColor: brown[100],
+    minHeight: 233,
+    paddingHorizontal: spacing[16],
+    paddingTop: 49,
+  },
   dailyAuthReadyBanner: {
     backgroundColor: brown[100],
     minHeight: 233,
@@ -260,6 +264,10 @@ const styles = StyleSheet.create({
     flex: 1,
     gap: spacing[4],
   },
+  waitingMembersTextContainer: {
+    width: 201,
+    gap: spacing[8],
+  },
   goalTitle: {
     ...typography.accent.title2,
     color: gray[900],
@@ -267,6 +275,18 @@ const styles = StyleSheet.create({
   goalSubtitle: {
     ...typography.primary.body3R,
     color: gray[600],
+  },
+  waitingMembersTitle: {
+    ...typography.accent.title2,
+    fontSize: 21,
+    lineHeight: 27.3,
+    letterSpacing: -0.42,
+    color: brown[600],
+  },
+  waitingMembersSubtitle: {
+    ...typography.primary.body3R,
+    letterSpacing: -0.24,
+    color: brown[600],
   },
   dailyAuthWarningTitle: {
     ...typography.accent.title2,
@@ -279,6 +299,13 @@ const styles = StyleSheet.create({
   bannerImage: {
     width: 64,
     height: 58,
+  },
+  waitingMembersImage: {
+    position: 'absolute',
+    top: 49,
+    right: 53,
+    width: 51,
+    height: 71,
   },
   buttonIcon: {
     width: 16,

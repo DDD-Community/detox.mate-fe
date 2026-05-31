@@ -3,6 +3,7 @@ export * from './Button';
 export * from './Checkbox';
 export * from './Chip';
 export * from './ClipboardCopyToast';
+export * from './HeaderAction';
 export * from './Icon';
 export * from './NetworkErrorToast';
 export * from './Toast';

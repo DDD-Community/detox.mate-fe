@@ -4,8 +4,8 @@ Scope: `assets/` 아래 정적 이미지 파일을 앱 코드와 Expo 설정 기
 
 ## Summary
 
-- 총 39개 이미지 파일을 확인했습니다.
-- 코드 또는 Expo 설정에서 확인된 사용 중 파일: 39개
+- 총 40개 이미지 파일을 확인했습니다.
+- 코드 또는 Expo 설정에서 확인된 사용 중 파일: 40개
 - 현재 참조가 확인되지 않은 삭제 후보: 0개
 - 앱 설정 파일(`icon`, `adaptive-icon`, `favicon`, `splash_logo`)은 화면 코드에서 직접 참조하지 않아도 빌드/앱 메타데이터에 필요합니다.
 
@@ -23,6 +23,7 @@ Scope: `assets/` 아래 정적 이미지 파일을 앱 코드와 Expo 설정 기
 | `assets/feed_bar_chart.png`          | Used   | `ActionGuideBanner`                         |
 | `assets/feed_daily_calender.png`     | Used   | `ActionGuideBanner`                         |
 | `assets/feed_emotion.png`            | Used   | feed detail, my page                        |
+| `assets/feed_hourglass.png`          | Used   | `ActionGuideBanner`                         |
 | `assets/feed_warning.png`            | Used   | `ActionGuideBanner`                         |
 | `assets/icon.png`                    | Used   | `app.config.ts` app icon                    |
 | `assets/icon_fl_Camera.png`          | Used   | `ActionGuideBanner`                         |

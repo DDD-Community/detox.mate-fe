@@ -1,11 +1,13 @@
 import { useRef, useState } from 'react';
 import { Image, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import Svg, { Circle, Defs, LinearGradient, Stop } from 'react-native-svg';
 import { Icon } from '../../components/Icon';
 import { primitiveColors, radius, spacing, typography } from '../../lib/token';
 
-const { gray, green, system } = primitiveColors;
+const { gray, green, level, system } = primitiveColors;
 const WHITE = '#FFFFFF';
 const AVATAR_SIZE = 48;
+const AVATAR_RING_WIDTH = 2;
 
 export type MemberItem = {
   id: string;
@@ -85,7 +87,7 @@ function MemberAvatar({ member, onPress }: { member: MemberItem; onPress?: () =>
     >
       <View style={styles.avatarWrapper}>
         <Image source={member.avatarSource} style={styles.avatar} resizeMode="cover" />
-        {isVerified && <View style={styles.avatarRing} />}
+        {isVerified ? <VerifiedAvatarRing /> : <View style={styles.avatarBorder} />}
         {isVerified && (
           <View style={styles.checkBadge}>
             <Icon name="check" size={10} color={WHITE} />
@@ -104,6 +106,43 @@ function MemberAvatar({ member, onPress }: { member: MemberItem; onPress?: () =>
         })()}
       </Text>
     </Pressable>
+  );
+}
+
+function VerifiedAvatarRing() {
+  const center = AVATAR_SIZE / 2;
+  const ringRadius = center - AVATAR_RING_WIDTH / 2;
+
+  return (
+    <Svg
+      width={AVATAR_SIZE}
+      height={AVATAR_SIZE}
+      viewBox={`0 0 ${AVATAR_SIZE} ${AVATAR_SIZE}`}
+      style={styles.avatarRing}
+    >
+      <Defs>
+        <LinearGradient
+          id="verifiedAvatarGradient"
+          x1="0"
+          y1="0"
+          x2={AVATAR_SIZE}
+          y2={AVATAR_SIZE}
+          gradientUnits="userSpaceOnUse"
+        >
+          <Stop offset="0" stopColor={level[100]} />
+          <Stop offset="0.52" stopColor={level[300]} />
+          <Stop offset="1" stopColor={level[500]} />
+        </LinearGradient>
+      </Defs>
+      <Circle
+        cx={center}
+        cy={center}
+        r={ringRadius}
+        fill="none"
+        stroke="url(#verifiedAvatarGradient)"
+        strokeWidth={AVATAR_RING_WIDTH}
+      />
+    </Svg>
   );
 }
 
@@ -171,9 +210,16 @@ const styles = StyleSheet.create({
     left: 0,
     right: 0,
     bottom: 0,
+  },
+  avatarBorder: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
     borderRadius: radius.full,
-    borderWidth: 2,
-    borderColor: green[300],
+    borderWidth: 1,
+    borderColor: gray[200],
   },
   checkBadge: {
     position: 'absolute',
@@ -194,14 +240,14 @@ const styles = StyleSheet.create({
     right: 0,
     backgroundColor: system.red.opacity100,
     borderRadius: radius.full,
-    minWidth: 18,
-    height: 18,
-    paddingHorizontal: spacing[4],
+    width: 12,
+    height: 12,
     alignItems: 'center',
     justifyContent: 'center',
   },
   badgeText: {
     ...typography.primary.caption2,
+    lineHeight: 12,
     color: WHITE,
   },
   avatarName: {
@@ -213,7 +259,7 @@ const styles = StyleSheet.create({
     width: AVATAR_SIZE,
     height: AVATAR_SIZE,
     borderRadius: radius.full,
-    borderWidth: 1.5,
+    borderWidth: 1,
     borderColor: gray[200],
     alignItems: 'center',
     justifyContent: 'center',
