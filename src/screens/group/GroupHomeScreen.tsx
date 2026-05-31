@@ -23,8 +23,18 @@ export default function GroupHomeScreen() {
 
           if (cancelled) return;
 
-          if ((groups?.length ?? 0) > 0) {
-            router.replace('/(feed)/home');
+          const firstGroup = groups[0];
+          if (firstGroup) {
+            router.replace({
+              pathname: '/(feed)/home',
+              params: {
+                ...(firstGroup.currentChallenge?.id != null
+                  ? { groupChallengeId: String(firstGroup.currentChallenge.id) }
+                  : {}),
+                ...(firstGroup.name ? { groupName: firstGroup.name } : {}),
+                ...(firstGroup.inviteCode ? { inviteCode: firstGroup.inviteCode } : {}),
+              },
+            });
             return;
           }
         } catch {

@@ -16,7 +16,6 @@ export default function GroupCreateScreen() {
   const [step, setStep] = useState<1 | 2>(1);
   const [groupName, setGroupName] = useState('');
   const [inviteCode, setInviteCode] = useState('');
-  const [memberCount, setMemberCount] = useState(1);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const { copyToastVisible, showCopyToast } = useClipboardCopyToast();
@@ -31,7 +30,6 @@ export default function GroupCreateScreen() {
       const res = await apiClient.post('/groups', { name: groupName.trim() });
       console.log(res);
       setInviteCode(res.data.inviteCode);
-      setMemberCount(res.data.members?.length ?? 1);
       setStep(2);
     } catch (e: any) {
       const status = e?.response?.status;
@@ -58,14 +56,10 @@ export default function GroupCreateScreen() {
   };
 
   const handleGoToFeed = () => {
-    if (memberCount >= 2) {
-      router.replace('/(feed)/home');
-    } else {
-      router.replace({
-        pathname: '/(feed)/home',
-        params: { groupName: groupName.trim(), inviteCode },
-      });
-    }
+    router.replace({
+      pathname: '/(feed)/home',
+      params: { groupName: groupName.trim(), inviteCode },
+    });
   };
 
   return (

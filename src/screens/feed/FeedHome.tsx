@@ -13,7 +13,13 @@ import {
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Svg, { Path } from 'react-native-svg';
 import apiClient from '../../api/client';
-import { CurrentUsageGoalTimeResponseUsageGoalType } from '../../api/generated/model';
+import { getFeed } from '../../api/generated/feed/feed';
+import { getGroupChallenge } from '../../api/generated/group-challenge/group-challenge';
+import {
+  CurrentUsageGoalTimeResponseUsageGoalType,
+  type MemberResponse,
+  type ReactionResponse,
+} from '../../api/generated/model';
 import { getUserUsageGoalTime } from '../../api/generated/user-usage-goal-time/user-usage-goal-time';
 import { Button } from '../../components/Button';
 import { Icon } from '../../components/Icon';
@@ -38,72 +44,19 @@ const WHITE = '#FFFFFF';
 const AVATAR_SRC = require('../../../assets/basic-profile-turtle-hi.png');
 const SCROLL_TOP_BUTTON_SIZE = 44;
 const SCROLL_TOP_ICON_SIZE = 16;
+const feedApi = getFeed();
+const groupChallengeApi = getGroupChallenge();
 
-type GroupInfo = {
-  id: string;
-  name: string;
-  inviteCode: string;
-  members: unknown[];
+type FeedGroup = {
+  id?: string;
+  name?: string;
+  inviteCode?: string;
 };
 
-type GroupChallenge = {
-  id: string;
-};
-
-type ActivityDetail = {
-  usageGoalType: string;
-  usedMinutes: number;
-  goalMinutes: number;
-  isAchieved: boolean;
-};
-
-type DailyGoal = {
-  usageGoalType?: string;
-  goalMinutes?: number;
-};
-
-type ActivityRecord = {
-  submittedAt: string;
-  activityImageUrl: string | null;
-  reflectionText: string | null;
-  allAchieved: boolean;
-  details: ActivityDetail[];
-};
-
-type TodayChallengeMember = {
+type StoreableMember = MemberResponse & {
+  userId: number;
   groupMemberId: number;
-  groupChallengeParticipantId: number;
-  userId: number;
-  displayName: string;
-  profileImageUrl: string;
-  isUserWithdrawn: boolean;
-  isMe: boolean;
-  memberStatus: string;
-  participantStatus: string;
-  dailyStatus: string;
-  includedInGroupResult: boolean;
-  goals: DailyGoal[];
   challengeRecordId: number;
-  activityRecord: ActivityRecord | null;
-  reactionCount: number;
-  commentCount: number;
-  pokeCount: number;
-  isPoked: boolean;
-};
-
-type TodayFeedResponse = {
-  groupId: number;
-  date: string;
-  dailySummary: unknown;
-  members: TodayChallengeMember[];
-};
-
-type PostReactionResponse = {
-  reactionId: number;
-  challengeRecordId: number;
-  userId: number;
-  reactionBody: ReactionCode;
-  createdAt: string;
 };
 
 const formatMinutes = (minutes: number | null | undefined): string | undefined => {
@@ -132,9 +85,30 @@ const isCreatedToday = (isoDate: string): boolean => {
   );
 };
 
-const hasTotalUsageGoal = (member: TodayChallengeMember): boolean =>
+const hasTotalUsageGoal = (member: MemberResponse): boolean =>
   member.goals?.some((goal) => goal.usageGoalType === 'TOTAL_USAGE' && goal.goalMinutes != null) ??
   false;
+
+const isUsableId = (id: number | undefined): id is number => id != null && Number.isFinite(id);
+
+const isStoreableMember = (member: MemberResponse): member is StoreableMember =>
+  isUsableId(member.userId) &&
+  isUsableId(member.groupMemberId) &&
+  isUsableId(member.challengeRecordId);
+
+const getRouteGroupChallengeId = (value: string | undefined): string | null => {
+  if (!value) return null;
+  const numericId = Number(value);
+  return Number.isFinite(numericId) && numericId > 0 ? String(numericId) : null;
+};
+
+const getRouteGroup = (groupName?: string, inviteCode?: string): FeedGroup | null => {
+  if (!groupName && !inviteCode) return null;
+  return {
+    ...(groupName ? { name: groupName } : {}),
+    ...(inviteCode ? { inviteCode } : {}),
+  };
+};
 
 const getMinutesUntilTomorrow = (now: Date): number => {
   const tomorrow = new Date(now);
@@ -171,23 +145,23 @@ const formatTimeAgo = (isoDate: string): string => {
   return `${Math.floor(hours / 24)}일 전`;
 };
 
-const mapMemberToFeedItem = (m: TodayChallengeMember): FeedItem => {
-  const isVerified = m.activityRecord !== null;
+const mapMemberToFeedItem = (m: MemberResponse): FeedItem => {
+  const isVerified = m.activityRecord != null;
   const isGoalAchieved = m.activityRecord?.allAchieved === true;
   const activityImageUrl = m.activityRecord?.activityImageUrl;
   const hasActivityImage = activityImageUrl != null && activityImageUrl.length > 0;
   const totalUsage = m.activityRecord?.details?.find((d) => d.usageGoalType === 'TOTAL_USAGE');
   const totalGoal = m.goals?.find((goal) => goal.usageGoalType === 'TOTAL_USAGE');
   return {
-    id: String(m.userId),
+    id: String(m.userId ?? ''),
     groupChallengeParticipantId: m.groupChallengeParticipantId,
     challengeRecordId: m.challengeRecordId,
-    name: m.displayName,
-    isMe: m.isMe,
+    name: m.displayName ?? '',
+    isMe: m.isMe === true,
     avatarSource: m.profileImageUrl ? { uri: m.profileImageUrl } : AVATAR_SRC,
-    commentCount: m.commentCount,
-    reactionCount: m.reactionCount,
-    pokeCount: m.pokeCount,
+    commentCount: m.commentCount ?? 0,
+    reactionCount: m.reactionCount ?? 0,
+    pokeCount: m.pokeCount ?? 0,
     reactions: [],
     pokes: [],
     isVerified,
@@ -210,7 +184,7 @@ const mapMemberToFeedItem = (m: TodayChallengeMember): FeedItem => {
   };
 };
 
-const compareChallengeMembers = (a: TodayChallengeMember, b: TodayChallengeMember): number => {
+const compareChallengeMembers = (a: MemberResponse, b: MemberResponse): number => {
   if (a.isMe !== b.isMe) return a.isMe ? -1 : 1;
 
   const aSubmittedAt = a.activityRecord?.submittedAt;
@@ -225,33 +199,37 @@ const compareChallengeMembers = (a: TodayChallengeMember, b: TodayChallengeMembe
     if (submittedDiff !== 0) return submittedDiff;
   }
 
-  const nameDiff = a.displayName.localeCompare(b.displayName, 'ko-KR');
+  const nameDiff = (a.displayName ?? '').localeCompare(b.displayName ?? '', 'ko-KR');
   if (nameDiff !== 0) return nameDiff;
 
-  return a.userId - b.userId;
+  return (a.userId ?? 0) - (b.userId ?? 0);
 };
 
-const mapMemberToMemberItem = (m: TodayChallengeMember): MemberItem => ({
-  id: String(m.userId),
-  name: m.displayName,
-  isMe: m.isMe,
+const mapMemberToMemberItem = (m: MemberResponse): MemberItem => ({
+  id: String(m.userId ?? ''),
+  name: m.displayName ?? '',
+  isMe: m.isMe === true,
   avatarSource: m.profileImageUrl ? { uri: m.profileImageUrl } : AVATAR_SRC,
-  badgeCount: m.pokeCount > 0 ? m.pokeCount : undefined,
-  isVerified: m.activityRecord !== null,
+  badgeCount: (m.pokeCount ?? 0) > 0 ? m.pokeCount : undefined,
+  isVerified: m.activityRecord != null,
   isGoalAchieved: m.activityRecord?.allAchieved === true,
 });
 
 export default function FeedHome() {
   const {
     groupChallengeId: routeGroupChallengeId,
+    groupName: routeGroupName,
+    inviteCode: routeInviteCode,
     challengeRecordId,
     scrollChallengeRecordId,
   } = useLocalSearchParams<{
     groupChallengeId?: string;
+    groupName?: string;
+    inviteCode?: string;
     challengeRecordId?: string;
     scrollChallengeRecordId?: string;
   }>();
-  const [group, setGroup] = useState<GroupInfo | null>(null);
+  const [group, setGroup] = useState<FeedGroup | null>(null);
   const [groupChallengeId, setGroupChallengeId] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [goalState, setGoalState] = useState<GoalState>('notSet');
@@ -282,27 +260,43 @@ export default function FeedHome() {
     }
   }, []);
 
-  const fetchFeedData = useCallback(async (gcId: string) => {
+  const fetchFeedData = useCallback(async (gcId: string, fallbackGroup?: FeedGroup | null) => {
     try {
-      const res = await apiClient.get<TodayFeedResponse>(
-        `/group-challenges/${gcId}/challenge-records/today`
-      );
-      const { members: apiMembers, groupId } = res.data;
+      const numericGroupChallengeId = Number(gcId);
+      if (!Number.isFinite(numericGroupChallengeId)) return;
+
+      const [overview, today] = await Promise.all([
+        feedApi.getGroupChallengeOverview(numericGroupChallengeId),
+        feedApi.getTodayChallengeRecords(numericGroupChallengeId),
+      ]);
+      const apiMembers = today.members ?? [];
       const sortedMembers = [...apiMembers].sort(compareChallengeMembers);
+      const groupId = overview.groupId ?? today.groupId;
+      const groupName = overview.groupName ?? fallbackGroup?.name;
+      const inviteCode = overview.inviteCode ?? fallbackGroup?.inviteCode;
+      setGroup({
+        ...(isUsableId(groupId) ? { id: String(groupId) } : {}),
+        ...(groupName ? { name: groupName } : {}),
+        ...(inviteCode ? { inviteCode } : {}),
+      });
       setFeedItems(sortedMembers.map(mapMemberToFeedItem));
       setMembers(sortedMembers.map(mapMemberToMemberItem));
       setGoalSetMemberCount(apiMembers.filter(hasTotalUsageGoal).length);
-      memberStore.setAll(
-        sortedMembers.map((m) => ({
-          userId: m.userId,
-          groupMemberId: m.groupMemberId,
-          challengeRecordId: m.challengeRecordId,
-          displayName: m.displayName,
-          profileImageUrl: m.profileImageUrl,
-        })),
-        groupId
-      );
-      const pokedIds = apiMembers.filter((m) => m.isPoked).map((m) => String(m.userId));
+      if (isUsableId(groupId)) {
+        memberStore.setAll(
+          sortedMembers.filter(isStoreableMember).map((m) => ({
+            userId: m.userId,
+            groupMemberId: m.groupMemberId,
+            challengeRecordId: m.challengeRecordId,
+            displayName: m.displayName ?? '',
+            profileImageUrl: m.profileImageUrl,
+          })),
+          groupId
+        );
+      }
+      const pokedIds = apiMembers
+        .filter((m) => m.isPoked === true && isUsableId(m.userId))
+        .map((m) => String(m.userId));
       setPokedMemberIds(pokedIds);
       pokedIds.forEach((id) => pokeStore.add(id));
     } catch {
@@ -314,26 +308,19 @@ export default function FeedHome() {
 
   const fetchGroupAndChallenge = useCallback(async () => {
     try {
-      const [groupRes, challengeRes] = await Promise.all([
-        apiClient.get<GroupInfo[]>('/me/groups'),
-        apiClient.get<GroupChallenge[]>('/me/group-challenges'),
-      ]);
-
-      const groups = groupRes.data;
-      if (groups.length > 0) {
-        const g = groups[0];
-        setGroup(g);
-      } else {
-        setGroup(null);
-      }
-
-      const challenges = challengeRes.data;
-      const routeGcId =
-        routeGroupChallengeId && routeGroupChallengeId.length > 0 ? routeGroupChallengeId : null;
-      const gcId = routeGcId ?? (challenges.length > 0 ? challenges[0].id : null);
+      const routeGcId = getRouteGroupChallengeId(routeGroupChallengeId);
+      const routeGroup = getRouteGroup(routeGroupName, routeInviteCode);
+      const challenges = routeGcId ? [] : await groupChallengeApi.getMyGroupChallenges();
+      const firstChallengeId = challenges[0]?.id;
+      const gcId = routeGcId ?? (firstChallengeId != null ? String(firstChallengeId) : null);
       setGroupChallengeId(gcId);
       if (gcId) {
-        await fetchFeedData(gcId);
+        await fetchFeedData(gcId, routeGroup);
+      } else {
+        setGroup(routeGroup);
+        setFeedItems([]);
+        setMembers([]);
+        setGoalSetMemberCount(0);
       }
     } finally {
       if (!initialLoadDone.current) {
@@ -341,7 +328,7 @@ export default function FeedHome() {
         initialLoadDone.current = true;
       }
     }
-  }, [fetchFeedData, routeGroupChallengeId]);
+  }, [fetchFeedData, routeGroupChallengeId, routeGroupName, routeInviteCode]);
 
   useFocusEffect(
     useCallback(() => {
@@ -352,7 +339,7 @@ export default function FeedHome() {
   );
 
   const handleInvite = async () => {
-    if (!group) return;
+    if (!group?.inviteCode) return;
     await Share.share({
       message: `우리 함께 디지털 디톡스해요! 💉\n디톡스 메이트 그룹 초대 코드: ${group.inviteCode}`,
     });
@@ -446,14 +433,16 @@ export default function FeedHome() {
           });
         }
       } else {
-        const res = await apiClient.post<PostReactionResponse>(
+        const res = await apiClient.post<ReactionResponse>(
           `/challenge-records/${targetItem.challengeRecordId}/reactions`,
           { reactionCode }
         );
-        setMyReactionIds((prev) => ({
-          ...prev,
-          [itemId]: { ...(prev[itemId] ?? {}), [reactionCode]: res.data.reactionId },
-        }));
+        if (res.data.reactionId != null) {
+          setMyReactionIds((prev) => ({
+            ...prev,
+            [itemId]: { ...(prev[itemId] ?? {}), [reactionCode]: res.data.reactionId! },
+          }));
+        }
       }
     } catch {
       // keep optimistic state on error
