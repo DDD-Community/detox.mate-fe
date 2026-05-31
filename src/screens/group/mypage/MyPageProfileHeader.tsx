@@ -7,6 +7,7 @@ import { primitiveColors, radius, spacing, typography } from '@/lib/token';
 import TURTLE_IMG from '@assets/turtle-hi.png';
 
 const { brown, gray, green } = primitiveColors;
+const PROFILE_CARD_BOTTOM_RADIUS = spacing[20];
 
 interface ProfileChipProps {
   label: string;
@@ -125,8 +126,8 @@ export function MyPageProfileHeader({
 const styles = StyleSheet.create({
   profileCard: {
     backgroundColor: brown[100],
-    borderBottomLeftRadius: spacing[20],
-    borderBottomRightRadius: spacing[20],
+    borderBottomLeftRadius: PROFILE_CARD_BOTTOM_RADIUS,
+    borderBottomRightRadius: PROFILE_CARD_BOTTOM_RADIUS,
     paddingBottom: spacing[16],
     overflow: 'hidden',
   },
@@ -134,10 +135,14 @@ const styles = StyleSheet.create({
     ...StyleSheet.absoluteFillObject,
     width: '100%',
     height: '100%',
+    borderBottomLeftRadius: PROFILE_CARD_BOTTOM_RADIUS,
+    borderBottomRightRadius: PROFILE_CARD_BOTTOM_RADIUS,
   },
   profileBackgroundDim: {
     ...StyleSheet.absoluteFillObject,
     backgroundColor: 'rgba(0, 0, 0, 0.32)',
+    borderBottomLeftRadius: PROFILE_CARD_BOTTOM_RADIUS,
+    borderBottomRightRadius: PROFILE_CARD_BOTTOM_RADIUS,
   },
   header: {
     height: 54,

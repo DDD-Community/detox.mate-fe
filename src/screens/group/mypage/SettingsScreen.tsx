@@ -1,5 +1,6 @@
 import * as Linking from 'expo-linking';
 import * as Notifications from 'expo-notifications';
+import Constants from 'expo-constants';
 import { router, useFocusEffect } from 'expo-router';
 import * as SecureStore from 'expo-secure-store';
 import { useCallback, useEffect, useRef, useState } from 'react';
@@ -20,6 +21,7 @@ import { NotificationPermissionAlert } from './NotificationPermissionAlert';
 import { WithdrawConfirmAlert } from './WithdrawConfirmAlert';
 
 const { brown, gray, green } = primitiveColors;
+const appVersion = Constants.nativeApplicationVersion ?? Constants.expoConfig?.version ?? '1.0.0';
 
 interface ToggleRowProps {
   label: string;
@@ -306,9 +308,12 @@ export default function SettingsScreen() {
           <LinkRow label="로그아웃" onPress={handleOpenLogoutAlert} />
         </View>
 
-        <Pressable onPress={handleOpenWithdrawAlert} hitSlop={8} style={styles.withdrawWrap}>
-          <Text style={styles.withdrawText}>회원 탈퇴</Text>
-        </Pressable>
+        <View style={styles.metaRow}>
+          <Pressable onPress={handleOpenWithdrawAlert} hitSlop={8}>
+            <Text style={styles.withdrawText}>회원 탈퇴</Text>
+          </Pressable>
+          <Text style={styles.versionText}>v{appVersion}</Text>
+        </View>
       </View>
 
       <LogoutConfirmAlert
@@ -355,7 +360,6 @@ const styles = StyleSheet.create({
     paddingHorizontal: spacing[16],
     paddingTop: spacing[20],
     gap: spacing[20],
-    alignItems: 'center',
   },
   card: {
     width: '100%',
@@ -385,13 +389,18 @@ const styles = StyleSheet.create({
     ...typography.primary.body1R,
     color: gray[800],
   },
-  withdrawWrap: {
-    marginTop: spacing[4],
-    alignSelf: 'center',
+  metaRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing[12],
   },
   withdrawText: {
     ...typography.primary.caption,
     color: gray[400],
     textDecorationLine: 'underline',
+  },
+  versionText: {
+    ...typography.primary.caption,
+    color: gray[400],
   },
 });

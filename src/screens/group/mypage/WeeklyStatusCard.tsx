@@ -1,6 +1,7 @@
 import { StyleSheet, Text, View } from 'react-native';
 
 import { Icon } from '@/components';
+import { formatMinutesAsHourMinute } from '@/lib/formatDuration';
 import { primitiveColors, radius, spacing, typography } from '@/lib/token';
 
 const { brown, gray, green, system } = primitiveColors;
@@ -18,7 +19,7 @@ export interface WeeklyStatusCardProps {
   achievableDays: number;
 }
 
-const formatDiff = (minutes: number) => `${Math.abs(minutes)}m`;
+const formatDiff = (minutes: number) => formatMinutesAsHourMinute(Math.abs(minutes));
 
 export function WeeklyStatusCard({
   weekLabel,
