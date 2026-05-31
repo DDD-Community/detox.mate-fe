@@ -12,13 +12,21 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import type {
+  MemberResponse,
   NotificationHistoryItemResponse,
   NotificationHistoryListResponse,
+  NotificationNavigationResponse,
 } from '../../api/generated/model';
+import { CurrentUsageGoalTimeResponseUsageGoalType } from '../../api/generated/model';
+import { getFeed } from '../../api/generated/feed/feed';
+import { getGroup } from '../../api/generated/group/group';
 import { getNotificationHistory } from '../../api/generated/notification-history/notification-history';
+import { getUserUsageGoalTime } from '../../api/generated/user-usage-goal-time/user-usage-goal-time';
 import { Icon, Toast, useToastVisibility } from '../../components';
 import { memberStore } from '../../lib/memberStore';
 import { primitiveColors, radius, spacing, typography } from '../../lib/token';
+import type { GoalState } from '../feed/ActionGuideBanner';
+import type { FeedItem } from '../feed/FeedCard';
 
 const { brown, gray } = primitiveColors;
 
@@ -27,8 +35,15 @@ const EMPTY_IMAGE = require('../../../assets/onboarding-none-feed.png');
 
 interface NotificationSection {
   title: string;
-  data: NotificationHistoryItemResponse[];
+  data: NotificationItem[];
 }
+
+type NotificationItem = NotificationHistoryItemResponse & {
+  senderUserId?: number | null;
+  senderProfileImageUrl?: string | null;
+};
+
+type NotificationKind = 'comment' | 'reaction' | 'verified' | 'poke' | 'newMember' | 'unknown';
 
 const formatRelativeTime = (iso?: string): string => {
   if (!iso) return '';
@@ -57,41 +72,213 @@ const extractSenderName = (message?: string): string | undefined => {
   return match?.[1] ?? match?.[2];
 };
 
-const getSenderAvatarSource = (item: NotificationHistoryItemResponse): number | { uri: string } => {
+const getSenderAvatarSource = (item: NotificationItem): number | { uri: string } => {
+  if (item.senderProfileImageUrl) return { uri: item.senderProfileImageUrl };
   const name = extractSenderName(item.message);
   const profileImageUrl = name ? memberStore.getByDisplayName(name)?.profileImageUrl : undefined;
   return profileImageUrl ? { uri: profileImageUrl } : DEFAULT_AVATAR;
 };
 
 const TOAST_DURATION_MS = 2500;
+const DEFAULT_NAVIGATION_ERROR_MESSAGE = '이동할 수 없는 알림이에요';
+
+const isFiniteNumber = (value: unknown): value is number =>
+  typeof value === 'number' && Number.isFinite(value);
+
+const getNotificationKind = (item: NotificationItem): NotificationKind => {
+  const text = `${item.title ?? ''} ${item.message ?? ''}`;
+  if (/새\s*멤버|합류|가입/.test(text)) return 'newMember';
+  if (/콕|찌르|재촉/.test(text)) return 'poke';
+  if (/댓글/.test(text)) return 'comment';
+  if (/반응/.test(text)) return 'reaction';
+  if (/인증\s*업로드|인증\s*완료|인증을\s*업로드|인증을\s*완료/.test(text)) {
+    return 'verified';
+  }
+  return 'unknown';
+};
+
+const isPreVerificationComment = (item: NotificationItem): boolean => {
+  const text = `${item.title ?? ''} ${item.message ?? ''} ${item.sourceType ?? ''}`;
+  return /인증\s*전|PRE[_-]?VERIFICATION|BEFORE[_-]?VERIFICATION/i.test(text);
+};
+
+const isCreatedToday = (isoDate: string): boolean => {
+  const created = new Date(isoDate);
+  const now = new Date();
+  return (
+    created.getFullYear() === now.getFullYear() &&
+    created.getMonth() === now.getMonth() &&
+    created.getDate() === now.getDate()
+  );
+};
+
+const formatMinutes = (minutes: number | null | undefined): string | undefined => {
+  if (minutes == null) return undefined;
+  const h = Math.floor(minutes / 60);
+  const m = minutes % 60;
+  if (h > 0 && m > 0) return `${h}h ${m}m`;
+  if (h > 0) return `${h}h`;
+  return `${m}m`;
+};
+
+const formatMinutesAsHHMM = (minutes: number | null | undefined): string | undefined => {
+  if (minutes == null) return undefined;
+  const h = Math.floor(minutes / 60);
+  const m = minutes % 60;
+  return `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}`;
+};
+
+const getGoalState = async (): Promise<GoalState> => {
+  try {
+    const response = await getUserUsageGoalTime().getCurrentGoalTimes();
+    const total = response.goals?.find(
+      (g) => g.usageGoalType === CurrentUsageGoalTimeResponseUsageGoalType.TOTAL_USAGE
+    );
+    if (!total) return 'notSet';
+    return total.createdAt && isCreatedToday(total.createdAt) ? 'setWaiting' : 'authReady';
+  } catch {
+    return 'authReady';
+  }
+};
+
+const pushFeed = (groupChallengeId?: number, challengeRecordId?: number) => {
+  router.push({
+    pathname: '/(feed)/home',
+    params: {
+      ...(isFiniteNumber(groupChallengeId) ? { groupChallengeId: String(groupChallengeId) } : {}),
+      ...(isFiniteNumber(challengeRecordId)
+        ? { challengeRecordId: String(challengeRecordId) }
+        : {}),
+    },
+  });
+};
+
+const mapMemberToFeedItem = (member: MemberResponse): FeedItem => {
+  const isVerified = member.activityRecord != null;
+  const isGoalAchieved = member.activityRecord?.allAchieved === true;
+  const totalUsage = member.activityRecord?.details?.find((d) => d.usageGoalType === 'TOTAL_USAGE');
+  const totalGoal = member.goals?.find((goal) => goal.usageGoalType === 'TOTAL_USAGE');
+
+  return {
+    id: String(member.userId ?? ''),
+    groupChallengeParticipantId: member.groupChallengeParticipantId,
+    challengeRecordId: member.challengeRecordId,
+    name: member.displayName ?? '',
+    isMe: member.isMe === true,
+    avatarSource: member.profileImageUrl ? { uri: member.profileImageUrl } : DEFAULT_AVATAR,
+    commentCount: member.commentCount ?? 0,
+    reactionCount: member.reactionCount ?? 0,
+    pokeCount: member.pokeCount ?? 0,
+    reactions: [],
+    pokes: [],
+    isVerified,
+    isGoalAchieved: isVerified ? isGoalAchieved : undefined,
+    photoSource:
+      isGoalAchieved && member.activityRecord?.activityImageUrl
+        ? { uri: member.activityRecord.activityImageUrl }
+        : undefined,
+    postText: isGoalAchieved ? (member.activityRecord?.reflectionText ?? undefined) : undefined,
+    retroText:
+      isVerified && !isGoalAchieved
+        ? (member.activityRecord?.reflectionText ?? undefined)
+        : undefined,
+    screenTime: formatMinutes(totalUsage?.usedMinutes),
+    goal: formatMinutesAsHHMM(totalGoal?.goalMinutes),
+    verifiedTimeAgo:
+      isVerified && member.activityRecord?.submittedAt
+        ? formatRelativeTime(member.activityRecord.submittedAt)
+        : undefined,
+  };
+};
+
+const cacheFeedMembers = (members: MemberResponse[] | undefined, groupId?: number) => {
+  if (!members || !isFiniteNumber(groupId)) return;
+  memberStore.setAll(
+    members
+      .filter((m) => isFiniteNumber(m.userId))
+      .map((m) => ({
+        userId: m.userId as number,
+        groupMemberId: m.groupMemberId ?? 0,
+        challengeRecordId: m.challengeRecordId ?? 0,
+        displayName: m.displayName ?? '',
+        profileImageUrl: m.profileImageUrl,
+      })),
+    groupId
+  );
+};
+
+const pushPostDetail = async (
+  groupChallengeId: number,
+  member: MemberResponse,
+  groupId?: number
+): Promise<boolean> => {
+  if (!member.challengeRecordId) return false;
+
+  const goalState = await getGoalState();
+  router.push({
+    pathname: '/(feed)/post-detail',
+    params: {
+      item: JSON.stringify(mapMemberToFeedItem(member)),
+      goalState,
+      isPoked: member.isPoked ? '1' : '0',
+      myReaction: '',
+      groupChallengeId: String(groupChallengeId),
+      ...(isFiniteNumber(groupId) ? { groupId: String(groupId) } : {}),
+    },
+  });
+  return true;
+};
+
+const routePostDetail = async (
+  groupChallengeId?: number,
+  predicate?: (member: MemberResponse) => boolean
+): Promise<boolean> => {
+  if (!isFiniteNumber(groupChallengeId) || !predicate) return false;
+
+  const feed = await getFeed().getTodayChallengeRecords(groupChallengeId);
+  cacheFeedMembers(feed.members, feed.groupId);
+  const member = feed.members?.find(predicate);
+  if (!member) return false;
+
+  return pushPostDetail(groupChallengeId, member, feed.groupId);
+};
+
+const getGroupChallengeId = (
+  item: NotificationItem,
+  nav?: NotificationNavigationResponse
+): number | undefined => {
+  if (nav?.targetType === 'FEED' && isFiniteNumber(nav.targetId)) return nav.targetId;
+  if (nav?.fallbackTargetType === 'FEED' && isFiniteNumber(nav.fallbackTargetId)) {
+    return nav.fallbackTargetId;
+  }
+  if (item.targetType === 'FEED' && isFiniteNumber(item.targetId)) return item.targetId;
+  return undefined;
+};
+
+const getGroupId = (
+  item: NotificationItem,
+  nav?: NotificationNavigationResponse
+): number | undefined => {
+  if (nav?.targetType === 'GROUP' && isFiniteNumber(nav.targetId)) return nav.targetId;
+  if (nav?.fallbackTargetType === 'GROUP' && isFiniteNumber(nav.fallbackTargetId)) {
+    return nav.fallbackTargetId;
+  }
+  if (item.targetType === 'GROUP' && isFiniteNumber(item.targetId)) return item.targetId;
+  return undefined;
+};
 
 const routeByTarget = (type?: string, id?: number, fallbackType?: string, fallbackId?: number) => {
-  // 백엔드 enum 기준 라우팅.
   switch (type) {
     case 'FEED':
-      // targetId: groupChallengeId
-      router.push({
-        pathname: '/(feed)/home',
-        params: id != null ? { groupChallengeId: String(id) } : undefined,
-      });
+      pushFeed(id);
       return;
     case 'FEED_DETAIL':
-      // targetId: challengeRecordId. FeedHome opens the matching post detail after loading.
-      router.push({
-        pathname: '/(feed)/home',
-        params: {
-          ...(id != null ? { challengeRecordId: String(id) } : {}),
-          ...(fallbackType === 'FEED' && fallbackId != null
-            ? { groupChallengeId: String(fallbackId) }
-            : {}),
-        },
-      });
+      pushFeed(fallbackType === 'FEED' ? fallbackId : undefined, id);
       return;
     case 'GROUP':
-      // targetId: groupId
       router.push({
         pathname: '/(group)/group-info',
-        params: id != null ? { groupId: String(id) } : undefined,
+        params: isFiniteNumber(id) ? { groupId: String(id) } : undefined,
       });
       return;
     case 'NONE':
@@ -99,6 +286,79 @@ const routeByTarget = (type?: string, id?: number, fallbackType?: string, fallba
       // 이동 없음
       return;
   }
+};
+
+const routeSenderPost = async (
+  item: NotificationItem,
+  groupChallengeId?: number
+): Promise<boolean> => {
+  return routePostDetail(groupChallengeId, (member) => member.userId === item.senderUserId);
+};
+
+const routeMyPost = async (groupChallengeId?: number): Promise<boolean> => {
+  return routePostDetail(groupChallengeId, (member) => member.isMe === true);
+};
+
+const routeSenderProfileFromFeed = async (
+  item: NotificationItem,
+  groupChallengeId?: number
+): Promise<boolean> => {
+  if (!isFiniteNumber(item.senderUserId) || !isFiniteNumber(groupChallengeId)) return false;
+
+  const feed = await getFeed().getTodayChallengeRecords(groupChallengeId);
+  const sender = feed.members?.find((m) => m.userId === item.senderUserId);
+  if (!sender?.groupMemberId || !feed.groupId) return false;
+
+  router.push({
+    pathname: '/(group)/mypage',
+    params: {
+      memberId: String(sender.groupMemberId),
+      friendName: sender.displayName ?? '',
+      friendUserId: String(item.senderUserId),
+      friendGroupId: String(feed.groupId),
+      challengeRecordId: sender.challengeRecordId ? String(sender.challengeRecordId) : '',
+    },
+  });
+  return true;
+};
+
+const routeSenderProfileFromGroup = async (
+  item: NotificationItem,
+  groupId?: number
+): Promise<boolean> => {
+  if (!isFiniteNumber(item.senderUserId) || !isFiniteNumber(groupId)) return false;
+
+  const group = await getGroup().getGroup(groupId);
+  const sender = group.members?.find((m) => m.userId === item.senderUserId);
+  if (!sender?.id) return false;
+
+  let challengeRecordId = '';
+  const groupChallengeId = group.currentChallenge?.id;
+  if (isFiniteNumber(groupChallengeId)) {
+    const feed = await getFeed().getTodayChallengeRecords(groupChallengeId);
+    const senderFeedItem = feed.members?.find((m) => m.userId === item.senderUserId);
+    if (senderFeedItem?.challengeRecordId) {
+      challengeRecordId = String(senderFeedItem.challengeRecordId);
+    }
+  }
+
+  router.push({
+    pathname: '/(group)/mypage',
+    params: {
+      memberId: String(sender.id),
+      friendName: sender.displayName ?? '',
+      friendUserId: String(item.senderUserId),
+      friendGroupId: String(groupId),
+      challengeRecordId,
+    },
+  });
+  return true;
+};
+
+const isMyCurrentFeedVerified = async (groupChallengeId?: number): Promise<boolean> => {
+  if (!isFiniteNumber(groupChallengeId)) return false;
+  const feed = await getFeed().getTodayChallengeRecords(groupChallengeId);
+  return feed.members?.some((m) => m.isMe && m.activityRecord != null) ?? false;
 };
 
 export default function NotificationListScreen() {
@@ -139,12 +399,62 @@ export default function NotificationListScreen() {
 
   const handlePressItem = async (item: NotificationHistoryItemResponse) => {
     if (!item.id) return;
-    const nav = await getNotificationHistory().getNotificationHistory(item.id);
-    if (!nav.navigable) {
-      showWithMessage(nav.reason ?? '이동할 수 없는 알림이에요');
-      return;
+    const notification = item as NotificationItem;
+
+    try {
+      const nav = await getNotificationHistory().getNotificationHistory(item.id);
+      if (!nav.navigable) {
+        showWithMessage(nav.reason ?? DEFAULT_NAVIGATION_ERROR_MESSAGE);
+        return;
+      }
+
+      const kind = getNotificationKind(notification);
+      const groupChallengeId = getGroupChallengeId(notification, nav);
+      const groupId = getGroupId(notification, nav);
+
+      if (nav.targetType === 'FEED_DETAIL' && isFiniteNumber(nav.targetId)) {
+        const routed = await routePostDetail(
+          groupChallengeId,
+          (member) => member.challengeRecordId === nav.targetId
+        );
+        if (routed) return;
+      }
+
+      if (kind === 'newMember') {
+        const routed =
+          (await routeSenderProfileFromGroup(notification, groupId)) ||
+          (await routeSenderProfileFromFeed(notification, groupChallengeId));
+        if (!routed)
+          routeByTarget(nav.targetType, nav.targetId, nav.fallbackTargetType, nav.fallbackTargetId);
+        return;
+      }
+
+      if (kind === 'poke') {
+        return;
+      }
+
+      if (kind === 'verified' && nav.targetType === 'FEED') {
+        const routed = await routeSenderPost(notification, groupChallengeId);
+        if (routed) return;
+      }
+
+      if (kind === 'comment' && isPreVerificationComment(notification)) {
+        const alreadyVerified = await isMyCurrentFeedVerified(groupChallengeId);
+        if (alreadyVerified) {
+          showWithMessage('이미 인증을 완료했어요');
+          return;
+        }
+      }
+
+      if ((kind === 'comment' || kind === 'reaction') && nav.targetType === 'FEED') {
+        const routed = await routeMyPost(groupChallengeId);
+        if (routed) return;
+      }
+
+      routeByTarget(nav.targetType, nav.targetId, nav.fallbackTargetType, nav.fallbackTargetId);
+    } catch {
+      showWithMessage(DEFAULT_NAVIGATION_ERROR_MESSAGE);
     }
-    routeByTarget(nav.targetType, nav.targetId, nav.fallbackTargetType, nav.fallbackTargetId);
   };
 
   return (
