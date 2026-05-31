@@ -2,11 +2,20 @@ import * as Clipboard from 'expo-clipboard';
 import { router, useLocalSearchParams } from 'expo-router';
 import * as SecureStore from 'expo-secure-store';
 import { useEffect, useState } from 'react';
-import { ActivityIndicator, Image, Pressable, Share, StyleSheet, Text, View } from 'react-native';
+import {
+  ActivityIndicator,
+  Image,
+  Pressable,
+  ScrollView,
+  Share,
+  StyleSheet,
+  Text,
+  View,
+} from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { getFeed, getGroup, type GroupMemberResponse } from '@/api';
-import { Icon } from '@/components';
+import { ClipboardCopyToast, HeaderAction, Icon, useClipboardCopyToast } from '@/components';
 import { primitiveColors, radius, spacing, typography } from '@/lib/token';
 import { LeaveGroupAlert } from './LeaveGroupAlert';
 
@@ -30,6 +39,7 @@ export default function GroupInfoScreen() {
 
   const [isLeaveAlertOpen, setIsLeaveAlertOpen] = useState(false);
   const [isLeaving, setIsLeaving] = useState(false);
+  const { copyToastVisible, showCopyToast } = useClipboardCopyToast();
 
   const getCurrentUserId = async () => {
     const userIdStr = await SecureStore.getItemAsync('currentUserId');
@@ -86,7 +96,7 @@ export default function GroupInfoScreen() {
   const handleCopyInviteCode = async () => {
     if (!inviteCode) return;
     await Clipboard.setStringAsync(inviteCode);
-    // TODO: 토스트 "초대 코드가 복사되었어요"
+    showCopyToast();
   };
 
   const handleShareInviteCode = async () => {
@@ -122,12 +132,7 @@ export default function GroupInfoScreen() {
     <View style={styles.root}>
       <SafeAreaView edges={['top']}>
         <View style={styles.header}>
-          <Pressable onPress={handleBack} hitSlop={8}>
-            <Icon name="caretLeft" size={24} color={gray[800]} />
-          </Pressable>
-          <Text style={styles.headerTitle} numberOfLines={1}>
-            {groupName}
-          </Text>
+          <HeaderAction label={groupName} onPress={handleBack} accessibilityLabel="뒤로가기" />
         </View>
       </SafeAreaView>
 
@@ -136,7 +141,11 @@ export default function GroupInfoScreen() {
           <ActivityIndicator color={gray[400]} />
         </View>
       ) : (
-        <View style={styles.body}>
+        <ScrollView
+          style={styles.bodyScroll}
+          contentContainerStyle={styles.body}
+          showsVerticalScrollIndicator={false}
+        >
           <Text style={styles.memberCount}>멤버 {members.length}명</Text>
 
           <View style={styles.inviteCard}>
@@ -159,11 +168,14 @@ export default function GroupInfoScreen() {
               const displayName = m.displayName ?? '';
               const content = (
                 <>
-                  <Image
-                    source={m.profileImageUrl ? { uri: m.profileImageUrl } : DEFAULT_AVATAR}
-                    style={styles.memberAvatar}
-                    resizeMode="cover"
-                  />
+                  <View style={styles.memberAvatarFrame}>
+                    <Image
+                      source={m.profileImageUrl ? { uri: m.profileImageUrl } : DEFAULT_AVATAR}
+                      style={styles.memberAvatar}
+                      resizeMode="cover"
+                    />
+                    <View pointerEvents="none" style={styles.memberAvatarBorder} />
+                  </View>
                   <Text style={styles.memberName} numberOfLines={1}>
                     {isMe ? '나' : displayName}
                   </Text>
@@ -207,7 +219,7 @@ export default function GroupInfoScreen() {
           <Pressable onPress={handleOpenLeaveAlert} style={styles.leaveCard}>
             <Text style={styles.leaveText}>그룹 나가기</Text>
           </Pressable>
-        </View>
+        </ScrollView>
       )}
 
       <LeaveGroupAlert
@@ -216,6 +228,8 @@ export default function GroupInfoScreen() {
         onConfirm={handleConfirmLeave}
         loading={isLeaving}
       />
+
+      <ClipboardCopyToast visible={copyToastVisible} position="bottom" />
     </View>
   );
 }
@@ -228,24 +242,21 @@ const styles = StyleSheet.create({
   header: {
     height: 54,
     paddingHorizontal: spacing[16],
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: spacing[16],
-  },
-  headerTitle: {
-    ...typography.accent.title2,
-    color: gray[800],
-    flex: 1,
+    justifyContent: 'center',
   },
   loadingWrap: {
     flex: 1,
     alignItems: 'center',
     justifyContent: 'center',
   },
-  body: {
+  bodyScroll: {
     flex: 1,
+  },
+  body: {
+    flexGrow: 1,
     paddingHorizontal: spacing[16],
     paddingTop: spacing[20],
+    paddingBottom: spacing[32],
     gap: spacing[8],
   },
   memberCount: {
@@ -301,11 +312,25 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     gap: spacing[12],
   },
+  memberAvatarFrame: {
+    width: 40,
+    height: 40,
+  },
   memberAvatar: {
     width: 40,
     height: 40,
     borderRadius: radius.full,
     backgroundColor: gray[100],
+  },
+  memberAvatarBorder: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    borderRadius: radius.full,
+    borderWidth: 1,
+    borderColor: gray[200],
   },
   memberName: {
     ...typography.primary.body1B,

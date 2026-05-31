@@ -12,30 +12,37 @@ import {
   View,
 } from 'react-native';
 
-import { Icon } from '@/components';
+import { HeaderAction, Icon } from '@/components';
 import { primitiveColors, typography } from '@/lib/token';
 import { useRetroForm } from './useRetroForm';
+import type { VerifyRoot } from './verifyFlowParams';
 
 const { gray, brown, green, system } = primitiveColors;
 
 export default function RetroScreen() {
-  const { value, groupChallengeParticipantId } = useLocalSearchParams<{
+  const { value, groupChallengeParticipantId, verifyRoot } = useLocalSearchParams<{
     value?: string;
     groupChallengeParticipantId?: string;
+    verifyRoot?: VerifyRoot;
   }>();
   const { canSubmit, handlePickImage, handleSubmit, imageAsset, setText, submitting, text } =
     useRetroForm({
       value,
       groupChallengeParticipantId,
+      verifyRoot,
     });
 
   return (
     <SafeAreaView style={styles.root}>
       <View style={styles.header}>
-        <Pressable style={styles.headerBack} onPress={() => router.back()}>
-          <Icon name="caretLeft" size={24} color={gray[900]} />
-          <Text style={styles.headerTitle}>오늘의 회고</Text>
-        </Pressable>
+        <HeaderAction
+          label="오늘의 회고"
+          onPress={() => router.back()}
+          iconColor={gray[900]}
+          style={styles.headerBack}
+          textStyle={styles.headerTitle}
+          accessibilityLabel="뒤로가기"
+        />
       </View>
 
       <KeyboardAvoidingView

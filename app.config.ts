@@ -1,8 +1,19 @@
 import type { ExpoConfig } from 'expo/config';
+import { execSync } from 'node:child_process';
 
 const appEnv = process.env.APP_ENV === 'production' ? 'production' : 'development';
 const isProduction = appEnv === 'production';
-const appVersion = isProduction ? (process.env.APP_VERSION ?? '1.0.0') : '1.0.0';
+const appVersion = process.env.APP_VERSION ?? '1.0.0';
+const buildChannel = process.env.APP_BUILD_CHANNEL ?? 'local';
+const gitSha =
+  process.env.APP_GIT_SHA ??
+  (() => {
+    try {
+      return execSync('git rev-parse --short HEAD', { encoding: 'utf8' }).trim();
+    } catch {
+      return null;
+    }
+  })();
 const iosGoogleServicesFile =
   process.env.GOOGLE_SERVICES_PLIST ?? `./firebase/GoogleService-Info.${appEnv}.plist`;
 const androidGoogleServicesFile =
@@ -80,6 +91,9 @@ const config: ExpoConfig = {
   ],
   extra: {
     appEnv,
+    appVersion,
+    buildChannel,
+    gitSha,
     apiBaseUrl: isProduction ? 'https://api.detoxmate.co.kr' : 'https://api-dev.detoxmate.co.kr',
     router: {},
     eas: {

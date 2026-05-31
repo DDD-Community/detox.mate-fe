@@ -1,14 +1,22 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 
 const STEP_MINUTES = 10;
-const MIN_MINUTES = 0;
-const MAX_MINUTES = 24 * 60;
 const INITIAL_MINUTES = 2 * 60;
 const HOLD_DELAY_MS = 400;
 const HOLD_INTERVAL_MS = 80;
 
-export function useGoalTimeStepper() {
-  const [minutes, setMinutes] = useState(INITIAL_MINUTES);
+type UseGoalTimeStepperOptions = {
+  initialMinutes?: number;
+  minMinutes?: number;
+  maxMinutes?: number;
+};
+
+export function useGoalTimeStepper({
+  initialMinutes = INITIAL_MINUTES,
+  minMinutes = 0,
+  maxMinutes = 24 * 60,
+}: UseGoalTimeStepperOptions = {}) {
+  const [minutes, setMinutes] = useState(initialMinutes);
   const holdTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const holdIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
@@ -26,14 +34,17 @@ export function useGoalTimeStepper() {
 
   useEffect(() => clearHold, [clearHold]);
 
-  const apply = useCallback((delta: number) => {
-    setMinutes((prev) => {
-      const next = prev + delta;
-      if (next < MIN_MINUTES) return MIN_MINUTES;
-      if (next > MAX_MINUTES) return MAX_MINUTES;
-      return next;
-    });
-  }, []);
+  const apply = useCallback(
+    (delta: number) => {
+      setMinutes((prev) => {
+        const next = prev + delta;
+        if (next < minMinutes) return minMinutes;
+        if (next > maxMinutes) return maxMinutes;
+        return next;
+      });
+    },
+    [maxMinutes, minMinutes]
+  );
 
   const startHold = useCallback(
     (delta: number) => {
@@ -47,10 +58,11 @@ export function useGoalTimeStepper() {
   );
 
   return {
-    canDecrease: minutes > MIN_MINUTES,
-    canIncrease: minutes < MAX_MINUTES,
+    canDecrease: minutes > minMinutes,
+    canIncrease: minutes < maxMinutes,
     clearHold,
     minutes,
+    setMinutes,
     startDecrease: () => startHold(-STEP_MINUTES),
     startIncrease: () => startHold(STEP_MINUTES),
   };

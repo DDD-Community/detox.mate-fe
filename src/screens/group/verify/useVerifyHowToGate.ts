@@ -5,7 +5,7 @@ import {
   isVerifyHowToHidden,
   setVerifyHowToHidden,
 } from '@/features/verify-how-to/howToPreference';
-import { buildVerifyFlowParams, type VerifyFlowParams } from './verifyFlowParams';
+import { buildVerifyFlowParams, getVerifyPath, type VerifyFlowParams } from './verifyFlowParams';
 
 export function useVerifyHowToGate(params: VerifyFlowParams) {
   const isVerifyMode = params.mode === 'verify';
@@ -14,7 +14,7 @@ export function useVerifyHowToGate(params: VerifyFlowParams) {
 
   const moveToMethod = () => {
     router.replace({
-      pathname: '/(group)/verify/method',
+      pathname: getVerifyPath('method', params.verifyRoot),
       params: Object.keys(methodParams).length > 0 ? methodParams : undefined,
     });
   };
@@ -37,7 +37,7 @@ export function useVerifyHowToGate(params: VerifyFlowParams) {
     return () => {
       active = false;
     };
-  }, [isVerifyMode, params.goal, params.groupChallengeParticipantId]);
+  }, [isVerifyMode, params.goal, params.groupChallengeParticipantId, params.verifyRoot]);
 
   const handleHideForever = async () => {
     await setVerifyHowToHidden();

@@ -2,11 +2,17 @@ import { router, useLocalSearchParams } from 'expo-router';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 
 import { primitiveColors, typography } from '@/lib/token';
+import { buildVerifyValueParams, getVerifyPath, type VerifyRoot } from './verifyFlowParams';
 
 const { brown, green } = primitiveColors;
 
 export default function VerifyWrongTimeScreen() {
-  const { achieved } = useLocalSearchParams<{ achieved?: string }>();
+  const { achieved, value, groupChallengeParticipantId, verifyRoot } = useLocalSearchParams<{
+    achieved?: string;
+    value?: string;
+    groupChallengeParticipantId?: string;
+    verifyRoot?: VerifyRoot;
+  }>();
   const goalAchieved = achieved !== '0';
 
   const handleClose = () => {
@@ -17,7 +23,10 @@ export default function VerifyWrongTimeScreen() {
     if (goalAchieved) {
       router.replace('/(group)/post');
     } else {
-      router.replace('/(group)/verify/retro');
+      router.replace({
+        pathname: getVerifyPath('retro', verifyRoot),
+        params: buildVerifyValueParams({ value, groupChallengeParticipantId, verifyRoot }),
+      });
     }
   };
 

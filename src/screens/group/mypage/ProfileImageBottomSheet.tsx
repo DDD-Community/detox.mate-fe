@@ -1,9 +1,11 @@
 import { Modal, Pressable, StyleSheet, Text, View } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { primitiveColors, radius, spacing, typography } from '@/lib/token';
 
 const { gray } = primitiveColors;
+const SHEET_SIDE_MARGIN = 8;
+const SHEET_BOTTOM_GAP = 8;
 
 interface ProfileImageBottomSheetProps {
   visible: boolean;
@@ -18,6 +20,8 @@ export function ProfileImageBottomSheet({
   onSelectDefault,
   onSelectGallery,
 }: ProfileImageBottomSheetProps) {
+  const insets = useSafeAreaInsets();
+
   return (
     <Modal
       visible={visible}
@@ -27,31 +31,28 @@ export function ProfileImageBottomSheet({
       statusBarTranslucent
     >
       <Pressable style={styles.backdrop} onPress={onClose}>
-        <SafeAreaView edges={['bottom']} style={styles.sheetWrap}>
-          <Pressable onPress={(event) => event.stopPropagation()} style={styles.sheet}>
-            <View style={styles.grabberWrap}>
-              <View style={styles.grabber} />
-            </View>
-            <View style={styles.list}>
-              <Pressable
-                onPress={onSelectDefault}
-                style={({ pressed }) => [
-                  styles.row,
-                  styles.rowBorder,
-                  pressed && styles.rowPressed,
-                ]}
-              >
-                <Text style={styles.rowText}>기본 이미지</Text>
-              </Pressable>
-              <Pressable
-                onPress={onSelectGallery}
-                style={({ pressed }) => [styles.row, pressed && styles.rowPressed]}
-              >
-                <Text style={styles.rowText}>갤러리에서 선택</Text>
-              </Pressable>
-            </View>
-          </Pressable>
-        </SafeAreaView>
+        <Pressable
+          onPress={(event) => event.stopPropagation()}
+          style={[styles.sheet, { bottom: insets.bottom + SHEET_BOTTOM_GAP }]}
+        >
+          <View style={styles.grabberWrap}>
+            <View style={styles.grabber} />
+          </View>
+          <View style={styles.list}>
+            <Pressable
+              onPress={onSelectDefault}
+              style={({ pressed }) => [styles.row, styles.rowBorder, pressed && styles.rowPressed]}
+            >
+              <Text style={styles.rowText}>기본 이미지</Text>
+            </Pressable>
+            <Pressable
+              onPress={onSelectGallery}
+              style={({ pressed }) => [styles.row, pressed && styles.rowPressed]}
+            >
+              <Text style={styles.rowText}>갤러리에서 선택</Text>
+            </Pressable>
+          </View>
+        </Pressable>
       </Pressable>
     </Modal>
   );
@@ -61,13 +62,11 @@ const styles = StyleSheet.create({
   backdrop: {
     flex: 1,
     backgroundColor: 'rgba(0, 0, 0, 0.5)',
-    justifyContent: 'flex-end',
-  },
-  sheetWrap: {
-    paddingHorizontal: spacing[8],
-    paddingBottom: spacing[8],
   },
   sheet: {
+    position: 'absolute',
+    left: SHEET_SIDE_MARGIN,
+    right: SHEET_SIDE_MARGIN,
     backgroundColor: '#FFFFFF',
     borderRadius: 24,
     paddingHorizontal: spacing[28],

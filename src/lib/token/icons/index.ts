@@ -1,11 +1,15 @@
 import type { Icon as PhosphorIcon } from 'phosphor-react-native';
 import { ArrowUpIcon } from 'phosphor-react-native/src/icons/ArrowUp';
+import { BellIcon } from 'phosphor-react-native/src/icons/Bell';
+import { BellRingingIcon } from 'phosphor-react-native/src/icons/BellRinging';
 import { CameraIcon } from 'phosphor-react-native/src/icons/Camera';
+import { CalendarBlankIcon } from 'phosphor-react-native/src/icons/CalendarBlank';
 import { CaretDownIcon } from 'phosphor-react-native/src/icons/CaretDown';
 import { CaretLeftIcon } from 'phosphor-react-native/src/icons/CaretLeft';
 import { CaretRightIcon } from 'phosphor-react-native/src/icons/CaretRight';
 import { CaretUpIcon } from 'phosphor-react-native/src/icons/CaretUp';
 import { ChatIcon } from 'phosphor-react-native/src/icons/Chat';
+import { ChatTeardropIcon } from 'phosphor-react-native/src/icons/ChatTeardrop';
 import { CheckIcon } from 'phosphor-react-native/src/icons/Check';
 import { CheckCircleIcon } from 'phosphor-react-native/src/icons/CheckCircle';
 import { CopyIcon } from 'phosphor-react-native/src/icons/Copy';
@@ -20,18 +24,24 @@ import { PlusIcon } from 'phosphor-react-native/src/icons/Plus';
 import { PlusCircleIcon } from 'phosphor-react-native/src/icons/PlusCircle';
 import { ShareFatIcon } from 'phosphor-react-native/src/icons/ShareFat';
 import { SignOutIcon } from 'phosphor-react-native/src/icons/SignOut';
+import { SmileyStickerIcon } from 'phosphor-react-native/src/icons/SmileySticker';
 import { TargetIcon } from 'phosphor-react-native/src/icons/Target';
 import { UploadSimpleIcon } from 'phosphor-react-native/src/icons/UploadSimple';
+import { UserIcon } from 'phosphor-react-native/src/icons/User';
 import { WarningCircleIcon } from 'phosphor-react-native/src/icons/WarningCircle';
 
 export const iconComponents = {
   arrowUp: ArrowUpIcon,
+  bell: BellIcon,
+  bellRinging: BellRingingIcon,
   camera: CameraIcon,
+  calendarBlank: CalendarBlankIcon,
   caretDown: CaretDownIcon,
   caretLeft: CaretLeftIcon,
   caretRight: CaretRightIcon,
   caretUp: CaretUpIcon,
   chat: ChatIcon,
+  chatTeardrop: ChatTeardropIcon,
   check: CheckIcon,
   checkCircle: CheckCircleIcon,
   copy: CopyIcon,
@@ -46,8 +56,10 @@ export const iconComponents = {
   plusCircle: PlusCircleIcon,
   shareFat: ShareFatIcon,
   signOut: SignOutIcon,
+  smileySticker: SmileyStickerIcon,
   target: TargetIcon,
   uploadSimple: UploadSimpleIcon,
+  user: UserIcon,
   warningCircle: WarningCircleIcon,
 } as const satisfies Record<string, PhosphorIcon>;
 

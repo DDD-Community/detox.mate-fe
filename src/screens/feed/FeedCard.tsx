@@ -1,4 +1,3 @@
-import { useState } from 'react';
 import { Alert, Image, Pressable, StyleSheet, Text, View } from 'react-native';
 import { Icon } from '../../components/Icon';
 import { primitiveColors, radius, spacing, typography } from '../../lib/token';
@@ -6,8 +5,8 @@ import type { GoalState } from './ActionGuideBanner';
 
 const { gray, green, system } = primitiveColors;
 const WHITE = '#FFFFFF';
-const AVATAR_SIZE = 36;
-const REACTION_EMOJIS = ['👍', '🔥', '💪', '🐢', '🥹'] as const;
+const AVATAR_SIZE = 40;
+const POCK_ICON = require('../../../assets/pock.png');
 
 export type ReactionEntry = {
   userId: string;
@@ -42,7 +41,18 @@ export type FeedItem = {
   retroText?: string;
   screenTime?: string;
   goal?: string;
+  usedMinutes?: number;
+  goalMinutes?: number;
 };
+
+function ProfileAvatar({ source }: { source: FeedItem['avatarSource'] }) {
+  return (
+    <View style={styles.avatarFrame}>
+      <Image source={source} style={styles.avatar} resizeMode="cover" />
+      <View pointerEvents="none" style={styles.avatarBorder} />
+    </View>
+  );
+}
 
 const BODY_TEXT: Record<GoalState, string> = {
   notSet: '개인 목표를 설정해야 해요',
@@ -55,49 +65,70 @@ export default function FeedCard({
   goalState,
   onPoke,
   onBodyPress,
+  onProfilePress,
   isPoked = false,
-  myReactions,
-  onReact,
+  onReactionPress,
   historyMode = false,
 }: {
   item: FeedItem;
   goalState: GoalState;
   onPoke?: (memberId: string, challengeRecordId?: number) => void;
   onBodyPress?: () => void;
+  onProfilePress?: () => void;
   isPoked?: boolean;
-  myReactions?: string[];
-  onReact?: (itemId: string, emoji: string) => void;
+  onReactionPress?: (item: FeedItem) => void;
   historyMode?: boolean;
 }) {
-  const [showPicker, setShowPicker] = useState(false);
-
   if (item.isVerified) {
-    const labelBg = item.isGoalAchieved ? green[300] : gray[400];
+    const hasFailurePhoto = !item.isGoalAchieved && item.photoSource != null;
+    const usesPostLayout = item.isGoalAchieved || hasFailurePhoto;
+    const postText = item.postText ?? item.retroText;
+    const labelBg = item.isGoalAchieved
+      ? system.green.opacity100
+      : hasFailurePhoto
+        ? system.red.opacity100
+        : gray[400];
     const labelText = item.isGoalAchieved ? '목표 성공' : '목표 실패';
+    const screentimeAccentColor = item.isGoalAchieved
+      ? system.green.opacity100
+      : hasFailurePhoto
+        ? system.red.opacity100
+        : gray[500];
+    const screentimeBackgroundColor = item.isGoalAchieved
+      ? system.green.opacity10
+      : hasFailurePhoto
+        ? system.red.opacity10
+        : gray[50];
 
     return (
-      <Pressable style={[styles.card, showPicker && styles.cardFront]} onPress={onBodyPress}>
+      <Pressable style={styles.card} onPress={onBodyPress}>
         {/* Header */}
         <View style={styles.header}>
-          <View style={styles.avatarWithLabel}>
-            <Image source={item.avatarSource} style={styles.avatar} resizeMode="cover" />
-            <View style={styles.statusLabelAnchor}>
-              <View style={[styles.statusLabel, { backgroundColor: labelBg }]}>
-                <Text style={styles.statusLabelText}>{labelText}</Text>
+          <View style={styles.verifiedHeaderContent}>
+            <Pressable style={styles.profileButton} onPress={onProfilePress}>
+              <View style={styles.avatarWithLabel}>
+                <ProfileAvatar source={item.avatarSource} />
+                <View style={styles.statusLabelAnchor}>
+                  <View style={[styles.statusLabel, { backgroundColor: labelBg }]}>
+                    <Text style={styles.statusLabelText}>{labelText}</Text>
+                  </View>
+                </View>
               </View>
-            </View>
+              <Text style={styles.memberName}>{item.name}</Text>
+            </Pressable>
+            {item.verifiedTimeAgo != null && (
+              <Text style={styles.timeAgo}>{item.verifiedTimeAgo}</Text>
+            )}
           </View>
-          <Text style={[styles.memberName, { flex: 1 }]}>{item.name}</Text>
-          <Text style={styles.timeAgo}>{item.verifiedTimeAgo}</Text>
         </View>
 
         {/* Content */}
-        {item.isGoalAchieved ? (
+        {usesPostLayout ? (
           <>
             {item.photoSource != null && (
               <Image source={item.photoSource} style={styles.photo} resizeMode="cover" />
             )}
-            {item.postText != null && <Text style={styles.postText}>{item.postText}</Text>}
+            {postText != null && <Text style={styles.postText}>{postText}</Text>}
           </>
         ) : (
           <View style={styles.retroCard}>
@@ -108,57 +139,32 @@ export default function FeedCard({
 
         {/* Screentime */}
         {item.screenTime != null && (
-          <View
-            style={[
-              styles.screentimeRow,
-              { backgroundColor: item.isGoalAchieved ? system.green.opacity10 : gray[50] },
-            ]}
-          >
-            <Text style={[styles.screentimeLabel, !item.isGoalAchieved && { color: gray[500] }]}>
+          <View style={[styles.screentimeRow, { backgroundColor: screentimeBackgroundColor }]}>
+            <Text style={[styles.screentimeLabel, { color: screentimeAccentColor }]}>
               스크린 타임
             </Text>
-            <Text style={[styles.screentimeValue, !item.isGoalAchieved && { color: gray[500] }]}>
+            <Text style={[styles.screentimeValue, { color: screentimeAccentColor }]}>
               {item.screenTime}
             </Text>
           </View>
         )}
 
-        {/* Footer + reaction picker (absolute, below footer) */}
+        {/* Footer */}
         <View style={styles.footerWrapper}>
           <View style={styles.footer}>
             <Pressable
               style={[styles.footerButton, goalState === 'notSet' && styles.footerButtonDisabled]}
               disabled={goalState === 'notSet'}
-              onPress={() => setShowPicker((v) => !v)}
+              onPress={() => onReactionPress?.(item)}
             >
-              <Image
-                source={require('../../../assets/impressions.png')}
-                style={styles.impressionIcon}
-                resizeMode="contain"
-              />
+              <Icon name="smileySticker" size={24} color={gray[800]} />
               <Text style={styles.footerCount}>{item.reactionCount}</Text>
             </Pressable>
             <Pressable style={styles.footerButton} onPress={onBodyPress}>
-              <Icon name="chat" size={16} color={gray[500]} />
+              <Icon name="chatTeardrop" size={24} color={gray[800]} />
               <Text style={styles.footerCount}>{item.commentCount}</Text>
             </Pressable>
           </View>
-          {showPicker && (
-            <View style={styles.reactionPicker}>
-              {REACTION_EMOJIS.map((emoji) => (
-                <Pressable
-                  key={emoji}
-                  style={styles.reactionOption}
-                  onPress={() => {
-                    onReact?.(item.id, emoji);
-                    setShowPicker(false);
-                  }}
-                >
-                  <Text style={styles.reactionOptionText}>{emoji}</Text>
-                </Pressable>
-              ))}
-            </View>
-          )}
         </View>
       </Pressable>
     );
@@ -169,10 +175,15 @@ export default function FeedCard({
   const unverifiedBodyText = historyMode ? '인증하지 않았어요' : BODY_TEXT[goalState];
 
   return (
-    <Pressable style={[styles.card, showPicker && styles.cardFront]} onPress={onBodyPress}>
+    <Pressable
+      style={[styles.card, styles.unverifiedCard, showPokeButton && styles.unverifiedCardWithPoke]}
+      onPress={onBodyPress}
+    >
       <View style={styles.header}>
-        <Image source={item.avatarSource} style={styles.avatar} resizeMode="cover" />
-        <Text style={styles.memberName}>{item.isMe ? '나' : item.name}</Text>
+        <Pressable style={styles.profileButton} onPress={onProfilePress}>
+          <ProfileAvatar source={item.avatarSource} />
+          <Text style={styles.memberName}>{item.isMe ? '나' : item.name}</Text>
+        </Pressable>
       </View>
 
       <View style={styles.body}>
@@ -188,16 +199,16 @@ export default function FeedCard({
             onPoke?.(item.id, item.challengeRecordId);
           }}
         >
-          <Text>👉</Text>
           <Text style={[styles.pokeButtonText, isPoked && styles.pokeButtonTextDisabled]}>
             콕 찌르기
           </Text>
+          <Image source={POCK_ICON} style={styles.pockIcon} resizeMode="contain" />
         </Pressable>
       )}
 
       <View style={styles.footer}>
         <View style={styles.footerButton}>
-          <Icon name="chat" size={16} color={gray[500]} />
+          <Icon name="chatTeardrop" size={24} color={gray[800]} />
           <Text style={styles.footerCount}>{item.commentCount}</Text>
         </View>
       </View>
@@ -208,27 +219,54 @@ export default function FeedCard({
 const styles = StyleSheet.create({
   card: {
     backgroundColor: WHITE,
-    borderRadius: radius[16],
+    borderRadius: 24,
     padding: spacing[16],
     gap: spacing[24],
     overflow: 'visible',
   },
-  cardFront: {
-    zIndex: 10,
-    elevation: 10,
+  unverifiedCard: {
+    minHeight: 180,
+    gap: spacing[24],
+  },
+  unverifiedCardWithPoke: {
+    minHeight: 246,
   },
   header: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: spacing[8],
   },
+  profileButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing[8],
+  },
+  verifiedHeaderContent: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing[12],
+  },
   avatarWithLabel: {
     alignItems: 'center',
+  },
+  avatarFrame: {
+    width: AVATAR_SIZE,
+    height: AVATAR_SIZE,
   },
   avatar: {
     width: AVATAR_SIZE,
     height: AVATAR_SIZE,
     borderRadius: radius.full,
+  },
+  avatarBorder: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    borderRadius: radius.full,
+    borderWidth: 1,
+    borderColor: gray[200],
   },
   statusLabelAnchor: {
     position: 'absolute',
@@ -247,12 +285,12 @@ const styles = StyleSheet.create({
     color: WHITE,
   },
   memberName: {
-    ...typography.primary.body2B,
+    ...typography.accent.body1,
     color: gray[900],
   },
   timeAgo: {
-    ...typography.primary.caption,
-    color: gray[400],
+    ...typography.accent.body3,
+    color: gray[300],
   },
   photo: {
     width: '100%',
@@ -301,52 +339,28 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: spacing[16],
-  },
-  reactionPicker: {
-    position: 'absolute',
-    top: 32,
-    left: 0,
-    zIndex: 100,
-    flexDirection: 'row',
-    backgroundColor: WHITE,
-    borderRadius: radius.full,
-    paddingHorizontal: spacing[12],
-    paddingVertical: spacing[8],
-    gap: spacing[8],
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.12,
-    shadowRadius: 8,
-    elevation: 4,
-  },
-  reactionOption: {},
-  reactionOptionText: {
-    fontSize: 22,
+    minHeight: 36,
   },
   footerButton: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: spacing[4],
+    minHeight: 36,
   },
   footerButtonDisabled: {
     opacity: 0.35,
   },
-  impressionIcon: {
-    width: 18,
-    height: 18,
-  },
   footerCount: {
-    ...typography.primary.body3R,
-    color: gray[500],
+    ...typography.primary.body2R,
+    color: gray[800],
   },
   // Unverified-only styles
   body: {
     alignItems: 'center',
-    paddingVertical: spacing[8],
   },
   bodyText: {
-    ...typography.primary.body2R,
-    color: gray[500],
+    ...typography.accent.body1,
+    color: gray[400],
     textAlign: 'center',
   },
   pokeButton: {
@@ -354,19 +368,23 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     alignSelf: 'center',
     backgroundColor: green[300],
-    borderRadius: radius.full,
-    paddingVertical: spacing[8],
-    paddingHorizontal: spacing[16],
+    borderRadius: 18,
+    minHeight: 44,
+    paddingHorizontal: spacing[12],
     gap: spacing[4],
   },
   pokeButtonDisabled: {
-    backgroundColor: gray[200],
+    opacity: 0.3,
   },
   pokeButtonText: {
-    ...typography.primary.body3B,
+    ...typography.primary.body2B,
     color: WHITE,
   },
   pokeButtonTextDisabled: {
-    color: gray[400],
+    color: WHITE,
+  },
+  pockIcon: {
+    width: 22,
+    height: 17,
   },
 });

@@ -71,7 +71,7 @@ apiClient.interceptors.response.use(
         return apiClient(originalRequest);
       } catch (refreshError) {
         await clearAuthSession();
-        router.replace('/login');
+        router.replace({ pathname: '/login', params: { reason: 'sessionExpired' } });
         return Promise.reject(refreshError);
       }
     }

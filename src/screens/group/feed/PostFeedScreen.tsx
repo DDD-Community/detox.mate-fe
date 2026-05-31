@@ -13,7 +13,7 @@ import {
   TextInput,
   View,
 } from 'react-native';
-import { Icon } from '../../../components/Icon';
+import { HeaderAction, Icon } from '../../../components';
 import { submitTotalUsageActivityRecord } from '../../../features/activity-record/submitTotalUsageActivityRecord';
 import { uploadImage } from '../../../lib/uploadImage';
 import { primitiveColors } from '../../../lib/token/primitive/colors';
@@ -80,10 +80,14 @@ export default function PostFeedScreen() {
   return (
     <SafeAreaView style={styles.root}>
       <View style={styles.header}>
-        <Pressable style={styles.headerBack} onPress={() => router.back()}>
-          <Icon name="caretLeft" size={24} color={gray[900]} />
-          <Text style={styles.headerTitle}>게시물 올리기</Text>
-        </Pressable>
+        <HeaderAction
+          label="게시물 올리기"
+          onPress={() => router.back()}
+          iconColor={gray[900]}
+          style={styles.headerBack}
+          textStyle={styles.headerTitle}
+          accessibilityLabel="뒤로가기"
+        />
         <Pressable style={styles.headerSkip} onPress={handleSkip}>
           <Text style={styles.headerSkipLabel}>건너뛰기</Text>
         </Pressable>

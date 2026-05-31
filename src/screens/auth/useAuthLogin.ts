@@ -1,14 +1,22 @@
 import { useRouter } from 'expo-router';
+import * as ImagePicker from 'expo-image-picker';
+import * as Notifications from 'expo-notifications';
 import { useState } from 'react';
-import { Alert } from 'react-native';
+import * as SecureStore from 'expo-secure-store';
 
-import { type OAuthLoginResponse, loginWithApple, loginWithKakao, loginWithTestUser } from '@/api/auth';
+import {
+  type OAuthLoginResponse,
+  loginWithApple,
+  loginWithKakao,
+  loginWithTestUser,
+} from '@/api/auth';
 import { registerDevicePushToken } from '@/lib/fcmToken';
+import { APP_ACCESS_PERMISSION_GUIDE_SEEN_KEY, TERMS_ACCEPTED_KEY } from './authStorageKeys';
 
 export type LoginProvider = 'kakao' | 'apple' | 'test';
 
 type LoginAction = () => Promise<OAuthLoginResponse>;
-export type TestUserKey = 'front-a' | 'front-b' | 'front-c' | 'server-a' | 'server-b' | 'server-c';
+export type TestUserKey = string;
 
 export const TEST_USER_KEYS: TestUserKey[] = [
   'front-a',
@@ -19,30 +27,44 @@ export const TEST_USER_KEYS: TestUserKey[] = [
   'server-c',
 ];
 
-export function useAuthLogin() {
+const NATIVE_PERMISSION_PROMPT_DELAY_MS = 350;
+
+const waitForPermissionPromptReady = () =>
+  new Promise<void>((resolve) => setTimeout(resolve, NATIVE_PERMISSION_PROMPT_DELAY_MS));
+
+interface UseAuthLoginOptions {
+  onLoginFailure?: () => void;
+}
+
+export function useAuthLogin({ onLoginFailure }: UseAuthLoginOptions = {}) {
   const router = useRouter();
   const [pendingProvider, setPendingProvider] = useState<LoginProvider | null>(null);
+  const [permissionGuideVisible, setPermissionGuideVisible] = useState(false);
+  const [permissionGuideConfirming, setPermissionGuideConfirming] = useState(false);
 
   const completeLogin = async (provider: LoginProvider, login: LoginAction) => {
     if (pendingProvider) return;
 
     setPendingProvider(provider);
     try {
-      const result = await login();
+      await login();
+      await SecureStore.setItemAsync(TERMS_ACCEPTED_KEY, 'true');
       try {
         await registerDevicePushToken();
       } catch {
         // 토큰 등록 실패는 로그인 흐름을 막지 않음
       }
-      // 서버가 신규 유저로 판단하면 온보딩부터 시작
-      // (탈퇴 후 앱 미종료 상태에서 재가입하는 경우 등)
-      if (result.isNewUser) {
-        router.replace('/onboarding');
-      } else {
+
+      const hasSeenPermissionGuide = await SecureStore.getItemAsync(
+        APP_ACCESS_PERMISSION_GUIDE_SEEN_KEY
+      );
+      if (hasSeenPermissionGuide === 'true') {
         router.replace('/(group)/home');
+      } else {
+        setPermissionGuideVisible(true);
       }
     } catch {
-      Alert.alert('로그인 실패', '로그인을 처리하지 못했어요. 잠시 후 다시 시도해주세요.');
+      onLoginFailure?.();
     } finally {
       setPendingProvider(null);
     }
@@ -60,10 +82,36 @@ export function useAuthLogin() {
     completeLogin('test', () => loginWithTestUser(testUserKey));
   };
 
+  const handleConfirmPermissionGuide = async () => {
+    if (permissionGuideConfirming) return;
+
+    setPermissionGuideConfirming(true);
+    setPermissionGuideVisible(false);
+
+    try {
+      await waitForPermissionPromptReady();
+      await ImagePicker.requestMediaLibraryPermissionsAsync();
+      await Notifications.requestPermissionsAsync();
+
+      try {
+        await registerDevicePushToken();
+      } catch {
+        // 권한 허용 후 토큰 등록 실패는 다음 로그인/설정 진입 시 재시도됨
+      }
+    } finally {
+      await SecureStore.setItemAsync(APP_ACCESS_PERMISSION_GUIDE_SEEN_KEY, 'true');
+      setPermissionGuideConfirming(false);
+      router.replace('/(group)/home');
+    }
+  };
+
   return {
     handleKakaoLogin,
     handleAppleLogin,
     handleTestLogin,
+    handleConfirmPermissionGuide,
     pendingProvider,
+    permissionGuideConfirming,
+    permissionGuideVisible,
   };
 }

@@ -1,10 +1,10 @@
 import { router } from 'expo-router';
 import { useState } from 'react';
-import { Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
+import { StyleSheet, Text, TextInput, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { getUser } from '@/api';
-import { Button, Icon } from '@/components';
+import { Button, HeaderAction } from '@/components';
 import { primitiveColors, radius, spacing, typography } from '@/lib/token';
 
 const { brown, gray } = primitiveColors;
@@ -41,10 +41,7 @@ export default function EditNicknameScreen() {
     <View style={styles.root}>
       <SafeAreaView edges={['top']}>
         <View style={styles.header}>
-          <Pressable onPress={handleBack} hitSlop={8}>
-            <Icon name="caretLeft" size={24} color={gray[800]} />
-          </Pressable>
-          <Text style={styles.headerTitle}>닉네임 변경</Text>
+          <HeaderAction label="닉네임 변경" onPress={handleBack} accessibilityLabel="뒤로가기" />
         </View>
       </SafeAreaView>
 
@@ -88,13 +85,7 @@ const styles = StyleSheet.create({
   header: {
     height: 54,
     paddingHorizontal: spacing[16],
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: spacing[16],
-  },
-  headerTitle: {
-    ...typography.accent.title2,
-    color: gray[800],
+    justifyContent: 'center',
   },
   body: {
     flex: 1,

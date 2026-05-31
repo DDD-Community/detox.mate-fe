@@ -5,7 +5,12 @@ import { ActivityRecordDetailRequestUsageGoalType, getActivityRecord } from '@/a
 import { analyzeScreenTimeImage } from '@/features/screen-time-analyze';
 import { parseHHMMToMinutes } from '@/lib/formatDuration';
 import { pickImageFromLibrary } from './useImageLibraryPicker';
-import { buildVerifyFlowParams, type VerifyFlowParams, type VerifyMode } from './verifyFlowParams';
+import {
+  buildVerifyFlowParams,
+  getVerifyPath,
+  type VerifyFlowParams,
+  type VerifyMode,
+} from './verifyFlowParams';
 
 interface UseVerifyUploadAnalysisOptions extends VerifyFlowParams {
   imageUri?: string;
@@ -17,10 +22,16 @@ export function useVerifyUploadAnalysis({
   mode,
   goal,
   groupChallengeParticipantId,
+  verifyRoot,
 }: UseVerifyUploadAnalysisOptions) {
   const [imageUri, setImageUri] = useState<string | undefined>(initialImageUri);
   const [isAnalyzing, setIsAnalyzing] = useState(false);
-  const forwardParams = buildVerifyFlowParams({ mode, goal, groupChallengeParticipantId });
+  const forwardParams = buildVerifyFlowParams({
+    mode,
+    goal,
+    groupChallengeParticipantId,
+    verifyRoot,
+  });
   const hasImage = Boolean(imageUri);
 
   const handlePickImage = async () => {
@@ -39,7 +50,7 @@ export function useVerifyUploadAnalysis({
 
       if (!result.ok) {
         router.replace({
-          pathname: '/(group)/verify/error',
+          pathname: getVerifyPath('error', verifyRoot),
           params: {
             ...forwardParams,
             reason: result.reason,
@@ -51,7 +62,7 @@ export function useVerifyUploadAnalysis({
 
       if (mode !== 'verify') {
         router.replace({
-          pathname: '/(group)/verify/done',
+          pathname: getVerifyPath('done', verifyRoot),
           params: { value: result.value, ...forwardParams },
         });
         return;
@@ -67,7 +78,7 @@ export function useVerifyUploadAnalysis({
       });
 
       router.replace({
-        pathname: '/(group)/verify/done',
+        pathname: getVerifyPath('done', verifyRoot),
         params: { value: result.value, achieved: String(allAchieved ?? false), ...forwardParams },
       });
     } finally {

@@ -12,16 +12,22 @@ import {
 } from '@/lib/formatDuration';
 import { primitiveColors, typography } from '@/lib/token';
 import { VerifyBottomSheet } from './VerifyBottomSheet';
-import { buildVerifyValueParams, type VerifyMode } from './verifyFlowParams';
+import {
+  buildVerifyValueParams,
+  getVerifyPath,
+  type VerifyMode,
+  type VerifyRoot,
+} from './verifyFlowParams';
 
 const { gray, brown, green, system } = primitiveColors;
 
 export default function VerifyDoneScreen() {
-  const { value, mode, goal, groupChallengeParticipantId } = useLocalSearchParams<{
+  const { value, mode, goal, groupChallengeParticipantId, verifyRoot } = useLocalSearchParams<{
     value?: string;
     mode?: VerifyMode;
     goal?: string;
     groupChallengeParticipantId?: string;
+    verifyRoot?: VerifyRoot;
   }>();
   const display = formatHHMMToDisplay(value);
   const isVerifyMode = mode === 'verify';
@@ -46,7 +52,7 @@ export default function VerifyDoneScreen() {
         groupChallengeParticipantId,
       });
     }
-    router.replace('/(group)/verify/complete');
+    router.replace(getVerifyPath('complete', verifyRoot));
   };
 
   const handlePostFeed = () => {
@@ -58,15 +64,18 @@ export default function VerifyDoneScreen() {
 
   const handleReportWrongTime = () => {
     router.push({
-      pathname: '/(group)/verify/wrong-time',
-      params: { achieved: goalAchieved ? '1' : '0' },
+      pathname: getVerifyPath('wrong-time', verifyRoot),
+      params: {
+        achieved: goalAchieved ? '1' : '0',
+        ...buildVerifyValueParams({ value, mode, goal, groupChallengeParticipantId, verifyRoot }),
+      },
     });
   };
 
   const handleRecordRetro = () => {
     router.replace({
-      pathname: '/(group)/verify/retro',
-      params: buildVerifyValueParams({ value, groupChallengeParticipantId }),
+      pathname: getVerifyPath('retro', verifyRoot),
+      params: buildVerifyValueParams({ value, groupChallengeParticipantId, verifyRoot }),
     });
   };
 

@@ -34,6 +34,11 @@ type ChallengeRecord = {
   pokeCount: number;
 };
 
+type GroupChallengeResponse = {
+  startAt?: string | null;
+  endAt?: string | null;
+};
+
 const AVATAR_SRC = require('../../../assets/basic-profile-turtle-hi.png');
 const EMPTY_REACTIONS: ReactionEntry[] = [];
 const EMPTY_POKES: PokeEntry[] = [];
@@ -53,12 +58,24 @@ function shiftDate(dateStr: string, delta: number): string {
   return `${y}-${m}-${d}`;
 }
 
+function parseDateParam(dateStr?: string): string | null {
+  if (!dateStr) return null;
+  const [year, month, day] = dateStr.split('T')[0].split('-').map(Number);
+  if (!year || !month || !day) return null;
+
+  return `${year}-${String(month).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+}
+
 function todayString(): string {
   const now = new Date();
   const y = now.getFullYear();
   const m = String(now.getMonth() + 1).padStart(2, '0');
   const d = String(now.getDate()).padStart(2, '0');
   return `${y}-${m}-${d}`;
+}
+
+function yesterdayString(): string {
+  return shiftDate(todayString(), -1);
 }
 
 function recordToFeedItem(r: ChallengeRecord): FeedItem {
@@ -84,20 +101,75 @@ function recordToFeedItem(r: ChallengeRecord): FeedItem {
 }
 
 export default function CalendarHistoryScreen() {
-  const { date: paramDate, groupChallengeId } = useLocalSearchParams<{
+  const {
+    date: paramDate,
+    groupChallengeId,
+    startDate: paramStartDate,
+    endDate: paramEndDate,
+  } = useLocalSearchParams<{
     date: string;
     groupChallengeId: string;
+    startDate?: string;
+    endDate?: string;
   }>();
 
   const [date, setDate] = useState(paramDate ?? todayString());
   const [items, setItems] = useState<FeedItem[]>([]);
   const [loading, setLoading] = useState(true);
+  const [firstSelectableDate, setFirstSelectableDate] = useState<string | null>(
+    parseDateParam(paramStartDate)
+  );
+  const [lastSelectableDate, setLastSelectableDate] = useState(() => {
+    const parsedEndDate = parseDateParam(paramEndDate);
+    const yesterday = yesterdayString();
+    return parsedEndDate && parsedEndDate < yesterday ? parsedEndDate : yesterday;
+  });
 
   const today = todayString();
-  const isToday = date >= today;
+  const isAtOrBeforeFirstDate = firstSelectableDate != null && date <= firstSelectableDate;
+  const isAtOrAfterLastDate = date >= lastSelectableDate || date >= today;
+
+  useEffect(() => {
+    if (!groupChallengeId || firstSelectableDate) return;
+
+    const fetchChallengeRange = async () => {
+      try {
+        const res = await apiClient.get<GroupChallengeResponse>(
+          `/group-challenges/${groupChallengeId}`
+        );
+        const startDate = parseDateParam(res.data.startAt ?? undefined);
+        const endDate = parseDateParam(res.data.endAt ?? undefined);
+        const yesterday = yesterdayString();
+
+        if (startDate) {
+          setFirstSelectableDate(startDate);
+        }
+        if (endDate && endDate < yesterday) {
+          setLastSelectableDate(endDate);
+        }
+      } catch {
+        // keep navigation range from params/defaults
+      }
+    };
+
+    fetchChallengeRange();
+  }, [firstSelectableDate, groupChallengeId]);
+
+  useEffect(() => {
+    if (firstSelectableDate && date < firstSelectableDate) {
+      setDate(firstSelectableDate);
+      return;
+    }
+    if (date > lastSelectableDate) {
+      setDate(lastSelectableDate);
+    }
+  }, [date, firstSelectableDate, lastSelectableDate]);
 
   useEffect(() => {
     if (!groupChallengeId) return;
+    if (firstSelectableDate && date < firstSelectableDate) return;
+    if (date > lastSelectableDate) return;
+
     setLoading(true);
     const fetch = async () => {
       try {
@@ -113,9 +185,12 @@ export default function CalendarHistoryScreen() {
       }
     };
     fetch();
-  }, [date, groupChallengeId]);
+  }, [date, firstSelectableDate, groupChallengeId, lastSelectableDate]);
 
   const goTo = (newDate: string) => {
+    if (firstSelectableDate && newDate < firstSelectableDate) return;
+    if (newDate > lastSelectableDate) return;
+
     setDate(newDate);
   };
 
@@ -128,13 +203,17 @@ export default function CalendarHistoryScreen() {
         </TouchableOpacity>
 
         <View style={styles.dateNav}>
-          <TouchableOpacity style={styles.arrowBtn} onPress={() => goTo(shiftDate(date, -1))}>
+          <TouchableOpacity
+            style={[styles.arrowBtn, isAtOrBeforeFirstDate && styles.arrowDisabled]}
+            disabled={isAtOrBeforeFirstDate}
+            onPress={() => goTo(shiftDate(date, -1))}
+          >
             <Icon name="caretLeft" size={20} color={gray[900]} />
           </TouchableOpacity>
           <Text style={styles.dateText}>{formatDisplayDate(date)}</Text>
           <TouchableOpacity
-            style={[styles.arrowBtn, isToday && styles.arrowDisabled]}
-            disabled={isToday}
+            style={[styles.arrowBtn, isAtOrAfterLastDate && styles.arrowDisabled]}
+            disabled={isAtOrAfterLastDate}
             onPress={() => goTo(shiftDate(date, 1))}
           >
             <Icon name="caretRight" size={20} color={gray[900]} />

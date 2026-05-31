@@ -1,105 +1,239 @@
-import { useLocalSearchParams } from 'expo-router';
+import { router, useLocalSearchParams } from 'expo-router';
+import { useEffect, useState } from 'react';
 import {
-  Image,
+  ActivityIndicator,
   Pressable,
-  SafeAreaView,
   StyleSheet,
   Text,
   View,
   type GestureResponderEvent,
 } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 
-import LOGO_DETOXMATE_BLACK from '@assets/logo-detoxmate-black.png';
-
-import { Button, Icon } from '@/components';
+import { getUserUsageGoalTime, UserUsageGoalTimeRequestUsageGoalType } from '@/api';
+import { AppLogo, Button, HeaderAction, Icon } from '@/components';
 import { formatHHMMToDisplay, formatMinutesAsHourMinute } from '@/lib/formatDuration';
-import { primitiveColors, typography } from '@/lib/token';
-import { useGoalTimeSave } from './useGoalTimeSave';
+import { primitiveColors, radius, spacing, typography } from '@/lib/token';
 import { useGoalTimeStepper } from './useGoalTimeStepper';
 
-const { gray, brown, green } = primitiveColors;
+const { brown, gray, green } = primitiveColors;
 
-export default function GoalSetupScreen() {
+const EDIT_MIN_MINUTES = 30;
+const EDIT_MAX_MINUTES = 24 * 60 - 10;
+
+type GoalSetupMode = 'initial' | 'edit';
+
+type GoalSetupScreenProps = {
+  mode?: GoalSetupMode;
+};
+
+export default function GoalSetupScreen({ mode = 'initial' }: GoalSetupScreenProps) {
   const { value } = useLocalSearchParams<{ value?: string }>();
-  const { canDecrease, canIncrease, clearHold, minutes, startDecrease, startIncrease } =
-    useGoalTimeStepper();
-  const { handleSave, isSaving } = useGoalTimeSave(minutes);
+  const isEditMode = mode === 'edit';
+  const [existingGoalMinutes, setExistingGoalMinutes] = useState<number | null>(null);
+  const [isLoading, setIsLoading] = useState(isEditMode);
+  const [isSaving, setIsSaving] = useState(false);
+  const { canDecrease, canIncrease, clearHold, minutes, setMinutes, startDecrease, startIncrease } =
+    useGoalTimeStepper(
+      isEditMode ? { minMinutes: EDIT_MIN_MINUTES, maxMinutes: EDIT_MAX_MINUTES } : undefined
+    );
 
-  const screenTimeDisplay = formatHHMMToDisplay(value);
+  const screenTimeDisplay = !isEditMode ? formatHHMMToDisplay(value) : null;
+  const isUnchanged = isEditMode && existingGoalMinutes != null && minutes === existingGoalMinutes;
+
+  useEffect(() => {
+    if (!isEditMode) return;
+
+    let cancelled = false;
+    (async () => {
+      try {
+        const response = await getUserUsageGoalTime().getCurrentGoalTimes();
+        if (cancelled) return;
+
+        const total = response.goals?.find(
+          (goal) => goal.usageGoalType === UserUsageGoalTimeRequestUsageGoalType.TOTAL_USAGE
+        );
+        if (total?.goalMinutes != null) {
+          setMinutes(total.goalMinutes);
+          setExistingGoalMinutes(total.goalMinutes);
+        }
+      } finally {
+        if (!cancelled) setIsLoading(false);
+      }
+    })();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [isEditMode, setMinutes]);
+
+  const handleCancel = () => {
+    router.back();
+  };
+
+  const handleSave = async () => {
+    if (isLoading || isSaving || isUnchanged) return;
+
+    setIsSaving(true);
+    try {
+      await getUserUsageGoalTime().setGoalTimes({
+        goals: [
+          {
+            usageGoalType: UserUsageGoalTimeRequestUsageGoalType.TOTAL_USAGE,
+            goalMinutes: minutes,
+          },
+        ],
+      });
+
+      if (isEditMode) {
+        router.back();
+      } else {
+        router.replace('/(feed)/home');
+      }
+    } finally {
+      setIsSaving(false);
+    }
+  };
 
   return (
-    <SafeAreaView style={styles.root}>
-      <View style={styles.header}>
-        <Image source={LOGO_DETOXMATE_BLACK} style={styles.logo} resizeMode="contain" />
-      </View>
+    <View style={styles.root}>
+      <SafeAreaView edges={['top']}>
+        <View style={isEditMode ? styles.editHeader : styles.initialHeader}>
+          {isEditMode ? (
+            <HeaderAction label="목표 설정" onPress={handleCancel} accessibilityLabel="뒤로가기" />
+          ) : (
+            <AppLogo />
+          )}
+        </View>
+      </SafeAreaView>
 
-      <View style={styles.body}>
-        <View style={styles.textGroup}>
+      <View style={[styles.body, isEditMode ? styles.editBody : styles.initialBody]}>
+        <View style={[styles.textGroup, isEditMode ? styles.editTextGroup : null]}>
           <Text style={styles.title}>개인 목표 스크린 타임 설정</Text>
-          <Text style={styles.description}>마이페이지에서 2주에 한 번 변경할 수 있어요.</Text>
+          <Text style={styles.description}>
+            {isEditMode
+              ? '2주에 한 번 변경할 수 있어요.'
+              : '마이페이지에서 2주에 한 번 변경할 수 있어요.'}
+          </Text>
         </View>
 
-        {screenTimeDisplay ? (
-          <View style={styles.summary}>
-            <Text style={styles.summaryLabel}>내 스크린 타임</Text>
-            <Text style={styles.summaryValue}>{screenTimeDisplay}</Text>
-          </View>
+        {isEditMode ? (
+          <SummaryCard
+            label="기존 목표"
+            mode={mode}
+            value={
+              existingGoalMinutes != null ? formatMinutesAsHourMinute(existingGoalMinutes) : '-'
+            }
+          />
+        ) : screenTimeDisplay ? (
+          <SummaryCard label="내 스크린 타임" mode={mode} value={screenTimeDisplay} />
         ) : null}
 
-        <View style={styles.stepperWrap}>
-          <View style={styles.stepper}>
-            <StepButton
-              kind="minus"
-              onPressIn={startDecrease}
-              onPressOut={clearHold}
-              disabled={!canDecrease}
-            />
-            <Text style={styles.stepperValue}>{formatMinutesAsHourMinute(minutes)}</Text>
-            <StepButton
-              kind="plus"
-              onPressIn={startIncrease}
-              onPressOut={clearHold}
-              disabled={!canIncrease}
-            />
+        {isLoading ? (
+          <View style={styles.loadingWrap}>
+            <ActivityIndicator color={gray[400]} />
           </View>
-          <Text style={styles.stepperCaption}>하루 기준</Text>
-        </View>
+        ) : (
+          <View style={isEditMode ? styles.editStepperWrap : styles.initialStepperWrap}>
+            <View style={styles.stepper}>
+              <StepButton
+                kind="minus"
+                mode={mode}
+                onPressIn={startDecrease}
+                onPressOut={clearHold}
+                disabled={!canDecrease}
+              />
+              <Text style={styles.stepperValue}>{formatMinutesAsHourMinute(minutes)}</Text>
+              <StepButton
+                kind="plus"
+                mode={mode}
+                onPressIn={startIncrease}
+                onPressOut={clearHold}
+                disabled={!canIncrease}
+              />
+            </View>
+            <Text style={styles.stepperCaption}>하루 기준</Text>
+          </View>
+        )}
       </View>
 
-      <View style={styles.cta}>
-        <Button
-          label={isSaving ? '저장 중...' : '저장하기'}
-          color="primary"
-          onPress={handleSave}
-          disabled={isSaving}
-          style={styles.button}
-        />
-      </View>
-    </SafeAreaView>
+      <SafeAreaView edges={['bottom']} style={isEditMode ? styles.editCta : styles.initialCta}>
+        {isEditMode ? (
+          <>
+            <Button
+              label="취소"
+              color="assistive"
+              onPress={handleCancel}
+              style={styles.cancelButton}
+            />
+            <Button
+              label={isSaving ? '저장 중...' : '저장하기'}
+              color="primary"
+              disabled={isLoading || isSaving || isUnchanged}
+              onPress={handleSave}
+              style={styles.saveButton}
+            />
+          </>
+        ) : (
+          <Button
+            label={isSaving ? '저장 중...' : '저장하기'}
+            color="primary"
+            onPress={handleSave}
+            disabled={isSaving}
+            style={styles.fullButton}
+          />
+        )}
+      </SafeAreaView>
+    </View>
+  );
+}
+
+type SummaryCardProps = {
+  label: string;
+  mode: GoalSetupMode;
+  value: string;
+};
+
+function SummaryCard({ label, mode, value }: SummaryCardProps) {
+  return (
+    <View style={[styles.summary, mode === 'edit' ? styles.editSummary : null]}>
+      <Text style={styles.summaryLabel}>{label}</Text>
+      <Text style={styles.summaryValue}>{value}</Text>
+    </View>
   );
 }
 
 type StepButtonProps = {
   kind: 'plus' | 'minus';
+  mode: GoalSetupMode;
   onPressIn: (e: GestureResponderEvent) => void;
   onPressOut: (e: GestureResponderEvent) => void;
   disabled?: boolean;
 };
 
-function StepButton({ kind, onPressIn, onPressOut, disabled }: StepButtonProps) {
+function StepButton({ kind, mode, onPressIn, onPressOut, disabled }: StepButtonProps) {
+  const isEditMode = mode === 'edit';
+  const iconName = isEditMode ? (kind === 'plus' ? 'plusCircle' : 'minusCircle') : kind;
+
   return (
     <Pressable
       onPressIn={disabled ? undefined : onPressIn}
       onPressOut={disabled ? undefined : onPressOut}
       disabled={disabled}
+      hitSlop={isEditMode ? 8 : undefined}
       style={({ pressed }) => [
-        styles.stepBtn,
-        pressed && !disabled ? styles.stepBtnPressed : null,
-        disabled ? styles.stepBtnDisabled : null,
+        isEditMode ? styles.editStepButton : styles.initialStepButton,
+        pressed && !disabled && !isEditMode ? styles.initialStepButtonPressed : null,
+        disabled ? styles.stepButtonDisabled : null,
       ]}
       accessibilityRole="button"
     >
-      <Icon name={kind} size={28} color="#FFFFFF" />
+      <Icon
+        name={iconName}
+        size={isEditMode ? 57 : 28}
+        weight={isEditMode ? 'fill' : undefined}
+        color={isEditMode ? gray[900] : '#FFFFFF'}
+      />
     </Pressable>
   );
 }
@@ -109,56 +243,71 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: brown[50],
   },
-  header: {
+  initialHeader: {
     height: 54,
-    paddingHorizontal: 16,
+    paddingHorizontal: spacing[16],
     justifyContent: 'center',
   },
-  logo: {
-    width: 110,
-    height: 18,
+  editHeader: {
+    height: 54,
+    paddingHorizontal: spacing[16],
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing[16],
   },
   body: {
     flex: 1,
-    paddingHorizontal: 16,
-    gap: 32,
+    paddingHorizontal: spacing[16],
+  },
+  initialBody: {
+    paddingTop: spacing[12],
+    gap: spacing[32],
+  },
+  editBody: {
+    paddingTop: spacing[20],
   },
   textGroup: {
-    gap: 4,
-    marginTop: 12,
+    gap: spacing[4],
+  },
+  editTextGroup: {
+    gap: spacing[12],
   },
   title: {
     ...typography.accent.h3,
     color: gray[900],
-    letterSpacing: -0.52,
   },
   description: {
     ...typography.primary.body2R,
     color: gray[400],
-    letterSpacing: -0.28,
   },
   summary: {
     backgroundColor: gray[50],
-    borderRadius: 16,
-    padding: 16,
+    borderRadius: radius[16],
+    padding: spacing[16],
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
   },
+  editSummary: {
+    marginTop: spacing[28],
+  },
   summaryLabel: {
     ...typography.primary.body3R,
     color: gray[500],
-    letterSpacing: -0.24,
   },
   summaryValue: {
     ...typography.primary.body1B,
     color: gray[500],
-    letterSpacing: -0.32,
   },
-  stepperWrap: {
-    marginTop: 60,
+  initialStepperWrap: {
+    marginTop: spacing[28],
     alignItems: 'center',
-    gap: 16,
+    gap: spacing[16],
+  },
+  editStepperWrap: {
+    marginTop: spacing[80],
+    alignItems: 'center',
+    gap: spacing[16],
   },
   stepper: {
     flexDirection: 'row',
@@ -170,15 +319,13 @@ const styles = StyleSheet.create({
     ...typography.accent.h1,
     fontSize: 57,
     lineHeight: 57 * 1.3,
-    color: '#000',
-    letterSpacing: -1.15,
+    color: '#000000',
   },
   stepperCaption: {
     ...typography.primary.title1B,
-    color: '#000',
-    letterSpacing: -0.4,
+    color: '#000000',
   },
-  stepBtn: {
+  initialStepButton: {
     width: 57,
     height: 57,
     borderRadius: 28.5,
@@ -186,18 +333,41 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
-  stepBtnPressed: {
+  editStepButton: {
+    width: 57,
+    height: 57,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  initialStepButtonPressed: {
     opacity: 0.85,
   },
-  stepBtnDisabled: {
+  stepButtonDisabled: {
     opacity: 0.4,
   },
-  cta: {
-    paddingHorizontal: 16,
-    paddingTop: 16,
-    paddingBottom: 60,
+  loadingWrap: {
+    flex: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
-  button: {
+  initialCta: {
+    paddingHorizontal: spacing[16],
+    paddingTop: spacing[16],
+    paddingBottom: spacing[44],
+  },
+  editCta: {
+    flexDirection: 'row',
+    gap: spacing[8],
+    paddingHorizontal: spacing[16],
+    paddingTop: spacing[16],
+  },
+  cancelButton: {
+    width: 108,
+  },
+  saveButton: {
+    flex: 1,
+  },
+  fullButton: {
     alignSelf: 'stretch',
   },
 });

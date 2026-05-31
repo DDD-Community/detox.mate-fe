@@ -5,20 +5,22 @@ import { Button, Icon } from '@/components';
 import { primitiveColors, typography } from '@/lib/token';
 import { useVerifyMethodNavigation } from './useVerifyMethodNavigation';
 import { VerifyBottomSheet } from './VerifyBottomSheet';
-import type { VerifyMode } from './verifyFlowParams';
+import type { VerifyMode, VerifyRoot } from './verifyFlowParams';
 
 const { gray } = primitiveColors;
 
 export default function VerifyMethodScreen() {
-  const { mode, goal, groupChallengeParticipantId } = useLocalSearchParams<{
+  const { mode, goal, groupChallengeParticipantId, verifyRoot } = useLocalSearchParams<{
     mode?: VerifyMode;
     goal?: string;
     groupChallengeParticipantId?: string;
+    verifyRoot?: VerifyRoot;
   }>();
   const { handleGallery, handleSettings } = useVerifyMethodNavigation({
     mode,
     goal,
     groupChallengeParticipantId,
+    verifyRoot,
   });
 
   return (

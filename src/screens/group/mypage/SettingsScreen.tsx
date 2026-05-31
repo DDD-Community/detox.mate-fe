@@ -13,13 +13,18 @@ import {
   registerDevicePushToken,
   unregisterDevicePushToken,
 } from '@/lib/fcmToken';
-import { Icon } from '@/components';
+import { HeaderAction, Icon } from '@/components';
+import { env } from '@/config/env';
 import { primitiveColors, radius, spacing, typography } from '@/lib/token';
 import { LogoutConfirmAlert } from './LogoutConfirmAlert';
 import { NotificationPermissionAlert } from './NotificationPermissionAlert';
 import { WithdrawConfirmAlert } from './WithdrawConfirmAlert';
 
 const { brown, gray, green } = primitiveColors;
+const appVersionLabel =
+  env.buildChannel === 'local' && env.gitSha
+    ? `v${env.appVersion} DEV · ${env.gitSha}`
+    : `v${env.appVersion}`;
 
 interface ToggleRowProps {
   label: string;
@@ -282,10 +287,7 @@ export default function SettingsScreen() {
     <View style={styles.root}>
       <SafeAreaView edges={['top']}>
         <View style={styles.header}>
-          <Pressable onPress={handleBack} hitSlop={8}>
-            <Icon name="caretLeft" size={24} color={gray[800]} />
-          </Pressable>
-          <Text style={styles.headerTitle}>설정</Text>
+          <HeaderAction label="설정" onPress={handleBack} accessibilityLabel="뒤로가기" />
         </View>
       </SafeAreaView>
 
@@ -306,9 +308,12 @@ export default function SettingsScreen() {
           <LinkRow label="로그아웃" onPress={handleOpenLogoutAlert} />
         </View>
 
-        <Pressable onPress={handleOpenWithdrawAlert} hitSlop={8} style={styles.withdrawWrap}>
-          <Text style={styles.withdrawText}>회원 탈퇴</Text>
-        </Pressable>
+        <View style={styles.metaRow}>
+          <Pressable onPress={handleOpenWithdrawAlert} hitSlop={8}>
+            <Text style={styles.withdrawText}>회원 탈퇴</Text>
+          </Pressable>
+          <Text style={styles.versionText}>{appVersionLabel}</Text>
+        </View>
       </View>
 
       <LogoutConfirmAlert
@@ -342,20 +347,13 @@ const styles = StyleSheet.create({
   header: {
     height: 54,
     paddingHorizontal: spacing[16],
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: spacing[16],
-  },
-  headerTitle: {
-    ...typography.accent.title2,
-    color: gray[800],
+    justifyContent: 'center',
   },
   body: {
     flex: 1,
     paddingHorizontal: spacing[16],
     paddingTop: spacing[20],
     gap: spacing[20],
-    alignItems: 'center',
   },
   card: {
     width: '100%',
@@ -385,13 +383,18 @@ const styles = StyleSheet.create({
     ...typography.primary.body1R,
     color: gray[800],
   },
-  withdrawWrap: {
-    marginTop: spacing[4],
-    alignSelf: 'center',
+  metaRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing[12],
   },
   withdrawText: {
     ...typography.primary.caption,
     color: gray[400],
     textDecorationLine: 'underline',
+  },
+  versionText: {
+    ...typography.primary.caption,
+    color: gray[400],
   },
 });

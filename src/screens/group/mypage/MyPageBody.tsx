@@ -9,6 +9,8 @@ import { WeeklyStatusCard } from './WeeklyStatusCard';
 import CALENDAR_IMG from '@assets/mypage-calender.png';
 import GROUP_INVITE_IMG from '@assets/onboarding-group-invite.png';
 import GROUP_PLUS_IMG from '@assets/onboarding-group-plus.png';
+import REACTION_IMG from '@assets/feed_emotion.png';
+import POCK_IMG from '@assets/pock.png';
 
 const { brown, gray } = primitiveColors;
 
@@ -48,7 +50,9 @@ interface MyPageBodyProps {
   achievedDays: number;
   joinedGroups: JoinedGroupItem[];
   daysUntilGoalChange: number;
+  isReacting: boolean;
   onPoke: () => void;
+  onToggleReactionPicker: () => void;
   onSetGoal: () => void;
   onCreateGroup: () => void;
   onEnterInviteCode: () => void;
@@ -71,7 +75,9 @@ export function MyPageBody({
   achievedDays,
   joinedGroups,
   daysUntilGoalChange,
+  isReacting,
   onPoke,
+  onToggleReactionPicker,
   onSetGoal,
   onCreateGroup,
   onEnterInviteCode,
@@ -99,6 +105,7 @@ export function MyPageBody({
           <Button
             label="콕 찌르기"
             color="primary"
+            leadingIcon={<Image source={POCK_IMG} style={styles.pockIcon} resizeMode="contain" />}
             disabled={isPoking}
             onPress={onPoke}
             style={styles.pokeCta}
@@ -121,6 +128,18 @@ export function MyPageBody({
           achievedDays={achievedDays}
           achievableDays={certifiedDays}
         />
+        <View style={styles.friendReactionWrap}>
+          <Button
+            label="리액션 보내기"
+            color="assistive"
+            leadingIcon={
+              <Image source={REACTION_IMG} style={styles.reactionIcon} resizeMode="contain" />
+            }
+            disabled={isReacting}
+            onPress={onToggleReactionPicker}
+            style={styles.friendReactionButton}
+          />
+        </View>
       </View>
     );
   }
@@ -133,26 +152,7 @@ export function MyPageBody({
     );
   }
 
-  if (hasGoalSet && hasJoinedGroup) {
-    return (
-      <JoinedGroupBody
-        weekLabel="최근 7일"
-        diffMinutes={diffMinutes}
-        avgScreenTime={avgScreenTime}
-        goalScreenTime={goalScreenTime}
-        verifiedDays={certifiedDays}
-        totalVerifyDays={totalVerifyDays}
-        achievedDays={achievedDays}
-        achievableDays={certifiedDays}
-        groups={joinedGroups}
-        daysUntilGoalChange={daysUntilGoalChange}
-        onGroupPress={onGroupPress}
-        onGoalChangePress={onChangeGoal}
-      />
-    );
-  }
-
-  if (hasGoalSet) {
+  if (!hasJoinedGroup) {
     return (
       <View style={styles.goalSetBody}>
         <View style={styles.actionCardRow}>
@@ -173,6 +173,25 @@ export function MyPageBody({
         </View>
         <Text style={styles.actionHelperText}>새 그룹을 만들거나 친구가 만든 그룹에 입장해요</Text>
       </View>
+    );
+  }
+
+  if (hasGoalSet) {
+    return (
+      <JoinedGroupBody
+        weekLabel="최근 7일"
+        diffMinutes={diffMinutes}
+        avgScreenTime={avgScreenTime}
+        goalScreenTime={goalScreenTime}
+        verifiedDays={certifiedDays}
+        totalVerifyDays={totalVerifyDays}
+        achievedDays={achievedDays}
+        achievableDays={certifiedDays}
+        groups={joinedGroups}
+        daysUntilGoalChange={daysUntilGoalChange}
+        onGroupPress={onGroupPress}
+        onGoalChangePress={onChangeGoal}
+      />
     );
   }
 
@@ -261,6 +280,20 @@ const styles = StyleSheet.create({
     paddingHorizontal: spacing[16],
     paddingTop: spacing[16],
   },
+  friendReactionWrap: {
+    alignItems: 'center',
+    gap: spacing[8],
+    marginTop: spacing[16],
+    zIndex: 1,
+  },
+  friendReactionButton: {
+    width: 311,
+    alignSelf: 'center',
+  },
+  reactionIcon: {
+    width: 20,
+    height: 20,
+  },
   friendEmptyState: {
     flex: 1,
     alignItems: 'center',
@@ -283,5 +316,9 @@ const styles = StyleSheet.create({
   pokeCta: {
     width: 311,
     alignSelf: 'center',
+  },
+  pockIcon: {
+    width: 22,
+    height: 17,
   },
 });

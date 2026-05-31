@@ -1,6 +1,7 @@
 import { router } from 'expo-router';
-import { Image, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { primitiveColors, spacing, typography } from '../../lib/token';
+import { Icon } from '../../components/Icon';
 
 const { gray } = primitiveColors;
 
@@ -19,35 +20,29 @@ export default function FeedHeader({ groupName, groupChallengeId }: FeedHeaderPr
 
   return (
     <View style={styles.header}>
-      <Text style={styles.title}>{groupName}</Text>
+      <View style={styles.titleWrap}>
+        <Text style={styles.title} numberOfLines={1} ellipsizeMode="tail">
+          {groupName}
+        </Text>
+      </View>
       <View style={styles.icons}>
-        <TouchableOpacity
+        <Pressable
           style={styles.iconButton}
+          hitSlop={8}
           onPress={() => router.push('/(group)/notifications')}
         >
-          <Image
-            source={require('../../../assets/onboarding-rg-bell.png')}
-            style={styles.icon}
-            resizeMode="contain"
-          />
-        </TouchableOpacity>
-        <TouchableOpacity style={styles.iconButton} onPress={handleCalendarPress}>
-          <Image
-            source={require('../../../assets/onboarding-calendar.png')}
-            style={styles.icon}
-            resizeMode="contain"
-          />
-        </TouchableOpacity>
-        <TouchableOpacity
+          <Icon name="bell" size={24} color={gray[800]} />
+        </Pressable>
+        <Pressable style={styles.iconButton} hitSlop={8} onPress={handleCalendarPress}>
+          <Icon name="calendarBlank" size={24} color={gray[800]} />
+        </Pressable>
+        <Pressable
           style={styles.iconButton}
+          hitSlop={8}
           onPress={() => router.push('/(group)/mypage')}
         >
-          <Image
-            source={require('../../../assets/onboarding-rg-user.png')}
-            style={styles.icon}
-            resizeMode="contain"
-          />
-        </TouchableOpacity>
+          <Icon name="user" size={24} color={gray[800]} />
+        </Pressable>
       </View>
     </View>
   );
@@ -55,29 +50,32 @@ export default function FeedHeader({ groupName, groupChallengeId }: FeedHeaderPr
 
 const styles = StyleSheet.create({
   header: {
-    paddingTop: spacing[64],
-    paddingHorizontal: spacing[24],
-    paddingBottom: spacing[16],
+    height: 113,
+    paddingTop: 59,
+    paddingHorizontal: spacing[16],
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
+    gap: spacing[16],
+  },
+  titleWrap: {
+    flex: 1,
+    minWidth: 0,
   },
   title: {
-    ...typography.primary.title2B,
-    color: gray[900],
+    ...typography.accent.title2,
+    color: gray[800],
+    letterSpacing: -0.4,
   },
   icons: {
     flexDirection: 'row',
-    gap: spacing[2],
+    gap: spacing[12],
+    flexShrink: 0,
   },
   iconButton: {
-    width: 36,
-    height: 36,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  icon: {
     width: 24,
     height: 24,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
 });

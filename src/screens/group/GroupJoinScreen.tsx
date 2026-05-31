@@ -2,12 +2,14 @@ import * as Clipboard from 'expo-clipboard';
 import { useRouter } from 'expo-router';
 import React, { useState } from 'react';
 import { Image, Share, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import apiClient from '../../api/client';
+import { ClipboardCopyToast, useClipboardCopyToast } from '../../components';
 import { Icon } from '../../components/Icon';
-import { primitiveColors } from '../../lib/token/primitive/colors';
-import { typography } from '../../lib/token/primitive/typography';
+import { primitiveColors, radius, spacing, typography } from '../../lib/token';
 
 const { green, gray, brown } = primitiveColors;
+const INVITE_CODE_MAX_LENGTH = 5;
 
 export default function GroupJoinScreen() {
   const router = useRouter();
@@ -16,11 +18,12 @@ export default function GroupJoinScreen() {
   const [groupName, setGroupName] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const { copyToastVisible, showCopyToast } = useClipboardCopyToast();
 
-  const canComplete = inviteCode.length === 5;
+  const canComplete = inviteCode.length === INVITE_CODE_MAX_LENGTH;
 
   const handleCodeChange = (text: string) => {
-    setInviteCode(text.toUpperCase().slice(0, 5));
+    setInviteCode(text.toUpperCase().slice(0, INVITE_CODE_MAX_LENGTH));
     setError(null);
   };
 
@@ -37,11 +40,11 @@ export default function GroupJoinScreen() {
       const status = e?.response?.status;
       console.log(status);
       if (status === 409) {
-        setError('이미 참여한 그룹이에요');
+        setError('초대 코드를 다시 확인해주세요');
       } else if (status === 404) {
-        setError('유효하지 않은 초대 코드예요');
+        setError('초대 코드를 다시 확인해주세요');
       } else {
-        setError('그룹 참여에 실패했어요. 다시 시도해 주세요');
+        setError('초대 코드를 다시 확인해주세요');
       }
     } finally {
       setLoading(false);
@@ -50,6 +53,7 @@ export default function GroupJoinScreen() {
 
   const handleCopy = async () => {
     await Clipboard.setStringAsync(inviteCode);
+    showCopyToast();
   };
 
   const handleShare = async () => {
@@ -64,35 +68,51 @@ export default function GroupJoinScreen() {
 
   return (
     <View style={styles.root}>
-      <View style={styles.progressRow}>
-        <View style={[styles.segment, styles.segmentActive]} />
-        <View
-          style={[styles.segment, step === 2 ? styles.segmentActive : styles.segmentInactive]}
-        />
-      </View>
-      <Text style={styles.stepLabel}>{step}/2</Text>
+      <SafeAreaView edges={['top']} style={styles.topArea}>
+        <View style={styles.progressRow}>
+          <View style={[styles.segment, styles.segmentActive]} />
+          <View
+            style={[styles.segment, step === 2 ? styles.segmentActive : styles.segmentInactive]}
+          />
+        </View>
+      </SafeAreaView>
 
       {step === 1 ? (
         <View style={styles.content}>
+          <Text style={styles.stepLabel}>{step}/2</Text>
           <Text style={styles.title}>공유받은 초대 코드를{'\n'}입력하세요</Text>
-
-          <View style={styles.gap24} />
 
           <View style={styles.inputWrapper}>
             <TextInput
               style={styles.input}
               value={inviteCode}
               onChangeText={handleCodeChange}
-              placeholder="초대 코드를 입력해 주세요"
+              placeholder="초대 코드를 입력해주세요"
               placeholderTextColor={gray[300]}
               autoCapitalize="characters"
-              maxLength={5}
+              maxLength={INVITE_CODE_MAX_LENGTH}
             />
+            {error ? null : (
+              <Text style={styles.counter}>
+                {inviteCode.length}/{INVITE_CODE_MAX_LENGTH}
+              </Text>
+            )}
           </View>
-          {error && <Text style={styles.errorText}>{error}</Text>}
+          {error ? (
+            <View style={styles.errorRow}>
+              <Icon
+                name="warningCircle"
+                size={14}
+                weight="fill"
+                color={primitiveColors.system.red.opacity100}
+              />
+              <Text style={styles.errorText}>{error}</Text>
+            </View>
+          ) : null}
         </View>
       ) : (
         <View style={styles.content}>
+          <Text style={styles.stepLabel}>{step}/2</Text>
           <Image
             source={require('../../../assets/onboarding-check.png')}
             style={styles.checkImage}
@@ -103,7 +123,7 @@ export default function GroupJoinScreen() {
             {'\n'}그룹에 참여했어요!
           </Text>
           <Text style={styles.completeSubtitle}>
-            초대 코드를 친구에게 공유해서 함께 시작해 보세요
+            초대 코드를 친구에게 공유해서 함께 시작해보세요
           </Text>
 
           <View style={styles.gap24} />
@@ -125,7 +145,7 @@ export default function GroupJoinScreen() {
         </View>
       )}
 
-      <View style={styles.buttonRow}>
+      <SafeAreaView edges={['bottom']} style={styles.buttonRow}>
         <TouchableOpacity
           style={styles.prevButton}
           onPress={() => router.back()}
@@ -134,14 +154,19 @@ export default function GroupJoinScreen() {
           <Text style={styles.prevText}>이전</Text>
         </TouchableOpacity>
         <TouchableOpacity
-          style={[styles.nextButton, step === 1 && !canComplete && styles.nextButtonDisabled]}
+          style={[
+            styles.nextButton,
+            step === 1 && (!canComplete || loading) && styles.nextButtonDisabled,
+          ]}
           onPress={step === 1 ? handleComplete : handleGoToFeed}
-          disabled={step === 1 && !canComplete}
+          disabled={step === 1 && (!canComplete || loading)}
           activeOpacity={0.85}
         >
           <Text style={styles.nextText}>{step === 1 ? '완료' : '그룹 피드로 가기'}</Text>
         </TouchableOpacity>
-      </View>
+      </SafeAreaView>
+
+      <ClipboardCopyToast visible={copyToastVisible} />
     </View>
   );
 }
@@ -151,80 +176,99 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: brown[50],
   },
+  topArea: {
+    paddingTop: 35,
+  },
   progressRow: {
     flexDirection: 'row',
-    gap: 6,
-    paddingHorizontal: 24,
-    paddingTop: 64,
+    gap: spacing[2],
+    paddingHorizontal: spacing[16],
   },
   segment: {
     flex: 1,
-    height: 4,
-    borderRadius: 2,
+    height: 2,
+    borderRadius: radius.full,
   },
   segmentActive: {
-    backgroundColor: green[400],
+    backgroundColor: brown[900],
   },
   segmentInactive: {
-    backgroundColor: green[75],
+    backgroundColor: brown[900],
+    opacity: 0.1,
   },
   stepLabel: {
-    ...typography.primary.caption,
+    ...typography.primary.body2R,
     color: gray[400],
-    paddingHorizontal: 24,
-    marginTop: 8,
+    marginBottom: spacing[8],
   },
   content: {
     flex: 1,
-    paddingHorizontal: 24,
-    paddingTop: 24,
+    paddingHorizontal: spacing[16],
+    paddingTop: spacing[32],
   },
-  gap24: { height: 24 },
+  gap24: { height: spacing[24] },
   title: {
-    ...typography.primary.h2,
+    ...typography.accent.h3,
     color: gray[900],
+    marginBottom: spacing[40],
+    letterSpacing: -0.52,
   },
   inputWrapper: {
+    flexDirection: 'row',
+    alignItems: 'center',
     backgroundColor: '#FFFFFF',
-    borderRadius: 12,
-    paddingHorizontal: 16,
-    paddingVertical: 14,
+    borderRadius: radius[12],
+    height: 50,
+    paddingHorizontal: spacing[16],
+  },
+  errorRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing[4],
+    marginTop: spacing[8],
   },
   errorText: {
-    ...typography.primary.caption,
-    color: '#E53935',
-    paddingHorizontal: 4,
-    marginTop: 8,
+    ...typography.accent.caption,
+    color: primitiveColors.system.red.opacity100,
+    letterSpacing: -0.26,
   },
   input: {
+    flex: 1,
     ...typography.primary.body1R,
     color: gray[900],
     padding: 0,
-    letterSpacing: 3,
+  },
+  counter: {
+    ...typography.primary.body3R,
+    color: gray[300],
+    marginLeft: spacing[8],
+    letterSpacing: -0.24,
   },
   checkImage: {
-    width: 100,
-    height: 100,
+    width: 80,
+    height: 80,
     alignSelf: 'center',
-    marginBottom: 16,
-    marginTop: 8,
+    marginTop: 31,
+    marginBottom: spacing[20],
   },
   completeTitle: {
-    ...typography.primary.h2,
+    ...typography.accent.h3,
     color: gray[900],
     textAlign: 'center',
-    marginBottom: 8,
+    marginBottom: spacing[12],
+    letterSpacing: -0.52,
   },
   completeSubtitle: {
     ...typography.primary.body2R,
-    color: gray[600],
+    color: gray[400],
     textAlign: 'center',
+    letterSpacing: -0.28,
   },
   inviteCard: {
     backgroundColor: '#FFFFFF',
-    borderRadius: 16,
-    padding: 20,
-    gap: 12,
+    borderRadius: radius[12],
+    padding: spacing[20],
+    gap: spacing[20],
   },
   codeRow: {
     flexDirection: 'row',
@@ -233,13 +277,14 @@ const styles = StyleSheet.create({
     gap: 10,
   },
   codeLabel: {
-    ...typography.primary.body2R,
-    color: gray[600],
+    ...typography.accent.body2,
+    color: gray[500],
+    letterSpacing: -0.31,
   },
   codeText: {
-    ...typography.primary.title1B,
+    ...typography.accent.h3,
     color: gray[900],
-    letterSpacing: 2,
+    letterSpacing: -0.31,
   },
   shareInCard: {
     flexDirection: 'row',
@@ -247,25 +292,29 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     gap: 8,
     backgroundColor: gray[50],
-    borderRadius: 10,
-    paddingVertical: 12,
+    borderRadius: 18,
+    height: 44,
   },
   shareText: {
-    ...typography.primary.body2M,
-    color: gray[900],
+    ...typography.primary.body2B,
+    color: gray[800],
+    letterSpacing: -0.28,
   },
   buttonRow: {
     flexDirection: 'row',
-    gap: 8,
-    paddingHorizontal: 24,
-    paddingTop: 24,
-    paddingBottom: 48,
+    gap: spacing[8],
+    paddingHorizontal: spacing[16],
+    paddingTop: spacing[16],
+    paddingBottom: 26,
+    backgroundColor: brown[50],
   },
   prevButton: {
-    flex: 2,
-    backgroundColor: gray[700],
-    borderRadius: 100,
-    paddingVertical: 16,
+    width: 108,
+    minWidth: 88,
+    height: 50,
+    backgroundColor: brown[900],
+    borderRadius: 18,
+    paddingHorizontal: spacing[16],
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -274,15 +323,18 @@ const styles = StyleSheet.create({
     color: '#FFFFFF',
   },
   nextButton: {
-    flex: 3,
-    backgroundColor: green[400],
-    borderRadius: 100,
-    paddingVertical: 16,
+    flex: 1,
+    minWidth: 88,
+    height: 50,
+    backgroundColor: green[300],
+    borderRadius: 18,
+    paddingHorizontal: spacing[16],
     alignItems: 'center',
     justifyContent: 'center',
   },
   nextButtonDisabled: {
-    backgroundColor: gray[200],
+    backgroundColor: green[400],
+    opacity: 0.3,
   },
   nextText: {
     ...typography.primary.body1B,
