@@ -135,26 +135,7 @@ export function MyPageBody({
     );
   }
 
-  if (hasGoalSet && hasJoinedGroup) {
-    return (
-      <JoinedGroupBody
-        weekLabel="최근 7일"
-        diffMinutes={diffMinutes}
-        avgScreenTime={avgScreenTime}
-        goalScreenTime={goalScreenTime}
-        verifiedDays={certifiedDays}
-        totalVerifyDays={totalVerifyDays}
-        achievedDays={achievedDays}
-        achievableDays={certifiedDays}
-        groups={joinedGroups}
-        daysUntilGoalChange={daysUntilGoalChange}
-        onGroupPress={onGroupPress}
-        onGoalChangePress={onChangeGoal}
-      />
-    );
-  }
-
-  if (hasGoalSet) {
+  if (!hasJoinedGroup) {
     return (
       <View style={styles.goalSetBody}>
         <View style={styles.actionCardRow}>
@@ -175,6 +156,25 @@ export function MyPageBody({
         </View>
         <Text style={styles.actionHelperText}>새 그룹을 만들거나 친구가 만든 그룹에 입장해요</Text>
       </View>
+    );
+  }
+
+  if (hasGoalSet) {
+    return (
+      <JoinedGroupBody
+        weekLabel="최근 7일"
+        diffMinutes={diffMinutes}
+        avgScreenTime={avgScreenTime}
+        goalScreenTime={goalScreenTime}
+        verifiedDays={certifiedDays}
+        totalVerifyDays={totalVerifyDays}
+        achievedDays={achievedDays}
+        achievableDays={certifiedDays}
+        groups={joinedGroups}
+        daysUntilGoalChange={daysUntilGoalChange}
+        onGroupPress={onGroupPress}
+        onGoalChangePress={onChangeGoal}
+      />
     );
   }
 
