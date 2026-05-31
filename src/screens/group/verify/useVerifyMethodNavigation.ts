@@ -4,7 +4,7 @@ import { useRef } from 'react';
 import { AppState } from 'react-native';
 
 import { pickImageFromLibrary } from './useImageLibraryPicker';
-import { buildVerifyFlowParams, type VerifyFlowParams } from './verifyFlowParams';
+import { buildVerifyFlowParams, getVerifyPath, type VerifyFlowParams } from './verifyFlowParams';
 
 export function useVerifyMethodNavigation(params: VerifyFlowParams) {
   const awaitingReturnRef = useRef(false);
@@ -15,7 +15,7 @@ export function useVerifyMethodNavigation(params: VerifyFlowParams) {
     if (!asset) return;
 
     router.replace({
-      pathname: '/(group)/verify/upload',
+      pathname: getVerifyPath('upload', params.verifyRoot),
       params: { imageUri: asset.uri, ...forwardParams },
     });
   };
@@ -28,7 +28,7 @@ export function useVerifyMethodNavigation(params: VerifyFlowParams) {
       awaitingReturnRef.current = false;
       subscription.remove();
       router.replace({
-        pathname: '/(group)/verify/upload',
+        pathname: getVerifyPath('upload', params.verifyRoot),
         params: forwardParams,
       });
     });

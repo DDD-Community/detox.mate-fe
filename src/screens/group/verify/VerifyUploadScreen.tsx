@@ -5,7 +5,7 @@ import { Button, Icon } from '@/components';
 import { primitiveColors, typography } from '@/lib/token';
 import { useVerifyUploadAnalysis } from './useVerifyUploadAnalysis';
 import { VerifyBottomSheet } from './VerifyBottomSheet';
-import type { VerifyMode } from './verifyFlowParams';
+import type { VerifyMode, VerifyRoot } from './verifyFlowParams';
 
 const { gray } = primitiveColors;
 
@@ -15,11 +15,13 @@ export default function VerifyUploadScreen() {
     mode,
     goal,
     groupChallengeParticipantId,
+    verifyRoot,
   } = useLocalSearchParams<{
     imageUri?: string;
     mode?: VerifyMode;
     goal?: string;
     groupChallengeParticipantId?: string;
+    verifyRoot?: VerifyRoot;
   }>();
   const {
     buttonDisabled,
@@ -34,6 +36,7 @@ export default function VerifyUploadScreen() {
     mode,
     goal,
     groupChallengeParticipantId,
+    verifyRoot,
   });
 
   return (

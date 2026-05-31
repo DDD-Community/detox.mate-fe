@@ -47,7 +47,12 @@ function GoalBanner() {
         leadingIcon={<Icon name="target" size={16} color={WHITE} />}
         color="assistive"
         size="sm"
-        onPress={() => router.push('/(group)/goal')}
+        onPress={() =>
+          router.push({
+            pathname: '/verify',
+            params: { mode: 'initial', verifyRoot: 'root' },
+          })
+        }
         style={styles.bannerButton}
       />
     </View>
@@ -101,9 +106,10 @@ function DailyAuthBanner({ verifyParams }: Pick<Props, 'verifyParams'>) {
         size="sm"
         onPress={() =>
           router.push({
-            pathname: '/(group)/verify',
+            pathname: '/verify',
             params: {
               mode: 'verify',
+              verifyRoot: 'root',
               ...(verifyParams?.goal ? { goal: verifyParams.goal } : {}),
               ...(verifyParams?.groupChallengeParticipantId
                 ? { groupChallengeParticipantId: verifyParams.groupChallengeParticipantId }

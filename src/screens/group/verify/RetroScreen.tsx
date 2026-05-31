@@ -15,18 +15,21 @@ import {
 import { Icon } from '@/components';
 import { primitiveColors, typography } from '@/lib/token';
 import { useRetroForm } from './useRetroForm';
+import type { VerifyRoot } from './verifyFlowParams';
 
 const { gray, brown, green, system } = primitiveColors;
 
 export default function RetroScreen() {
-  const { value, groupChallengeParticipantId } = useLocalSearchParams<{
+  const { value, groupChallengeParticipantId, verifyRoot } = useLocalSearchParams<{
     value?: string;
     groupChallengeParticipantId?: string;
+    verifyRoot?: VerifyRoot;
   }>();
   const { canSubmit, handlePickImage, handleSubmit, imageAsset, setText, submitting, text } =
     useRetroForm({
       value,
       groupChallengeParticipantId,
+      verifyRoot,
     });
 
   return (

@@ -6,20 +6,22 @@ import SCREEN_TIME_REF_IMAGE from '@assets/screen_time_ref.png';
 import { Button } from '@/components';
 import { primitiveColors, typography } from '@/lib/token';
 import { useVerifyHowToGate } from './useVerifyHowToGate';
-import type { VerifyMode } from './verifyFlowParams';
+import type { VerifyMode, VerifyRoot } from './verifyFlowParams';
 
 const { gray } = primitiveColors;
 
 export default function VerifyHowToScreen() {
-  const { mode, goal, groupChallengeParticipantId } = useLocalSearchParams<{
+  const { mode, goal, groupChallengeParticipantId, verifyRoot } = useLocalSearchParams<{
     mode?: VerifyMode;
     goal?: string;
     groupChallengeParticipantId?: string;
+    verifyRoot?: VerifyRoot;
   }>();
   const { handleConfirm, handleHideForever, isVerifyMode, ready } = useVerifyHowToGate({
     mode,
     goal,
     groupChallengeParticipantId,
+    verifyRoot,
   });
 
   if (!ready) {

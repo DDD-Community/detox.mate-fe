@@ -2,21 +2,27 @@ import { router, useLocalSearchParams } from 'expo-router';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 
 import { primitiveColors } from '@/lib/token';
-import { buildVerifyFlowParams, type VerifyMode } from './verifyFlowParams';
+import {
+  buildVerifyFlowParams,
+  getVerifyPath,
+  type VerifyMode,
+  type VerifyRoot,
+} from './verifyFlowParams';
 
 const { green } = primitiveColors;
 
 export default function VerifyErrorScreen() {
-  const { mode, goal, groupChallengeParticipantId } = useLocalSearchParams<{
+  const { mode, goal, groupChallengeParticipantId, verifyRoot } = useLocalSearchParams<{
     mode?: VerifyMode;
     goal?: string;
     groupChallengeParticipantId?: string;
+    verifyRoot?: VerifyRoot;
   }>();
 
   const handleRetake = () => {
     router.replace({
-      pathname: '/(group)/verify/method',
-      params: buildVerifyFlowParams({ mode, goal, groupChallengeParticipantId }),
+      pathname: getVerifyPath('method', verifyRoot),
+      params: buildVerifyFlowParams({ mode, goal, groupChallengeParticipantId, verifyRoot }),
     });
   };
 
