@@ -42,7 +42,7 @@ export function AuthLoginButton({
     >
       {isIconButton ? (
         <View style={styles.buttonInner}>
-          <Image source={iconSource} />
+          <Image source={iconSource} style={styles.icon} resizeMode="contain" />
           <Text style={[styles.iconButtonText, variantStyles[variant].text]}>{buttonText}</Text>
           <View style={styles.iconPlaceholder} />
         </View>
@@ -55,16 +55,22 @@ export function AuthLoginButton({
 
 const styles = StyleSheet.create({
   button: {
+    height: 56,
     borderRadius: 18,
-    paddingVertical: 16,
+    justifyContent: 'center',
   },
   buttonInner: {
+    flex: 1,
     flexDirection: 'row',
     alignItems: 'center',
-    paddingHorizontal: 20,
+    paddingHorizontal: 14,
   },
   iconPlaceholder: {
-    width: 24,
+    width: 18,
+  },
+  icon: {
+    width: 18,
+    height: 18,
   },
   iconButtonText: {
     flex: 1,

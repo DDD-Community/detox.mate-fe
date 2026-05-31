@@ -1,11 +1,11 @@
 import { StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 
 import { Icon } from '@/components';
-import { primitiveColors, spacing, typography } from '@/lib/token';
+import { primitiveColors, radius, spacing, typography } from '@/lib/token';
 import { TermsAgreementRow } from './TermsAgreementRow';
 import { useTermsAgreement } from './useTermsAgreement';
 
-const { green, gray } = primitiveColors;
+const { brown, gray } = primitiveColors;
 
 export default function TermsAgreementScreen() {
   const {
@@ -35,7 +35,7 @@ export default function TermsAgreementScreen() {
           <View style={styles.gap28} />
 
           <TouchableOpacity style={styles.allAgreeRow} onPress={handleAllAgree} activeOpacity={0.7}>
-            <Icon name="check" size={20} color={allAgreed ? green[500] : gray[400]} />
+            <Icon name="check" size={18} color={gray[900]} />
             <Text style={styles.allAgreeText}>전체 동의</Text>
           </TouchableOpacity>
 
@@ -76,38 +76,41 @@ export default function TermsAgreementScreen() {
 const styles = StyleSheet.create({
   root: {
     flex: 1,
-    backgroundColor: gray[100],
+    backgroundColor: 'rgba(0, 0, 0, 0.3)',
     justifyContent: 'flex-end',
   },
   backdrop: {
     flex: 1,
   },
   sheet: {
-    backgroundColor: '#FFFFFF',
-    borderTopLeftRadius: 20,
-    borderTopRightRadius: 20,
-    paddingBottom: 34,
+    marginHorizontal: spacing[8],
+    marginBottom: 42,
+    backgroundColor: brown[50],
+    borderRadius: 24,
+    paddingHorizontal: spacing[20],
+    paddingBottom: spacing[20],
   },
   handle: {
-    width: 40,
-    height: 4,
-    backgroundColor: gray[200],
-    borderRadius: 2,
+    width: 52,
+    height: 5,
+    backgroundColor: gray[100],
+    borderRadius: radius.full,
     alignSelf: 'center',
-    marginTop: 12,
+    marginTop: 5,
   },
   content: {
-    paddingHorizontal: 24,
-    paddingTop: 28,
+    paddingTop: spacing[24],
   },
   title: {
-    ...typography.primary.h2,
+    ...typography.accent.h3,
     color: gray[900],
-    marginBottom: 12,
+    letterSpacing: -0.52,
+    marginBottom: spacing[12],
   },
   subtitle: {
     ...typography.primary.body2R,
     color: gray[400],
+    letterSpacing: -0.28,
   },
   gap28: { height: 28 },
   gap16: { height: 16 },
@@ -118,26 +121,28 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     gap: spacing[8],
     backgroundColor: gray[50],
-    borderRadius: 12,
+    borderRadius: radius[12],
     paddingVertical: 14,
-    paddingHorizontal: 16,
+    paddingHorizontal: spacing[12],
   },
   allAgreeText: {
-    ...typography.primary.body1M,
+    ...typography.accent.title2,
     color: gray[900],
   },
   confirmButton: {
-    borderRadius: 100,
-    paddingVertical: 16,
+    height: 50,
+    borderRadius: 18,
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: gray[200],
+    backgroundColor: brown[900],
+    opacity: 0.3,
   },
   confirmButtonEnabled: {
-    backgroundColor: gray[800],
+    opacity: 1,
   },
   confirmText: {
     ...typography.primary.body1B,
     color: '#FFFFFF',
+    letterSpacing: -0.32,
   },
 });

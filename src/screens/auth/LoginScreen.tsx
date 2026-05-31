@@ -1,20 +1,28 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Image, Modal, Pressable, StyleSheet, Text, View } from 'react-native';
+import { useLocalSearchParams } from 'expo-router';
 
+import LOGO_BLACK from '@assets/logo-black.png';
 import LOGO_APPLE_LOGIN from '@assets/logo-apple-login.png';
 import LOGO_KAKAO_LOGIN from '@assets/logo-kakao-login.png';
 import TURTLE_HI_IMAGE from '@assets/turtle-hi.png';
 
-import { AppLogo } from '@/components';
+import { Icon, Toast, useToastVisibility } from '@/components';
 import { env } from '@/config/env';
 import { primitiveColors, typography } from '@/lib/token';
 import { AppAccessPermissionGuideModal } from './AppAccessPermissionGuideModal';
 import { AuthLoginButton } from './AuthLoginButton';
 import { TEST_USER_KEYS, TestUserKey, useAuthLogin } from './useAuthLogin';
 
-const { brown, gray } = primitiveColors;
+const { brown, gray, system } = primitiveColors;
+const LOGIN_FAILURE_MESSAGE = '로그인에 실패했어요. 잠시 후 다시 시도해주세요.';
+const SESSION_EXPIRED_MESSAGE = '로그인 세션이 만료되었습니다.';
+const LOGIN_TOAST_BOTTOM_OFFSET = 204;
+const LOGIN_TOAST_WITH_TEST_BOTTOM_OFFSET = 272;
 
 export default function LoginScreen() {
+  const { reason } = useLocalSearchParams<{ reason?: string }>();
+  const loginToast = useToastVisibility();
   const {
     handleKakaoLogin,
     handleAppleLogin,
@@ -23,10 +31,19 @@ export default function LoginScreen() {
     pendingProvider,
     permissionGuideConfirming,
     permissionGuideVisible,
-  } = useAuthLogin();
+  } = useAuthLogin({
+    onLoginFailure: () => loginToast.showWithMessage(LOGIN_FAILURE_MESSAGE),
+  });
   const [testKeyModalVisible, setTestKeyModalVisible] = useState(false);
   const loginPending = Boolean(pendingProvider);
   const showTestLoginButton = env.appEnv === 'development';
+  const isSessionExpiredToast = loginToast.message === SESSION_EXPIRED_MESSAGE;
+
+  useEffect(() => {
+    if (reason === 'sessionExpired') {
+      loginToast.showWithMessage(SESSION_EXPIRED_MESSAGE);
+    }
+  }, [reason]);
 
   const handleOpenTestKeyModal = () => {
     if (loginPending) return;
@@ -47,28 +64,11 @@ export default function LoginScreen() {
 
   return (
     <View style={styles.root}>
-      <View style={styles.topSection}>
-        <AppLogo scale={1.4} />
-        <Text style={styles.tagline}>매일 디지털 디톡스를 하며{'\n'}친구들과 함께 성장해요</Text>
-      </View>
-
-      <View style={styles.imageSection}>
-        <Image source={TURTLE_HI_IMAGE} style={styles.turtleImage} resizeMode="contain" />
-      </View>
+      <Image source={LOGO_BLACK} style={styles.logoMark} resizeMode="contain" />
+      <Text style={styles.tagline}>매일 디지털 디톡스를 하며{'\n'}친구들과 함께 성장해요</Text>
+      <Image source={TURTLE_HI_IMAGE} style={styles.turtleImage} resizeMode="contain" />
 
       <View style={styles.buttonSection}>
-        <AuthLoginButton
-          variant="kakao"
-          label="카카오로 시작하기"
-          pendingLabel="카카오 로그인 중..."
-          iconSource={LOGO_KAKAO_LOGIN}
-          onPress={handleKakaoLogin}
-          pending={pendingProvider === 'kakao'}
-          disabled={loginPending}
-        />
-
-        <View style={styles.buttonGap} />
-
         {showTestLoginButton ? (
           <>
             <AuthLoginButton
@@ -85,6 +85,18 @@ export default function LoginScreen() {
         ) : null}
 
         <AuthLoginButton
+          variant="kakao"
+          label="카카오로 시작하기"
+          pendingLabel="카카오 로그인 중..."
+          iconSource={LOGO_KAKAO_LOGIN}
+          onPress={handleKakaoLogin}
+          pending={pendingProvider === 'kakao'}
+          disabled={loginPending}
+        />
+
+        <View style={styles.buttonGap} />
+
+        <AuthLoginButton
           variant="apple"
           label="애플로 시작하기"
           pendingLabel="애플 로그인 중..."
@@ -94,6 +106,22 @@ export default function LoginScreen() {
           disabled={loginPending}
         />
       </View>
+
+      <Toast
+        visible={loginToast.visible}
+        message={loginToast.message}
+        bottomOffset={
+          showTestLoginButton ? LOGIN_TOAST_WITH_TEST_BOTTOM_OFFSET : LOGIN_TOAST_BOTTOM_OFFSET
+        }
+        icon={
+          <Icon
+            name={isSessionExpiredToast ? 'info' : 'warningCircle'}
+            size={16}
+            weight="fill"
+            color={isSessionExpiredToast ? '#FFFFFF' : system.red.opacity100}
+          />
+        }
+      />
 
       {showTestLoginButton ? (
         <Modal
@@ -136,28 +164,35 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: brown[50],
   },
-  topSection: {
-    alignItems: 'center',
-    paddingTop: 150,
-    gap: 10,
+  logoMark: {
+    position: 'absolute',
+    top: 151,
+    alignSelf: 'center',
+    width: 26,
+    height: 25,
   },
   tagline: {
-    ...typography.primary.body1R,
-    color: gray[600],
+    position: 'absolute',
+    top: 196,
+    left: 0,
+    right: 0,
+    ...typography.accent.body1,
+    color: gray[800],
+    letterSpacing: -0.36,
     textAlign: 'center',
   },
-  imageSection: {
-    flex: 1,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
   turtleImage: {
-    width: 260,
-    height: 280,
+    position: 'absolute',
+    top: 316,
+    left: 86,
+    width: 174,
+    height: 231,
   },
   buttonSection: {
-    paddingHorizontal: 24,
-    paddingBottom: 48,
+    position: 'absolute',
+    left: 16,
+    right: 16,
+    bottom: 60,
   },
   buttonGap: {
     height: 12,

@@ -59,7 +59,7 @@ export function AppAccessPermissionGuideModal({
                     <PermissionItem
                       icon="imageSquare"
                       title="갤러리"
-                      description="스크린타임 사진 인증 시 필요해요."
+                      description="스크린 타임 사진 인증 시 필요해요."
                     />
                     <PermissionItem
                       icon="bellRinging"

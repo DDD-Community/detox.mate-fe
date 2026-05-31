@@ -2,7 +2,6 @@ import { useRouter } from 'expo-router';
 import * as ImagePicker from 'expo-image-picker';
 import * as Notifications from 'expo-notifications';
 import { useState } from 'react';
-import { Alert } from 'react-native';
 import * as SecureStore from 'expo-secure-store';
 
 import {
@@ -33,7 +32,11 @@ const NATIVE_PERMISSION_PROMPT_DELAY_MS = 350;
 const waitForPermissionPromptReady = () =>
   new Promise<void>((resolve) => setTimeout(resolve, NATIVE_PERMISSION_PROMPT_DELAY_MS));
 
-export function useAuthLogin() {
+interface UseAuthLoginOptions {
+  onLoginFailure?: () => void;
+}
+
+export function useAuthLogin({ onLoginFailure }: UseAuthLoginOptions = {}) {
   const router = useRouter();
   const [pendingProvider, setPendingProvider] = useState<LoginProvider | null>(null);
   const [permissionGuideVisible, setPermissionGuideVisible] = useState(false);
@@ -61,7 +64,7 @@ export function useAuthLogin() {
         setPermissionGuideVisible(true);
       }
     } catch {
-      Alert.alert('로그인 실패', '로그인을 처리하지 못했어요. 잠시 후 다시 시도해주세요.');
+      onLoginFailure?.();
     } finally {
       setPendingProvider(null);
     }

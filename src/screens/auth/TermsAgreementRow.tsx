@@ -28,7 +28,7 @@ const styles = StyleSheet.create({
   row: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: spacing[12],
+    gap: spacing[8],
   },
   rowRight: {
     flex: 1,
@@ -37,7 +37,8 @@ const styles = StyleSheet.create({
   },
   label: {
     flex: 1,
-    ...typography.primary.body2M,
-    color: gray[900],
+    ...typography.accent.title2,
+    color: gray[800],
+    letterSpacing: -0.4,
   },
 });
