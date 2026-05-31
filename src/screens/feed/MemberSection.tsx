@@ -13,15 +13,17 @@ export type MemberItem = {
   isMe: boolean;
   avatarSource: number | { uri: string };
   badgeCount?: number;
+  isVerified?: boolean;
   isGoalAchieved?: boolean;
 };
 
 interface Props {
   members: MemberItem[];
   onInvite: () => void;
+  onMemberPress?: (memberId: string) => void;
 }
 
-export default function MemberSection({ members, onInvite }: Props) {
+export default function MemberSection({ members, onInvite, onMemberPress }: Props) {
   const [scrollEnabled, setScrollEnabled] = useState(false);
   const containerWidth = useRef(0);
   const contentWidth = useRef(0);
@@ -58,7 +60,11 @@ export default function MemberSection({ members, onInvite }: Props) {
         }}
       >
         {members.map((member) => (
-          <MemberAvatar key={member.id} member={member} />
+          <MemberAvatar
+            key={member.id}
+            member={member}
+            onPress={() => onMemberPress?.(member.id)}
+          />
         ))}
         <InviteButton onPress={onInvite} />
       </ScrollView>
@@ -66,18 +72,26 @@ export default function MemberSection({ members, onInvite }: Props) {
   );
 }
 
-function MemberAvatar({ member }: { member: MemberItem }) {
+function MemberAvatar({ member, onPress }: { member: MemberItem; onPress?: () => void }) {
+  const isVerified = member.isVerified ?? member.isGoalAchieved;
+
   return (
-    <View style={styles.avatarItem}>
+    <Pressable
+      style={styles.avatarItem}
+      onPress={onPress}
+      hitSlop={8}
+      accessibilityRole="button"
+      accessibilityLabel={`${member.isMe ? '나' : member.name} 피드로 이동`}
+    >
       <View style={styles.avatarWrapper}>
         <Image source={member.avatarSource} style={styles.avatar} resizeMode="cover" />
-        {member.isGoalAchieved && <View style={styles.avatarRing} />}
-        {member.isGoalAchieved && (
+        {isVerified && <View style={styles.avatarRing} />}
+        {isVerified && (
           <View style={styles.checkBadge}>
             <Icon name="check" size={10} color={WHITE} />
           </View>
         )}
-        {!member.isGoalAchieved && member.badgeCount !== undefined && (
+        {!isVerified && member.badgeCount !== undefined && (
           <View style={styles.badge}>
             <Text style={styles.badgeText}>{member.badgeCount}</Text>
           </View>
@@ -89,7 +103,7 @@ function MemberAvatar({ member }: { member: MemberItem }) {
           return label.length >= 4 ? `${label.slice(0, 3)}...` : label;
         })()}
       </Text>
-    </View>
+    </Pressable>
   );
 }
 

@@ -166,12 +166,34 @@ const mapMemberToFeedItem = (m: TodayChallengeMember): FeedItem => {
   };
 };
 
+const compareChallengeMembers = (a: TodayChallengeMember, b: TodayChallengeMember): number => {
+  if (a.isMe !== b.isMe) return a.isMe ? -1 : 1;
+
+  const aSubmittedAt = a.activityRecord?.submittedAt;
+  const bSubmittedAt = b.activityRecord?.submittedAt;
+  const aVerified = aSubmittedAt != null;
+  const bVerified = bSubmittedAt != null;
+
+  if (aVerified !== bVerified) return aVerified ? -1 : 1;
+  if (aVerified && bVerified) {
+    const submittedDiff =
+      new Date(bSubmittedAt ?? 0).getTime() - new Date(aSubmittedAt ?? 0).getTime();
+    if (submittedDiff !== 0) return submittedDiff;
+  }
+
+  const nameDiff = a.displayName.localeCompare(b.displayName, 'ko-KR');
+  if (nameDiff !== 0) return nameDiff;
+
+  return a.userId - b.userId;
+};
+
 const mapMemberToMemberItem = (m: TodayChallengeMember): MemberItem => ({
   id: String(m.userId),
   name: m.displayName,
   isMe: m.isMe,
   avatarSource: m.profileImageUrl ? { uri: m.profileImageUrl } : AVATAR_SRC,
   badgeCount: m.pokeCount > 0 ? m.pokeCount : undefined,
+  isVerified: m.activityRecord !== null,
   isGoalAchieved: m.activityRecord?.allAchieved === true,
 });
 
@@ -217,10 +239,11 @@ export default function FeedHome() {
         `/group-challenges/${gcId}/challenge-records/today`
       );
       const { members: apiMembers, groupId } = res.data;
-      setFeedItems(apiMembers.map(mapMemberToFeedItem));
-      setMembers(apiMembers.map(mapMemberToMemberItem));
+      const sortedMembers = [...apiMembers].sort(compareChallengeMembers);
+      setFeedItems(sortedMembers.map(mapMemberToFeedItem));
+      setMembers(sortedMembers.map(mapMemberToMemberItem));
       memberStore.setAll(
-        apiMembers.map((m) => ({
+        sortedMembers.map((m) => ({
           userId: m.userId,
           groupMemberId: m.groupMemberId,
           challengeRecordId: m.challengeRecordId,
@@ -288,8 +311,15 @@ export default function FeedHome() {
   };
 
   const handlePoke = async (memberId: string, challengeRecordId?: number) => {
-    pokeStore.add(memberId);
-    setPokedMemberIds((prev) => [...prev, memberId]);
+    const alreadyPoked = pokeStore.has(memberId);
+
+    if (!alreadyPoked) {
+      pokeStore.add(memberId);
+    }
+    setPokedMemberIds((prev) => (prev.includes(memberId) ? prev : [...prev, memberId]));
+
+    if (alreadyPoked) return;
+
     setMembers((prev) =>
       prev.map((m) => (m.id === memberId ? { ...m, badgeCount: (m.badgeCount ?? 0) + 1 } : m))
     );
@@ -301,7 +331,7 @@ export default function FeedHome() {
         return { ...item, pokeCount: item.pokeCount + 1, pokes: [myPokeEntry, ...filteredPokes] };
       })
     );
-    if (!challengeRecordId) return;
+    if (challengeRecordId == null) return;
     try {
       await apiClient.post(`/challenge-records/${challengeRecordId}/pokes/${memberId}`);
     } catch {
@@ -444,12 +474,24 @@ function ActiveFeed({
 }) {
   const scrollRef = useRef<ScrollView>(null);
   const openedTargetRef = useRef<string | null>(null);
+  const feedSheetYRef = useRef(0);
+  const feedCardListYRef = useRef(0);
+  const feedCardYByMemberIdRef = useRef<Record<string, number>>({});
 
   const enrichedMembers = members.map((m) => ({
     ...m,
+    isVerified: feedItems.some((f) => f.id === m.id && f.isVerified),
     isGoalAchieved: feedItems.some((f) => f.id === m.id && f.isVerified && f.isGoalAchieved),
   }));
   const myFeedItem = feedItems.find((item) => item.isMe);
+
+  const scrollToFeedItem = useCallback((memberId: string) => {
+    const cardY = feedCardYByMemberIdRef.current[memberId];
+    if (cardY == null) return;
+
+    const y = Math.max(0, feedSheetYRef.current + feedCardListYRef.current + cardY - spacing[16]);
+    scrollRef.current?.scrollTo({ y, animated: true });
+  }, []);
 
   const openPostDetail = useCallback(
     (item: FeedItem) => {
@@ -488,6 +530,25 @@ function ActiveFeed({
     });
   }, []);
 
+  const handleMemberPress = useCallback(
+    (memberId: string) => {
+      const targetItem = feedItems.find((item) => item.id === memberId);
+      if (!targetItem) return;
+
+      const canPoke =
+        !targetItem.isMe &&
+        !targetItem.isVerified &&
+        goalState !== 'setWaiting' &&
+        !pokedMemberIds.includes(targetItem.id);
+
+      if (canPoke) {
+        onPoke(targetItem.id, targetItem.challengeRecordId);
+      }
+      scrollToFeedItem(targetItem.id);
+    },
+    [feedItems, goalState, onPoke, pokedMemberIds, scrollToFeedItem]
+  );
+
   useEffect(() => {
     if (!targetChallengeRecordId || openedTargetRef.current === targetChallengeRecordId) return;
 
@@ -518,21 +579,41 @@ function ActiveFeed({
               : {}),
           }}
         />
-        <View style={styles.feedSheet}>
-          <MemberSection members={enrichedMembers} onInvite={onInvite} />
-          <View style={styles.feedCardList}>
+        <View
+          style={styles.feedSheet}
+          onLayout={(event) => {
+            feedSheetYRef.current = event.nativeEvent.layout.y;
+          }}
+        >
+          <MemberSection
+            members={enrichedMembers}
+            onInvite={onInvite}
+            onMemberPress={handleMemberPress}
+          />
+          <View
+            style={styles.feedCardList}
+            onLayout={(event) => {
+              feedCardListYRef.current = event.nativeEvent.layout.y;
+            }}
+          >
             {feedItems.map((item) => (
-              <FeedCard
+              <View
                 key={item.id}
-                item={item}
-                goalState={goalState}
-                onPoke={onPoke}
-                onReact={onReact}
-                isPoked={pokedMemberIds.includes(item.id)}
-                myReactions={myReactions[item.id]}
-                onBodyPress={() => openPostDetail(item)}
-                onProfilePress={() => openMemberProfile(item)}
-              />
+                onLayout={(event) => {
+                  feedCardYByMemberIdRef.current[item.id] = event.nativeEvent.layout.y;
+                }}
+              >
+                <FeedCard
+                  item={item}
+                  goalState={goalState}
+                  onPoke={onPoke}
+                  onReact={onReact}
+                  isPoked={pokedMemberIds.includes(item.id)}
+                  myReactions={myReactions[item.id]}
+                  onBodyPress={() => openPostDetail(item)}
+                  onProfilePress={() => openMemberProfile(item)}
+                />
+              </View>
             ))}
           </View>
         </View>
