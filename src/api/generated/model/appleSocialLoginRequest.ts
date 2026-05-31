@@ -10,5 +10,7 @@ export interface AppleSocialLoginRequest {
   identityToken: string;
   /** @minLength 1 */
   rawNonce: string;
+  /** @minLength 1 */
+  authorizationCode: string;
   displayName?: string;
 }

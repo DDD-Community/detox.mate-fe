@@ -9,6 +9,8 @@ export interface NotificationHistoryItemResponse {
   id?: number;
   title?: string;
   message?: string;
+  senderUserId?: number;
+  senderProfileImageUrl?: string;
   read?: boolean;
   targetType?: string;
   targetId?: number;

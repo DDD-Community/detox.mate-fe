@@ -9,6 +9,7 @@ export interface GroupChallengeOverviewResponse {
   groupChallengeId?: number;
   groupId?: number;
   groupName?: string;
+  inviteCode?: string;
   challengeNo?: number;
   status?: string;
   startAt?: string;
