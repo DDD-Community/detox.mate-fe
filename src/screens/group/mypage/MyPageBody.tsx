@@ -9,6 +9,7 @@ import { WeeklyStatusCard } from './WeeklyStatusCard';
 import CALENDAR_IMG from '@assets/mypage-calender.png';
 import GROUP_INVITE_IMG from '@assets/onboarding-group-invite.png';
 import GROUP_PLUS_IMG from '@assets/onboarding-group-plus.png';
+import REACTION_IMG from '@assets/feed_emotion.png';
 import POCK_IMG from '@assets/pock.png';
 
 const { brown, gray } = primitiveColors;
@@ -49,7 +50,9 @@ interface MyPageBodyProps {
   achievedDays: number;
   joinedGroups: JoinedGroupItem[];
   daysUntilGoalChange: number;
+  isReacting: boolean;
   onPoke: () => void;
+  onToggleReactionPicker: () => void;
   onSetGoal: () => void;
   onCreateGroup: () => void;
   onEnterInviteCode: () => void;
@@ -72,7 +75,9 @@ export function MyPageBody({
   achievedDays,
   joinedGroups,
   daysUntilGoalChange,
+  isReacting,
   onPoke,
+  onToggleReactionPicker,
   onSetGoal,
   onCreateGroup,
   onEnterInviteCode,
@@ -123,6 +128,18 @@ export function MyPageBody({
           achievedDays={achievedDays}
           achievableDays={certifiedDays}
         />
+        <View style={styles.friendReactionWrap}>
+          <Button
+            label="리액션 보내기"
+            color="assistive"
+            leadingIcon={
+              <Image source={REACTION_IMG} style={styles.reactionIcon} resizeMode="contain" />
+            }
+            disabled={isReacting}
+            onPress={onToggleReactionPicker}
+            style={styles.friendReactionButton}
+          />
+        </View>
       </View>
     );
   }
@@ -262,6 +279,20 @@ const styles = StyleSheet.create({
   friendBody: {
     paddingHorizontal: spacing[16],
     paddingTop: spacing[16],
+  },
+  friendReactionWrap: {
+    alignItems: 'center',
+    gap: spacing[8],
+    marginTop: spacing[16],
+    zIndex: 1,
+  },
+  friendReactionButton: {
+    width: 311,
+    alignSelf: 'center',
+  },
+  reactionIcon: {
+    width: 20,
+    height: 20,
   },
   friendEmptyState: {
     flex: 1,
