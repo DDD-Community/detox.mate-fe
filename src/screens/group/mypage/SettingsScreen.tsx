@@ -1,6 +1,5 @@
 import * as Linking from 'expo-linking';
 import * as Notifications from 'expo-notifications';
-import Constants from 'expo-constants';
 import { router, useFocusEffect } from 'expo-router';
 import * as SecureStore from 'expo-secure-store';
 import { useCallback, useEffect, useRef, useState } from 'react';
@@ -15,13 +14,17 @@ import {
   unregisterDevicePushToken,
 } from '@/lib/fcmToken';
 import { HeaderAction, Icon } from '@/components';
+import { env } from '@/config/env';
 import { primitiveColors, radius, spacing, typography } from '@/lib/token';
 import { LogoutConfirmAlert } from './LogoutConfirmAlert';
 import { NotificationPermissionAlert } from './NotificationPermissionAlert';
 import { WithdrawConfirmAlert } from './WithdrawConfirmAlert';
 
 const { brown, gray, green } = primitiveColors;
-const appVersion = Constants.nativeApplicationVersion ?? Constants.expoConfig?.version ?? '1.0.0';
+const appVersionLabel =
+  env.buildChannel === 'local' && env.gitSha
+    ? `v${env.appVersion} DEV · ${env.gitSha}`
+    : `v${env.appVersion}`;
 
 interface ToggleRowProps {
   label: string;
@@ -309,7 +312,7 @@ export default function SettingsScreen() {
           <Pressable onPress={handleOpenWithdrawAlert} hitSlop={8}>
             <Text style={styles.withdrawText}>회원 탈퇴</Text>
           </Pressable>
-          <Text style={styles.versionText}>v{appVersion}</Text>
+          <Text style={styles.versionText}>{appVersionLabel}</Text>
         </View>
       </View>
 
