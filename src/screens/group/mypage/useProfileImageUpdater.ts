@@ -5,6 +5,7 @@ import { getUser, PresignedUrlRequestUploadPurpose } from '@/api';
 import { uploadImage } from '@/lib/uploadImage';
 
 export const DEFAULT_PROFILE_IMAGE_OBJECT_KEY = 'static/turtle-hi.png';
+const CLEAR_PROFILE_IMAGE_OBJECT_KEY = '';
 
 const IMAGE_PICKER_OPEN_DELAY_MS = 300;
 
@@ -32,7 +33,7 @@ export function useProfileImageUpdater() {
 
     try {
       const response = await getUser().updateMe({
-        profileImageObjectKey: DEFAULT_PROFILE_IMAGE_OBJECT_KEY,
+        profileImageObjectKey: CLEAR_PROFILE_IMAGE_OBJECT_KEY,
       });
       // eslint-disable-next-line no-console
       console.log('[default-image] response', response);

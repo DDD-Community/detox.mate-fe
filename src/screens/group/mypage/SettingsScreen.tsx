@@ -14,7 +14,7 @@ import {
   registerDevicePushToken,
   unregisterDevicePushToken,
 } from '@/lib/fcmToken';
-import { Icon } from '@/components';
+import { HeaderAction, Icon } from '@/components';
 import { primitiveColors, radius, spacing, typography } from '@/lib/token';
 import { LogoutConfirmAlert } from './LogoutConfirmAlert';
 import { NotificationPermissionAlert } from './NotificationPermissionAlert';
@@ -284,10 +284,7 @@ export default function SettingsScreen() {
     <View style={styles.root}>
       <SafeAreaView edges={['top']}>
         <View style={styles.header}>
-          <Pressable onPress={handleBack} hitSlop={8}>
-            <Icon name="caretLeft" size={24} color={gray[800]} />
-          </Pressable>
-          <Text style={styles.headerTitle}>설정</Text>
+          <HeaderAction label="설정" onPress={handleBack} accessibilityLabel="뒤로가기" />
         </View>
       </SafeAreaView>
 
@@ -347,13 +344,7 @@ const styles = StyleSheet.create({
   header: {
     height: 54,
     paddingHorizontal: spacing[16],
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: spacing[16],
-  },
-  headerTitle: {
-    ...typography.accent.title2,
-    color: gray[800],
+    justifyContent: 'center',
   },
   body: {
     flex: 1,

@@ -11,7 +11,7 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { getUserUsageGoalTime, UserUsageGoalTimeRequestUsageGoalType } from '@/api';
-import { AppLogo, Button, Icon } from '@/components';
+import { AppLogo, Button, HeaderAction, Icon } from '@/components';
 import { formatHHMMToDisplay, formatMinutesAsHourMinute } from '@/lib/formatDuration';
 import { primitiveColors, radius, spacing, typography } from '@/lib/token';
 import { useGoalTimeStepper } from './useGoalTimeStepper';
@@ -100,12 +100,7 @@ export default function GoalSetupScreen({ mode = 'initial' }: GoalSetupScreenPro
       <SafeAreaView edges={['top']}>
         <View style={isEditMode ? styles.editHeader : styles.initialHeader}>
           {isEditMode ? (
-            <>
-              <Pressable onPress={handleCancel} hitSlop={8}>
-                <Icon name="caretLeft" size={24} color={gray[800]} />
-              </Pressable>
-              <Text style={styles.headerTitle}>목표 설정</Text>
-            </>
+            <HeaderAction label="목표 설정" onPress={handleCancel} accessibilityLabel="뒤로가기" />
           ) : (
             <AppLogo />
           )}
@@ -259,10 +254,6 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: spacing[16],
-  },
-  headerTitle: {
-    ...typography.accent.title2,
-    color: gray[800],
   },
   body: {
     flex: 1,

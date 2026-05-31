@@ -41,7 +41,7 @@ function MemberAvatar({
     <View style={[styles.avatar, { left: offset }]}>
       <Image
         source={profileImageUrl ? { uri: profileImageUrl } : DEFAULT_AVATAR}
-        style={styles.avatarImage}
+        style={[styles.avatarImage, !profileImageUrl && styles.defaultAvatarImage]}
         resizeMode="cover"
         accessibilityLabel={name ? `${name} 프로필 이미지` : '기본 프로필 이미지'}
       />
@@ -97,7 +97,7 @@ export function JoinedGroupBody({
               {group.name}
             </Text>
           </View>
-          <Icon name="caretRight" size={24} color={gray[900]} />
+          <Icon name="caretRight" size={24} color={gray[200]} />
         </Pressable>
       ))}
 
@@ -153,7 +153,7 @@ const styles = StyleSheet.create({
     width: 40,
     height: 40,
     borderRadius: radius.full,
-    backgroundColor: gray[200],
+    backgroundColor: '#FFFFFF',
     borderWidth: 2,
     borderColor: '#FFFFFF',
     alignItems: 'center',
@@ -163,6 +163,11 @@ const styles = StyleSheet.create({
   avatarImage: {
     width: '100%',
     height: '100%',
+  },
+  defaultAvatarImage: {
+    width: 44,
+    height: 44,
+    margin: -2,
   },
   groupName: {
     ...typography.primary.body1B,

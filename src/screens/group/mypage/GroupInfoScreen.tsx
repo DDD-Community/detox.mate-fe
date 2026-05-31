@@ -15,7 +15,7 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { getFeed, getGroup, type GroupMemberResponse } from '@/api';
-import { ClipboardCopyToast, Icon, useClipboardCopyToast } from '@/components';
+import { ClipboardCopyToast, HeaderAction, Icon, useClipboardCopyToast } from '@/components';
 import { primitiveColors, radius, spacing, typography } from '@/lib/token';
 import { LeaveGroupAlert } from './LeaveGroupAlert';
 
@@ -132,12 +132,7 @@ export default function GroupInfoScreen() {
     <View style={styles.root}>
       <SafeAreaView edges={['top']}>
         <View style={styles.header}>
-          <Pressable onPress={handleBack} hitSlop={8}>
-            <Icon name="caretLeft" size={24} color={gray[800]} />
-          </Pressable>
-          <Text style={styles.headerTitle} numberOfLines={1}>
-            {groupName}
-          </Text>
+          <HeaderAction label={groupName} onPress={handleBack} accessibilityLabel="뒤로가기" />
         </View>
       </SafeAreaView>
 
@@ -173,11 +168,14 @@ export default function GroupInfoScreen() {
               const displayName = m.displayName ?? '';
               const content = (
                 <>
-                  <Image
-                    source={m.profileImageUrl ? { uri: m.profileImageUrl } : DEFAULT_AVATAR}
-                    style={styles.memberAvatar}
-                    resizeMode="cover"
-                  />
+                  <View style={styles.memberAvatarFrame}>
+                    <Image
+                      source={m.profileImageUrl ? { uri: m.profileImageUrl } : DEFAULT_AVATAR}
+                      style={styles.memberAvatar}
+                      resizeMode="cover"
+                    />
+                    <View pointerEvents="none" style={styles.memberAvatarBorder} />
+                  </View>
                   <Text style={styles.memberName} numberOfLines={1}>
                     {isMe ? '나' : displayName}
                   </Text>
@@ -244,14 +242,7 @@ const styles = StyleSheet.create({
   header: {
     height: 54,
     paddingHorizontal: spacing[16],
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: spacing[16],
-  },
-  headerTitle: {
-    ...typography.accent.title2,
-    color: gray[800],
-    flex: 1,
+    justifyContent: 'center',
   },
   loadingWrap: {
     flex: 1,
@@ -321,11 +312,25 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     gap: spacing[12],
   },
+  memberAvatarFrame: {
+    width: 40,
+    height: 40,
+  },
   memberAvatar: {
     width: 40,
     height: 40,
     borderRadius: radius.full,
     backgroundColor: gray[100],
+  },
+  memberAvatarBorder: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    borderRadius: radius.full,
+    borderWidth: 1,
+    borderColor: gray[200],
   },
   memberName: {
     ...typography.primary.body1B,

@@ -1,15 +1,6 @@
 import { useFocusEffect, useRouter } from 'expo-router';
 import { useCallback, useState } from 'react';
-import {
-  ActivityIndicator,
-  Image,
-  Pressable,
-  StyleSheet,
-  Text,
-  TouchableOpacity,
-  View,
-} from 'react-native';
-import { AppLogo } from '@/components';
+import { ActivityIndicator, Image, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { getGroup } from '../../api/generated/group/group';
 import { primitiveColors } from '../../lib/token/primitive/colors';
 import { radius } from '../../lib/token/primitive/radius';
@@ -53,47 +44,17 @@ export default function GroupHomeScreen() {
 
   return (
     <View style={styles.root}>
-      <View style={styles.header}>
-        <AppLogo />
-        <View style={styles.headerIcons}>
-          <Pressable
-            style={styles.iconButton}
-            hitSlop={8}
-            onPress={() => router.push('/(group)/notifications')}
-          >
-            <Image
-              source={require('../../../assets/onboarding-rg-bell.png')}
-              style={styles.headerIcon}
-              resizeMode="contain"
-            />
-          </Pressable>
-          <Pressable
-            style={styles.iconButton}
-            hitSlop={8}
-            onPress={() => router.push('/(group)/mypage')}
-          >
-            <Image
-              source={require('../../../assets/onboarding-rg-user.png')}
-              style={styles.headerIcon}
-              resizeMode="contain"
-            />
-          </Pressable>
-        </View>
-      </View>
-
       {isCheckingGroups ? (
         <View style={styles.loadingBody}>
           <ActivityIndicator color={gray[400]} />
         </View>
       ) : (
         <View style={styles.content}>
-          <View style={styles.illustration}>
-            <Image
-              source={require('../../../assets/turtle-fall.png')}
-              style={styles.turtle}
-              resizeMode="contain"
-            />
-          </View>
+          <Image
+            source={require('../../../assets/turtle-fall.png')}
+            style={styles.turtle}
+            resizeMode="contain"
+          />
           <View style={styles.copyFrame}>
             <Text style={styles.title}>아직 그룹이 없어요</Text>
             <Text style={styles.subtitle}>새 그룹을 만들거나 친구가 만든 그룹에 입장해요</Text>
@@ -136,28 +97,6 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: brown[50],
   },
-  header: {
-    height: 113,
-    paddingTop: 59,
-    paddingHorizontal: 16,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-  },
-  headerIcons: {
-    flexDirection: 'row',
-    gap: 12,
-  },
-  iconButton: {
-    width: 24,
-    height: 24,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  headerIcon: {
-    width: 24,
-    height: 24,
-  },
   loadingBody: {
     flex: 1,
     alignItems: 'center',
@@ -165,19 +104,20 @@ const styles = StyleSheet.create({
   },
   content: {
     flex: 1,
-    justifyContent: 'center',
-    paddingHorizontal: 16,
-  },
-  illustration: {
-    alignItems: 'center',
   },
   turtle: {
+    position: 'absolute',
+    top: 177,
+    alignSelf: 'center',
     width: 236,
     height: 218,
   },
   copyFrame: {
+    position: 'absolute',
+    top: 435,
+    left: 0,
+    right: 0,
     alignItems: 'center',
-    marginTop: 40,
   },
   title: {
     ...typography.accent.h3,
@@ -192,9 +132,12 @@ const styles = StyleSheet.create({
     marginTop: 12,
   },
   cardRow: {
+    position: 'absolute',
+    top: 558,
+    left: 16,
+    right: 16,
     flexDirection: 'row',
     gap: 8,
-    marginTop: 58,
   },
   card: {
     flex: 1,

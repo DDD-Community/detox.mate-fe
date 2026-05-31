@@ -40,11 +40,11 @@ export default function GroupJoinScreen() {
       const status = e?.response?.status;
       console.log(status);
       if (status === 409) {
-        setError('이미 참여한 그룹이에요');
+        setError('초대 코드를 다시 확인해주세요');
       } else if (status === 404) {
-        setError('유효하지 않은 초대 코드예요');
+        setError('초대 코드를 다시 확인해주세요');
       } else {
-        setError('그룹 참여에 실패했어요. 다시 시도해 주세요');
+        setError('초대 코드를 다시 확인해주세요');
       }
     } finally {
       setLoading(false);
@@ -92,11 +92,23 @@ export default function GroupJoinScreen() {
               autoCapitalize="characters"
               maxLength={INVITE_CODE_MAX_LENGTH}
             />
-            <Text style={styles.counter}>
-              {inviteCode.length}/{INVITE_CODE_MAX_LENGTH}
-            </Text>
+            {error ? null : (
+              <Text style={styles.counter}>
+                {inviteCode.length}/{INVITE_CODE_MAX_LENGTH}
+              </Text>
+            )}
           </View>
-          {error && <Text style={styles.errorText}>{error}</Text>}
+          {error ? (
+            <View style={styles.errorRow}>
+              <Icon
+                name="warningCircle"
+                size={14}
+                weight="fill"
+                color={primitiveColors.system.red.opacity100}
+              />
+              <Text style={styles.errorText}>{error}</Text>
+            </View>
+          ) : null}
         </View>
       ) : (
         <View style={styles.content}>
@@ -111,7 +123,7 @@ export default function GroupJoinScreen() {
             {'\n'}그룹에 참여했어요!
           </Text>
           <Text style={styles.completeSubtitle}>
-            초대 코드를 친구에게 공유해서 함께 시작해 보세요
+            초대 코드를 친구에게 공유해서 함께 시작해보세요
           </Text>
 
           <View style={styles.gap24} />
@@ -199,6 +211,7 @@ const styles = StyleSheet.create({
     ...typography.accent.h3,
     color: gray[900],
     marginBottom: spacing[40],
+    letterSpacing: -0.52,
   },
   inputWrapper: {
     flexDirection: 'row',
@@ -208,11 +221,16 @@ const styles = StyleSheet.create({
     height: 50,
     paddingHorizontal: spacing[16],
   },
-  errorText: {
-    ...typography.primary.caption,
-    color: '#E53935',
-    paddingHorizontal: spacing[4],
+  errorRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing[4],
     marginTop: spacing[8],
+  },
+  errorText: {
+    ...typography.accent.caption,
+    color: primitiveColors.system.red.opacity100,
+    letterSpacing: -0.26,
   },
   input: {
     flex: 1,
@@ -224,30 +242,33 @@ const styles = StyleSheet.create({
     ...typography.primary.body3R,
     color: gray[300],
     marginLeft: spacing[8],
+    letterSpacing: -0.24,
   },
   checkImage: {
-    width: 100,
-    height: 100,
+    width: 80,
+    height: 80,
     alignSelf: 'center',
-    marginBottom: 16,
-    marginTop: 8,
+    marginTop: 31,
+    marginBottom: spacing[20],
   },
   completeTitle: {
-    ...typography.primary.h2,
+    ...typography.accent.h3,
     color: gray[900],
     textAlign: 'center',
-    marginBottom: 8,
+    marginBottom: spacing[12],
+    letterSpacing: -0.52,
   },
   completeSubtitle: {
     ...typography.primary.body2R,
-    color: gray[600],
+    color: gray[400],
     textAlign: 'center',
+    letterSpacing: -0.28,
   },
   inviteCard: {
     backgroundColor: '#FFFFFF',
-    borderRadius: 16,
-    padding: 20,
-    gap: 12,
+    borderRadius: radius[12],
+    padding: spacing[20],
+    gap: spacing[20],
   },
   codeRow: {
     flexDirection: 'row',
@@ -256,13 +277,14 @@ const styles = StyleSheet.create({
     gap: 10,
   },
   codeLabel: {
-    ...typography.primary.body2R,
-    color: gray[600],
+    ...typography.accent.body2,
+    color: gray[500],
+    letterSpacing: -0.31,
   },
   codeText: {
-    ...typography.primary.title1B,
+    ...typography.accent.h3,
     color: gray[900],
-    letterSpacing: 2,
+    letterSpacing: -0.31,
   },
   shareInCard: {
     flexDirection: 'row',
@@ -270,12 +292,13 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     gap: 8,
     backgroundColor: gray[50],
-    borderRadius: 10,
-    paddingVertical: 12,
+    borderRadius: 18,
+    height: 44,
   },
   shareText: {
-    ...typography.primary.body2M,
-    color: gray[900],
+    ...typography.primary.body2B,
+    color: gray[800],
+    letterSpacing: -0.28,
   },
   buttonRow: {
     flexDirection: 'row',
@@ -303,13 +326,14 @@ const styles = StyleSheet.create({
     flex: 1,
     minWidth: 88,
     height: 50,
-    backgroundColor: green[400],
+    backgroundColor: green[300],
     borderRadius: 18,
     paddingHorizontal: spacing[16],
     alignItems: 'center',
     justifyContent: 'center',
   },
   nextButtonDisabled: {
+    backgroundColor: green[400],
     opacity: 0.3,
   },
   nextText: {

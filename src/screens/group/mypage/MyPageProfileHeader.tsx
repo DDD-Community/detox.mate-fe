@@ -1,13 +1,14 @@
 import { Image, Pressable, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
-import { Icon } from '@/components';
+import { HeaderAction, Icon } from '@/components';
 import { primitiveColors, radius, spacing, typography } from '@/lib/token';
 
 import TURTLE_IMG from '@assets/turtle-hi.png';
 
 const { brown, gray, green } = primitiveColors;
 const PROFILE_CARD_BOTTOM_RADIUS = spacing[20];
+const CAMERA_BUTTON_BORDER_WIDTH = 0.391;
 
 interface ProfileChipProps {
   label: string;
@@ -66,12 +67,14 @@ export function MyPageProfileHeader({
       ) : null}
       <SafeAreaView edges={['top']}>
         <View style={styles.header}>
-          <Pressable onPress={onBack} hitSlop={8} style={styles.headerLeft}>
-            <Icon name="caretLeft" size={24} color={foregroundColor} />
-            <Text style={[styles.headerTitle, hasProfileBackground && styles.photoText]}>
-              {isFriend ? displayName : '마이페이지'}
-            </Text>
-          </Pressable>
+          <HeaderAction
+            label={isFriend ? displayName : '마이페이지'}
+            onPress={onBack}
+            iconColor={foregroundColor}
+            style={styles.headerLeft}
+            textStyle={[styles.headerTitle, hasProfileBackground && styles.photoText]}
+            accessibilityLabel="뒤로가기"
+          />
           {!isFriend && (
             <Pressable onPress={onSettings} hitSlop={8}>
               <Icon name="gearSix" size={24} color={foregroundColor} />
@@ -215,7 +218,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     backgroundColor: '#FFFFFF',
-    borderWidth: 1,
+    borderWidth: CAMERA_BUTTON_BORDER_WIDTH,
     borderColor: gray[100],
     borderRadius: radius.full,
   },
