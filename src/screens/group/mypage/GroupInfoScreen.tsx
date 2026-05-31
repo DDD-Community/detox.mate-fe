@@ -2,11 +2,20 @@ import * as Clipboard from 'expo-clipboard';
 import { router, useLocalSearchParams } from 'expo-router';
 import * as SecureStore from 'expo-secure-store';
 import { useEffect, useState } from 'react';
-import { ActivityIndicator, Image, Pressable, Share, StyleSheet, Text, View } from 'react-native';
+import {
+  ActivityIndicator,
+  Image,
+  Pressable,
+  ScrollView,
+  Share,
+  StyleSheet,
+  Text,
+  View,
+} from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { getFeed, getGroup, type GroupMemberResponse } from '@/api';
-import { Icon } from '@/components';
+import { ClipboardCopyToast, Icon, useClipboardCopyToast } from '@/components';
 import { primitiveColors, radius, spacing, typography } from '@/lib/token';
 import { LeaveGroupAlert } from './LeaveGroupAlert';
 
@@ -30,6 +39,7 @@ export default function GroupInfoScreen() {
 
   const [isLeaveAlertOpen, setIsLeaveAlertOpen] = useState(false);
   const [isLeaving, setIsLeaving] = useState(false);
+  const { copyToastVisible, showCopyToast } = useClipboardCopyToast();
 
   const getCurrentUserId = async () => {
     const userIdStr = await SecureStore.getItemAsync('currentUserId');
@@ -86,7 +96,7 @@ export default function GroupInfoScreen() {
   const handleCopyInviteCode = async () => {
     if (!inviteCode) return;
     await Clipboard.setStringAsync(inviteCode);
-    // TODO: 토스트 "초대 코드가 복사되었어요"
+    showCopyToast();
   };
 
   const handleShareInviteCode = async () => {
@@ -136,7 +146,11 @@ export default function GroupInfoScreen() {
           <ActivityIndicator color={gray[400]} />
         </View>
       ) : (
-        <View style={styles.body}>
+        <ScrollView
+          style={styles.bodyScroll}
+          contentContainerStyle={styles.body}
+          showsVerticalScrollIndicator={false}
+        >
           <Text style={styles.memberCount}>멤버 {members.length}명</Text>
 
           <View style={styles.inviteCard}>
@@ -207,7 +221,7 @@ export default function GroupInfoScreen() {
           <Pressable onPress={handleOpenLeaveAlert} style={styles.leaveCard}>
             <Text style={styles.leaveText}>그룹 나가기</Text>
           </Pressable>
-        </View>
+        </ScrollView>
       )}
 
       <LeaveGroupAlert
@@ -216,6 +230,8 @@ export default function GroupInfoScreen() {
         onConfirm={handleConfirmLeave}
         loading={isLeaving}
       />
+
+      <ClipboardCopyToast visible={copyToastVisible} position="bottom" />
     </View>
   );
 }
@@ -242,10 +258,14 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
-  body: {
+  bodyScroll: {
     flex: 1,
+  },
+  body: {
+    flexGrow: 1,
     paddingHorizontal: spacing[16],
     paddingTop: spacing[20],
+    paddingBottom: spacing[32],
     gap: spacing[8],
   },
   memberCount: {

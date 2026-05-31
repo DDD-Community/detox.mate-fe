@@ -1,9 +1,9 @@
-import { Pressable, StyleSheet, Text, View } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { Pressable, StyleSheet, Text } from 'react-native';
 
 import { Icon } from '../Icon';
+import { Toast } from '../Toast';
 import { useNetworkErrorToastStore } from '../../stores/networkErrorToastStore';
-import { primitiveColors, radius, spacing, typography } from '../../lib/token';
+import { primitiveColors, typography } from '../../lib/token';
 
 const { system } = primitiveColors;
 
@@ -22,13 +22,13 @@ export function NetworkErrorToast() {
   const text = hasRetryQueue ? NETWORK_ERROR_MESSAGE : (message ?? '');
 
   return (
-    <SafeAreaView edges={['bottom']} pointerEvents="box-none" style={styles.safeArea}>
-      <View style={styles.toast}>
-        <View style={styles.messageGroup}>
-          <Icon name="warningCircle" size={16} weight="fill" color={system.red.opacity100} />
-          <Text style={styles.message}>{text}</Text>
-        </View>
-        <View style={styles.actions}>
+    <Toast
+      visible={visible}
+      message={text}
+      icon={<Icon name="warningCircle" size={16} weight="fill" color={system.red.opacity100} />}
+      fullWidth
+      actions={
+        <>
           {hasRetryQueue && (
             <Pressable onPress={retryAll} hitSlop={8}>
               <Text style={styles.retry}>재시도</Text>
@@ -37,50 +37,13 @@ export function NetworkErrorToast() {
           <Pressable onPress={dismiss} hitSlop={8}>
             <Text style={styles.close}>닫기</Text>
           </Pressable>
-        </View>
-      </View>
-    </SafeAreaView>
+        </>
+      }
+    />
   );
 }
 
 const styles = StyleSheet.create({
-  safeArea: {
-    position: 'absolute',
-    left: 0,
-    right: 0,
-    bottom: 0,
-    alignItems: 'center',
-    paddingHorizontal: spacing[16],
-    paddingBottom: spacing[16],
-  },
-  toast: {
-    maxWidth: 343,
-    width: '100%',
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    gap: spacing[20],
-    paddingHorizontal: spacing[16],
-    paddingVertical: spacing[8],
-    backgroundColor: 'rgba(43, 47, 56, 0.8)',
-    borderRadius: radius[16],
-  },
-  messageGroup: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: spacing[4],
-    flexShrink: 1,
-  },
-  message: {
-    ...typography.primary.body3R,
-    color: '#FFFFFF',
-    flexShrink: 1,
-  },
-  actions: {
-    flexDirection: 'row',
-    gap: spacing[12],
-    flexShrink: 0,
-  },
   retry: {
     ...typography.primary.body3B,
     color: system.blue.opacity100,

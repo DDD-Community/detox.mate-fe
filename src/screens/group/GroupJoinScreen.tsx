@@ -4,6 +4,7 @@ import React, { useState } from 'react';
 import { Image, Share, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import apiClient from '../../api/client';
+import { ClipboardCopyToast, useClipboardCopyToast } from '../../components';
 import { Icon } from '../../components/Icon';
 import { primitiveColors, radius, spacing, typography } from '../../lib/token';
 
@@ -17,6 +18,7 @@ export default function GroupJoinScreen() {
   const [groupName, setGroupName] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const { copyToastVisible, showCopyToast } = useClipboardCopyToast();
 
   const canComplete = inviteCode.length === INVITE_CODE_MAX_LENGTH;
 
@@ -51,6 +53,7 @@ export default function GroupJoinScreen() {
 
   const handleCopy = async () => {
     await Clipboard.setStringAsync(inviteCode);
+    showCopyToast();
   };
 
   const handleShare = async () => {
@@ -150,6 +153,8 @@ export default function GroupJoinScreen() {
           <Text style={styles.nextText}>{step === 1 ? '완료' : '그룹 피드로 가기'}</Text>
         </TouchableOpacity>
       </SafeAreaView>
+
+      <ClipboardCopyToast visible={copyToastVisible} />
     </View>
   );
 }

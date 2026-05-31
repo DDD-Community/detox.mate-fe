@@ -1,5 +1,5 @@
 import { router } from 'expo-router';
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useState } from 'react';
 import {
   ActivityIndicator,
   Image,
@@ -16,7 +16,7 @@ import type {
   NotificationHistoryListResponse,
 } from '../../api/generated/model';
 import { getNotificationHistory } from '../../api/generated/notification-history/notification-history';
-import { Icon } from '../../components/Icon';
+import { Icon, Toast, useToastVisibility } from '../../components';
 import { memberStore } from '../../lib/memberStore';
 import { primitiveColors, radius, spacing, typography } from '../../lib/token';
 
@@ -104,20 +104,11 @@ const routeByTarget = (type?: string, id?: number, fallbackType?: string, fallba
 export default function NotificationListScreen() {
   const [sections, setSections] = useState<NotificationSection[]>([]);
   const [isLoading, setIsLoading] = useState(true);
-  const [toastMessage, setToastMessage] = useState<string | null>(null);
-  const toastTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-
-  const showToast = (message: string) => {
-    setToastMessage(message);
-    if (toastTimerRef.current) clearTimeout(toastTimerRef.current);
-    toastTimerRef.current = setTimeout(() => setToastMessage(null), TOAST_DURATION_MS);
-  };
-
-  useEffect(() => {
-    return () => {
-      if (toastTimerRef.current) clearTimeout(toastTimerRef.current);
-    };
-  }, []);
+  const {
+    visible: toastVisible,
+    message: toastMessage,
+    showWithMessage,
+  } = useToastVisibility(TOAST_DURATION_MS);
 
   useEffect(() => {
     let cancelled = false;
@@ -150,7 +141,7 @@ export default function NotificationListScreen() {
     if (!item.id) return;
     const nav = await getNotificationHistory().getNotificationHistory(item.id);
     if (!nav.navigable) {
-      showToast(nav.reason ?? '이동할 수 없는 알림이에요');
+      showWithMessage(nav.reason ?? '이동할 수 없는 알림이에요');
       return;
     }
     routeByTarget(nav.targetType, nav.targetId, nav.fallbackTargetType, nav.fallbackTargetId);
@@ -206,13 +197,7 @@ export default function NotificationListScreen() {
         />
       )}
 
-      {toastMessage && (
-        <SafeAreaView edges={['bottom']} pointerEvents="box-none" style={styles.toastWrap}>
-          <View style={styles.toast}>
-            <Text style={styles.toastText}>{toastMessage}</Text>
-          </View>
-        </SafeAreaView>
-      )}
+      <Toast visible={toastVisible} message={toastMessage} />
     </View>
   );
 }
@@ -294,27 +279,6 @@ const styles = StyleSheet.create({
   emptyText: {
     ...typography.accent.body2,
     color: gray[400],
-    textAlign: 'center',
-  },
-  toastWrap: {
-    position: 'absolute',
-    left: 0,
-    right: 0,
-    bottom: 0,
-    alignItems: 'center',
-    paddingHorizontal: spacing[16],
-    paddingBottom: spacing[16],
-  },
-  toast: {
-    maxWidth: 343,
-    paddingHorizontal: spacing[16],
-    paddingVertical: spacing[8],
-    backgroundColor: 'rgba(43, 47, 56, 0.8)',
-    borderRadius: radius[16],
-  },
-  toastText: {
-    ...typography.primary.body3R,
-    color: '#FFFFFF',
     textAlign: 'center',
   },
 });
