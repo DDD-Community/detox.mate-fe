@@ -8,13 +8,22 @@ import TURTLE_HI_IMAGE from '@assets/turtle-hi.png';
 import { AppLogo } from '@/components';
 import { env } from '@/config/env';
 import { primitiveColors, typography } from '@/lib/token';
+import { AppAccessPermissionGuideModal } from './AppAccessPermissionGuideModal';
 import { AuthLoginButton } from './AuthLoginButton';
 import { TEST_USER_KEYS, TestUserKey, useAuthLogin } from './useAuthLogin';
 
 const { brown, gray } = primitiveColors;
 
 export default function LoginScreen() {
-  const { handleKakaoLogin, handleAppleLogin, handleTestLogin, pendingProvider } = useAuthLogin();
+  const {
+    handleKakaoLogin,
+    handleAppleLogin,
+    handleTestLogin,
+    handleConfirmPermissionGuide,
+    pendingProvider,
+    permissionGuideConfirming,
+    permissionGuideVisible,
+  } = useAuthLogin();
   const [testKeyModalVisible, setTestKeyModalVisible] = useState(false);
   const loginPending = Boolean(pendingProvider);
   const showTestLoginButton = env.appEnv === 'development';
@@ -112,6 +121,12 @@ export default function LoginScreen() {
           </Pressable>
         </Modal>
       ) : null}
+
+      <AppAccessPermissionGuideModal
+        visible={permissionGuideVisible}
+        onConfirm={handleConfirmPermissionGuide}
+        confirming={permissionGuideConfirming}
+      />
     </View>
   );
 }

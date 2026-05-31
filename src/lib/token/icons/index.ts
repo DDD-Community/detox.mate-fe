@@ -1,6 +1,7 @@
 import type { Icon as PhosphorIcon } from 'phosphor-react-native';
 import { ArrowUpIcon } from 'phosphor-react-native/src/icons/ArrowUp';
 import { BellIcon } from 'phosphor-react-native/src/icons/Bell';
+import { BellRingingIcon } from 'phosphor-react-native/src/icons/BellRinging';
 import { CameraIcon } from 'phosphor-react-native/src/icons/Camera';
 import { CalendarBlankIcon } from 'phosphor-react-native/src/icons/CalendarBlank';
 import { CaretDownIcon } from 'phosphor-react-native/src/icons/CaretDown';
@@ -32,6 +33,7 @@ import { WarningCircleIcon } from 'phosphor-react-native/src/icons/WarningCircle
 export const iconComponents = {
   arrowUp: ArrowUpIcon,
   bell: BellIcon,
+  bellRinging: BellRingingIcon,
   camera: CameraIcon,
   calendarBlank: CalendarBlankIcon,
   caretDown: CaretDownIcon,

@@ -3,6 +3,8 @@ import { useRouter } from 'expo-router';
 import { useEffect } from 'react';
 import { Image, StyleSheet, View } from 'react-native';
 
+import { TERMS_ACCEPTED_KEY } from './auth/authStorageKeys';
+
 export default function SplashScreen() {
   const router = useRouter();
 
@@ -10,15 +12,10 @@ export default function SplashScreen() {
     const redirect = async () => {
       await new Promise((resolve) => setTimeout(resolve, 1000));
 
-      const isNewUser = await SecureStore.getItemAsync('isNewUser');
-      if (isNewUser !== 'true') {
-        router.replace('/onboarding');
-        return;
-      }
-
       const accessToken = await SecureStore.getItemAsync('accessTokenKey');
       if (!accessToken) {
-        router.replace('/login');
+        const termsAccepted = await SecureStore.getItemAsync(TERMS_ACCEPTED_KEY);
+        router.replace(termsAccepted === 'true' ? '/login' : '/onboarding');
         return;
       }
 
