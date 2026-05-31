@@ -1,6 +1,6 @@
 import { useRef, useState } from 'react';
 import { Image, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
-import Svg, { Circle, Defs, LinearGradient, Stop } from 'react-native-svg';
+import Svg, { Circle, Defs, LinearGradient, Path, Stop } from 'react-native-svg';
 import { Icon } from '../../components/Icon';
 import { primitiveColors, radius, spacing, typography } from '../../lib/token';
 
@@ -8,6 +8,9 @@ const { gray, green, level, system } = primitiveColors;
 const WHITE = '#FFFFFF';
 const AVATAR_SIZE = 48;
 const AVATAR_RING_WIDTH = 2;
+const VERIFIED_CHECK_BADGE_SIZE = 12;
+const VERIFIED_CHECK_ICON_SIZE = 8;
+const VERIFIED_CHECK_BADGE_COLOR = '#439646';
 
 export type MemberItem = {
   id: string;
@@ -90,7 +93,7 @@ function MemberAvatar({ member, onPress }: { member: MemberItem; onPress?: () =>
         {isVerified ? <VerifiedAvatarRing /> : <View style={styles.avatarBorder} />}
         {isVerified && (
           <View style={styles.checkBadge}>
-            <Icon name="check" size={10} color={WHITE} />
+            <VerifiedCheckIcon />
           </View>
         )}
         {!isVerified && member.badgeCount !== undefined && (
@@ -141,6 +144,23 @@ function VerifiedAvatarRing() {
         fill="none"
         stroke="url(#verifiedAvatarGradient)"
         strokeWidth={AVATAR_RING_WIDTH}
+      />
+    </Svg>
+  );
+}
+
+function VerifiedCheckIcon() {
+  return (
+    <Svg
+      width={VERIFIED_CHECK_ICON_SIZE}
+      height={VERIFIED_CHECK_ICON_SIZE}
+      viewBox={`0 0 ${VERIFIED_CHECK_ICON_SIZE} ${VERIFIED_CHECK_ICON_SIZE}`}
+    >
+      <Path
+        d="M6.67701 0.927014L2.67701 4.92701C2.6538 4.95026 2.62622 4.9687 2.59587 4.98128C2.56552 4.99386 2.53299 5.00034 2.50014 5.00034C2.46729 5.00034 2.43475 4.99386 2.4044 4.98128C2.37405 4.9687 2.34648 4.95026 2.32326 4.92701L0.573264 3.17701C0.526354 3.1301 0.5 3.06648 0.5 3.00014C0.5 2.9338 0.526354 2.87017 0.573264 2.82326C0.620174 2.77635 0.683798 2.75 0.750139 2.75C0.81648 2.75 0.880104 2.77635 0.927014 2.82326L2.50014 4.3967L6.32326 0.573264C6.37017 0.526354 6.4338 0.5 6.50014 0.5C6.56648 0.5 6.6301 0.526354 6.67701 0.573264C6.72392 0.620174 6.75028 0.683798 6.75028 0.750139C6.75028 0.81648 6.72392 0.880104 6.67701 0.927014Z"
+        fill={WHITE}
+        stroke={WHITE}
+        transform="translate(0.5 1.5)"
       />
     </Svg>
   );
@@ -225,12 +245,10 @@ const styles = StyleSheet.create({
     position: 'absolute',
     bottom: 0,
     right: 0,
-    width: 18,
-    height: 18,
+    width: VERIFIED_CHECK_BADGE_SIZE,
+    height: VERIFIED_CHECK_BADGE_SIZE,
     borderRadius: radius.full,
-    backgroundColor: green[300],
-    borderWidth: 1.5,
-    borderColor: WHITE,
+    backgroundColor: VERIFIED_CHECK_BADGE_COLOR,
     alignItems: 'center',
     justifyContent: 'center',
   },
