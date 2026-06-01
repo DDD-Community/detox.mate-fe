@@ -96,11 +96,7 @@ export default function FeedCard({
       : hasFailurePhoto
         ? system.red.opacity100
         : gray[500];
-    const screentimeBackgroundColor = item.isGoalAchieved
-      ? system.green.opacity10
-      : hasFailurePhoto
-        ? system.red.opacity10
-        : gray[50];
+    const screentimeBackgroundColor = item.isGoalAchieved ? system.green.opacity10 : gray[50];
 
     return (
       <Pressable style={styles.card} onPress={onBodyPress}>
