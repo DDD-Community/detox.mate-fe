@@ -13,6 +13,7 @@ import {
   View,
 } from 'react-native';
 import apiClient from '../../api/client';
+import { logError, normalizeError } from '../../api/errors';
 import { getFeed } from '../../api/generated/feed/feed';
 import { getGroupChallenge } from '../../api/generated/group-challenge/group-challenge';
 import {
@@ -403,9 +404,13 @@ export default function FeedHome() {
     );
     if (challengeRecordId == null) return;
     try {
-      await apiClient.post(`/challenge-records/${challengeRecordId}/pokes/${memberId}`);
-    } catch {
-      // 임시 연결 — 에러 무시
+      await apiClient.post(`/challenge-records/${challengeRecordId}/pokes/${memberId}`, undefined, {
+        errorPolicy: { presentation: 'silent', context: 'feed.poke' },
+        retryPolicy: 'none',
+        skipGlobalError: true,
+      });
+    } catch (error) {
+      logError(normalizeError(error), { scope: 'feed', operation: 'poke' });
     }
   };
 
@@ -444,7 +449,12 @@ export default function FeedHome() {
     try {
       const res = await apiClient.post<ReactionResponse>(
         `/challenge-records/${targetItem.challengeRecordId}/reactions`,
-        { reactionCode }
+        { reactionCode },
+        {
+          errorPolicy: { presentation: 'silent', context: 'feed.react' },
+          retryPolicy: 'none',
+          skipGlobalError: true,
+        }
       );
       if (res.data.reactionId != null) {
         setMyReactionIds((prev) => ({
@@ -452,8 +462,8 @@ export default function FeedHome() {
           [itemId]: { ...(prev[itemId] ?? {}), [reactionCode]: res.data.reactionId! },
         }));
       }
-    } catch {
-      // keep optimistic state on error
+    } catch (error) {
+      logError(normalizeError(error), { scope: 'feed', operation: 'react' });
     }
   };
 

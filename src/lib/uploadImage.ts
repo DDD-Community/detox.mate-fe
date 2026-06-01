@@ -1,5 +1,7 @@
+import { createAppError } from '../api/errors';
 import { PresignedUrlRequestUploadPurpose } from '../api/generated/model';
-import { getUpload } from '../api/generated/upload/upload';
+import type { PresignedUrlResponse } from '../api/generated/model';
+import { customAxios } from '../api/mutator';
 
 export const SUPPORTED_IMAGE_FORMAT_LABEL = 'JPG, PNG, HEIC';
 
@@ -131,29 +133,70 @@ export async function uploadImage(
   const uploadPurpose =
     options?.uploadPurpose ?? PresignedUrlRequestUploadPurpose.ACTIVITY_RECORD_IMAGE;
 
-  const { issuePresignedUrl } = getUpload();
-  const { uploadUrl, objectKey } = await issuePresignedUrl({
-    fileName,
-    contentType,
-    fileSize,
-    uploadPurpose,
-  });
+  const { uploadUrl, objectKey } = await customAxios<PresignedUrlResponse>(
+    {
+      url: '/uploads/presigned-urls',
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      data: {
+        fileName,
+        contentType,
+        fileSize,
+        uploadPurpose,
+      },
+    },
+    {
+      errorPolicy: { presentation: 'dialog', context: 'upload.presignedUrl' },
+      retryPolicy: 'none',
+      skipGlobalError: true,
+    }
+  );
 
   if (!uploadUrl || !objectKey) {
-    throw new Error('presigned URL을 발급받지 못했습니다');
+    throw createAppError({
+      type: 'upload',
+      code: 'PRESIGNED_URL_MISSING',
+      message: 'presigned URL을 발급받지 못했습니다',
+    });
   }
 
-  const fileResponse = await fetch(imageUri);
-  const blob = await fileResponse.blob();
+  let blob: Blob;
+  try {
+    const fileResponse = await fetch(imageUri);
+    blob = await fileResponse.blob();
+  } catch (error) {
+    throw createAppError({
+      type: 'upload',
+      code: 'LOCAL_IMAGE_READ_FAILED',
+      message: '이미지 파일을 불러오지 못했습니다',
+      originalError: error,
+    });
+  }
 
-  const uploadResponse = await fetch(uploadUrl, {
-    method: 'PUT',
-    headers: { 'Content-Type': contentType },
-    body: blob,
-  });
+  let uploadResponse: Response;
+  try {
+    uploadResponse = await fetch(uploadUrl, {
+      method: 'PUT',
+      headers: { 'Content-Type': contentType },
+      body: blob,
+    });
+  } catch (error) {
+    throw createAppError({
+      type: 'upload',
+      code: 'UPLOAD_NETWORK_FAILED',
+      message: '이미지 업로드에 실패했습니다',
+      originalError: error,
+      retriable: true,
+    });
+  }
 
   if (!uploadResponse.ok) {
-    throw new Error('이미지 업로드에 실패했습니다');
+    throw createAppError({
+      type: 'upload',
+      code: 'UPLOAD_FAILED',
+      status: uploadResponse.status,
+      message: '이미지 업로드에 실패했습니다',
+    });
   }
 
   return objectKey;

@@ -3,6 +3,7 @@ import { router } from 'expo-router';
 import { useState } from 'react';
 import { Alert } from 'react-native';
 
+import { getUserErrorMessage, logError, normalizeError } from '@/api/errors';
 import { submitTotalUsageActivityRecord } from '@/features/activity-record/submitTotalUsageActivityRecord';
 import { uploadImage } from '@/lib/uploadImage';
 import { pickImageFromLibrary } from './useImageLibraryPicker';
@@ -53,8 +54,15 @@ export function useRetroForm({
       });
       router.replace(getVerifyPath('complete', verifyRoot));
     } catch (error) {
-      const message =
-        error instanceof Error ? error.message : '게시에 실패했어요. 다시 시도해 주세요.';
+      const appError = normalizeError(error);
+      logError(appError, { scope: 'verify.retro', operation: 'submitActivityRecord' });
+      const message = getUserErrorMessage(appError, {
+        presentation: 'dialog',
+        userMessage:
+          appError.type === 'upload'
+            ? '이미지 업로드에 실패했어요. 다시 시도해 주세요.'
+            : '게시에 실패했어요. 다시 시도해 주세요.',
+      });
       Alert.alert('게시 실패', message);
     } finally {
       setSubmitting(false);
