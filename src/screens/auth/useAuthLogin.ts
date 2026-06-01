@@ -10,7 +10,8 @@ import {
   loginWithKakao,
   loginWithTestUser,
 } from '@/api/auth';
-import { type AppError, logError, normalizeError } from '@/api/errors';
+import { logError, normalizeError } from '@/api/errors';
+import type { AppError } from '@/api/errors/types';
 import { registerDevicePushToken } from '@/lib/fcmToken';
 import { APP_ACCESS_PERMISSION_GUIDE_SEEN_KEY, TERMS_ACCEPTED_KEY } from './authStorageKeys';
 

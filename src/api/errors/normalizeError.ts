@@ -2,7 +2,7 @@ import axios, { AxiosError } from 'axios';
 
 import type { ApiErrorPayload, AppError, AppErrorType } from './types';
 
-type CreateAppErrorInput = {
+type AppErrorInput = {
   type: AppErrorType;
   message?: string;
   status?: number;
@@ -17,7 +17,7 @@ const DEFAULT_ERROR_MESSAGE = '요청을 처리하지 못했어요. 잠시 후 �
 export const isAppError = (error: unknown): error is AppError =>
   Boolean(error && typeof error === 'object' && (error as Partial<AppError>).isAppError);
 
-export function createAppError({
+export function AppError({
   type,
   message,
   status,
@@ -25,7 +25,7 @@ export function createAppError({
   payload,
   originalError,
   retriable,
-}: CreateAppErrorInput): AppError {
+}: AppErrorInput): AppError {
   const appError = new Error(message ?? DEFAULT_ERROR_MESSAGE) as AppError;
   appError.name = 'AppError';
   appError.isAppError = true;
@@ -90,7 +90,7 @@ export function normalizeError(error: unknown): AppError {
   if (axios.isAxiosError(error)) {
     if (!error.response) {
       const type = isTimeoutAxiosError(error) ? 'timeout' : 'network';
-      return createAppError({
+      return AppError({
         type: isNetworkAxiosError(error) || type === 'timeout' ? type : 'unknown',
         message: error.message,
         originalError: error,
@@ -101,7 +101,7 @@ export function normalizeError(error: unknown): AppError {
     const status = error.response.status;
     const payload = toApiErrorPayload(error.response.data, status);
 
-    return createAppError({
+    return AppError({
       type: getTypeByStatus(status),
       status,
       code: payload?.code,
@@ -119,7 +119,7 @@ export function normalizeError(error: unknown): AppError {
         ? 'network'
         : 'unknown';
 
-    return createAppError({
+    return AppError({
       type,
       message: error.message,
       originalError: error,
@@ -127,7 +127,7 @@ export function normalizeError(error: unknown): AppError {
     });
   }
 
-  return createAppError({
+  return AppError({
     type: 'unknown',
     message: DEFAULT_ERROR_MESSAGE,
     originalError: error,

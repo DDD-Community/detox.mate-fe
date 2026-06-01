@@ -1,4 +1,4 @@
-import { createAppError } from '../api/errors';
+import { AppError } from '../api/errors';
 import { PresignedUrlRequestUploadPurpose } from '../api/generated/model';
 import type { PresignedUrlResponse } from '../api/generated/model';
 import { customAxios } from '../api/mutator';
@@ -153,7 +153,7 @@ export async function uploadImage(
   );
 
   if (!uploadUrl || !objectKey) {
-    throw createAppError({
+    throw AppError({
       type: 'upload',
       code: 'PRESIGNED_URL_MISSING',
       message: 'presigned URL을 발급받지 못했습니다',
@@ -165,7 +165,7 @@ export async function uploadImage(
     const fileResponse = await fetch(imageUri);
     blob = await fileResponse.blob();
   } catch (error) {
-    throw createAppError({
+    throw AppError({
       type: 'upload',
       code: 'LOCAL_IMAGE_READ_FAILED',
       message: '이미지 파일을 불러오지 못했습니다',
@@ -181,7 +181,7 @@ export async function uploadImage(
       body: blob,
     });
   } catch (error) {
-    throw createAppError({
+    throw AppError({
       type: 'upload',
       code: 'UPLOAD_NETWORK_FAILED',
       message: '이미지 업로드에 실패했습니다',
@@ -191,7 +191,7 @@ export async function uploadImage(
   }
 
   if (!uploadResponse.ok) {
-    throw createAppError({
+    throw AppError({
       type: 'upload',
       code: 'UPLOAD_FAILED',
       status: uploadResponse.status,

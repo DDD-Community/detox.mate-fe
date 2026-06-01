@@ -3,7 +3,7 @@ import { describe, expect, it } from 'vitest';
 
 import { handleRequestError } from './handleRequestError';
 import { getUserErrorMessage } from './messages';
-import { createAppError, normalizeError } from './normalizeError';
+import { AppError, normalizeError } from './normalizeError';
 import { canRetryRequest, getRequestRetryPolicy } from './retryPolicy';
 
 const createAxiosError = ({
@@ -53,7 +53,7 @@ describe('normalizeError', () => {
   });
 
   it('normalizes upload and unknown errors', () => {
-    const uploadError = createAppError({ type: 'upload', code: 'UPLOAD_FAILED' });
+    const uploadError = AppError({ type: 'upload', code: 'UPLOAD_FAILED' });
     const unknownError = normalizeError('unexpected');
 
     expect(normalizeError(uploadError).type).toBe('upload');
@@ -63,7 +63,7 @@ describe('normalizeError', () => {
 
 describe('getUserErrorMessage', () => {
   it('uses code and status maps before default type messages', () => {
-    const error = createAppError({ type: 'conflict', status: 409, code: 'ALREADY_JOINED' });
+    const error = AppError({ type: 'conflict', status: 409, code: 'ALREADY_JOINED' });
 
     expect(
       getUserErrorMessage(error, {
@@ -74,7 +74,7 @@ describe('getUserErrorMessage', () => {
   });
 
   it('falls back to type messages', () => {
-    expect(getUserErrorMessage(createAppError({ type: 'server' }))).toBe(
+    expect(getUserErrorMessage(AppError({ type: 'server' }))).toBe(
       '요청을 처리하지 못했어요. 잠시 후 다시 시도해주세요'
     );
   });
@@ -82,7 +82,7 @@ describe('getUserErrorMessage', () => {
 
 describe('retry policy', () => {
   it('retries only safe methods by default', () => {
-    const networkError = createAppError({ type: 'network', retriable: true });
+    const networkError = AppError({ type: 'network', retriable: true });
 
     expect(canRetryRequest({ method: 'GET' }, networkError)).toBe(true);
     expect(canRetryRequest({ method: 'HEAD' }, networkError)).toBe(true);
@@ -90,7 +90,7 @@ describe('retry policy', () => {
   });
 
   it('allows mutation retry only with manual policy', () => {
-    const networkError = createAppError({ type: 'network', retriable: true });
+    const networkError = AppError({ type: 'network', retriable: true });
     const config: AxiosRequestConfig = { method: 'POST', retryPolicy: 'manual' };
 
     expect(getRequestRetryPolicy(config)).toBe('manual');
@@ -100,7 +100,7 @@ describe('retry policy', () => {
 
 describe('handleRequestError', () => {
   it('uses request presentation policy for inline handling', () => {
-    const result = handleRequestError(createAppError({ type: 'validation', status: 400 }), {
+    const result = handleRequestError(AppError({ type: 'validation', status: 400 }), {
       presentation: 'inline',
       messagesByStatus: { 400: '입력값을 확인해주세요.' },
     });
@@ -111,7 +111,7 @@ describe('handleRequestError', () => {
   });
 
   it('defaults server errors to toast handling and logging', () => {
-    const result = handleRequestError(createAppError({ type: 'server', status: 500 }));
+    const result = handleRequestError(AppError({ type: 'server', status: 500 }));
 
     expect(result.presentation).toBe('toast');
     expect(result.shouldLog).toBe(true);

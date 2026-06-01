@@ -1,6 +1,13 @@
-export * from './handleRequestError';
-export * from './logger';
-export * from './messages';
-export * from './normalizeError';
-export * from './retryPolicy';
-export * from './types';
+export { handleRequestError } from './handleRequestError';
+export { logError } from './logger';
+export { getUserErrorMessage } from './messages';
+export { AppError, isAppError, normalizeError } from './normalizeError';
+export { canRetryRequest, getRequestRetryPolicy } from './retryPolicy';
+export type {
+  ApiErrorPayload,
+  AppErrorType,
+  ErrorPresentation,
+  HandledErrorResult,
+  RequestErrorPolicy,
+  RetryPolicy,
+} from './types';
