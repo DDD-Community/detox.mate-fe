@@ -19,6 +19,7 @@ import { HeaderAction, Icon } from '../../components';
 import { memberStore } from '../../lib/memberStore';
 import { pokeStore } from '../../lib/pokeStore';
 import { primitiveColors, radius, spacing, typography } from '../../lib/token';
+import { useNetworkErrorToastStore } from '../../stores/networkErrorToastStore';
 import type { GoalState } from './ActionGuideBanner';
 import type { FeedItem, PokeEntry, ReactionEntry } from './FeedCard';
 import ReactionPicker, {
@@ -32,6 +33,9 @@ const WHITE = '#FFFFFF';
 const AVATAR_SOURCE = require('../../../assets/basic-profile-turtle-hi.png');
 const POCK_ICON = require('../../../assets/pock.png');
 const IMPRESSION_ICON = require('../../../assets/feed_emotion.png');
+const DUPLICATE_REACTION_MESSAGE = '이미 같은 리액션을 남겼습니다';
+const COMMENT_MAX_LENGTH = 1000;
+const COMMENT_MAX_LENGTH_MESSAGE = '댓글은 최대 1000자까지 입력할 수 있어요';
 
 type CommentItem = {
   id: string;
@@ -204,6 +208,7 @@ export default function FeedPostDetail() {
   const [showReactionPicker, setShowReactionPicker] = useState(false);
   const [commentText, setCommentText] = useState('');
   const [fetchedPokes, setFetchedPokes] = useState<PokeEntry[]>([]);
+  const pendingReactionCodesRef = useRef<Set<string>>(new Set());
 
   useEffect(() => {
     if (!feedItem.challengeRecordId) return;
@@ -238,7 +243,13 @@ export default function FeedPostDetail() {
       const res = await apiClient.get<DetailResponse>(
         `/group-challenges/${groupChallengeId}/challenge-records/${feedItem.challengeRecordId}`
       );
-      const myId = myUserIdRef.current;
+      let myId = myUserIdRef.current;
+      if (myId == null) {
+        const storedUserId = await SecureStore.getItemAsync('currentUserId');
+        const parsedUserId = storedUserId ? Number(storedUserId) : null;
+        myId = parsedUserId != null && Number.isFinite(parsedUserId) ? parsedUserId : null;
+        myUserIdRef.current = myId;
+      }
       const serverReactions: ReactionEntry[] = res.data.reactions.summary.map((r) => ({
         userId: String(r.userId),
         name: myId != null && r.userId === myId ? '나' : r.displayName,
@@ -247,6 +258,13 @@ export default function FeedPostDetail() {
       }));
       setReactions(serverReactions);
       setReactionCount(res.data.reactionCount);
+      if (myId != null) {
+        const serverMyReactionEmojis = res.data.reactions.summary
+          .filter((r) => r.userId === myId)
+          .map((r) => normalizeReactionCode(r.reactionBody))
+          .filter((reaction): reaction is NonNullable<typeof reaction> => !!reaction);
+        setMyReactionEmojis(serverMyReactionEmojis);
+      }
 
       const mappedPokes: PokeEntry[] = res.data.pokedUsers.map((u) => ({
         userId: String(u.userId),
@@ -307,9 +325,14 @@ export default function FeedPostDetail() {
   const handleReact = async (reaction: string) => {
     const reactionCode = normalizeReactionCode(reaction);
     if (!reactionCode) return;
+    if (!feedItem.challengeRecordId) return;
 
     const hasThis = myReactionEmojis.some((current) => isSameReaction(current, reactionCode));
-    if (hasThis) return;
+    if (hasThis || pendingReactionCodesRef.current.has(reactionCode)) {
+      useNetworkErrorToastStore.getState().showMessage(DUPLICATE_REACTION_MESSAGE);
+      return;
+    }
+    pendingReactionCodesRef.current.add(reactionCode);
 
     const entry: ReactionEntry = {
       userId: 'me',
@@ -320,7 +343,6 @@ export default function FeedPostDetail() {
     setReactions((prev) => [entry, ...prev]);
     setMyReactionEmojis((prev) => [...prev, reactionCode]);
     setReactionCount((prev) => prev + 1);
-    if (!feedItem.challengeRecordId) return;
     try {
       const res = await apiClient.post<{ reactionId: number }>(
         `/challenge-records/${feedItem.challengeRecordId}/reactions`,
@@ -328,12 +350,32 @@ export default function FeedPostDetail() {
       );
       setMyReactionIds((prev) => ({ ...prev, [reactionCode]: res.data.reactionId }));
       await fetchDetail();
-    } catch {}
+    } catch {
+      setReactions((prev) => {
+        const optimisticIndex = prev.findIndex(
+          (item) => item.userId === 'me' && isSameReaction(item.emoji, reactionCode)
+        );
+        if (optimisticIndex < 0) return prev;
+        return prev.filter((_, index) => index !== optimisticIndex);
+      });
+      setMyReactionEmojis((prev) =>
+        prev.filter((current) => !isSameReaction(current, reactionCode))
+      );
+      setReactionCount((prev) => Math.max(0, prev - 1));
+      await fetchDetail();
+    } finally {
+      pendingReactionCodesRef.current.delete(reactionCode);
+    }
   };
 
   const handleSendComment = async () => {
     const text = commentText.trim();
     if (!text) return;
+    if (text.length > COMMENT_MAX_LENGTH) {
+      useNetworkErrorToastStore.getState().showMessage(COMMENT_MAX_LENGTH_MESSAGE);
+      return;
+    }
+
     setCommentText('');
     const newComment: CommentItem = {
       id: String(Date.now()),
@@ -599,6 +641,7 @@ export default function FeedPostDetail() {
               placeholderTextColor={gray[400]}
               value={commentText}
               onChangeText={setCommentText}
+              maxLength={COMMENT_MAX_LENGTH}
               returnKeyType="send"
               onSubmitEditing={handleSendComment}
             />
