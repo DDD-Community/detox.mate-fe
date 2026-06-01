@@ -380,19 +380,11 @@ export default function FeedHome() {
 
     const userEmojis = myReactions[itemId] ?? [];
     const hasThisEmoji = userEmojis.some((current) => isSameReaction(current, reactionCode));
+    if (hasThisEmoji) return;
 
     setFeedItems((prev) =>
       prev.map((item) => {
         if (item.id !== itemId) return item;
-        if (hasThisEmoji) {
-          return {
-            ...item,
-            reactionCount: Math.max(0, item.reactionCount - 1),
-            reactions: item.reactions.filter(
-              (r) => !(r.userId === 'me' && isSameReaction(r.emoji, reactionCode))
-            ),
-          };
-        }
         const myEntry: ReactionEntry = {
           userId: 'me',
           name: '나',
@@ -408,41 +400,22 @@ export default function FeedHome() {
     );
     setMyReactions((prev) => {
       const current = prev[itemId] ?? [];
-      return {
-        ...prev,
-        [itemId]: hasThisEmoji
-          ? current.filter((e) => !isSameReaction(e, reactionCode))
-          : [...current, reactionCode],
-      };
+      return { ...prev, [itemId]: [...current, reactionCode] };
     });
 
     const targetItem = feedItems.find((f) => f.id === itemId);
     if (!targetItem?.challengeRecordId) return;
 
     try {
-      if (hasThisEmoji) {
-        const reactionId = myReactionIds[itemId]?.[reactionCode];
-        if (reactionId) {
-          await apiClient.delete(
-            `/challenge-records/${targetItem.challengeRecordId}/reactions/${reactionId}`
-          );
-          setMyReactionIds((prev) => {
-            const copy = { ...(prev[itemId] ?? {}) };
-            delete copy[reactionCode];
-            return { ...prev, [itemId]: copy };
-          });
-        }
-      } else {
-        const res = await apiClient.post<ReactionResponse>(
-          `/challenge-records/${targetItem.challengeRecordId}/reactions`,
-          { reactionCode }
-        );
-        if (res.data.reactionId != null) {
-          setMyReactionIds((prev) => ({
-            ...prev,
-            [itemId]: { ...(prev[itemId] ?? {}), [reactionCode]: res.data.reactionId! },
-          }));
-        }
+      const res = await apiClient.post<ReactionResponse>(
+        `/challenge-records/${targetItem.challengeRecordId}/reactions`,
+        { reactionCode }
+      );
+      if (res.data.reactionId != null) {
+        setMyReactionIds((prev) => ({
+          ...prev,
+          [itemId]: { ...(prev[itemId] ?? {}), [reactionCode]: res.data.reactionId! },
+        }));
       }
     } catch {
       // keep optimistic state on error
