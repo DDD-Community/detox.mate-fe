@@ -11,7 +11,7 @@ import {
 import { useNetworkErrorToastStore } from '@/stores/networkErrorToastStore';
 
 export const DEFAULT_PROFILE_IMAGE_OBJECT_KEY = 'static/turtle-hi.png';
-const CLEAR_PROFILE_IMAGE_OBJECT_KEY = '';
+const CLEAR_PROFILE_IMAGE_OBJECT_KEY = null;
 
 const IMAGE_PICKER_OPEN_DELAY_MS = 300;
 const PROFILE_IMAGE_UPDATE_ERROR_MESSAGE =
