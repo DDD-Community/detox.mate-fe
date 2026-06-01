@@ -5,6 +5,7 @@ import { useEffect, type ComponentType } from 'react';
 import { fontSources } from '../src/lib/token/primitive/fonts';
 import { NetworkErrorToast } from '../src/components/NetworkErrorToast';
 import { subscribeToDevicePushTokenRefresh } from '../src/lib/fcmToken';
+import { AppErrorBoundary } from '../src/components/AppErrorBoundary';
 
 SplashScreen.preventAutoHideAsync();
 
@@ -35,7 +36,9 @@ export default function RootLayout() {
 
   return (
     <>
-      <Stack screenOptions={{ headerShown: false }} />
+      <AppErrorBoundary>
+        <Stack screenOptions={{ headerShown: false }} />
+      </AppErrorBoundary>
       <NetworkErrorToast />
     </>
   );
