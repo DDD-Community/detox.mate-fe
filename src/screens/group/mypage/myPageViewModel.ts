@@ -1,6 +1,28 @@
 import type { GroupMemberProfileResponse, GroupResponse, MyProfileResponse } from '@/api';
 import { formatMinutesAsHourMinute } from '@/lib/formatDuration';
 
+const getCertifiedDayAverageUsedMinutes = (
+  averageUsedMinutes: number | null | undefined,
+  totalDays: number | null | undefined,
+  certifiedDays: number | null | undefined
+) => {
+  if (averageUsedMinutes == null) return undefined;
+  if (!certifiedDays || certifiedDays <= 0) return averageUsedMinutes;
+  if (!totalDays || totalDays <= 0) return averageUsedMinutes;
+
+  return Math.round((averageUsedMinutes * totalDays) / certifiedDays);
+};
+
+const getDifferenceMinutes = (
+  averageUsedMinutes: number | undefined,
+  goalMinutes: number | null | undefined,
+  fallbackDifferenceMinutes: number | null | undefined
+) => {
+  if (averageUsedMinutes == null || goalMinutes == null) return fallbackDifferenceMinutes ?? 0;
+
+  return averageUsedMinutes - goalMinutes;
+};
+
 interface BuildMyPageViewModelOptions {
   isFriend: boolean;
   friendName?: string;
@@ -24,6 +46,11 @@ export function buildMyPageViewModel({
 }: BuildMyPageViewModelOptions) {
   const activeProfile = isFriend ? friendProfile : memberProfile;
   const weekly = activeProfile?.weeklySummary;
+  const averageUsedMinutes = getCertifiedDayAverageUsedMinutes(
+    weekly?.averageUsedMinutes,
+    weekly?.totalDays,
+    weekly?.certifiedDays
+  );
   const displayProfileImageUri = isFriend
     ? (friendProfile?.profileImageUrl ?? null)
     : profileImageUri;
@@ -39,9 +66,13 @@ export function buildMyPageViewModel({
     hasJoinedGroup: groups.length > 0,
     isFriendGoalSet: (friendProfile?.currentGoals?.length ?? 0) > 0,
     weeklyStatus: {
-      avgScreenTime: formatMinutesAsHourMinute(weekly?.averageUsedMinutes),
+      avgScreenTime: formatMinutesAsHourMinute(averageUsedMinutes),
       goalScreenTime: formatMinutesAsHourMinute(weekly?.goalMinutes),
-      diffMinutes: weekly?.differenceMinutes ?? 0,
+      diffMinutes: getDifferenceMinutes(
+        averageUsedMinutes,
+        weekly?.goalMinutes,
+        weekly?.differenceMinutes
+      ),
       certifiedDays: weekly?.certifiedDays ?? 0,
       totalVerifyDays: weekly?.totalDays ?? 7,
       achievedDays: weekly?.achievedDays ?? 0,
