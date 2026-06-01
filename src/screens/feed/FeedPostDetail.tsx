@@ -170,6 +170,7 @@ export default function FeedPostDetail() {
   const statusLabelColor = feedItem.isGoalAchieved ? system.green.opacity100 : gray[400];
   const screentimeAccentColor = feedItem.isGoalAchieved ? system.green.opacity100 : gray[500];
   const screentimeBackgroundColor = feedItem.isGoalAchieved ? system.green.opacity10 : gray[50];
+  const myUserIdRef = useRef<number | null>(null);
 
   const ownInList = (feedItem.reactions ?? [])
     .filter((r) => r.userId === 'me')
@@ -187,10 +188,11 @@ export default function FeedPostDetail() {
       emoji: reaction,
     }));
 
-  const myUserIdRef = useRef<number | null>(null);
   useEffect(() => {
     SecureStore.getItemAsync('currentUserId').then((v) => {
-      myUserIdRef.current = v ? Number(v) : null;
+      const currentUserId = v ? Number(v) : null;
+      myUserIdRef.current =
+        currentUserId != null && Number.isFinite(currentUserId) ? currentUserId : null;
     });
   }, []);
 
@@ -286,6 +288,15 @@ export default function FeedPostDetail() {
 
   const displayPokes: PokeEntry[] = fetchedPokes.length > 0 ? fetchedPokes : (feedItem.pokes ?? []);
   const sortedComments = [...comments].sort((a, b) => a.createdAt - b.createdAt);
+  const getMyAvatarSource = useCallback((): CommentItem['avatarSource'] => {
+    const currentUserId = myUserIdRef.current;
+    const profileImageUrl =
+      currentUserId != null ? memberStore.get(currentUserId)?.profileImageUrl : undefined;
+
+    if (profileImageUrl) return { uri: profileImageUrl };
+    if (feedItem.isMe) return feedItem.avatarSource;
+    return AVATAR_SOURCE as number;
+  }, [feedItem.avatarSource, feedItem.isMe]);
 
   const handleHeaderBack = () => {
     if (fromFeedHome === '1' && router.canGoBack()) {
@@ -337,7 +348,7 @@ export default function FeedPostDetail() {
     const entry: ReactionEntry = {
       userId: 'me',
       name: '나',
-      avatarSource: AVATAR_SOURCE as number,
+      avatarSource: getMyAvatarSource(),
       emoji: reactionCode,
     };
     setReactions((prev) => [entry, ...prev]);
@@ -380,7 +391,7 @@ export default function FeedPostDetail() {
     const newComment: CommentItem = {
       id: String(Date.now()),
       authorName: '나',
-      avatarSource: AVATAR_SOURCE as number,
+      avatarSource: getMyAvatarSource(),
       text,
       createdAt: Date.now(),
       timeAgoLabel: '방금 전',
@@ -487,7 +498,7 @@ export default function FeedPostDetail() {
                         const myEntry: PokeEntry = {
                           userId: 'me',
                           name: '나',
-                          avatarSource: AVATAR_SOURCE as number,
+                          avatarSource: getMyAvatarSource(),
                         };
                         return [myEntry, ...prev];
                       });
