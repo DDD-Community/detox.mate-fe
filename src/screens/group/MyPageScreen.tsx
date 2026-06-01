@@ -1,11 +1,7 @@
 import { router } from 'expo-router';
-import { useState } from 'react';
 import { ScrollView, StyleSheet, View } from 'react-native';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
-import { getReaction } from '@/api/generated/reaction/reaction';
 import { primitiveColors, spacing } from '@/lib/token';
-import ReactionPicker, { isSameReaction, type ReactionCode } from '@/screens/feed/ReactionPicker';
 import { MyPageBody } from './mypage/MyPageBody';
 import { MyPageProfileHeader } from './mypage/MyPageProfileHeader';
 import { ProfileImageBottomSheet } from './mypage/ProfileImageBottomSheet';
@@ -21,17 +17,12 @@ import { useMyPageParams } from './mypage/useMyPageParams';
 const { brown } = primitiveColors;
 
 export default function MyPageScreen() {
-  const insets = useSafeAreaInsets();
   const myPageParams = useMyPageParams();
   const isFriend = myPageParams.mode === 'friend';
   const friendName = isFriend ? myPageParams.friendName : undefined;
   const friendUserId = isFriend ? myPageParams.friendUserId : undefined;
   const challengeRecordId = isFriend ? myPageParams.challengeRecordId : undefined;
   const { isPoking, poke } = useFriendPoke({ challengeRecordId, friendUserId });
-  const [isReactionPickerOpen, setIsReactionPickerOpen] = useState(false);
-  const [isReacting, setIsReacting] = useState(false);
-  const [selectedReactions, setSelectedReactions] = useState<string[]>([]);
-  const [reactionIds, setReactionIds] = useState<Record<string, number>>({});
 
   const {
     isImageSheetOpen,
@@ -86,65 +77,6 @@ export default function MyPageScreen() {
 
   const handleChangeGoal = () => {
     router.push('/(group)/goal-time-edit');
-  };
-
-  const handleToggleReactionPicker = () => {
-    setIsReactionPickerOpen((prev) => !prev);
-  };
-
-  const handleSelectReaction = async (reactionCode: ReactionCode) => {
-    if (isReacting || !challengeRecordId) return;
-
-    const challengeRecordIdNumber = Number(challengeRecordId);
-    if (Number.isNaN(challengeRecordIdNumber)) return;
-
-    const existingReactionId = reactionIds[reactionCode];
-    setIsReactionPickerOpen(false);
-    setIsReacting(true);
-
-    if (existingReactionId != null) {
-      setSelectedReactions((prev) =>
-        prev.filter((reaction) => !isSameReaction(reaction, reactionCode))
-      );
-      try {
-        await getReaction().deleteReaction(challengeRecordIdNumber, existingReactionId);
-        setReactionIds((prev) => {
-          const next = { ...prev };
-          delete next[reactionCode];
-          return next;
-        });
-      } catch {
-        setSelectedReactions((prev) =>
-          prev.some((reaction) => isSameReaction(reaction, reactionCode))
-            ? prev
-            : [...prev, reactionCode]
-        );
-      } finally {
-        setIsReacting(false);
-      }
-      return;
-    }
-
-    setSelectedReactions((prev) =>
-      prev.some((reaction) => isSameReaction(reaction, reactionCode))
-        ? prev
-        : [...prev, reactionCode]
-    );
-    try {
-      const response = await getReaction().createReaction(challengeRecordIdNumber, {
-        reactionCode,
-      });
-      const reactionId = response.reactionId;
-      if (reactionId != null) {
-        setReactionIds((prev) => ({ ...prev, [reactionCode]: reactionId }));
-      }
-    } catch {
-      setSelectedReactions((prev) =>
-        prev.filter((reaction) => !isSameReaction(reaction, reactionCode))
-      );
-    } finally {
-      setIsReacting(false);
-    }
   };
 
   const {
@@ -213,9 +145,7 @@ export default function MyPageScreen() {
           achievedDays={achievedDays}
           joinedGroups={joinedGroups}
           daysUntilGoalChange={daysUntilGoalChange}
-          isReacting={isReacting}
           onPoke={poke}
-          onToggleReactionPicker={handleToggleReactionPicker}
           onSetGoal={handleSetGoal}
           onCreateGroup={handleCreateGroup}
           onEnterInviteCode={handleEnterInviteCode}
@@ -231,18 +161,6 @@ export default function MyPageScreen() {
         onSelectGallery={selectGalleryImage}
       />
 
-      {isFriend && isReactionPickerOpen ? (
-        <View
-          pointerEvents="box-none"
-          style={[styles.reactionPickerAnchor, { bottom: Math.max(insets.bottom + 12, 20) }]}
-        >
-          <ReactionPicker
-            selectedReactions={selectedReactions}
-            style={styles.reactionPicker}
-            onSelect={handleSelectReaction}
-          />
-        </View>
-      ) : null}
     </View>
   );
 }
@@ -258,14 +176,5 @@ const styles = StyleSheet.create({
   screenContent: {
     flexGrow: 1,
     paddingBottom: spacing[24],
-  },
-  reactionPickerAnchor: {
-    position: 'absolute',
-    left: 0,
-    right: 0,
-    alignItems: 'center',
-  },
-  reactionPicker: {
-    width: 311,
   },
 });

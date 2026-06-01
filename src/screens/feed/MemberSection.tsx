@@ -105,7 +105,7 @@ function MemberAvatar({ member, onPress }: { member: MemberItem; onPress?: () =>
       <Text style={styles.avatarName}>
         {(() => {
           const label = member.isMe ? '나' : member.name;
-          return label.length >= 4 ? `${label.slice(0, 3)}...` : label;
+          return label.length >= 5 ? `${label.slice(0, 4)}...` : label;
         })()}
       </Text>
     </Pressable>

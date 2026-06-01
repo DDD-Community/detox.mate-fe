@@ -1,5 +1,6 @@
 import { router, useLocalSearchParams } from 'expo-router';
-import { useEffect, useState } from 'react';
+import * as SecureStore from 'expo-secure-store';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import {
   Alert,
   Image,
@@ -194,6 +195,13 @@ export default function FeedPostDetail() {
       emoji: reaction,
     }));
 
+  const myUserIdRef = useRef<number | null>(null);
+  useEffect(() => {
+    SecureStore.getItemAsync('currentUserId').then((v) => {
+      myUserIdRef.current = v ? Number(v) : null;
+    });
+  }, []);
+
   const [isPoked, setIsPoked] = useState(isPokedParam === '1');
   const [pokeCount, setPokeCount] = useState(feedItem.pokeCount);
   const [comments, setComments] = useState<CommentItem[]>([]);
@@ -216,9 +224,10 @@ export default function FeedPostDetail() {
         const res = await apiClient.get<CommentsResponse>(
           `/challenge-records/${feedItem.challengeRecordId}/comments`
         );
+        const myId = myUserIdRef.current;
         const mapped = res.data.items.map((c) => ({
           id: String(c.commentId),
-          authorName: c.author.displayName,
+          authorName: myId != null && c.author.userId === myId ? '나' : c.author.displayName,
           avatarSource: c.author.profileImageUrl
             ? { uri: c.author.profileImageUrl }
             : AVATAR_SOURCE,
@@ -235,41 +244,39 @@ export default function FeedPostDetail() {
     fetchComments();
   }, [feedItem.challengeRecordId]);
 
-  useEffect(() => {
+  const fetchDetail = useCallback(async () => {
     if (!groupChallengeId || !feedItem.challengeRecordId) return;
-    const fetchDetail = async () => {
-      try {
-        const res = await apiClient.get<DetailResponse>(
-          `/group-challenges/${groupChallengeId}/challenge-records/${feedItem.challengeRecordId}`
-        );
-        const serverReactions: ReactionEntry[] = res.data.reactions.summary.map((r) => ({
-          userId: String(r.userId),
-          name: r.displayName,
-          avatarSource: r.profileImageUrl ? { uri: r.profileImageUrl } : (AVATAR_SOURCE as number),
-          emoji: normalizeReactionCode(r.reactionBody) ?? r.reactionBody,
-        }));
-        // Merge: keep any optimistic 'me' entries, replace server entries
-        setReactions((prev) => {
-          const myOptimistic = prev.filter((r) => r.userId === 'me');
-          return [...myOptimistic, ...serverReactions];
-        });
-        setReactionCount(res.data.reactionCount);
+    try {
+      const res = await apiClient.get<DetailResponse>(
+        `/group-challenges/${groupChallengeId}/challenge-records/${feedItem.challengeRecordId}`
+      );
+      const myId = myUserIdRef.current;
+      const serverReactions: ReactionEntry[] = res.data.reactions.summary.map((r) => ({
+        userId: String(r.userId),
+        name: myId != null && r.userId === myId ? '나' : r.displayName,
+        avatarSource: r.profileImageUrl ? { uri: r.profileImageUrl } : (AVATAR_SOURCE as number),
+        emoji: normalizeReactionCode(r.reactionBody) ?? r.reactionBody,
+      }));
+      setReactions(serverReactions);
+      setReactionCount(res.data.reactionCount);
 
-        const mappedPokes: PokeEntry[] = res.data.pokedUsers.map((u) => ({
-          userId: String(u.userId),
-          name: u.displayName,
-          avatarSource: u.profileImageUrl ? { uri: u.profileImageUrl } : (AVATAR_SOURCE as number),
-        }));
-        setFetchedPokes((prev) => {
-          const myOptimistic = prev.filter((p) => p.userId === 'me');
-          return [...myOptimistic, ...mappedPokes];
-        });
-      } catch {
-        // keep existing state on error
-      }
-    };
-    fetchDetail();
+      const mappedPokes: PokeEntry[] = res.data.pokedUsers.map((u) => ({
+        userId: String(u.userId),
+        name: myId != null && u.userId === myId ? '나' : u.displayName,
+        avatarSource: u.profileImageUrl ? { uri: u.profileImageUrl } : (AVATAR_SOURCE as number),
+      }));
+      setFetchedPokes((prev) => {
+        const myOptimistic = prev.filter((p) => p.userId === 'me');
+        return [...myOptimistic, ...mappedPokes];
+      });
+    } catch {
+      // keep existing state on error
+    }
   }, [groupChallengeId, feedItem.challengeRecordId]);
+
+  useEffect(() => {
+    fetchDetail();
+  }, [fetchDetail]);
 
   const displayPokes: PokeEntry[] = fetchedPokes.length > 0 ? fetchedPokes : (feedItem.pokes ?? []);
   const sortedComments = [...comments].sort((a, b) => a.createdAt - b.createdAt);
@@ -312,44 +319,26 @@ export default function FeedPostDetail() {
     if (!reactionCode) return;
 
     const hasThis = myReactionEmojis.some((current) => isSameReaction(current, reactionCode));
-    if (hasThis) {
-      setReactions((prev) =>
-        prev.filter((r) => !(r.userId === 'me' && isSameReaction(r.emoji, reactionCode)))
+    if (hasThis) return;
+
+    const entry: ReactionEntry = {
+      userId: 'me',
+      name: '나',
+      avatarSource: AVATAR_SOURCE as number,
+      emoji: reactionCode,
+    };
+    setReactions((prev) => [entry, ...prev]);
+    setMyReactionEmojis((prev) => [...prev, reactionCode]);
+    setReactionCount((prev) => prev + 1);
+    if (!feedItem.challengeRecordId) return;
+    try {
+      const res = await apiClient.post<{ reactionId: number }>(
+        `/challenge-records/${feedItem.challengeRecordId}/reactions`,
+        { reactionCode }
       );
-      setMyReactionEmojis((prev) => prev.filter((e) => !isSameReaction(e, reactionCode)));
-      setReactionCount((prev) => Math.max(0, prev - 1));
-      if (!feedItem.challengeRecordId) return;
-      const reactionId = myReactionIds[reactionCode];
-      if (!reactionId) return;
-      try {
-        await apiClient.delete(
-          `/challenge-records/${feedItem.challengeRecordId}/reactions/${reactionId}`
-        );
-        setMyReactionIds((prev) => {
-          const copy = { ...prev };
-          delete copy[reactionCode];
-          return copy;
-        });
-      } catch {}
-    } else {
-      const entry: ReactionEntry = {
-        userId: 'me',
-        name: '나',
-        avatarSource: AVATAR_SOURCE as number,
-        emoji: reactionCode,
-      };
-      setReactions((prev) => [entry, ...prev]);
-      setMyReactionEmojis((prev) => [...prev, reactionCode]);
-      setReactionCount((prev) => prev + 1);
-      if (!feedItem.challengeRecordId) return;
-      try {
-        const res = await apiClient.post<{ reactionId: number }>(
-          `/challenge-records/${feedItem.challengeRecordId}/reactions`,
-          { reactionCode }
-        );
-        setMyReactionIds((prev) => ({ ...prev, [reactionCode]: res.data.reactionId }));
-      } catch {}
-    }
+      setMyReactionIds((prev) => ({ ...prev, [reactionCode]: res.data.reactionId }));
+      await fetchDetail();
+    } catch {}
   };
 
   const handleSendComment = async () => {
@@ -525,7 +514,9 @@ export default function FeedPostDetail() {
                             )}
                           </View>
                         </View>
-                        <Text style={styles.pokeAvatarName}>{r.name}</Text>
+                        <Text style={styles.pokeAvatarName}>
+                          {r.name.length >= 5 ? `${r.name.slice(0, 4)}...` : r.name}
+                        </Text>
                       </Pressable>
                     );
                   })}
@@ -557,7 +548,9 @@ export default function FeedPostDetail() {
                           />
                         </View>
                       </View>
-                      <Text style={styles.pokeAvatarName}>{p.name}</Text>
+                      <Text style={styles.pokeAvatarName}>
+                        {p.name.length >= 5 ? `${p.name.slice(0, 4)}...` : p.name}
+                      </Text>
                     </Pressable>
                   ))}
                 </ScrollView>
