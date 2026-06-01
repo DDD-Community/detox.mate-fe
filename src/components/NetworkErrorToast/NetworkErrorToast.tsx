@@ -26,6 +26,7 @@ export function NetworkErrorToast() {
       visible={visible}
       message={text}
       icon={<Icon name="warningCircle" size={16} weight="fill" color={system.red.opacity100} />}
+      bottomOffset={60}
       fullWidth
       actions={
         <>

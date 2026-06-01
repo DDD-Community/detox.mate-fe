@@ -316,7 +316,9 @@ const routeSenderProfileFromFeed = async (
       friendName: sender.displayName ?? '',
       friendUserId: String(item.senderUserId),
       friendGroupId: String(feed.groupId),
+      groupChallengeId: String(groupChallengeId),
       challengeRecordId: sender.challengeRecordId ? String(sender.challengeRecordId) : '',
+      isPoked: sender.isPoked ? '1' : '0',
     },
   });
   return true;
@@ -333,6 +335,7 @@ const routeSenderProfileFromGroup = async (
   if (!sender?.id) return false;
 
   let challengeRecordId = '';
+  let isPoked = false;
   const groupChallengeId = group.currentChallenge?.id;
   if (isFiniteNumber(groupChallengeId)) {
     const feed = await getFeed().getTodayChallengeRecords(groupChallengeId);
@@ -340,6 +343,7 @@ const routeSenderProfileFromGroup = async (
     if (senderFeedItem?.challengeRecordId) {
       challengeRecordId = String(senderFeedItem.challengeRecordId);
     }
+    isPoked = senderFeedItem?.isPoked === true;
   }
 
   router.push({
@@ -349,7 +353,9 @@ const routeSenderProfileFromGroup = async (
       friendName: sender.displayName ?? '',
       friendUserId: String(item.senderUserId),
       friendGroupId: String(groupId),
+      groupChallengeId: isFiniteNumber(groupChallengeId) ? String(groupChallengeId) : '',
       challengeRecordId,
+      isPoked: isPoked ? '1' : '0',
     },
   });
   return true;

@@ -22,6 +22,7 @@ import { LeaveGroupAlert } from './LeaveGroupAlert';
 const { brown, gray } = primitiveColors;
 
 const DEFAULT_AVATAR = require('../../../../assets/basic-profile-turtle-hi.png');
+type TodayChallengeRecordByUserId = Record<number, { challengeRecordId: number; isPoked: boolean }>;
 
 export default function GroupInfoScreen() {
   const { groupId: groupIdParam } = useLocalSearchParams<{ groupId?: string }>();
@@ -31,10 +32,10 @@ export default function GroupInfoScreen() {
   const [inviteCode, setInviteCode] = useState('');
   const [members, setMembers] = useState<GroupMemberResponse[]>([]);
   const [myUserId, setMyUserId] = useState<number | null>(null);
-  // userId → 오늘의 challengeRecordId 매핑 (콕 찌르기에 필요)
-  const [challengeRecordIdByUserId, setChallengeRecordIdByUserId] = useState<
-    Record<number, number>
-  >({});
+  const [currentGroupChallengeId, setCurrentGroupChallengeId] = useState<number | null>(null);
+  // userId → 오늘의 challengeRecordId/isPoked 매핑 (친구 프로필 콕 찌르기에 필요)
+  const [todayChallengeRecordByUserId, setTodayChallengeRecordByUserId] =
+    useState<TodayChallengeRecordByUserId>({});
   const [isLoading, setIsLoading] = useState(true);
 
   const [isLeaveAlertOpen, setIsLeaveAlertOpen] = useState(false);
@@ -69,16 +70,22 @@ export default function GroupInfoScreen() {
         setMembers(data.members ?? []);
 
         const groupChallengeId = data.currentChallenge?.id;
+        setCurrentGroupChallengeId(groupChallengeId ?? null);
         if (groupChallengeId != null) {
           const today = await getFeed().getTodayChallengeRecords(groupChallengeId);
           if (cancelled) return;
-          const map: Record<number, number> = {};
+          const map: TodayChallengeRecordByUserId = {};
           for (const m of today.members ?? []) {
             if (m.userId != null && m.challengeRecordId != null) {
-              map[m.userId] = m.challengeRecordId;
+              map[m.userId] = {
+                challengeRecordId: m.challengeRecordId,
+                isPoked: m.isPoked === true,
+              };
             }
           }
-          setChallengeRecordIdByUserId(map);
+          setTodayChallengeRecordByUserId(map);
+        } else {
+          setTodayChallengeRecordByUserId({});
         }
       } finally {
         if (!cancelled) setIsLoading(false);
@@ -190,8 +197,8 @@ export default function GroupInfoScreen() {
                 );
               }
 
-              const challengeRecordId =
-                m.userId != null ? challengeRecordIdByUserId[m.userId] : undefined;
+              const todayChallengeRecord =
+                m.userId != null ? todayChallengeRecordByUserId[m.userId] : undefined;
               return (
                 <Pressable
                   key={m.id}
@@ -204,8 +211,13 @@ export default function GroupInfoScreen() {
                         friendName: displayName,
                         friendUserId: m.userId != null ? String(m.userId) : '',
                         friendGroupId: groupId != null ? String(groupId) : '',
+                        groupChallengeId:
+                          currentGroupChallengeId != null ? String(currentGroupChallengeId) : '',
                         challengeRecordId:
-                          challengeRecordId != null ? String(challengeRecordId) : '',
+                          todayChallengeRecord?.challengeRecordId != null
+                            ? String(todayChallengeRecord.challengeRecordId)
+                            : '',
+                        isPoked: todayChallengeRecord?.isPoked ? '1' : '0',
                       },
                     })
                   }
@@ -229,7 +241,7 @@ export default function GroupInfoScreen() {
         loading={isLeaving}
       />
 
-      <ClipboardCopyToast visible={copyToastVisible} position="bottom" />
+      <ClipboardCopyToast visible={copyToastVisible} position="bottom" bottomOffset={60} />
     </View>
   );
 }

@@ -22,7 +22,14 @@ export default function MyPageScreen() {
   const friendName = isFriend ? myPageParams.friendName : undefined;
   const friendUserId = isFriend ? myPageParams.friendUserId : undefined;
   const challengeRecordId = isFriend ? myPageParams.challengeRecordId : undefined;
-  const { isPoking, poke } = useFriendPoke({ challengeRecordId, friendUserId });
+  const groupChallengeId = isFriend ? myPageParams.groupChallengeId : undefined;
+  const initialIsPoked = isFriend ? myPageParams.isPoked === '1' : false;
+  const { isPoking, isPoked, poke } = useFriendPoke({
+    challengeRecordId,
+    groupChallengeId,
+    friendUserId,
+    initialIsPoked,
+  });
 
   const {
     isImageSheetOpen,
@@ -135,6 +142,7 @@ export default function MyPageScreen() {
           isLoading={isLoading}
           isFriendGoalSet={isFriendGoalSet}
           isPoking={isPoking}
+          isPoked={isPoked}
           hasGoalSet={hasGoalSet}
           hasJoinedGroup={hasJoinedGroup}
           diffMinutes={diffMinutes}
@@ -160,7 +168,6 @@ export default function MyPageScreen() {
         onSelectDefault={selectDefaultImage}
         onSelectGallery={selectGalleryImage}
       />
-
     </View>
   );
 }

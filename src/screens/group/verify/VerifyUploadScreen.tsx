@@ -26,7 +26,7 @@ type Size = {
   height: number;
 };
 
-function getTopAlignedCoverStyle(
+function getCenteredCoverStyle(
   containerSize: Size,
   imageSize: Size | null
 ): ImageStyle | undefined {
@@ -51,6 +51,7 @@ function getTopAlignedCoverStyle(
     width: containerSize.width,
     height: containerSize.width / imageAspectRatio,
     left: 0,
+    top: (containerSize.height - containerSize.width / imageAspectRatio) / 2,
   };
 }
 
@@ -85,7 +86,7 @@ export default function VerifyUploadScreen() {
     groupChallengeParticipantId,
     verifyRoot,
   });
-  const previewImageStyle = getTopAlignedCoverStyle(
+  const previewImageStyle = getCenteredCoverStyle(
     { width: previewWidth, height: PREVIEW_HEIGHT },
     imageSize
   );

@@ -3,7 +3,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { Button } from '@/components';
 import { primitiveColors, radius, spacing, typography } from '@/lib/token';
-import { JoinedGroupBody, type JoinedGroupItem } from './JoinedGroupBody';
+import { JoinedGroupBody, JoinedGroupList, type JoinedGroupItem } from './JoinedGroupBody';
 import { WeeklyStatusCard } from './WeeklyStatusCard';
 
 import CALENDAR_IMG from '@assets/mypage-calender.png';
@@ -11,7 +11,7 @@ import GROUP_INVITE_IMG from '@assets/onboarding-group-invite.png';
 import GROUP_PLUS_IMG from '@assets/onboarding-group-plus.png';
 import POCK_IMG from '@assets/pock.png';
 
-const { brown, gray } = primitiveColors;
+const { brown, gray, green } = primitiveColors;
 
 interface GroupActionCardProps {
   image: number;
@@ -39,6 +39,7 @@ interface MyPageBodyProps {
   isLoading: boolean;
   isFriendGoalSet: boolean;
   isPoking: boolean;
+  isPoked: boolean;
   hasGoalSet: boolean;
   hasJoinedGroup: boolean;
   diffMinutes: number;
@@ -62,6 +63,7 @@ export function MyPageBody({
   isLoading,
   isFriendGoalSet,
   isPoking,
+  isPoked,
   hasGoalSet,
   hasJoinedGroup,
   diffMinutes,
@@ -79,6 +81,8 @@ export function MyPageBody({
   onGroupPress,
   onChangeGoal,
 }: MyPageBodyProps) {
+  const isPokeDisabled = isPoking || isPoked;
+
   if (isFriend && isLoading) {
     return (
       <View style={styles.loadingWrap}>
@@ -89,24 +93,25 @@ export function MyPageBody({
 
   if (isFriend && !isFriendGoalSet) {
     return (
-      <>
+      <View style={styles.friendPokeState}>
         <View style={styles.friendEmptyState}>
           <Image source={CALENDAR_IMG} style={styles.calendar} resizeMode="contain" />
           <Text style={styles.friendEmptyText}>
             아직 목표를 설정하지 않았어요.{'\n'}목표 설정 알림을 보내주세요!
           </Text>
         </View>
-        <SafeAreaView edges={['bottom']} style={styles.pokeCtaWrap}>
-          <Button
-            label="콕 찌르기"
-            color="primary"
-            leadingIcon={<Image source={POCK_IMG} style={styles.pockIcon} resizeMode="contain" />}
-            disabled={isPoking}
-            onPress={onPoke}
-            style={styles.pokeCta}
-          />
-        </SafeAreaView>
-      </>
+        <Pressable
+          accessibilityRole="button"
+          accessibilityLabel="콕 찌르기"
+          accessibilityState={{ disabled: isPokeDisabled }}
+          disabled={isPokeDisabled}
+          onPress={onPoke}
+          style={[styles.pokeCta, isPokeDisabled && styles.pokeCtaDisabled]}
+        >
+          <Image source={POCK_IMG} style={styles.pockIcon} resizeMode="contain" />
+          <Text style={styles.pokeCtaText}>콕 찌르기</Text>
+        </Pressable>
+      </View>
     );
   }
 
@@ -185,6 +190,10 @@ export function MyPageBody({
         <Text style={styles.emptyText}>목표 설정을 해야 참여할 수 있어요.</Text>
       </View>
 
+      <View style={styles.goalUnsetGroupList}>
+        <JoinedGroupList groups={joinedGroups} onGroupPress={onGroupPress} />
+      </View>
+
       <SafeAreaView edges={['bottom']} style={styles.ctaWrap}>
         <Button
           label="목표 스크린 타임 설정"
@@ -226,6 +235,11 @@ const styles = StyleSheet.create({
   cta: {
     alignSelf: 'stretch',
   },
+  goalUnsetGroupList: {
+    paddingHorizontal: spacing[16],
+    paddingBottom: 18,
+    gap: spacing[8],
+  },
   goalSetBody: {
     paddingHorizontal: spacing[16],
     paddingTop: spacing[16],
@@ -263,12 +277,17 @@ const styles = StyleSheet.create({
     paddingHorizontal: spacing[16],
     paddingTop: spacing[16],
   },
-  friendEmptyState: {
+  friendPokeState: {
     flex: 1,
     alignItems: 'center',
     justifyContent: 'center',
-    gap: spacing[16],
+    gap: spacing[20],
     paddingHorizontal: spacing[24],
+    paddingBottom: spacing[24],
+  },
+  friendEmptyState: {
+    alignItems: 'center',
+    gap: spacing[16],
   },
   friendEmptyText: {
     ...typography.primary.body3R,
@@ -277,14 +296,22 @@ const styles = StyleSheet.create({
     color: gray[400],
     textAlign: 'center',
   },
-  pokeCtaWrap: {
-    paddingHorizontal: spacing[16],
-    paddingBottom: spacing[16],
-    alignItems: 'center',
-  },
   pokeCta: {
-    width: 311,
+    flexDirection: 'row',
+    alignItems: 'center',
     alignSelf: 'center',
+    backgroundColor: green[300],
+    borderRadius: 18,
+    minHeight: 44,
+    paddingHorizontal: spacing[12],
+    gap: spacing[4],
+  },
+  pokeCtaDisabled: {
+    opacity: 0.3,
+  },
+  pokeCtaText: {
+    ...typography.primary.body2B,
+    color: '#FFFFFF',
   },
   pockIcon: {
     width: 22,
