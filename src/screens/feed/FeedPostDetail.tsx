@@ -163,21 +163,9 @@ export default function FeedPostDetail() {
     feedItem.isVerified === true && !feedItem.isGoalAchieved && feedItem.photoSource != null;
   const usesPostLayout = feedItem.isGoalAchieved || hasFailurePhoto;
   const postText = feedItem.postText ?? feedItem.retroText;
-  const statusLabelColor = feedItem.isGoalAchieved
-    ? system.green.opacity100
-    : hasFailurePhoto
-      ? system.red.opacity100
-      : gray[400];
-  const screentimeAccentColor = feedItem.isGoalAchieved
-    ? system.green.opacity100
-    : hasFailurePhoto
-      ? system.red.opacity100
-      : gray[500];
-  const screentimeBackgroundColor = feedItem.isGoalAchieved
-    ? system.green.opacity10
-    : hasFailurePhoto
-      ? system.red.opacity10
-      : gray[50];
+  const statusLabelColor = feedItem.isGoalAchieved ? system.green.opacity100 : gray[400];
+  const screentimeAccentColor = feedItem.isGoalAchieved ? system.green.opacity100 : gray[500];
+  const screentimeBackgroundColor = feedItem.isGoalAchieved ? system.green.opacity10 : gray[50];
 
   const ownInList = (feedItem.reactions ?? [])
     .filter((r) => r.userId === 'me')
