@@ -8,25 +8,15 @@ import type { NotificationHistoryListResponse, NotificationNavigationResponse } 
 
 import { customAxios } from '../../mutator';
 
-type SecondParameter<T extends (...args: never) => unknown> = Parameters<T>[1];
-
 export const getNotificationHistory = () => {
-  const getMyNotifications = (
-    options?: SecondParameter<typeof customAxios<NotificationHistoryListResponse>>
-  ) => {
-    return customAxios<NotificationHistoryListResponse>(
-      { url: `/notifications`, method: 'GET' },
-      options
-    );
+  const getMyNotifications = () => {
+    return customAxios<NotificationHistoryListResponse>({ url: `/notifications`, method: 'GET' });
   };
-  const getNotificationHistory = (
-    notificationHistoryId: number,
-    options?: SecondParameter<typeof customAxios<NotificationNavigationResponse>>
-  ) => {
-    return customAxios<NotificationNavigationResponse>(
-      { url: `/notifications/${notificationHistoryId}/navigation`, method: 'GET' },
-      options
-    );
+  const getNotificationHistory = (notificationHistoryId: number) => {
+    return customAxios<NotificationNavigationResponse>({
+      url: `/notifications/${notificationHistoryId}/navigation`,
+      method: 'GET',
+    });
   };
   return { getMyNotifications, getNotificationHistory };
 };

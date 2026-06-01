@@ -8,17 +8,12 @@ import type { GroupActivityCalendarResponse } from '../model';
 
 import { customAxios } from '../../mutator';
 
-type SecondParameter<T extends (...args: never) => unknown> = Parameters<T>[1];
-
 export const getGroupActivityCalendar = () => {
-  const getActivityCalendar = (
-    groupChallengeId: number,
-    options?: SecondParameter<typeof customAxios<GroupActivityCalendarResponse>>
-  ) => {
-    return customAxios<GroupActivityCalendarResponse>(
-      { url: `/group-challenges/${groupChallengeId}/activity-calendar`, method: 'GET' },
-      options
-    );
+  const getActivityCalendar = (groupChallengeId: number) => {
+    return customAxios<GroupActivityCalendarResponse>({
+      url: `/group-challenges/${groupChallengeId}/activity-calendar`,
+      method: 'GET',
+    });
   };
   return { getActivityCalendar };
 };

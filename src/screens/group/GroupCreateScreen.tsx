@@ -58,19 +58,15 @@ export default function GroupCreateScreen() {
     setLoading(true);
     setError(null);
     try {
-      const data = await customAxios<GroupResponse>(
-        {
-          url: '/groups',
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          data: { name: groupName.trim() },
-        },
-        {
-          errorPolicy: GROUP_CREATE_ERROR_POLICY,
-          retryPolicy: 'none',
-          skipGlobalError: true,
-        }
-      );
+      const data = await customAxios<GroupResponse>({
+        url: '/groups',
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        data: { name: groupName.trim() },
+        errorPolicy: GROUP_CREATE_ERROR_POLICY,
+        retryPolicy: 'none',
+        skipGlobalError: true,
+      });
       setInviteCode(data.inviteCode ?? '');
       setStep(2);
     } catch (error) {

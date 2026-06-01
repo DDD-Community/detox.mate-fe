@@ -12,42 +12,30 @@ import type {
 
 import { customAxios } from '../../mutator';
 
-type SecondParameter<T extends (...args: never) => unknown> = Parameters<T>[1];
-
 export const getUser = () => {
-  const getMe = (options?: SecondParameter<typeof customAxios<MyProfileResponse>>) => {
-    return customAxios<MyProfileResponse>({ url: `/users/me`, method: 'GET' }, options);
+  const getMe = () => {
+    return customAxios<MyProfileResponse>({ url: `/users/me`, method: 'GET' });
   };
-  const withdraw = (options?: SecondParameter<typeof customAxios<void>>) => {
-    return customAxios<void>({ url: `/users/me`, method: 'DELETE' }, options);
+  const withdraw = () => {
+    return customAxios<void>({ url: `/users/me`, method: 'DELETE' });
   };
-  const updateMe = (
-    updateMyProfileRequest: UpdateMyProfileRequest,
-    options?: SecondParameter<typeof customAxios<MyProfileResponse>>
-  ) => {
-    return customAxios<MyProfileResponse>(
-      {
-        url: `/users/me`,
-        method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
-        data: updateMyProfileRequest,
-      },
-      options
-    );
+  const updateMe = (updateMyProfileRequest: UpdateMyProfileRequest) => {
+    return customAxios<MyProfileResponse>({
+      url: `/users/me`,
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      data: updateMyProfileRequest,
+    });
   };
   const updatePushNotificationSetting = (
-    updatePushNotificationSettingRequest: UpdatePushNotificationSettingRequest,
-    options?: SecondParameter<typeof customAxios<void>>
+    updatePushNotificationSettingRequest: UpdatePushNotificationSettingRequest
   ) => {
-    return customAxios<void>(
-      {
-        url: `/users/me/notifications`,
-        method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
-        data: updatePushNotificationSettingRequest,
-      },
-      options
-    );
+    return customAxios<void>({
+      url: `/users/me/notifications`,
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      data: updatePushNotificationSettingRequest,
+    });
   };
   return { getMe, withdraw, updateMe, updatePushNotificationSetting };
 };

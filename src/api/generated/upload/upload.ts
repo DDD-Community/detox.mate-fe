@@ -8,22 +8,14 @@ import type { PresignedUrlRequest, PresignedUrlResponse } from '../model';
 
 import { customAxios } from '../../mutator';
 
-type SecondParameter<T extends (...args: never) => unknown> = Parameters<T>[1];
-
 export const getUpload = () => {
-  const issuePresignedUrl = (
-    presignedUrlRequest: PresignedUrlRequest,
-    options?: SecondParameter<typeof customAxios<PresignedUrlResponse>>
-  ) => {
-    return customAxios<PresignedUrlResponse>(
-      {
-        url: `/uploads/presigned-urls`,
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        data: presignedUrlRequest,
-      },
-      options
-    );
+  const issuePresignedUrl = (presignedUrlRequest: PresignedUrlRequest) => {
+    return customAxios<PresignedUrlResponse>({
+      url: `/uploads/presigned-urls`,
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      data: presignedUrlRequest,
+    });
   };
   return { issuePresignedUrl };
 };

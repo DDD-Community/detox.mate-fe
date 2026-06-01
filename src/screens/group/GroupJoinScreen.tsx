@@ -64,19 +64,15 @@ export default function GroupJoinScreen() {
     setLoading(true);
     setError(null);
     try {
-      const data = await customAxios<GroupResponse>(
-        {
-          url: '/groups/join',
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          data: { inviteCode },
-        },
-        {
-          errorPolicy: GROUP_JOIN_ERROR_POLICY,
-          retryPolicy: 'none',
-          skipGlobalError: true,
-        }
-      );
+      const data = await customAxios<GroupResponse>({
+        url: '/groups/join',
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        data: { inviteCode },
+        errorPolicy: GROUP_JOIN_ERROR_POLICY,
+        retryPolicy: 'none',
+        skipGlobalError: true,
+      });
       setGroupName(data.name ?? '');
       setStep(2);
     } catch (error) {

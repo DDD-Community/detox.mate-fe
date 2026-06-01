@@ -133,24 +133,20 @@ export async function uploadImage(
   const uploadPurpose =
     options?.uploadPurpose ?? PresignedUrlRequestUploadPurpose.ACTIVITY_RECORD_IMAGE;
 
-  const { uploadUrl, objectKey } = await customAxios<PresignedUrlResponse>(
-    {
-      url: '/uploads/presigned-urls',
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      data: {
-        fileName,
-        contentType,
-        fileSize,
-        uploadPurpose,
-      },
+  const { uploadUrl, objectKey } = await customAxios<PresignedUrlResponse>({
+    url: '/uploads/presigned-urls',
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    data: {
+      fileName,
+      contentType,
+      fileSize,
+      uploadPurpose,
     },
-    {
-      errorPolicy: { presentation: 'dialog', context: 'upload.presignedUrl' },
-      retryPolicy: 'none',
-      skipGlobalError: true,
-    }
-  );
+    errorPolicy: { presentation: 'dialog', context: 'upload.presignedUrl' },
+    retryPolicy: 'none',
+    skipGlobalError: true,
+  });
 
   if (!uploadUrl || !objectKey) {
     throw AppError({

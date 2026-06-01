@@ -6,11 +6,9 @@
  */
 import { customAxios } from '../../mutator';
 
-type SecondParameter<T extends (...args: never) => unknown> = Parameters<T>[1];
-
 export const getGroupDev = () => {
-  const deleteGroup = (id: number, options?: SecondParameter<typeof customAxios<void>>) => {
-    return customAxios<void>({ url: `/groups/${id}`, method: 'DELETE' }, options);
+  const deleteGroup = (id: number) => {
+    return customAxios<void>({ url: `/groups/${id}`, method: 'DELETE' });
   };
   return { deleteGroup };
 };

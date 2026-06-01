@@ -13,36 +13,24 @@ import type {
 
 import { customAxios } from '../../mutator';
 
-type SecondParameter<T extends (...args: never) => unknown> = Parameters<T>[1];
-
 export const getActivityRecord = () => {
-  const create1 = (
-    activityRecordCreateRequest: ActivityRecordCreateRequest,
-    options?: SecondParameter<typeof customAxios<ActivityRecordCreateResponse>>
-  ) => {
-    return customAxios<ActivityRecordCreateResponse>(
-      {
-        url: `/activity-records`,
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        data: activityRecordCreateRequest,
-      },
-      options
-    );
+  const create1 = (activityRecordCreateRequest: ActivityRecordCreateRequest) => {
+    return customAxios<ActivityRecordCreateResponse>({
+      url: `/activity-records`,
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      data: activityRecordCreateRequest,
+    });
   };
   const checkAchievement = (
-    activityRecordAchievementCheckRequest: ActivityRecordAchievementCheckRequest,
-    options?: SecondParameter<typeof customAxios<ActivityRecordAchievementCheckResponse>>
+    activityRecordAchievementCheckRequest: ActivityRecordAchievementCheckRequest
   ) => {
-    return customAxios<ActivityRecordAchievementCheckResponse>(
-      {
-        url: `/activity-records/achievement-check`,
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        data: activityRecordAchievementCheckRequest,
-      },
-      options
-    );
+    return customAxios<ActivityRecordAchievementCheckResponse>({
+      url: `/activity-records/achievement-check`,
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      data: activityRecordAchievementCheckRequest,
+    });
   };
   return { create1, checkAchievement };
 };

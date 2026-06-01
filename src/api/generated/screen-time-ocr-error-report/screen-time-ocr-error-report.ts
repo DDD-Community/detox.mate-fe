@@ -11,22 +11,14 @@ import type {
 
 import { customAxios } from '../../mutator';
 
-type SecondParameter<T extends (...args: never) => unknown> = Parameters<T>[1];
-
 export const getScreenTimeOcrErrorReport = () => {
-  const create = (
-    screenTimeOcrErrorReportCreateRequest: ScreenTimeOcrErrorReportCreateRequest,
-    options?: SecondParameter<typeof customAxios<ScreenTimeOcrErrorReportCreateResponse>>
-  ) => {
-    return customAxios<ScreenTimeOcrErrorReportCreateResponse>(
-      {
-        url: `/screen-time-ocr-error-reports`,
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        data: screenTimeOcrErrorReportCreateRequest,
-      },
-      options
-    );
+  const create = (screenTimeOcrErrorReportCreateRequest: ScreenTimeOcrErrorReportCreateRequest) => {
+    return customAxios<ScreenTimeOcrErrorReportCreateResponse>({
+      url: `/screen-time-ocr-error-reports`,
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      data: screenTimeOcrErrorReportCreateRequest,
+    });
   };
   return { create };
 };

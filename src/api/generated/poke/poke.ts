@@ -6,18 +6,12 @@
  */
 import { customAxios } from '../../mutator';
 
-type SecondParameter<T extends (...args: never) => unknown> = Parameters<T>[1];
-
 export const getPoke = () => {
-  const pokeUser = (
-    challengeRecordId: number,
-    receiverUserId: number,
-    options?: SecondParameter<typeof customAxios<void>>
-  ) => {
-    return customAxios<void>(
-      { url: `/challenge-records/${challengeRecordId}/pokes/${receiverUserId}`, method: 'POST' },
-      options
-    );
+  const pokeUser = (challengeRecordId: number, receiverUserId: number) => {
+    return customAxios<void>({
+      url: `/challenge-records/${challengeRecordId}/pokes/${receiverUserId}`,
+      method: 'POST',
+    });
   };
   return { pokeUser };
 };

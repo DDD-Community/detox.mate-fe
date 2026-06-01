@@ -8,16 +8,12 @@ import type { ActivityCalendarRichFixtureResponse } from '../model';
 
 import { customAxios } from '../../mutator';
 
-type SecondParameter<T extends (...args: never) => unknown> = Parameters<T>[1];
-
 export const getActivityCalendarSqlFixture = () => {
-  const resetActivityCalendarRich = (
-    options?: SecondParameter<typeof customAxios<ActivityCalendarRichFixtureResponse>>
-  ) => {
-    return customAxios<ActivityCalendarRichFixtureResponse>(
-      { url: `/dev/fixtures/activity-calendar-rich`, method: 'POST' },
-      options
-    );
+  const resetActivityCalendarRich = () => {
+    return customAxios<ActivityCalendarRichFixtureResponse>({
+      url: `/dev/fixtures/activity-calendar-rich`,
+      method: 'POST',
+    });
   };
   return { resetActivityCalendarRich };
 };

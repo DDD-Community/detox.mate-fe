@@ -8,36 +8,22 @@ import type { RegisterFcmTokenRequest, RemoveFcmTokenRequest } from '../model';
 
 import { customAxios } from '../../mutator';
 
-type SecondParameter<T extends (...args: never) => unknown> = Parameters<T>[1];
-
 export const getFcmToken = () => {
-  const register = (
-    registerFcmTokenRequest: RegisterFcmTokenRequest,
-    options?: SecondParameter<typeof customAxios<void>>
-  ) => {
-    return customAxios<void>(
-      {
-        url: `/notifications/tokens`,
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        data: registerFcmTokenRequest,
-      },
-      options
-    );
+  const register = (registerFcmTokenRequest: RegisterFcmTokenRequest) => {
+    return customAxios<void>({
+      url: `/notifications/tokens`,
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      data: registerFcmTokenRequest,
+    });
   };
-  const remove = (
-    removeFcmTokenRequest: RemoveFcmTokenRequest,
-    options?: SecondParameter<typeof customAxios<void>>
-  ) => {
-    return customAxios<void>(
-      {
-        url: `/notifications/tokens`,
-        method: 'DELETE',
-        headers: { 'Content-Type': 'application/json' },
-        data: removeFcmTokenRequest,
-      },
-      options
-    );
+  const remove = (removeFcmTokenRequest: RemoveFcmTokenRequest) => {
+    return customAxios<void>({
+      url: `/notifications/tokens`,
+      method: 'DELETE',
+      headers: { 'Content-Type': 'application/json' },
+      data: removeFcmTokenRequest,
+    });
   };
   return { register, remove };
 };

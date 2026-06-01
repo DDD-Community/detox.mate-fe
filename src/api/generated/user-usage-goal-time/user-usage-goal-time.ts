@@ -12,30 +12,20 @@ import type {
 
 import { customAxios } from '../../mutator';
 
-type SecondParameter<T extends (...args: never) => unknown> = Parameters<T>[1];
-
 export const getUserUsageGoalTime = () => {
-  const setGoalTimes = (
-    userUsageGoalTimesSetRequest: UserUsageGoalTimesSetRequest,
-    options?: SecondParameter<typeof customAxios<UserUsageGoalTimesSetResponse>>
-  ) => {
-    return customAxios<UserUsageGoalTimesSetResponse>(
-      {
-        url: `/me/usage-goal-times`,
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        data: userUsageGoalTimesSetRequest,
-      },
-      options
-    );
+  const setGoalTimes = (userUsageGoalTimesSetRequest: UserUsageGoalTimesSetRequest) => {
+    return customAxios<UserUsageGoalTimesSetResponse>({
+      url: `/me/usage-goal-times`,
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      data: userUsageGoalTimesSetRequest,
+    });
   };
-  const getCurrentGoalTimes = (
-    options?: SecondParameter<typeof customAxios<CurrentUsageGoalTimesResponse>>
-  ) => {
-    return customAxios<CurrentUsageGoalTimesResponse>(
-      { url: `/me/usage-goal-times/current`, method: 'GET' },
-      options
-    );
+  const getCurrentGoalTimes = () => {
+    return customAxios<CurrentUsageGoalTimesResponse>({
+      url: `/me/usage-goal-times/current`,
+      method: 'GET',
+    });
   };
   return { setGoalTimes, getCurrentGoalTimes };
 };
