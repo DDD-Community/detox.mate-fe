@@ -283,7 +283,7 @@ export default function SettingsScreen() {
       await SecureStore.deleteItemAsync(TERMS_ACCEPTED_KEY);
       await SecureStore.deleteItemAsync(APP_ACCESS_PERMISSION_GUIDE_SEEN_KEY);
       setIsWithdrawAlertOpen(false);
-      router.replace('/(auth)/login');
+      router.replace('/(auth)/onboarding');
     } finally {
       setIsWithdrawing(false);
     }
