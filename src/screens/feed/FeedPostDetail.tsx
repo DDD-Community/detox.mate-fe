@@ -525,7 +525,9 @@ export default function FeedPostDetail() {
                             )}
                           </View>
                         </View>
-                        <Text style={styles.pokeAvatarName}>{r.name}</Text>
+                        <Text style={styles.pokeAvatarName}>
+                          {r.name.length >= 5 ? `${r.name.slice(0, 4)}...` : r.name}
+                        </Text>
                       </Pressable>
                     );
                   })}
@@ -557,7 +559,9 @@ export default function FeedPostDetail() {
                           />
                         </View>
                       </View>
-                      <Text style={styles.pokeAvatarName}>{p.name}</Text>
+                      <Text style={styles.pokeAvatarName}>
+                        {p.name.length >= 5 ? `${p.name.slice(0, 4)}...` : p.name}
+                      </Text>
                     </Pressable>
                   ))}
                 </ScrollView>
