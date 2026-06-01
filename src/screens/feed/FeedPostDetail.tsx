@@ -297,7 +297,9 @@ export default function FeedPostDetail() {
         friendName: info.displayName,
         friendUserId: userId,
         friendGroupId: String(info.groupId),
+        groupChallengeId: groupChallengeId ?? '',
         challengeRecordId: String(info.challengeRecordId),
+        isPoked: isPoked ? '1' : '0',
       },
     });
   };

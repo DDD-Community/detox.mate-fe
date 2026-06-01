@@ -28,6 +28,11 @@ export interface JoinedGroupBodyProps {
   onGoalChangePress?: () => void;
 }
 
+export interface JoinedGroupListProps {
+  groups: JoinedGroupItem[];
+  onGroupPress?: (groupId?: number) => void;
+}
+
 function MemberAvatar({
   name,
   profileImageUrl,
@@ -46,6 +51,37 @@ function MemberAvatar({
         accessibilityLabel={name ? `${name} 프로필 이미지` : '기본 프로필 이미지'}
       />
     </View>
+  );
+}
+
+export function JoinedGroupList({ groups, onGroupPress }: JoinedGroupListProps) {
+  return (
+    <>
+      {groups.map((group) => (
+        <Pressable
+          key={group.id ?? group.name}
+          onPress={() => onGroupPress?.(group.id)}
+          style={styles.groupCard}
+        >
+          <View style={styles.groupCardLeft}>
+            <View style={styles.avatarStack}>
+              {group.members.slice(0, 3).map((m, idx) => (
+                <MemberAvatar
+                  key={`${group.id ?? group.name}-${m.name}-${idx}`}
+                  name={m.name}
+                  profileImageUrl={m.profileImageUrl}
+                  offset={idx * 23}
+                />
+              ))}
+            </View>
+            <Text style={styles.groupName} numberOfLines={1}>
+              {group.name}
+            </Text>
+          </View>
+          <Icon name="caretRight" size={24} color={gray[200]} />
+        </Pressable>
+      ))}
+    </>
   );
 }
 
@@ -76,30 +112,7 @@ export function JoinedGroupBody({
         achievableDays={achievableDays}
       />
 
-      {groups.map((group) => (
-        <Pressable
-          key={group.id ?? group.name}
-          onPress={() => onGroupPress?.(group.id)}
-          style={styles.groupCard}
-        >
-          <View style={styles.groupCardLeft}>
-            <View style={styles.avatarStack}>
-              {group.members.slice(0, 3).map((m, idx) => (
-                <MemberAvatar
-                  key={`${group.id ?? group.name}-${m.name}-${idx}`}
-                  name={m.name}
-                  profileImageUrl={m.profileImageUrl}
-                  offset={idx * 23}
-                />
-              ))}
-            </View>
-            <Text style={styles.groupName} numberOfLines={1}>
-              {group.name}
-            </Text>
-          </View>
-          <Icon name="caretRight" size={24} color={gray[200]} />
-        </Pressable>
-      ))}
+      <JoinedGroupList groups={groups} onGroupPress={onGroupPress} />
 
       <View>
         <Button
