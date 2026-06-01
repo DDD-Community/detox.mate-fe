@@ -5,6 +5,11 @@ type PendingRequest = {
   cancel: () => void;
 };
 
+type RetryRequest<T> = {
+  retry: () => Promise<T>;
+  cancelError: unknown;
+};
+
 const AUTO_DISMISS_MS = 3000;
 
 interface NetworkErrorToastState {
@@ -18,6 +23,7 @@ interface NetworkErrorToastState {
    */
   visible: boolean;
   enqueueNetworkRetry: (request: PendingRequest) => void;
+  enqueueNetworkRetryRequest: <T>(request: RetryRequest<T>) => Promise<T>;
   showMessage: (text: string) => void;
   retryAll: () => void;
   dismiss: () => void;
@@ -43,6 +49,19 @@ export const useNetworkErrorToastStore = create<NetworkErrorToastState>((set, ge
       visible: true,
     }));
   },
+  enqueueNetworkRetryRequest: ({ retry, cancelError }) =>
+    new Promise((resolve, reject) => {
+      get().enqueueNetworkRetry({
+        retry: async () => {
+          try {
+            resolve(await retry());
+          } catch (error) {
+            reject(error);
+          }
+        },
+        cancel: () => reject(cancelError),
+      });
+    }),
   showMessage: (text) => {
     clearAutoDismissTimer();
     set({ message: text, visible: true });

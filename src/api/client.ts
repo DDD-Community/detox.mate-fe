@@ -89,12 +89,10 @@ apiClient.interceptors.response.use(
       originalRequest &&
       !suppressGlobalError
     ) {
-      const { enqueueNetworkRetry } = useNetworkErrorToastStore.getState();
-      return new Promise((resolve, reject) => {
-        enqueueNetworkRetry({
-          retry: () => apiClient(originalRequest).then(resolve).catch(reject),
-          cancel: () => reject(handled.error),
-        });
+      const { enqueueNetworkRetryRequest } = useNetworkErrorToastStore.getState();
+      return await enqueueNetworkRetryRequest({
+        retry: () => apiClient(originalRequest),
+        cancelError: handled.error,
       });
     }
 
