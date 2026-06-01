@@ -18,8 +18,8 @@ export type ReactionOption = {
 };
 
 export const REACTION_OPTIONS: ReactionOption[] = [
-  { code: 'CLAP', source: require('../../../assets/reaction-clap.png') },
   { code: 'LIKED', source: require('../../../assets/reaction-heart.png') },
+  { code: 'CLAP', source: require('../../../assets/reaction-clap.png') },
   { code: 'FIRE', source: require('../../../assets/reaction-fire.png') },
   { code: 'MUSCLE', source: require('../../../assets/reaction-strength.png') },
   { code: 'HAMMER', source: require('../../../assets/reaction-hammer.png') },
@@ -104,7 +104,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    backgroundColor: 'rgba(255,255,255,0.4)',
+    backgroundColor: '#FFFFFF',
     borderRadius: radius.full,
     paddingHorizontal: spacing[16],
     paddingVertical: spacing[8],

@@ -10,7 +10,6 @@ import {
   Text,
   View,
 } from 'react-native';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Svg, { Path } from 'react-native-svg';
 import apiClient from '../../api/client';
 import { getFeed } from '../../api/generated/feed/feed';
@@ -488,7 +487,7 @@ function ActiveFeed({
   targetChallengeRecordId?: string;
   scrollChallengeRecordId?: string;
 }) {
-  const insets = useSafeAreaInsets();
+  const feedWrapperRef = useRef<View>(null);
   const scrollRef = useRef<ScrollView>(null);
   const openedTargetRef = useRef<string | null>(null);
   const scrolledTargetRef = useRef<string | null>(null);
@@ -496,6 +495,13 @@ function ActiveFeed({
   const feedCardListYRef = useRef(0);
   const feedCardYByMemberIdRef = useRef<Record<string, number>>({});
   const [reactionPickerItem, setReactionPickerItem] = useState<FeedItem | null>(null);
+  const reactionPickerItemRef = useRef<FeedItem | null>(null);
+  reactionPickerItemRef.current = reactionPickerItem;
+  const [pickerLayout, setPickerLayout] = useState<{
+    top: number;
+    left: number;
+    width: number;
+  } | null>(null);
   const [isRestoringScroll, setIsRestoringScroll] = useState(() => !!scrollChallengeRecordId);
   const [now, setNow] = useState(() => new Date());
 
@@ -587,18 +593,34 @@ function ActiveFeed({
     [feedItems, goalState, onPoke, pokedMemberIds, scrollToFeedItem]
   );
 
-  const handleReactionPress = useCallback((item: FeedItem) => {
-    setReactionPickerItem((current) => (current?.id === item.id ? null : item));
-  }, []);
+  const handleReactionPress = useCallback(
+    (item: FeedItem, footerLayout: { x: number; y: number; width: number; height: number }) => {
+      if (reactionPickerItemRef.current?.id === item.id) {
+        setReactionPickerItem(null);
+        setPickerLayout(null);
+        return;
+      }
+      feedWrapperRef.current?.measureInWindow((wrapperX, wrapperY) => {
+        setPickerLayout({
+          top: footerLayout.y - wrapperY,
+          left: footerLayout.x - wrapperX,
+          width: footerLayout.width,
+        });
+      });
+      setReactionPickerItem(item);
+    },
+    []
+  );
 
   const handleReactionSelect = useCallback(
     (reactionCode: ReactionCode) => {
-      if (!reactionPickerItem) return;
-
-      onReact(reactionPickerItem.id, reactionCode);
+      const item = reactionPickerItemRef.current;
+      if (!item) return;
+      onReact(item.id, reactionCode);
       setReactionPickerItem(null);
+      setPickerLayout(null);
     },
-    [onReact, reactionPickerItem]
+    [onReact]
   );
 
   useEffect(() => {
@@ -672,7 +694,7 @@ function ActiveFeed({
   }, [feedItems, scrollChallengeRecordId, scrollToFeedItem]);
 
   return (
-    <View style={styles.feedWrapper}>
+    <View ref={feedWrapperRef} style={styles.feedWrapper}>
       <ScrollView
         ref={scrollRef}
         style={isRestoringScroll ? styles.restoringScroll : undefined}
@@ -734,32 +756,37 @@ function ActiveFeed({
         </View>
       </ScrollView>
 
-      {isRestoringScroll ? null : reactionPickerItem ? (
+      {reactionPickerItem && pickerLayout ? (
         <>
           <Pressable
             style={styles.reactionPickerOverlay}
-            onPress={() => setReactionPickerItem(null)}
+            onPress={() => {
+              setReactionPickerItem(null);
+              setPickerLayout(null);
+            }}
           />
-          <View
-            pointerEvents="box-none"
-            style={[styles.feedReactionPickerAnchor, { bottom: Math.max(insets.bottom + 12, 20) }]}
-          >
-            <ReactionPicker
-              selectedReactions={myReactions[reactionPickerItem.id]}
-              style={styles.feedReactionPicker}
-              onSelect={handleReactionSelect}
-            />
-          </View>
+          <ReactionPicker
+            selectedReactions={myReactions[reactionPickerItem.id]}
+            style={{
+              position: 'absolute',
+              top: pickerLayout.top,
+              left: pickerLayout.left,
+              width: pickerLayout.width,
+            }}
+            onSelect={handleReactionSelect}
+          />
         </>
       ) : (
-        <Pressable
-          style={styles.fab}
-          onPress={() => scrollRef.current?.scrollTo({ y: 0, animated: true })}
-          accessibilityRole="button"
-          accessibilityLabel="맨 위로 이동"
-        >
-          <ScrollTopIcon />
-        </Pressable>
+        !isRestoringScroll && (
+          <Pressable
+            style={styles.fab}
+            onPress={() => scrollRef.current?.scrollTo({ y: 0, animated: true })}
+            accessibilityRole="button"
+            accessibilityLabel="맨 위로 이동"
+          >
+            <ScrollTopIcon />
+          </Pressable>
+        )
       )}
     </View>
   );
@@ -863,15 +890,6 @@ const styles = StyleSheet.create({
   },
   reactionPickerOverlay: {
     ...StyleSheet.absoluteFillObject,
-  },
-  feedReactionPickerAnchor: {
-    position: 'absolute',
-    left: 0,
-    right: 0,
-    alignItems: 'center',
-  },
-  feedReactionPicker: {
-    width: 311,
   },
   emptyCard: {
     borderRadius: radius[16],

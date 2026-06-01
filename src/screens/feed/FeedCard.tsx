@@ -1,3 +1,4 @@
+import { useRef } from 'react';
 import { Alert, Image, Pressable, StyleSheet, Text, View } from 'react-native';
 import { Icon } from '../../components/Icon';
 import { primitiveColors, radius, spacing, typography } from '../../lib/token';
@@ -76,9 +77,14 @@ export default function FeedCard({
   onBodyPress?: () => void;
   onProfilePress?: () => void;
   isPoked?: boolean;
-  onReactionPress?: (item: FeedItem) => void;
+  onReactionPress?: (
+    item: FeedItem,
+    layout: { x: number; y: number; width: number; height: number }
+  ) => void;
   historyMode?: boolean;
 }) {
+  const footerWrapperRef = useRef<View>(null);
+
   if (item.isVerified) {
     const hasFailurePhoto = !item.isGoalAchieved && item.photoSource != null;
     const usesPostLayout = item.isGoalAchieved || hasFailurePhoto;
@@ -150,12 +156,16 @@ export default function FeedCard({
         )}
 
         {/* Footer */}
-        <View style={styles.footerWrapper}>
+        <View ref={footerWrapperRef} style={styles.footerWrapper}>
           <View style={styles.footer}>
             <Pressable
               style={[styles.footerButton, goalState === 'notSet' && styles.footerButtonDisabled]}
               disabled={goalState === 'notSet'}
-              onPress={() => onReactionPress?.(item)}
+              onPress={() => {
+                footerWrapperRef.current?.measureInWindow((x, y, width, height) => {
+                  onReactionPress?.(item, { x, y, width, height });
+                });
+              }}
             >
               <Icon name="smileySticker" size={24} color={gray[800]} />
               <Text style={styles.footerCount}>{item.reactionCount}</Text>
@@ -333,6 +343,7 @@ const styles = StyleSheet.create({
     color: system.green.opacity100,
   },
   footerWrapper: {
+    backgroundColor: WHITE,
     position: 'relative',
   },
   footer: {
