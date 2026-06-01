@@ -54,7 +54,7 @@ export function MyPageProfileHeader({
   const foregroundColor = hasProfileBackground ? '#FFFFFF' : gray[800];
 
   return (
-    <View style={styles.profileCard}>
+    <View style={[styles.profileCard, hasProfileBackground && styles.photoProfileCard]}>
       {hasProfileBackground && displayProfileImageUri ? (
         <>
           <Image
@@ -89,7 +89,7 @@ export function MyPageProfileHeader({
         )}
       </View>
 
-      <View style={styles.profileMeta}>
+      <View style={[styles.profileMeta, hasProfileBackground && styles.photoProfileMeta]}>
         {isFriend ? (
           <View style={styles.nameRow}>
             <Text style={[styles.nameText, hasProfileBackground && styles.photoText]}>
@@ -134,18 +134,18 @@ const styles = StyleSheet.create({
     paddingBottom: spacing[16],
     overflow: 'hidden',
   },
+  photoProfileCard: {
+    backgroundColor: 'transparent',
+    paddingBottom: 0,
+  },
   profileBackgroundImage: {
     ...StyleSheet.absoluteFillObject,
     width: '100%',
     height: '100%',
-    borderBottomLeftRadius: PROFILE_CARD_BOTTOM_RADIUS,
-    borderBottomRightRadius: PROFILE_CARD_BOTTOM_RADIUS,
   },
   profileBackgroundDim: {
     ...StyleSheet.absoluteFillObject,
     backgroundColor: 'rgba(0, 0, 0, 0.32)',
-    borderBottomLeftRadius: PROFILE_CARD_BOTTOM_RADIUS,
-    borderBottomRightRadius: PROFILE_CARD_BOTTOM_RADIUS,
   },
   header: {
     height: 54,
@@ -178,6 +178,9 @@ const styles = StyleSheet.create({
   profileMeta: {
     paddingHorizontal: spacing[16],
     gap: spacing[8],
+  },
+  photoProfileMeta: {
+    paddingBottom: spacing[16],
   },
   nameRow: {
     flexDirection: 'row',
