@@ -1,6 +1,6 @@
 import { router, useLocalSearchParams } from 'expo-router';
-import { useCallback, useEffect, useRef, useState } from 'react';
 import * as SecureStore from 'expo-secure-store';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import {
   Alert,
   Image,
@@ -224,9 +224,10 @@ export default function FeedPostDetail() {
         const res = await apiClient.get<CommentsResponse>(
           `/challenge-records/${feedItem.challengeRecordId}/comments`
         );
+        const myId = myUserIdRef.current;
         const mapped = res.data.items.map((c) => ({
           id: String(c.commentId),
-          authorName: c.author.displayName,
+          authorName: myId != null && c.author.userId === myId ? '나' : c.author.displayName,
           avatarSource: c.author.profileImageUrl
             ? { uri: c.author.profileImageUrl }
             : AVATAR_SOURCE,
