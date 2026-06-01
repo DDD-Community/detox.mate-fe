@@ -34,10 +34,9 @@ type CalendarDay = {
   key: string;
 };
 
-function getYesterday(): Date {
+function getToday(): Date {
   const date = new Date();
   date.setHours(0, 0, 0, 0);
-  date.setDate(date.getDate() - 1);
   return date;
 }
 
@@ -128,11 +127,11 @@ export default function CalendarScreen() {
   const { groupChallengeId } = useLocalSearchParams<{ groupChallengeId: string }>();
   const [calendarData, setCalendarData] = useState<CalendarResponse | null>(null);
   const [loading, setLoading] = useState(true);
-  const [yesterday] = useState(getYesterday);
-  const [selectedDate, setSelectedDate] = useState(yesterday);
-  const [visibleMonth, setVisibleMonth] = useState(startOfMonth(yesterday));
+  const [today] = useState(getToday);
+  const [selectedDate, setSelectedDate] = useState(today);
+  const [visibleMonth, setVisibleMonth] = useState(startOfMonth(today));
   const [firstActiveDate, setFirstActiveDate] = useState<Date | null>(null);
-  const [lastActiveDate, setLastActiveDate] = useState(yesterday);
+  const [lastActiveDate, setLastActiveDate] = useState(today);
 
   useEffect(() => {
     if (!groupChallengeId) return;
@@ -150,8 +149,8 @@ export default function CalendarScreen() {
         const challengeStartDate = parseDateParam(challengeRes?.data.startAt ?? undefined);
         const summaryStartDate = parseDateParam(res.data.summary?.startDate);
         const challengeEndDate = parseDateParam(challengeRes?.data.endAt ?? undefined);
-        const minDate = challengeStartDate ?? summaryStartDate ?? yesterday;
-        const maxDate = challengeEndDate ? earlierDate(challengeEndDate, yesterday) : yesterday;
+        const minDate = challengeStartDate ?? summaryStartDate ?? today;
+        const maxDate = challengeEndDate ? earlierDate(challengeEndDate, today) : today;
         const nextSelectedDate = clampDate(maxDate, minDate, maxDate);
 
         setFirstActiveDate(minDate);
