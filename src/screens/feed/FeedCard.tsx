@@ -91,11 +91,7 @@ export default function FeedCard({
     const postText = item.postText ?? item.retroText;
     const labelBg = item.isGoalAchieved ? system.green.opacity100 : gray[400];
     const labelText = item.isGoalAchieved ? '목표 성공' : '목표 실패';
-    const screentimeAccentColor = item.isGoalAchieved
-      ? system.green.opacity100
-      : hasFailurePhoto
-        ? system.red.opacity100
-        : gray[500];
+    const screentimeAccentColor = item.isGoalAchieved ? system.green.opacity100 : gray[500];
     const screentimeBackgroundColor = item.isGoalAchieved ? system.green.opacity10 : gray[50];
 
     return (
