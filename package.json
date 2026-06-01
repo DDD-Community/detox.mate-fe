@@ -9,6 +9,7 @@
     "android": "expo run:android",
     "ios": "expo run:ios",
     "web": "expo start --web",
+    "test": "vitest run",
     "format": "prettier . --write",
     "format:check": "prettier . --check",
     "api:gen": "orval"
@@ -60,7 +61,8 @@
     "orval": "^8.9.0",
     "prettier": "^3.8.1",
     "react-native-reanimated": "^4.2.1",
-    "typescript": "~5.9.2"
+    "typescript": "~5.9.2",
+    "vitest": "^4.1.8"
   },
   "lint-staged": {
     "*.{ts,tsx,js,jsx,json,md}": "prettier --write"

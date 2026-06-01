@@ -8,23 +8,33 @@ import type { CreateReactionRequest, ReactionResponse } from '../model';
 
 import { customAxios } from '../../mutator';
 
+type SecondParameter<T extends (...args: never) => unknown> = Parameters<T>[1];
+
 export const getReaction = () => {
   const createReaction = (
     challengeRecordId: number,
-    createReactionRequest: CreateReactionRequest
+    createReactionRequest: CreateReactionRequest,
+    options?: SecondParameter<typeof customAxios<ReactionResponse>>
   ) => {
-    return customAxios<ReactionResponse>({
-      url: `/challenge-records/${challengeRecordId}/reactions`,
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      data: createReactionRequest,
-    });
+    return customAxios<ReactionResponse>(
+      {
+        url: `/challenge-records/${challengeRecordId}/reactions`,
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        data: createReactionRequest,
+      },
+      options
+    );
   };
-  const deleteReaction = (challengeRecordId: number, reactionId: number) => {
-    return customAxios<void>({
-      url: `/challenge-records/${challengeRecordId}/reactions/${reactionId}`,
-      method: 'DELETE',
-    });
+  const deleteReaction = (
+    challengeRecordId: number,
+    reactionId: number,
+    options?: SecondParameter<typeof customAxios<void>>
+  ) => {
+    return customAxios<void>(
+      { url: `/challenge-records/${challengeRecordId}/reactions/${reactionId}`, method: 'DELETE' },
+      options
+    );
   };
   return { createReaction, deleteReaction };
 };

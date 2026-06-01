@@ -13,39 +13,63 @@ import type {
 
 import { customAxios } from '../../mutator';
 
+type SecondParameter<T extends (...args: never) => unknown> = Parameters<T>[1];
+
 export const getGroup = () => {
-  const createGroup = (createGroupRequest: CreateGroupRequest) => {
-    return customAxios<GroupResponse>({
-      url: `/groups`,
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      data: createGroupRequest,
-    });
+  const createGroup = (
+    createGroupRequest: CreateGroupRequest,
+    options?: SecondParameter<typeof customAxios<GroupResponse>>
+  ) => {
+    return customAxios<GroupResponse>(
+      {
+        url: `/groups`,
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        data: createGroupRequest,
+      },
+      options
+    );
   };
-  const joinGroup = (joinGroupRequest: JoinGroupRequest) => {
-    return customAxios<GroupResponse>({
-      url: `/groups/join`,
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      data: joinGroupRequest,
-    });
+  const joinGroup = (
+    joinGroupRequest: JoinGroupRequest,
+    options?: SecondParameter<typeof customAxios<GroupResponse>>
+  ) => {
+    return customAxios<GroupResponse>(
+      {
+        url: `/groups/join`,
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        data: joinGroupRequest,
+      },
+      options
+    );
   };
-  const getGroup = (groupId: number) => {
-    return customAxios<GroupResponse>({ url: `/groups/${groupId}`, method: 'GET' });
+  const getGroup = (
+    groupId: number,
+    options?: SecondParameter<typeof customAxios<GroupResponse>>
+  ) => {
+    return customAxios<GroupResponse>({ url: `/groups/${groupId}`, method: 'GET' }, options);
   };
-  const updateGroup = (groupId: number, updateGroupRequest: UpdateGroupRequest) => {
-    return customAxios<GroupResponse>({
-      url: `/groups/${groupId}`,
-      method: 'PATCH',
-      headers: { 'Content-Type': 'application/json' },
-      data: updateGroupRequest,
-    });
+  const updateGroup = (
+    groupId: number,
+    updateGroupRequest: UpdateGroupRequest,
+    options?: SecondParameter<typeof customAxios<GroupResponse>>
+  ) => {
+    return customAxios<GroupResponse>(
+      {
+        url: `/groups/${groupId}`,
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        data: updateGroupRequest,
+      },
+      options
+    );
   };
-  const getMyGroups = () => {
-    return customAxios<GroupResponse[]>({ url: `/me/groups`, method: 'GET' });
+  const getMyGroups = (options?: SecondParameter<typeof customAxios<GroupResponse[]>>) => {
+    return customAxios<GroupResponse[]>({ url: `/me/groups`, method: 'GET' }, options);
   };
-  const leaveGroup = (groupId: number) => {
-    return customAxios<void>({ url: `/groups/${groupId}/members/me`, method: 'DELETE' });
+  const leaveGroup = (groupId: number, options?: SecondParameter<typeof customAxios<void>>) => {
+    return customAxios<void>({ url: `/groups/${groupId}/members/me`, method: 'DELETE' }, options);
   };
   return { createGroup, joinGroup, getGroup, updateGroup, getMyGroups, leaveGroup };
 };

@@ -13,21 +13,33 @@ import type {
 
 import { customAxios } from '../../mutator';
 
+type SecondParameter<T extends (...args: never) => unknown> = Parameters<T>[1];
+
 export const getComment = () => {
-  const getComments = (challengeRecordId: number, params?: GetCommentsParams) => {
-    return customAxios<CommentListResponse>({
-      url: `/challenge-records/${challengeRecordId}/comments`,
-      method: 'GET',
-      params,
-    });
+  const getComments = (
+    challengeRecordId: number,
+    params?: GetCommentsParams,
+    options?: SecondParameter<typeof customAxios<CommentListResponse>>
+  ) => {
+    return customAxios<CommentListResponse>(
+      { url: `/challenge-records/${challengeRecordId}/comments`, method: 'GET', params },
+      options
+    );
   };
-  const createComment = (challengeRecordId: number, createCommentRequest: CreateCommentRequest) => {
-    return customAxios<CommentResponse>({
-      url: `/challenge-records/${challengeRecordId}/comments`,
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      data: createCommentRequest,
-    });
+  const createComment = (
+    challengeRecordId: number,
+    createCommentRequest: CreateCommentRequest,
+    options?: SecondParameter<typeof customAxios<CommentResponse>>
+  ) => {
+    return customAxios<CommentResponse>(
+      {
+        url: `/challenge-records/${challengeRecordId}/comments`,
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        data: createCommentRequest,
+      },
+      options
+    );
   };
   return { getComments, createComment };
 };

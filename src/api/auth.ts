@@ -5,6 +5,7 @@ import { bytesToHex } from '@noble/hashes/utils';
 import * as SecureStore from 'expo-secure-store';
 import { env } from '@/config/env';
 import apiClient from './client';
+import { createAppError, normalizeError } from './errors';
 import { getDevAuth } from './generated/dev-auth/dev-auth';
 import type { AuthLoginResponse } from './generated/model';
 
@@ -117,7 +118,7 @@ export async function refreshAccessToken(): Promise<ServerResponseTokens> {
   const refreshToken = await SecureStore.getItemAsync('refreshTokenKey');
   if (!refreshToken) {
     await clearAuthSession();
-    throw new Error('다시 로그인해 주세요.');
+    throw createAppError({ type: 'auth', message: '다시 로그인해 주세요.' });
   }
 
   try {
@@ -134,7 +135,7 @@ export async function refreshAccessToken(): Promise<ServerResponseTokens> {
 
     const { accessToken, refreshToken: updatedRefreshToken } = data;
     if (!accessToken || !updatedRefreshToken) {
-      throw new Error('토큰 재발급 응답이 올바르지 않습니다.');
+      throw createAppError({ type: 'auth', message: '토큰 재발급 응답이 올바르지 않습니다.' });
     }
 
     await SecureStore.setItemAsync('accessTokenKey', accessToken);
@@ -143,7 +144,12 @@ export async function refreshAccessToken(): Promise<ServerResponseTokens> {
     return data;
   } catch (error) {
     await clearAuthSession();
-    throw new Error('다시 로그인해 주세요.');
+    const appError = normalizeError(error);
+    throw createAppError({
+      type: 'auth',
+      message: '다시 로그인해 주세요.',
+      originalError: appError,
+    });
   }
 }
 

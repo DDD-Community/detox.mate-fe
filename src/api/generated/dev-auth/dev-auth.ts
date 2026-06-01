@@ -8,14 +8,22 @@ import type { AuthLoginResponse, DevTestLoginRequest } from '../model';
 
 import { customAxios } from '../../mutator';
 
+type SecondParameter<T extends (...args: never) => unknown> = Parameters<T>[1];
+
 export const getDevAuth = () => {
-  const testLogin = (devTestLoginRequest: DevTestLoginRequest) => {
-    return customAxios<AuthLoginResponse>({
-      url: `/dev/auth/test-login`,
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      data: devTestLoginRequest,
-    });
+  const testLogin = (
+    devTestLoginRequest: DevTestLoginRequest,
+    options?: SecondParameter<typeof customAxios<AuthLoginResponse>>
+  ) => {
+    return customAxios<AuthLoginResponse>(
+      {
+        url: `/dev/auth/test-login`,
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        data: devTestLoginRequest,
+      },
+      options
+    );
   };
   return { testLogin };
 };

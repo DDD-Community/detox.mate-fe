@@ -13,24 +13,32 @@ import type {
 
 import { customAxios } from '../../mutator';
 
+type SecondParameter<T extends (...args: never) => unknown> = Parameters<T>[1];
+
 export const getAdminScreenTimeOcrErrorReport = () => {
   const update = (
     reportId: number,
-    screenTimeOcrErrorReportUpdateRequest: ScreenTimeOcrErrorReportUpdateRequest
+    screenTimeOcrErrorReportUpdateRequest: ScreenTimeOcrErrorReportUpdateRequest,
+    options?: SecondParameter<typeof customAxios<ScreenTimeOcrErrorReportUpdateResponse>>
   ) => {
-    return customAxios<ScreenTimeOcrErrorReportUpdateResponse>({
-      url: `/admin/screen-time-ocr-error-reports/${reportId}`,
-      method: 'PATCH',
-      headers: { 'Content-Type': 'application/json' },
-      data: screenTimeOcrErrorReportUpdateRequest,
-    });
+    return customAxios<ScreenTimeOcrErrorReportUpdateResponse>(
+      {
+        url: `/admin/screen-time-ocr-error-reports/${reportId}`,
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        data: screenTimeOcrErrorReportUpdateRequest,
+      },
+      options
+    );
   };
-  const list = (params?: ListParams) => {
-    return customAxios<AdminScreenTimeOcrErrorReportListResponse>({
-      url: `/admin/screen-time-ocr-error-reports`,
-      method: 'GET',
-      params,
-    });
+  const list = (
+    params?: ListParams,
+    options?: SecondParameter<typeof customAxios<AdminScreenTimeOcrErrorReportListResponse>>
+  ) => {
+    return customAxios<AdminScreenTimeOcrErrorReportListResponse>(
+      { url: `/admin/screen-time-ocr-error-reports`, method: 'GET', params },
+      options
+    );
   };
   return { update, list };
 };

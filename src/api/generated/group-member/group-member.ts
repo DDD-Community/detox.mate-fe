@@ -8,12 +8,18 @@ import type { GroupMemberProfileResponse } from '../model';
 
 import { customAxios } from '../../mutator';
 
+type SecondParameter<T extends (...args: never) => unknown> = Parameters<T>[1];
+
 export const getGroupMember = () => {
-  const getGroupMemberProfile = (groupId: number, groupMemberId: number) => {
-    return customAxios<GroupMemberProfileResponse>({
-      url: `/groups/${groupId}/members/${groupMemberId}`,
-      method: 'GET',
-    });
+  const getGroupMemberProfile = (
+    groupId: number,
+    groupMemberId: number,
+    options?: SecondParameter<typeof customAxios<GroupMemberProfileResponse>>
+  ) => {
+    return customAxios<GroupMemberProfileResponse>(
+      { url: `/groups/${groupId}/members/${groupMemberId}`, method: 'GET' },
+      options
+    );
   };
   return { getGroupMemberProfile };
 };

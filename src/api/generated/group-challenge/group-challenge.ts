@@ -8,16 +8,26 @@ import type { GetMyGroupChallengesParams, GroupChallengeResponse } from '../mode
 
 import { customAxios } from '../../mutator';
 
+type SecondParameter<T extends (...args: never) => unknown> = Parameters<T>[1];
+
 export const getGroupChallenge = () => {
-  const getMyGroupChallenges = (params?: GetMyGroupChallengesParams) => {
-    return customAxios<GroupChallengeResponse[]>({
-      url: `/me/group-challenges`,
-      method: 'GET',
-      params,
-    });
+  const getMyGroupChallenges = (
+    params?: GetMyGroupChallengesParams,
+    options?: SecondParameter<typeof customAxios<GroupChallengeResponse[]>>
+  ) => {
+    return customAxios<GroupChallengeResponse[]>(
+      { url: `/me/group-challenges`, method: 'GET', params },
+      options
+    );
   };
-  const getGroupChallenge = (id: number) => {
-    return customAxios<GroupChallengeResponse>({ url: `/group-challenges/${id}`, method: 'GET' });
+  const getGroupChallenge = (
+    id: number,
+    options?: SecondParameter<typeof customAxios<GroupChallengeResponse>>
+  ) => {
+    return customAxios<GroupChallengeResponse>(
+      { url: `/group-challenges/${id}`, method: 'GET' },
+      options
+    );
   };
   return { getMyGroupChallenges, getGroupChallenge };
 };

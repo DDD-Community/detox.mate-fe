@@ -14,38 +14,64 @@ import type {
 
 import { customAxios } from '../../mutator';
 
+type SecondParameter<T extends (...args: never) => unknown> = Parameters<T>[1];
+
 export const getAuth = () => {
-  const kakaoAuth = (kakaoSocialLoginRequest: KakaoSocialLoginRequest) => {
-    return customAxios<AuthLoginResponse>({
-      url: `/auth/social/kakao`,
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      data: kakaoSocialLoginRequest,
-    });
+  const kakaoAuth = (
+    kakaoSocialLoginRequest: KakaoSocialLoginRequest,
+    options?: SecondParameter<typeof customAxios<AuthLoginResponse>>
+  ) => {
+    return customAxios<AuthLoginResponse>(
+      {
+        url: `/auth/social/kakao`,
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        data: kakaoSocialLoginRequest,
+      },
+      options
+    );
   };
-  const appleAuth = (appleSocialLoginRequest: AppleSocialLoginRequest) => {
-    return customAxios<AuthLoginResponse>({
-      url: `/auth/social/apple`,
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      data: appleSocialLoginRequest,
-    });
+  const appleAuth = (
+    appleSocialLoginRequest: AppleSocialLoginRequest,
+    options?: SecondParameter<typeof customAxios<AuthLoginResponse>>
+  ) => {
+    return customAxios<AuthLoginResponse>(
+      {
+        url: `/auth/social/apple`,
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        data: appleSocialLoginRequest,
+      },
+      options
+    );
   };
-  const refresh = (refreshTokenRequest: RefreshTokenRequest) => {
-    return customAxios<RefreshTokenResponse>({
-      url: `/auth/refresh`,
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      data: refreshTokenRequest,
-    });
+  const refresh = (
+    refreshTokenRequest: RefreshTokenRequest,
+    options?: SecondParameter<typeof customAxios<RefreshTokenResponse>>
+  ) => {
+    return customAxios<RefreshTokenResponse>(
+      {
+        url: `/auth/refresh`,
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        data: refreshTokenRequest,
+      },
+      options
+    );
   };
-  const logout = (refreshTokenRequest: RefreshTokenRequest) => {
-    return customAxios<void>({
-      url: `/auth/logout`,
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      data: refreshTokenRequest,
-    });
+  const logout = (
+    refreshTokenRequest: RefreshTokenRequest,
+    options?: SecondParameter<typeof customAxios<void>>
+  ) => {
+    return customAxios<void>(
+      {
+        url: `/auth/logout`,
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        data: refreshTokenRequest,
+      },
+      options
+    );
   };
   return { kakaoAuth, appleAuth, refresh, logout };
 };

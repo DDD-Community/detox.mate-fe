@@ -15,52 +15,73 @@ import type {
 
 import { customAxios } from '../../mutator';
 
+type SecondParameter<T extends (...args: never) => unknown> = Parameters<T>[1];
+
 export const getFeed = () => {
-  const getGroupChallengeOverview = (groupChallengeId: number) => {
-    return customAxios<GroupChallengeOverviewResponse>({
-      url: `/group-challenges/${groupChallengeId}/overview`,
-      method: 'GET',
-    });
+  const getGroupChallengeOverview = (
+    groupChallengeId: number,
+    options?: SecondParameter<typeof customAxios<GroupChallengeOverviewResponse>>
+  ) => {
+    return customAxios<GroupChallengeOverviewResponse>(
+      { url: `/group-challenges/${groupChallengeId}/overview`, method: 'GET' },
+      options
+    );
   };
   /**
    * @deprecated
    */
-  const getHomeFeed = (groupChallengeId: number) => {
-    return customAxios<HomeFeedResponse>({
-      url: `/group-challenges/${groupChallengeId}/home`,
-      method: 'GET',
-    });
+  const getHomeFeed = (
+    groupChallengeId: number,
+    options?: SecondParameter<typeof customAxios<HomeFeedResponse>>
+  ) => {
+    return customAxios<HomeFeedResponse>(
+      { url: `/group-challenges/${groupChallengeId}/home`, method: 'GET' },
+      options
+    );
   };
   const getHistoryChallengeRecords = (
     groupChallengeId: number,
-    params: GetHistoryChallengeRecordsParams
+    params: GetHistoryChallengeRecordsParams,
+    options?: SecondParameter<typeof customAxios<GroupChallengeRecordFeedResponse>>
   ) => {
-    return customAxios<GroupChallengeRecordFeedResponse>({
-      url: `/group-challenges/${groupChallengeId}/challenge-records`,
-      method: 'GET',
-      params,
-    });
+    return customAxios<GroupChallengeRecordFeedResponse>(
+      { url: `/group-challenges/${groupChallengeId}/challenge-records`, method: 'GET', params },
+      options
+    );
   };
-  const getGroupChallengeRecordDetail = (groupChallengeId: number, challengeRecordId: number) => {
-    return customAxios<MemberResponse>({
-      url: `/group-challenges/${groupChallengeId}/challenge-records/${challengeRecordId}`,
-      method: 'GET',
-    });
+  const getGroupChallengeRecordDetail = (
+    groupChallengeId: number,
+    challengeRecordId: number,
+    options?: SecondParameter<typeof customAxios<MemberResponse>>
+  ) => {
+    return customAxios<MemberResponse>(
+      {
+        url: `/group-challenges/${groupChallengeId}/challenge-records/${challengeRecordId}`,
+        method: 'GET',
+      },
+      options
+    );
   };
-  const getTodayChallengeRecords = (groupChallengeId: number) => {
-    return customAxios<GroupChallengeRecordFeedResponse>({
-      url: `/group-challenges/${groupChallengeId}/challenge-records/today`,
-      method: 'GET',
-    });
+  const getTodayChallengeRecords = (
+    groupChallengeId: number,
+    options?: SecondParameter<typeof customAxios<GroupChallengeRecordFeedResponse>>
+  ) => {
+    return customAxios<GroupChallengeRecordFeedResponse>(
+      { url: `/group-challenges/${groupChallengeId}/challenge-records/today`, method: 'GET' },
+      options
+    );
   };
   /**
    * @deprecated
    */
-  const getFeedDetail = (challengeRecordId: number) => {
-    return customAxios<FeedDetailResponse>({
-      url: `/challenge-records/${challengeRecordId}`,
-      method: 'GET',
-    });
+  const getFeedDetail = (
+    challengeRecordId: number,
+    options?: SecondParameter<typeof customAxios<FeedDetailResponse>>
+  ) => {
+    return customAxios<FeedDetailResponse>(
+      { url: `/challenge-records/${challengeRecordId}`, method: 'GET' },
+      options
+    );
   };
   return {
     getGroupChallengeOverview,
