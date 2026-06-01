@@ -204,6 +204,26 @@ const compareChallengeMembers = (a: MemberResponse, b: MemberResponse): number =
   return (a.userId ?? 0) - (b.userId ?? 0);
 };
 
+// 피드 카드 정렬: 인증 완료 → 미인증 가나다순 → userId (나 고정 없음)
+const compareFeedCards = (a: MemberResponse, b: MemberResponse): number => {
+  const aSubmittedAt = a.activityRecord?.submittedAt;
+  const bSubmittedAt = b.activityRecord?.submittedAt;
+  const aVerified = aSubmittedAt != null;
+  const bVerified = bSubmittedAt != null;
+
+  if (aVerified !== bVerified) return aVerified ? -1 : 1;
+  if (aVerified && bVerified) {
+    const submittedDiff =
+      new Date(bSubmittedAt ?? 0).getTime() - new Date(aSubmittedAt ?? 0).getTime();
+    if (submittedDiff !== 0) return submittedDiff;
+  }
+
+  const nameDiff = (a.displayName ?? '').localeCompare(b.displayName ?? '', 'ko-KR');
+  if (nameDiff !== 0) return nameDiff;
+
+  return (a.userId ?? 0) - (b.userId ?? 0);
+};
+
 const mapMemberToMemberItem = (m: MemberResponse): MemberItem => ({
   id: String(m.userId ?? ''),
   name: m.displayName ?? '',
@@ -270,6 +290,7 @@ export default function FeedHome() {
       ]);
       const apiMembers = today.members ?? [];
       const sortedMembers = [...apiMembers].sort(compareChallengeMembers);
+      const sortedFeedItems = [...apiMembers].sort(compareFeedCards);
       const groupId = overview.groupId ?? today.groupId;
       const groupName = overview.groupName ?? fallbackGroup?.name;
       const inviteCode = overview.inviteCode ?? fallbackGroup?.inviteCode;
@@ -278,7 +299,7 @@ export default function FeedHome() {
         ...(groupName ? { name: groupName } : {}),
         ...(inviteCode ? { inviteCode } : {}),
       });
-      setFeedItems(sortedMembers.map(mapMemberToFeedItem));
+      setFeedItems(sortedFeedItems.map(mapMemberToFeedItem));
       setMembers(sortedMembers.map(mapMemberToMemberItem));
       setGoalSetMemberCount(apiMembers.filter(hasTotalUsageGoal).length);
       if (isUsableId(groupId)) {
