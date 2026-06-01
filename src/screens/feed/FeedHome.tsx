@@ -883,7 +883,6 @@ const styles = StyleSheet.create({
   },
   feedCardList: {
     paddingHorizontal: spacing[16],
-    paddingTop: spacing[28],
     gap: spacing[20],
   },
   centered: {
