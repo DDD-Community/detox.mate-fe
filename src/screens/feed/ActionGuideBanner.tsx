@@ -316,7 +316,7 @@ const styles = StyleSheet.create({
   },
   verifiedBanner: {
     backgroundColor: brown[100],
-    minHeight: 292,
+    minHeight: 240,
     paddingHorizontal: spacing[16],
     paddingTop: spacing[28],
     paddingBottom: spacing[20],

@@ -315,6 +315,14 @@ export default function FeedPostDetail() {
     });
   };
 
+  const handlePostAuthorProfilePress = () => {
+    if (feedItem.isMe) {
+      router.push('/(group)/mypage');
+      return;
+    }
+    navigateToProfile(feedItem.id);
+  };
+
   const navigateToProfile = (userId: string) => {
     if (userId === 'me') return;
     const info = memberStore.get(Number(userId));
@@ -429,17 +437,19 @@ export default function FeedPostDetail() {
             {feedItem.isVerified ? (
               <>
                 <View style={styles.verifiedHeader}>
-                  <View style={styles.avatarWithLabel}>
-                    <ProfileAvatar source={feedItem.avatarSource} />
-                    <View style={styles.statusLabelAnchor}>
-                      <View style={[styles.statusLabel, { backgroundColor: statusLabelColor }]}>
-                        <Text style={styles.statusLabelText}>
-                          {feedItem.isGoalAchieved ? '목표 성공' : '목표 실패'}
-                        </Text>
+                  <Pressable style={styles.profileButton} onPress={handlePostAuthorProfilePress}>
+                    <View style={styles.avatarWithLabel}>
+                      <ProfileAvatar source={feedItem.avatarSource} />
+                      <View style={styles.statusLabelAnchor}>
+                        <View style={[styles.statusLabel, { backgroundColor: statusLabelColor }]}>
+                          <Text style={styles.statusLabelText}>
+                            {feedItem.isGoalAchieved ? '목표 성공' : '목표 실패'}
+                          </Text>
+                        </View>
                       </View>
                     </View>
-                  </View>
-                  <Text style={[styles.memberName, { flexShrink: 0 }]}>{feedItem.name}</Text>
+                    <Text style={[styles.memberName, { flexShrink: 0 }]}>{feedItem.name}</Text>
+                  </Pressable>
                   {feedItem.verifiedTimeAgo != null && (
                     <Text style={styles.timeAgo}>{feedItem.verifiedTimeAgo}</Text>
                   )}
@@ -716,6 +726,11 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     gap: spacing[8],
     marginBottom: spacing[8],
+  },
+  profileButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing[8],
   },
   avatarWithLabel: {
     alignItems: 'center',
