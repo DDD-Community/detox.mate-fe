@@ -77,16 +77,23 @@ export function useFriendPoke({
 
   const poke = async () => {
     if (isPoking || isPoked) return;
-    const numericChallengeRecordId = toFiniteNumber(challengeRecordId);
     const numericFriendUserId = toFiniteNumber(friendUserId);
-    if (numericChallengeRecordId == null || numericFriendUserId == null || !friendUserId) {
-      // 콕 찌르기에 필요한 정보가 없으면 무시 (라우팅하는 쪽에서 채워주어야 함)
+    if (numericFriendUserId == null || !friendUserId) {
+      // friendUserId가 없으면 콕 찌르기 불가
       return;
     }
 
     setIsPoking(true);
     setIsPoked(true);
     pokeStore.add(friendUserId);
+
+    const numericChallengeRecordId = toFiniteNumber(challengeRecordId);
+    if (numericChallengeRecordId == null) {
+      // challengeRecordId가 없는 멤버(목표 미설정 등) — 로컬 상태만 업데이트하고 API 생략
+      setIsPoking(false);
+      return;
+    }
+
     try {
       await getPoke().pokeUser(numericChallengeRecordId, numericFriendUserId);
     } finally {

@@ -1,5 +1,5 @@
 import { router } from 'expo-router';
-import { ScrollView, StyleSheet, View } from 'react-native';
+import { Alert, ScrollView, StyleSheet, View } from 'react-native';
 
 import { primitiveColors, spacing } from '@/lib/token';
 import { MyPageBody } from './mypage/MyPageBody';
@@ -116,6 +116,11 @@ export default function MyPageScreen() {
     achievedDays,
   } = weeklyStatus;
 
+  const handlePoke = () => {
+    Alert.alert(`${displayName}님을 콕 찔렀어요!`);
+    poke();
+  };
+
   return (
     <View style={styles.root}>
       <ScrollView
@@ -153,7 +158,7 @@ export default function MyPageScreen() {
           achievedDays={achievedDays}
           joinedGroups={joinedGroups}
           daysUntilGoalChange={daysUntilGoalChange}
-          onPoke={poke}
+          onPoke={handlePoke}
           onSetGoal={handleSetGoal}
           onCreateGroup={handleCreateGroup}
           onEnterInviteCode={handleEnterInviteCode}

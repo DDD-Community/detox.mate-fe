@@ -55,7 +55,6 @@ type FeedGroup = {
 type StoreableMember = MemberResponse & {
   userId: number;
   groupMemberId: number;
-  challengeRecordId: number;
 };
 
 const formatMinutes = (minutes: number | null | undefined): string | undefined => {
@@ -91,9 +90,7 @@ const hasTotalUsageGoal = (member: MemberResponse): boolean =>
 const isUsableId = (id: number | undefined): id is number => id != null && Number.isFinite(id);
 
 const isStoreableMember = (member: MemberResponse): member is StoreableMember =>
-  isUsableId(member.userId) &&
-  isUsableId(member.groupMemberId) &&
-  isUsableId(member.challengeRecordId);
+  isUsableId(member.userId) && isUsableId(member.groupMemberId);
 
 const getRouteGroupChallengeId = (value: string | undefined): string | null => {
   if (!value) return null;
@@ -301,13 +298,27 @@ export default function FeedHome() {
       });
       setFeedItems(sortedFeedItems.map(mapMemberToFeedItem));
       setMembers(sortedMembers.map(mapMemberToMemberItem));
-      setGoalSetMemberCount(apiMembers.filter(hasTotalUsageGoal).length);
+      const goalSetCount = apiMembers.filter(hasTotalUsageGoal).length;
+      // [임시 디버그] 목표 설정 인원 확인
+      console.log('[DEBUG] goalSetMemberCount:', goalSetCount);
+      console.log(
+        '[DEBUG] members goals:',
+        JSON.stringify(
+          apiMembers.map((m) => ({ name: m.displayName, goals: m.goals })),
+          null,
+          2
+        )
+      );
+      const myMember = apiMembers.find((m) => m.isMe === true);
+      const myGoal = myMember?.goals?.find((g) => g.usageGoalType === 'TOTAL_USAGE');
+      console.log('[DEBUG] 내 목표 시간:', myGoal ? `${myGoal.goalMinutes}분` : '미설정');
+      setGoalSetMemberCount(goalSetCount);
       if (isUsableId(groupId)) {
         memberStore.setAll(
           sortedMembers.filter(isStoreableMember).map((m) => ({
             userId: m.userId,
             groupMemberId: m.groupMemberId,
-            challengeRecordId: m.challengeRecordId,
+            ...(isUsableId(m.challengeRecordId) ? { challengeRecordId: m.challengeRecordId } : {}),
             displayName: m.displayName ?? '',
             profileImageUrl: m.profileImageUrl,
           })),
@@ -592,7 +603,7 @@ function ActiveFeed({
           friendUserId: item.id,
           friendGroupId: String(info.groupId),
           groupChallengeId: groupChallengeId ?? '',
-          challengeRecordId: String(info.challengeRecordId),
+          challengeRecordId: info.challengeRecordId != null ? String(info.challengeRecordId) : '',
           isPoked: pokedMemberIds.includes(item.id) ? '1' : '0',
         },
       });
