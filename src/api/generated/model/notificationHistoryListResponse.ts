@@ -4,9 +4,9 @@
  * OpenAPI definition
  * OpenAPI spec version: v0
  */
-import type { NotificationHistoryGroupResponse } from './notificationHistoryGroupResponse';
+import type { NotificationHistoryItemResponse } from './notificationHistoryItemResponse';
 
 export interface NotificationHistoryListResponse {
   unreadCount?: number;
-  groups?: NotificationHistoryGroupResponse[];
+  notifications?: NotificationHistoryItemResponse[];
 }

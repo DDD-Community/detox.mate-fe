@@ -12,6 +12,7 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import type {
+  FeedDetailResponse,
   MemberResponse,
   NotificationHistoryItemResponse,
   NotificationHistoryListResponse,
@@ -112,6 +113,46 @@ const isCreatedToday = (isoDate: string): boolean => {
   );
 };
 
+const getNotificationSectionTitle = (iso?: string): string => {
+  if (!iso) return '';
+
+  const created = new Date(iso);
+  if (Number.isNaN(created.getTime())) return '';
+
+  const today = new Date();
+  const startOfToday = new Date(today.getFullYear(), today.getMonth(), today.getDate()).getTime();
+  const startOfCreated = new Date(
+    created.getFullYear(),
+    created.getMonth(),
+    created.getDate()
+  ).getTime();
+  const diffDays = Math.floor((startOfToday - startOfCreated) / (24 * 60 * 60 * 1000));
+
+  if (diffDays <= 0) return '오늘';
+  if (diffDays === 1) return '어제';
+  if (diffDays < 7) return `${diffDays}일 전`;
+  return `${created.getFullYear()}년 ${created.getMonth() + 1}월 ${created.getDate()}일`;
+};
+
+const groupNotificationsByCreatedAt = (
+  notifications: NotificationHistoryItemResponse[] | undefined
+): NotificationSection[] => {
+  const sections: NotificationSection[] = [];
+
+  for (const notification of notifications ?? []) {
+    const title = getNotificationSectionTitle(notification.createdAt);
+    const section = sections.find((s) => s.title === title);
+
+    if (section) {
+      section.data.push(notification);
+    } else {
+      sections.push({ title, data: [notification] });
+    }
+  }
+
+  return sections;
+};
+
 const formatMinutes = (minutes: number | null | undefined): string | undefined => {
   if (minutes == null) return undefined;
   const h = Math.floor(minutes / 60);
@@ -191,6 +232,51 @@ const mapMemberToFeedItem = (member: MemberResponse): FeedItem => {
   };
 };
 
+const mapFeedDetailToFeedItem = (detail: FeedDetailResponse): FeedItem | undefined => {
+  if (!isFiniteNumber(detail.challengeRecordId)) return undefined;
+
+  const totalUsage = detail.details?.find((d) => d.usageGoalTypeCode === 'TOTAL_USAGE');
+  const isGoalAchieved = detail.goalStatus === 'SUCCESS';
+
+  return {
+    id: String(detail.author?.userId ?? detail.challengeRecordId),
+    challengeRecordId: detail.challengeRecordId,
+    name: detail.author?.displayName ?? '',
+    isMe: false,
+    avatarSource: detail.author?.profileImageUrl
+      ? { uri: detail.author.profileImageUrl }
+      : DEFAULT_AVATAR,
+    commentCount: detail.commentCount ?? 0,
+    reactionCount: detail.reactions?.totalCount ?? 0,
+    pokeCount: detail.pokeCount ?? 0,
+    reactions:
+      detail.reactions?.summary?.map((reaction) => ({
+        userId: String(reaction.userId ?? ''),
+        name: reaction.displayName ?? '',
+        avatarSource: reaction.profileImageUrl ? { uri: reaction.profileImageUrl } : DEFAULT_AVATAR,
+        emoji: reaction.reactionBody ?? '',
+      })) ?? [],
+    pokes:
+      detail.pokedUsers?.map((user) => ({
+        userId: String(user.userId ?? ''),
+        name: user.displayName ?? '',
+        avatarSource: user.profileImageUrl ? { uri: user.profileImageUrl } : DEFAULT_AVATAR,
+      })) ?? [],
+    isVerified: true,
+    isGoalAchieved,
+    photoSource: detail.activityImageUrl ? { uri: detail.activityImageUrl } : undefined,
+    postText: isGoalAchieved ? (detail.oneLineReview ?? undefined) : undefined,
+    retroText: isGoalAchieved ? undefined : (detail.oneLineReview ?? undefined),
+    screenTime: formatMinutes(totalUsage?.usedMinutes),
+    goal: formatMinutesAsHHMM(detail.snapshotGoalMinutes),
+    usedMinutes: totalUsage?.usedMinutes,
+    goalMinutes: detail.snapshotGoalMinutes,
+    verifiedTimeAgo: detail.activityCreatedAt
+      ? formatRelativeTime(detail.activityCreatedAt)
+      : undefined,
+  };
+};
+
 const cacheFeedMembers = (members: MemberResponse[] | undefined, groupId?: number) => {
   if (!members || !isFiniteNumber(groupId)) return;
   memberStore.setAll(
@@ -214,13 +300,29 @@ const pushPostDetail = async (
 ): Promise<boolean> => {
   if (!member.challengeRecordId) return false;
 
+  return pushFeedItemPostDetail(
+    groupChallengeId,
+    mapMemberToFeedItem(member),
+    member.isPoked,
+    groupId
+  );
+};
+
+const pushFeedItemPostDetail = async (
+  groupChallengeId: number,
+  item: FeedItem,
+  isPoked?: boolean,
+  groupId?: number
+): Promise<boolean> => {
+  if (!item.challengeRecordId) return false;
+
   const goalState = await getGoalState();
   router.push({
     pathname: '/(feed)/post-detail',
     params: {
-      item: JSON.stringify(mapMemberToFeedItem(member)),
+      item: JSON.stringify(item),
       goalState,
-      isPoked: member.isPoked ? '1' : '0',
+      isPoked: isPoked ? '1' : '0',
       myReaction: '',
       groupChallengeId: String(groupChallengeId),
       ...(isFiniteNumber(groupId) ? { groupId: String(groupId) } : {}),
@@ -241,6 +343,37 @@ const routePostDetail = async (
   if (!member) return false;
 
   return pushPostDetail(groupChallengeId, member, feed.groupId);
+};
+
+const routePostDetailByChallengeRecordId = async (
+  groupChallengeId?: number,
+  challengeRecordId?: number
+): Promise<boolean> => {
+  if (!isFiniteNumber(challengeRecordId)) return false;
+
+  if (isFiniteNumber(groupChallengeId)) {
+    try {
+      const member = await getFeed().getGroupChallengeRecordDetail(
+        groupChallengeId,
+        challengeRecordId
+      );
+      return pushPostDetail(groupChallengeId, member);
+    } catch {
+      // Deprecated detail endpoint below can recover when only challengeRecordId is reliable.
+    }
+  }
+
+  try {
+    const detail = await getFeed().getFeedDetail(challengeRecordId);
+    if (!isFiniteNumber(detail.groupChallengeId)) return false;
+
+    const item = mapFeedDetailToFeedItem(detail);
+    if (!item) return false;
+
+    return pushFeedItemPostDetail(detail.groupChallengeId, item, detail.poked);
+  } catch {
+    return false;
+  }
 };
 
 const getGroupChallengeId = (
@@ -265,6 +398,25 @@ const getGroupId = (
   }
   if (item.targetType === 'GROUP' && isFiniteNumber(item.targetId)) return item.targetId;
   return undefined;
+};
+
+const getTargetChallengeRecordId = (
+  item: NotificationItem,
+  nav?: NotificationNavigationResponse
+): number | undefined => {
+  if (nav?.targetType === 'FEED_DETAIL' && isFiniteNumber(nav.targetId)) return nav.targetId;
+  if (item.targetType === 'FEED_DETAIL' && isFiniteNumber(item.targetId)) return item.targetId;
+  return undefined;
+};
+
+const getVerifiedChallengeRecordId = (
+  item: NotificationItem,
+  nav?: NotificationNavigationResponse
+): number | undefined => {
+  return (
+    getTargetChallengeRecordId(item, nav) ??
+    (isFiniteNumber(item.sourceId) ? item.sourceId : undefined)
+  );
 };
 
 const routeByTarget = (type?: string, id?: number, fallbackType?: string, fallbackId?: number) => {
@@ -383,11 +535,7 @@ export default function NotificationListScreen() {
         const response: NotificationHistoryListResponse =
           await getNotificationHistory().getMyNotifications();
         if (cancelled) return;
-        const next: NotificationSection[] = (response.groups ?? []).map((g) => ({
-          title: g.label ?? '',
-          data: g.notifications ?? [],
-        }));
-        setSections(next);
+        setSections(groupNotificationsByCreatedAt(response.notifications));
       } finally {
         if (!cancelled) setIsLoading(false);
       }
@@ -418,10 +566,11 @@ export default function NotificationListScreen() {
       const groupChallengeId = getGroupChallengeId(notification, nav);
       const groupId = getGroupId(notification, nav);
 
-      if (nav.targetType === 'FEED_DETAIL' && isFiniteNumber(nav.targetId)) {
-        const routed = await routePostDetail(
+      const targetChallengeRecordId = getTargetChallengeRecordId(notification, nav);
+      if (isFiniteNumber(targetChallengeRecordId)) {
+        const routed = await routePostDetailByChallengeRecordId(
           groupChallengeId,
-          (member) => member.challengeRecordId === nav.targetId
+          targetChallengeRecordId
         );
         if (routed) return;
       }
@@ -439,8 +588,12 @@ export default function NotificationListScreen() {
         return;
       }
 
-      if (kind === 'verified' && nav.targetType === 'FEED') {
-        const routed = await routeSenderPost(notification, groupChallengeId);
+      if (kind === 'verified') {
+        const routed =
+          (await routePostDetailByChallengeRecordId(
+            groupChallengeId,
+            getVerifiedChallengeRecordId(notification, nav)
+          )) || (await routeSenderPost(notification, groupChallengeId));
         if (routed) return;
       }
 
