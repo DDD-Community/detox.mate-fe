@@ -48,14 +48,14 @@ export function useScreenTimeImageAnalyze() {
       const result = await analyzeScreenTimeImage(selectedImageUri);
 
       if (!result.ok && result.reason === 'analysis_failed') {
-        setErrorMessage(result.message ?? '이미지 분석에 실패했습니다.');
+        setErrorMessage(result.message ?? '이미지 스캔에 실패했습니다.');
         return null;
       }
 
       setAnalysisResult(result);
       return result;
     } catch (error) {
-      const message = error instanceof Error ? error.message : '이미지 분석에 실패했습니다.';
+      const message = error instanceof Error ? error.message : '이미지 스캔에 실패했습니다.';
       setAnalysisResult(null);
       setErrorMessage(message);
       return null;

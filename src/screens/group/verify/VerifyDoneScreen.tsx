@@ -22,12 +22,24 @@ import {
 const { gray, brown, green, system } = primitiveColors;
 
 export default function VerifyDoneScreen() {
-  const { value, mode, goal, groupChallengeParticipantId, verifyRoot } = useLocalSearchParams<{
+  const {
+    value,
+    mode,
+    goal,
+    groupChallengeParticipantId,
+    verifyRoot,
+    ocrImageUri,
+    ocrImageObjectKey,
+    ocrRecordDate,
+  } = useLocalSearchParams<{
     value?: string;
     mode?: VerifyMode;
     goal?: string;
     groupChallengeParticipantId?: string;
     verifyRoot?: VerifyRoot;
+    ocrImageUri?: string;
+    ocrImageObjectKey?: string;
+    ocrRecordDate?: string;
   }>();
   const display = formatHHMMToDisplay(value);
   const isVerifyMode = mode === 'verify';
@@ -67,7 +79,16 @@ export default function VerifyDoneScreen() {
       pathname: getVerifyPath('wrong-time', verifyRoot),
       params: {
         achieved: goalAchieved ? '1' : '0',
-        ...buildVerifyValueParams({ value, mode, goal, groupChallengeParticipantId, verifyRoot }),
+        ...buildVerifyValueParams({
+          value,
+          mode,
+          goal,
+          groupChallengeParticipantId,
+          verifyRoot,
+          ocrImageUri,
+          ocrImageObjectKey,
+          ocrRecordDate,
+        }),
       },
     });
   };
@@ -85,7 +106,7 @@ export default function VerifyDoneScreen() {
         <View style={styles.content}>
           <View style={styles.heading}>
             <Image source={ONBOARDING_CHECK_IMAGE} style={styles.checkIcon} resizeMode="contain" />
-            <Text style={styles.title}>분석 완료 !</Text>
+            <Text style={styles.title}>스캔 완료 !</Text>
           </View>
 
           <View style={styles.summary}>
@@ -109,7 +130,7 @@ export default function VerifyDoneScreen() {
       <View style={styles.verifyContent}>
         <View style={styles.heading}>
           <Image source={ONBOARDING_CHECK_IMAGE} style={styles.checkIcon} resizeMode="contain" />
-          <Text style={styles.verifyTitle}>{'어제의 스크린 타임\n분석 완료 !'}</Text>
+          <Text style={styles.verifyTitle}>{'어제의 스크린 타임\n스캔 완료 !'}</Text>
         </View>
 
         <View style={styles.verifySummaryGroup}>
@@ -136,7 +157,7 @@ export default function VerifyDoneScreen() {
               {goalAchieved
                 ? diffText
                   ? `좋아요, 목표보다 ${diffText} 덜 썼어요!`
-                  : '좋아요, 분석을 완료했어요!'
+                  : '좋아요, 스캔을 완료했어요!'
                 : '목표를 미달성 했어요, 조금만 더 힘내보아요!'}
             </Text>
           </View>

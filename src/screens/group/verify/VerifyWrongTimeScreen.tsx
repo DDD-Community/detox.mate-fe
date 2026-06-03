@@ -1,19 +1,78 @@
 import { router, useLocalSearchParams } from 'expo-router';
+import { useEffect, useRef, useState } from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 
+import { getScreenTimeOcrErrorReport } from '@/api/generated/screen-time-ocr-error-report/screen-time-ocr-error-report';
+import { PresignedUrlRequestUploadPurpose } from '@/api/generated/model';
+import { parseHHMMToMinutes } from '@/lib/formatDuration';
 import { primitiveColors, typography } from '@/lib/token';
+import { uploadImage } from '@/lib/uploadImage';
 import { buildVerifyValueParams, getVerifyPath, type VerifyRoot } from './verifyFlowParams';
 
 const { brown, green } = primitiveColors;
 
 export default function VerifyWrongTimeScreen() {
-  const { achieved, value, groupChallengeParticipantId, verifyRoot } = useLocalSearchParams<{
+  const {
+    achieved,
+    value,
+    groupChallengeParticipantId,
+    verifyRoot,
+    ocrImageUri,
+    ocrImageObjectKey,
+    ocrRecordDate,
+  } = useLocalSearchParams<{
     achieved?: string;
     value?: string;
     groupChallengeParticipantId?: string;
     verifyRoot?: VerifyRoot;
+    ocrImageUri?: string;
+    ocrImageObjectKey?: string;
+    ocrRecordDate?: string;
   }>();
   const goalAchieved = achieved !== '0';
+  const [isSubmittingReport, setIsSubmittingReport] = useState(false);
+  const didSubmitReportRef = useRef(false);
+
+  useEffect(() => {
+    if (didSubmitReportRef.current) return;
+
+    const participantId = groupChallengeParticipantId ? Number(groupChallengeParticipantId) : NaN;
+    const usedMinutes = parseHHMMToMinutes(value);
+
+    if (!Number.isFinite(participantId) || !ocrRecordDate || usedMinutes == null) {
+      return;
+    }
+
+    didSubmitReportRef.current = true;
+    setIsSubmittingReport(true);
+
+    const submitReport = async () => {
+      const imageObjectKey =
+        ocrImageObjectKey ??
+        (ocrImageUri
+          ? await uploadImage(ocrImageUri, {
+              uploadPurpose: PresignedUrlRequestUploadPurpose.SCREEN_TIME_OCR_REPORT_IMAGE,
+            })
+          : undefined);
+
+      if (!imageObjectKey) return;
+
+      await getScreenTimeOcrErrorReport().create({
+        groupChallengeParticipantId: participantId,
+        recordDate: ocrRecordDate,
+        imageObjectKey,
+        ocrTotalUsedMinutes: usedMinutes,
+      });
+    };
+
+    submitReport()
+      .catch(() => {
+        didSubmitReportRef.current = false;
+      })
+      .finally(() => {
+        setIsSubmittingReport(false);
+      });
+  }, [groupChallengeParticipantId, ocrImageObjectKey, ocrImageUri, ocrRecordDate, value]);
 
   const handleClose = () => {
     router.back();
@@ -36,10 +95,14 @@ export default function VerifyWrongTimeScreen() {
         <Text style={styles.title}>접수 되었습니다</Text>
         <Text style={styles.body}>{'사진을 검토한 뒤\n수일 내로 반영해 드릴게요'}</Text>
         <View style={styles.actions}>
-          <Pressable style={styles.closeButton} onPress={handleClose}>
+          <Pressable style={styles.closeButton} onPress={handleClose} disabled={isSubmittingReport}>
             <Text style={styles.closeLabel}>닫기</Text>
           </Pressable>
-          <Pressable style={styles.confirmButton} onPress={handleConfirm}>
+          <Pressable
+            style={styles.confirmButton}
+            onPress={handleConfirm}
+            disabled={isSubmittingReport}
+          >
             <Text style={styles.confirmLabel}>확인</Text>
           </Pressable>
         </View>

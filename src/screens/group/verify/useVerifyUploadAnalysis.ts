@@ -12,6 +12,20 @@ import {
   type VerifyMode,
 } from './verifyFlowParams';
 
+const formatDateParam = (date: Date): string => {
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, '0');
+  const day = String(date.getDate()).padStart(2, '0');
+  return `${year}-${month}-${day}`;
+};
+
+const getOcrRecordDate = () => {
+  const date = new Date();
+  date.setHours(0, 0, 0, 0);
+  date.setDate(date.getDate() - 1);
+  return formatDateParam(date);
+};
+
 interface UseVerifyUploadAnalysisOptions extends VerifyFlowParams {
   imageUri?: string;
   mode?: VerifyMode;
@@ -60,26 +74,36 @@ export function useVerifyUploadAnalysis({
         return;
       }
 
-      if (mode !== 'verify') {
+      const reportParams = {
+        ocrImageUri: imageUri,
+        ocrRecordDate: getOcrRecordDate(),
+      };
+
+      if (mode === 'verify') {
+        const { allAchieved } = await getActivityRecord().checkAchievement({
+          details: [
+            {
+              usageGoalType: ActivityRecordDetailRequestUsageGoalType.TOTAL_USAGE,
+              usedMinutes: parseHHMMToMinutes(result.value) ?? 0,
+            },
+          ],
+        });
+
         router.replace({
           pathname: getVerifyPath('done', verifyRoot),
-          params: { value: result.value, ...forwardParams },
+          params: {
+            value: result.value,
+            achieved: String(allAchieved ?? false),
+            ...forwardParams,
+            ...reportParams,
+          },
         });
         return;
       }
 
-      const { allAchieved } = await getActivityRecord().checkAchievement({
-        details: [
-          {
-            usageGoalType: ActivityRecordDetailRequestUsageGoalType.TOTAL_USAGE,
-            usedMinutes: parseHHMMToMinutes(result.value) ?? 0,
-          },
-        ],
-      });
-
       router.replace({
         pathname: getVerifyPath('done', verifyRoot),
-        params: { value: result.value, achieved: String(allAchieved ?? false), ...forwardParams },
+        params: { value: result.value, ...forwardParams, ...reportParams },
       });
     } finally {
       setIsAnalyzing(false);
@@ -88,7 +112,7 @@ export function useVerifyUploadAnalysis({
 
   return {
     buttonDisabled: !hasImage || isAnalyzing,
-    buttonLabel: isAnalyzing ? '분석중이에요...' : '분석하기',
+    buttonLabel: isAnalyzing ? '스캔중이에요...' : '스캔하기',
     handleAnalyze,
     handlePickImage,
     hasImage,
