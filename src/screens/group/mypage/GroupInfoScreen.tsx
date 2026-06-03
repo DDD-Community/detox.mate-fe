@@ -15,7 +15,7 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { getFeed, getGroup, type GroupMemberResponse } from '@/api';
-import { ClipboardCopyToast, HeaderAction, Icon, useClipboardCopyToast } from '@/components';
+import { ClipboardCopyToast, Icon, useClipboardCopyToast } from '@/components';
 import { primitiveColors, radius, spacing, typography } from '@/lib/token';
 import { LeaveGroupAlert } from './LeaveGroupAlert';
 
@@ -139,7 +139,18 @@ export default function GroupInfoScreen() {
     <View style={styles.root}>
       <SafeAreaView edges={['top']}>
         <View style={styles.header}>
-          <HeaderAction label={groupName} onPress={handleBack} accessibilityLabel="뒤로가기" />
+          <Pressable
+            onPress={handleBack}
+            hitSlop={8}
+            style={styles.headerBackButton}
+            accessibilityRole="button"
+            accessibilityLabel="뒤로가기"
+          >
+            <Icon name="caretLeft" size={24} color={gray[900]} />
+          </Pressable>
+          <Text style={styles.headerTitle} numberOfLines={1}>
+            {groupName}
+          </Text>
         </View>
       </SafeAreaView>
 
@@ -253,8 +264,23 @@ const styles = StyleSheet.create({
   },
   header: {
     height: 54,
-    paddingHorizontal: spacing[16],
+    flexDirection: 'row',
+    alignItems: 'center',
     justifyContent: 'center',
+    paddingHorizontal: spacing[16],
+  },
+  headerBackButton: {
+    position: 'absolute',
+    left: spacing[16],
+    width: 40,
+    height: 40,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  headerTitle: {
+    ...typography.accent.title2,
+    color: gray[800],
+    maxWidth: '70%',
   },
   loadingWrap: {
     flex: 1,

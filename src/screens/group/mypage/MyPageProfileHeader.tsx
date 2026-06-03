@@ -33,6 +33,7 @@ interface MyPageProfileHeaderProps {
   hasProfileBackground: boolean;
   isUpdatingProfileImage: boolean;
   onBack: () => void;
+  onHome: () => void;
   onSettings: () => void;
   onEditName: () => void;
   onEditProfileImage: () => void;
@@ -47,6 +48,7 @@ export function MyPageProfileHeader({
   hasProfileBackground,
   isUpdatingProfileImage,
   onBack,
+  onHome,
   onSettings,
   onEditName,
   onEditProfileImage,
@@ -67,18 +69,39 @@ export function MyPageProfileHeader({
       ) : null}
       <SafeAreaView edges={['top']}>
         <View style={styles.header}>
-          <HeaderAction
-            label={isFriend ? displayName : '마이페이지'}
-            onPress={onBack}
-            iconColor={foregroundColor}
-            style={styles.headerLeft}
-            textStyle={[styles.headerTitle, hasProfileBackground && styles.photoText]}
-            accessibilityLabel="뒤로가기"
-          />
-          {!isFriend && (
-            <Pressable onPress={onSettings} hitSlop={8}>
-              <Icon name="gearSix" size={24} color={foregroundColor} />
-            </Pressable>
+          {isFriend ? (
+            <HeaderAction
+              label={displayName}
+              onPress={onBack}
+              iconColor={foregroundColor}
+              style={styles.headerLeft}
+              textStyle={[styles.headerTitle, hasProfileBackground && styles.photoText]}
+              accessibilityLabel="뒤로가기"
+            />
+          ) : (
+            <>
+              <Text style={[styles.headerTitle, hasProfileBackground && styles.photoText]}>
+                마이페이지
+              </Text>
+              <View style={styles.headerActions}>
+                <Pressable
+                  onPress={onHome}
+                  hitSlop={8}
+                  accessibilityRole="button"
+                  accessibilityLabel="홈으로 이동"
+                >
+                  <Icon name="house" size={24} color={foregroundColor} />
+                </Pressable>
+                <Pressable
+                  onPress={onSettings}
+                  hitSlop={8}
+                  accessibilityRole="button"
+                  accessibilityLabel="설정"
+                >
+                  <Icon name="gearSix" size={24} color={foregroundColor} />
+                </Pressable>
+              </View>
+            </>
           )}
         </View>
       </SafeAreaView>
@@ -155,6 +178,11 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
   },
   headerLeft: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing[16],
+  },
+  headerActions: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: spacing[16],

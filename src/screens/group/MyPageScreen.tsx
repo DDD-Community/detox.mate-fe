@@ -55,6 +55,10 @@ export default function MyPageScreen() {
     router.push('/(group)/settings');
   };
 
+  const handleHome = () => {
+    router.replace('/(group)/home');
+  };
+
   const handleEditName = () => {
     router.push('/(group)/nickname-edit');
   };
@@ -137,6 +141,7 @@ export default function MyPageScreen() {
           hasProfileBackground={hasProfileBackground}
           isUpdatingProfileImage={isUpdatingProfileImage}
           onBack={handleBack}
+          onHome={handleHome}
           onSettings={handleSettings}
           onEditName={handleEditName}
           onEditProfileImage={handleEditProfileImage}

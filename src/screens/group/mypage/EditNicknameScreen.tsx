@@ -1,10 +1,10 @@
 import { router } from 'expo-router';
 import { useState } from 'react';
-import { StyleSheet, Text, TextInput, View } from 'react-native';
+import { Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { getUser } from '@/api';
-import { Button, HeaderAction } from '@/components';
+import { Button, Icon } from '@/components';
 import { primitiveColors, radius, spacing, typography } from '@/lib/token';
 
 const { brown, gray } = primitiveColors;
@@ -41,7 +41,18 @@ export default function EditNicknameScreen() {
     <View style={styles.root}>
       <SafeAreaView edges={['top']}>
         <View style={styles.header}>
-          <HeaderAction label="닉네임 변경" onPress={handleBack} accessibilityLabel="뒤로가기" />
+          <Pressable
+            onPress={handleBack}
+            hitSlop={8}
+            style={styles.headerBackButton}
+            accessibilityRole="button"
+            accessibilityLabel="뒤로가기"
+          >
+            <Icon name="caretLeft" size={24} color={gray[900]} />
+          </Pressable>
+          <Text style={styles.headerTitle} numberOfLines={1}>
+            닉네임 변경
+          </Text>
         </View>
       </SafeAreaView>
 
@@ -84,8 +95,22 @@ const styles = StyleSheet.create({
   },
   header: {
     height: 54,
-    paddingHorizontal: spacing[16],
+    flexDirection: 'row',
+    alignItems: 'center',
     justifyContent: 'center',
+    paddingHorizontal: spacing[16],
+  },
+  headerBackButton: {
+    position: 'absolute',
+    left: spacing[16],
+    width: 40,
+    height: 40,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  headerTitle: {
+    ...typography.accent.title2,
+    color: gray[800],
   },
   body: {
     flex: 1,

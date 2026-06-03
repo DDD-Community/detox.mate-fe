@@ -15,7 +15,7 @@ import {
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import apiClient from '../../api/client';
-import { HeaderAction, Icon } from '../../components';
+import { Icon, Toast, useToastVisibility } from '../../components';
 import { memberStore } from '../../lib/memberStore';
 import { pokeStore } from '../../lib/pokeStore';
 import { primitiveColors, radius, spacing, typography } from '../../lib/token';
@@ -37,6 +37,8 @@ const DUPLICATE_REACTION_MESSAGE = '이미 같은 리액션을 남겼습니다';
 const COMMENT_MAX_LENGTH = 1000;
 const COMMENT_MAX_LENGTH_MESSAGE = '댓글은 최대 1000자까지 입력할 수 있어요';
 const COMMENT_LENGTH_TOAST_COOLDOWN_MS = 1500;
+const COMMENT_INPUT_HEIGHT = 44;
+const COMMENT_TOAST_GAP = 20;
 
 type CommentItem = {
   id: string;
@@ -162,6 +164,9 @@ export default function FeedPostDetail() {
   }>();
 
   const insets = useSafeAreaInsets();
+  const commentInputBottomPadding = Math.max(insets.bottom, spacing[12]);
+  const commentToastBottomOffset =
+    commentInputBottomPadding + spacing[16] + COMMENT_INPUT_HEIGHT + COMMENT_TOAST_GAP;
   const feedItem = JSON.parse(itemJson as string) as FeedItem;
   const state: GoalState = goalState ?? 'authReady';
   const hasFailurePhoto =
@@ -213,6 +218,7 @@ export default function FeedPostDetail() {
   const [fetchedPokes, setFetchedPokes] = useState<PokeEntry[]>([]);
   const pendingReactionCodesRef = useRef<Set<string>>(new Set());
   const commentLimitToastShownAtRef = useRef(0);
+  const duplicateReactionToast = useToastVisibility();
 
   useEffect(() => {
     if (!feedItem.challengeRecordId) return;
@@ -350,7 +356,7 @@ export default function FeedPostDetail() {
 
     const hasThis = myReactionEmojis.some((current) => isSameReaction(current, reactionCode));
     if (hasThis || pendingReactionCodesRef.current.has(reactionCode)) {
-      useNetworkErrorToastStore.getState().showMessage(DUPLICATE_REACTION_MESSAGE);
+      duplicateReactionToast.showWithMessage(DUPLICATE_REACTION_MESSAGE);
       return;
     }
     pendingReactionCodesRef.current.add(reactionCode);
@@ -438,16 +444,21 @@ export default function FeedPostDetail() {
       style={styles.root}
       behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
     >
-      <View style={[styles.header, { paddingTop: insets.top + spacing[14] }]}>
-        <HeaderAction
-          label="게시물"
-          onPress={handleHeaderBack}
-          iconSize={20}
-          iconColor={gray[900]}
-          style={styles.headerBackButton}
-          textStyle={styles.headerTitle}
-          accessibilityLabel="뒤로가기"
-        />
+      <View style={[styles.header, { paddingTop: insets.top }]}>
+        <View style={styles.headerContent}>
+          <Pressable
+            onPress={handleHeaderBack}
+            hitSlop={8}
+            style={styles.headerBackButton}
+            accessibilityRole="button"
+            accessibilityLabel="뒤로가기"
+          >
+            <Icon name="caretLeft" size={24} color={gray[900]} />
+          </Pressable>
+          <Text style={styles.headerTitle} numberOfLines={1}>
+            게시물
+          </Text>
+        </View>
       </View>
 
       <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
@@ -674,7 +685,7 @@ export default function FeedPostDetail() {
             </View>
           </>
         ) : (
-          <View style={[styles.inputBar, { paddingBottom: Math.max(insets.bottom, spacing[12]) }]}>
+          <View style={[styles.inputBar, { paddingBottom: commentInputBottomPadding }]}>
             <TextInput
               style={styles.textInput}
               placeholder="응원 메시지를 남겨보세요"
@@ -700,6 +711,12 @@ export default function FeedPostDetail() {
             )}
           </View>
         ))}
+      <Toast
+        visible={duplicateReactionToast.visible}
+        message={duplicateReactionToast.message}
+        icon={<Icon name="warningCircle" size={16} weight="fill" color={system.red.opacity100} />}
+        bottomOffset={commentToastBottomOffset}
+      />
     </KeyboardAvoidingView>
   );
 }
@@ -710,18 +727,22 @@ const styles = StyleSheet.create({
     backgroundColor: brown[50],
   },
   header: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingHorizontal: spacing[16],
-    paddingBottom: spacing[14],
-    gap: spacing[8],
     backgroundColor: brown[50],
   },
-  headerBackButton: {
-    minHeight: 24,
+  headerContent: {
+    height: 54,
     flexDirection: 'row',
     alignItems: 'center',
-    gap: spacing[8],
+    justifyContent: 'center',
+    paddingHorizontal: spacing[16],
+  },
+  headerBackButton: {
+    position: 'absolute',
+    left: spacing[16],
+    width: 40,
+    height: 40,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   headerTitle: {
     ...typography.accent.title2,
@@ -1003,8 +1024,8 @@ const styles = StyleSheet.create({
     borderTopColor: gray[50],
   },
   impressionBtn: {
-    width: 44,
-    height: 44,
+    width: COMMENT_INPUT_HEIGHT,
+    height: COMMENT_INPUT_HEIGHT,
     borderRadius: radius.full,
     backgroundColor: gray[50],
     alignItems: 'center',
@@ -1016,7 +1037,7 @@ const styles = StyleSheet.create({
   },
   textInput: {
     flex: 1,
-    height: 44,
+    height: COMMENT_INPUT_HEIGHT,
     backgroundColor: WHITE,
     borderRadius: radius.full,
     paddingHorizontal: spacing[16],
@@ -1024,8 +1045,8 @@ const styles = StyleSheet.create({
     color: gray[900],
   },
   sendBtn: {
-    width: 44,
-    height: 44,
+    width: COMMENT_INPUT_HEIGHT,
+    height: COMMENT_INPUT_HEIGHT,
     borderRadius: radius.full,
     backgroundColor: green[300],
     alignItems: 'center',

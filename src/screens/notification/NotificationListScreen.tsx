@@ -23,7 +23,7 @@ import { getFeed } from '../../api/generated/feed/feed';
 import { getGroup } from '../../api/generated/group/group';
 import { getNotificationHistory } from '../../api/generated/notification-history/notification-history';
 import { getUserUsageGoalTime } from '../../api/generated/user-usage-goal-time/user-usage-goal-time';
-import { HeaderAction, Icon, Toast, useToastVisibility } from '../../components';
+import { Icon, Toast, useToastVisibility } from '../../components';
 import { memberStore } from '../../lib/memberStore';
 import { primitiveColors, radius, spacing, typography } from '../../lib/token';
 import type { GoalState } from '../feed/ActionGuideBanner';
@@ -620,7 +620,18 @@ export default function NotificationListScreen() {
     <View style={styles.root}>
       <SafeAreaView edges={['top']}>
         <View style={styles.header}>
-          <HeaderAction label="알림" onPress={handleBack} accessibilityLabel="뒤로가기" />
+          <Text style={styles.headerTitle} numberOfLines={1}>
+            알림
+          </Text>
+          <Pressable
+            onPress={handleBack}
+            hitSlop={8}
+            style={styles.headerCloseButton}
+            accessibilityRole="button"
+            accessibilityLabel="닫기"
+          >
+            <Icon name="x" size={24} color={gray[900]} />
+          </Pressable>
         </View>
       </SafeAreaView>
 
@@ -675,8 +686,22 @@ const styles = StyleSheet.create({
   },
   header: {
     height: 54,
-    paddingHorizontal: spacing[16],
+    flexDirection: 'row',
+    alignItems: 'center',
     justifyContent: 'center',
+    paddingHorizontal: spacing[16],
+  },
+  headerCloseButton: {
+    position: 'absolute',
+    right: spacing[16],
+    width: 40,
+    height: 40,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  headerTitle: {
+    ...typography.accent.title2,
+    color: gray[800],
   },
   listContent: {
     paddingBottom: spacing[40],
