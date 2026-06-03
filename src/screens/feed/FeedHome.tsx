@@ -10,7 +10,6 @@ import {
   Text,
   View,
 } from 'react-native';
-import Svg, { Path } from 'react-native-svg';
 import apiClient from '../../api/client';
 import { getFeed } from '../../api/generated/feed/feed';
 import { getGroupChallenge } from '../../api/generated/group-challenge/group-challenge';
@@ -41,8 +40,6 @@ import ReactionPicker, {
 const { brown, gray, green } = primitiveColors;
 const WHITE = '#FFFFFF';
 const AVATAR_SRC = require('../../../assets/basic-profile-turtle-hi.png');
-const SCROLL_TOP_BUTTON_SIZE = 44;
-const SCROLL_TOP_ICON_SIZE = 16;
 const feedApi = getFeed();
 const groupChallengeApi = getGroupChallenge();
 
@@ -813,35 +810,8 @@ function ActiveFeed({
             onSelect={handleReactionSelect}
           />
         </>
-      ) : (
-        !isRestoringScroll && (
-          <Pressable
-            style={styles.fab}
-            onPress={() => scrollRef.current?.scrollTo({ y: 0, animated: true })}
-            accessibilityRole="button"
-            accessibilityLabel="맨 위로 이동"
-          >
-            <ScrollTopIcon />
-          </Pressable>
-        )
-      )}
+      ) : null}
     </View>
-  );
-}
-
-function ScrollTopIcon() {
-  return (
-    <Svg
-      width={SCROLL_TOP_ICON_SIZE}
-      height={SCROLL_TOP_ICON_SIZE}
-      viewBox={`0 0 ${SCROLL_TOP_ICON_SIZE} ${SCROLL_TOP_ICON_SIZE}`}
-    >
-      <Path
-        d="M9.85403 5.35414C9.80759 5.40063 9.75245 5.43751 9.69175 5.46267C9.63105 5.48784 9.56599 5.50079 9.50028 5.50079C9.43457 5.50079 9.36951 5.48784 9.30881 5.46267C9.24811 5.43751 9.19296 5.40063 9.14653 5.35414L5.50028 1.70727V11.5004C5.50028 11.633 5.4476 11.7602 5.35383 11.8539C5.26006 11.9477 5.13289 12.0004 5.00028 12.0004C4.86767 12.0004 4.74049 11.9477 4.64672 11.8539C4.55296 11.7602 4.50028 11.633 4.50028 11.5004V1.70727L0.854028 5.35414C0.760208 5.44796 0.63296 5.50067 0.500278 5.50067C0.367596 5.50067 0.240348 5.44796 0.146528 5.35414C0.0527077 5.26032 9.88558e-10 5.13308 0 5.00039C-9.88558e-10 4.86771 0.0527077 4.74046 0.146528 4.64664L4.64653 0.146643C4.69296 0.100155 4.74811 0.0632756 4.80881 0.0381135C4.86951 0.0129513 4.93457 0 5.00028 0C5.06599 0 5.13105 0.0129513 5.19175 0.0381135C5.25245 0.0632756 5.30759 0.100155 5.35403 0.146643L9.85403 4.64664C9.90052 4.69308 9.9374 4.74822 9.96256 4.80892C9.98772 4.86962 10.0007 4.93469 10.0007 5.00039C10.0007 5.0661 9.98772 5.13116 9.96256 5.19186C9.9374 5.25256 9.90052 5.30771 9.85403 5.35414Z"
-        fill={gray[700]}
-        transform="translate(3 2)"
-      />
-    </Svg>
   );
 }
 
@@ -899,6 +869,7 @@ const styles = StyleSheet.create({
   },
   feedCardList: {
     paddingHorizontal: spacing[16],
+    paddingTop: spacing[28],
     gap: spacing[20],
   },
   centered: {
@@ -907,22 +878,6 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     paddingHorizontal: spacing[24],
     gap: spacing[16],
-  },
-  fab: {
-    position: 'absolute',
-    bottom: spacing[32],
-    right: spacing[16],
-    width: SCROLL_TOP_BUTTON_SIZE,
-    height: SCROLL_TOP_BUTTON_SIZE,
-    borderRadius: radius.full,
-    backgroundColor: WHITE,
-    alignItems: 'center',
-    justifyContent: 'center',
-    shadowColor: gray[900],
-    shadowOffset: { width: 0, height: 0 },
-    shadowOpacity: 0.1,
-    shadowRadius: 6,
-    elevation: 3,
   },
   reactionPickerOverlay: {
     ...StyleSheet.absoluteFillObject,
