@@ -1,13 +1,21 @@
 import * as ImagePicker from 'expo-image-picker';
 import { useState } from 'react';
+import { Alert } from 'react-native';
 
 import { getUser, PresignedUrlRequestUploadPurpose } from '@/api';
-import { uploadImage } from '@/lib/uploadImage';
+import {
+  SUPPORTED_IMAGE_FORMAT_LABEL,
+  UnsupportedImageFormatError,
+  uploadImage,
+} from '@/lib/uploadImage';
+import { useNetworkErrorToastStore } from '@/stores/networkErrorToastStore';
 
 export const DEFAULT_PROFILE_IMAGE_OBJECT_KEY = 'static/turtle-hi.png';
 const CLEAR_PROFILE_IMAGE_OBJECT_KEY = '';
 
 const IMAGE_PICKER_OPEN_DELAY_MS = 300;
+const PROFILE_IMAGE_UPDATE_ERROR_MESSAGE =
+  '프로필 이미지를 변경하지 못했어요. 잠시 후 다시 시도해주세요';
 
 export function useProfileImageUpdater() {
   const [isImageSheetOpen, setIsImageSheetOpen] = useState(false);
@@ -45,7 +53,7 @@ export function useProfileImageUpdater() {
         (e as { response?: { data?: unknown } })?.response?.data ?? e
       );
       setProfileImageUri(previous);
-      // TODO: 에러 토스트
+      useNetworkErrorToastStore.getState().showMessage(PROFILE_IMAGE_UPDATE_ERROR_MESSAGE);
     } finally {
       setIsUpdatingProfileImage(false);
     }
@@ -84,7 +92,14 @@ export function useProfileImageUpdater() {
       setProfileImageUri(response.profileImageUrl ?? asset.uri);
     } catch (e) {
       setProfileImageUri(previous);
-      // TODO: 에러 토스트
+      if (e instanceof UnsupportedImageFormatError) {
+        Alert.alert(
+          '지원하지 않는 이미지 형식이에요',
+          `${SUPPORTED_IMAGE_FORMAT_LABEL} 형식의 정적 이미지만 선택해 주세요.`
+        );
+      } else {
+        useNetworkErrorToastStore.getState().showMessage(PROFILE_IMAGE_UPDATE_ERROR_MESSAGE);
+      }
     } finally {
       setIsUpdatingProfileImage(false);
     }

@@ -1,14 +1,15 @@
 import { router, useLocalSearchParams } from 'expo-router';
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { ActivityIndicator, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { HeaderAction, Icon } from '../../components';
+import { Icon } from '../../components';
 import apiClient from '../../api/client';
 import { primitiveColors, radius, spacing, typography } from '../../lib/token';
 
 const { gray, green, brown, system } = primitiveColors;
 const WHITE = '#FFFFFF';
 const CALENDAR_RED = '#EF3024';
+const STREAK_TOAST_DURATION_MS = 2500;
 const WEEKDAYS = ['SUN', 'MON', 'TUE', 'WED', 'THU', 'FRI', 'SAT'] as const;
 
 type CalendarResponse = {
@@ -133,6 +134,16 @@ export default function CalendarScreen() {
   const [visibleMonth, setVisibleMonth] = useState(startOfMonth(yesterday));
   const [firstActiveDate, setFirstActiveDate] = useState<Date | null>(null);
   const [lastActiveDate, setLastActiveDate] = useState(yesterday);
+  const [streakToastVisible, setStreakToastVisible] = useState(false);
+  const streakToastTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  useEffect(() => {
+    return () => {
+      if (streakToastTimerRef.current) {
+        clearTimeout(streakToastTimerRef.current);
+      }
+    };
+  }, []);
 
   useEffect(() => {
     if (!groupChallengeId) return;
@@ -190,6 +201,18 @@ export default function CalendarScreen() {
     });
   };
 
+  const handleStreakInfoPress = () => {
+    if (streakToastTimerRef.current) {
+      clearTimeout(streakToastTimerRef.current);
+    }
+
+    setStreakToastVisible(true);
+    streakToastTimerRef.current = setTimeout(() => {
+      setStreakToastVisible(false);
+      streakToastTimerRef.current = null;
+    }, STREAK_TOAST_DURATION_MS);
+  };
+
   const calendarRows = getCalendarRows(visibleMonth);
   const previousMonth = addMonths(visibleMonth, -1);
   const nextMonth = addMonths(visibleMonth, 1);
@@ -202,12 +225,18 @@ export default function CalendarScreen() {
     <View style={styles.root}>
       <SafeAreaView edges={['top']}>
         <View style={styles.header}>
-          <HeaderAction
-            label="캘린더"
+          <Text style={styles.headerTitle} numberOfLines={1}>
+            캘린더
+          </Text>
+          <Pressable
             onPress={() => router.back()}
-            accessibilityLabel="뒤로가기"
-            textStyle={styles.headerTitle}
-          />
+            hitSlop={8}
+            style={styles.headerCloseButton}
+            accessibilityRole="button"
+            accessibilityLabel="닫기"
+          >
+            <Icon name="x" size={24} color={gray[900]} />
+          </Pressable>
         </View>
       </SafeAreaView>
 
@@ -216,15 +245,34 @@ export default function CalendarScreen() {
           <ActivityIndicator color={gray[400]} style={styles.loading} />
         ) : (
           <>
-            <View style={styles.streakCard} pointerEvents="none">
+            <View style={styles.streakCard}>
               <View style={styles.streakLeft}>
-                <Text style={styles.streakLabel}>🔥 그룹 스트릭</Text>
+                <View style={styles.streakTitleRow}>
+                  <Text style={styles.streakFire}>🔥</Text>
+                  <Text style={styles.streakLabel}>그룹 스트릭</Text>
+                  <Pressable
+                    onPress={handleStreakInfoPress}
+                    hitSlop={8}
+                    accessibilityRole="button"
+                    accessibilityLabel="그룹 스트릭 설명 보기"
+                  >
+                    <Icon name="question" size={16} color={WHITE} />
+                  </Pressable>
+                </View>
                 <Text style={styles.streakSub}>멤버 절반 이상이 인증한 날만 카운트돼요</Text>
               </View>
               <View style={styles.streakCountWrap}>
                 <Text style={styles.streakCount}>{calendarData?.streakDays ?? 0}</Text>
                 <Text style={styles.streakUnit}>일 연속</Text>
               </View>
+              {streakToastVisible ? (
+                <View style={styles.streakToast} pointerEvents="none">
+                  <View style={styles.streakToastArrow} />
+                  <Text style={styles.streakToastText}>
+                    인증에 성공한 날이 연속으로 이어지는 것을 말해요.
+                  </Text>
+                </View>
+              ) : null}
             </View>
 
             <View style={styles.statsRow} pointerEvents="none">
@@ -341,9 +389,19 @@ const styles = StyleSheet.create({
   },
   header: {
     height: 54,
-    paddingHorizontal: spacing[16],
+    flexDirection: 'row',
+    alignItems: 'center',
     justifyContent: 'center',
+    paddingHorizontal: spacing[16],
     backgroundColor: brown[50],
+  },
+  headerCloseButton: {
+    position: 'absolute',
+    right: spacing[16],
+    width: 40,
+    height: 40,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   headerTitle: {
     ...typography.accent.title2,
@@ -363,10 +421,20 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'space-between',
     minHeight: 82,
+    overflow: 'visible',
   },
   streakLeft: {
     flex: 1,
     gap: spacing[8],
+  },
+  streakTitleRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing[4],
+  },
+  streakFire: {
+    fontSize: 12,
+    lineHeight: 18,
   },
   streakLabel: {
     ...typography.primary.body3B,
@@ -393,6 +461,35 @@ const styles = StyleSheet.create({
     ...typography.accent.title1,
     color: WHITE,
     letterSpacing: -0.44,
+  },
+  streakToast: {
+    position: 'absolute',
+    top: 42,
+    left: 80,
+    right: spacing[16],
+    minHeight: 34,
+    paddingHorizontal: spacing[16],
+    paddingVertical: spacing[8],
+    borderRadius: 6,
+    backgroundColor: gray[900],
+    alignItems: 'center',
+    justifyContent: 'center',
+    zIndex: 2,
+  },
+  streakToastArrow: {
+    position: 'absolute',
+    top: -3,
+    left: 20,
+    width: 8,
+    height: 8,
+    backgroundColor: gray[900],
+    transform: [{ rotate: '45deg' }],
+  },
+  streakToastText: {
+    ...typography.accent.caption,
+    color: WHITE,
+    letterSpacing: -0.26,
+    textAlign: 'center',
   },
   statsRow: {
     marginHorizontal: spacing[16],

@@ -132,7 +132,7 @@ export default function VerifyUploadScreen() {
               </View>
               <View style={styles.dropzoneText}>
                 <Text style={styles.dropzoneTitle}>캡처 업로드</Text>
-                <Text style={styles.dropzoneCaption}>AI로 사용시간이 자동 분석돼요</Text>
+                <Text style={styles.dropzoneCaption}>AI로 사용시간이 자동 스캔돼요</Text>
               </View>
             </Pressable>
           )}

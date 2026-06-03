@@ -78,7 +78,7 @@ export async function analyzeScreenTimeImage(
     };
   } catch (error) {
     const message =
-      error instanceof Error ? error.message : '스크린 타임 이미지 분석에 실패했습니다.';
+      error instanceof Error ? error.message : '스크린 타임 이미지 스캔에 실패했습니다.';
 
     return {
       ok: false,

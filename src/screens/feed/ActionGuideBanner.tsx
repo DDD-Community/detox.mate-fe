@@ -7,6 +7,9 @@ import { primitiveColors, radius, spacing, typography } from '../../lib/token';
 const { brown, gray, green, system } = primitiveColors;
 const WHITE = '#FFFFFF';
 const DAILY_AUTH_BG = '#D5441BCC';
+const GUIDE_BANNER_HEIGHT = 233;
+const FEED_SHEET_OVERLAP = 62;
+const GUIDE_BANNER_VISIBLE_HEIGHT = GUIDE_BANNER_HEIGHT - FEED_SHEET_OVERLAP;
 const PROGRESS_BAR_WIDTH = 343;
 
 export type GoalState = 'notSet' | 'setWaiting' | 'authReady';
@@ -70,37 +73,47 @@ function GoalBanner() {
 
 function WaitingForMembersBanner() {
   return (
-    <View style={styles.waitingMembersBanner}>
-      <View style={styles.waitingMembersTextContainer}>
-        <Text style={styles.waitingMembersTitle}>멤버를 기다려주세요</Text>
-        <Text style={styles.waitingMembersSubtitle}>
-          {'멤버 2명 이상 목표 설정을 해야만\n시작할 수 있어요'}
-        </Text>
+    <View style={styles.centeredStatusBanner}>
+      <View style={styles.centeredStatusVisibleArea}>
+        <View style={styles.centeredStatusContent}>
+          <View style={styles.centeredStatusTextContainer}>
+            <Text style={styles.waitingMembersTitle}>멤버를 기다려주세요</Text>
+            <Text style={styles.waitingMembersSubtitle}>
+              {'멤버 2명 이상 목표 설정을 해야만\n시작할 수 있어요'}
+            </Text>
+          </View>
+          <View style={styles.centeredStatusImageSlot}>
+            <Image
+              source={require('../../../assets/feed_hourglass.png')}
+              style={styles.waitingMembersImage}
+              resizeMode="contain"
+            />
+          </View>
+        </View>
       </View>
-      <Image
-        source={require('../../../assets/feed_hourglass.png')}
-        style={styles.waitingMembersImage}
-        resizeMode="contain"
-      />
     </View>
   );
 }
 
 function GoalSetWaitingBanner() {
   return (
-    <View style={styles.goalBanner}>
-      <View style={styles.topRow}>
-        <View style={styles.textContainer}>
-          <Text style={styles.goalTitle}>지금 이 순간부터 시작됐어요</Text>
-          <Text style={styles.goalSubtitle}>
-            {'내일부터 스크린 타임을 인증할 수 있어요.\n오늘 하루를 버텨보세요!'}
-          </Text>
+    <View style={styles.centeredStatusBanner}>
+      <View style={styles.centeredStatusVisibleArea}>
+        <View style={styles.centeredStatusContent}>
+          <View style={styles.centeredStatusTextContainer}>
+            <Text style={styles.setWaitingTitle}>지금 이 순간부터 시작됐어요</Text>
+            <Text style={styles.setWaitingSubtitle}>
+              {'내일부터 스크린 타임을 인증할 수 있어요.\n오늘 하루를 버텨보세요!'}
+            </Text>
+          </View>
+          <View style={styles.centeredStatusImageSlot}>
+            <Image
+              source={require('../../../assets/feed_daily_calender.png')}
+              style={styles.setWaitingImage}
+              resizeMode="contain"
+            />
+          </View>
         </View>
-        <Image
-          source={require('../../../assets/feed_daily_calender.png')}
-          style={styles.bannerImage}
-          resizeMode="contain"
-        />
       </View>
     </View>
   );
@@ -168,12 +181,19 @@ function VerifiedBanner({ summary }: Pick<Props, 'summary'>) {
   const goalMinutes = summary?.goalMinutes ?? 0;
   const hasGoal = goalMinutes > 0;
   const displayMaxMinutes = Math.max(180, Math.ceil(Math.max(usedMinutes, goalMinutes) / 60) * 60);
-  const progressRatio = usedMinutes / displayMaxMinutes;
+  const progressRatio = displayMaxMinutes > 0 ? usedMinutes / displayMaxMinutes : 0;
   const markerRatio = hasGoal ? goalMinutes / displayMaxMinutes : 0;
-  const progressWidth = Math.max(0, PROGRESS_BAR_WIDTH * progressRatio);
-  const markerLeft = Math.max(0, PROGRESS_BAR_WIDTH * markerRatio - 0.5);
+  const progressWidth = Math.min(
+    PROGRESS_BAR_WIDTH,
+    Math.max(0, PROGRESS_BAR_WIDTH * progressRatio)
+  );
+  const markerLeft = Math.min(
+    PROGRESS_BAR_WIDTH - 0.5,
+    Math.max(0, PROGRESS_BAR_WIDTH * markerRatio - 0.5)
+  );
   const overGoalPercent = hasGoal ? ((usedMinutes - goalMinutes) / goalMinutes) * 100 : 0;
-  const showCompare = hasGoal && Number.isFinite(overGoalPercent) && overGoalPercent > 0;
+  const showCompare = hasGoal && Number.isFinite(overGoalPercent);
+  const isOverGoal = overGoalPercent > 0;
 
   return (
     <View style={styles.verifiedBanner}>
@@ -183,9 +203,26 @@ function VerifiedBanner({ summary }: Pick<Props, 'summary'>) {
           <Text style={styles.verifiedValue}>총 {formatMinutesForSummary(usedMinutes)}</Text>
         </View>
         {showCompare && (
-          <View style={styles.goalComparePill}>
-            <Icon name="caretUp" size={12} color={system.red.opacity100} weight="fill" />
-            <Text style={styles.goalCompareText}>목표 대비 {overGoalPercent.toFixed(1)}%</Text>
+          <View
+            style={[
+              styles.goalComparePill,
+              isOverGoal ? styles.goalCompareWarningPill : styles.goalCompareSuccessPill,
+            ]}
+          >
+            <Icon
+              name={isOverGoal ? 'warningCircle' : 'checkCircle'}
+              size={12}
+              color={isOverGoal ? system.red.opacity100 : system.green.opacity100}
+              weight="fill"
+            />
+            <Text
+              style={[
+                styles.goalCompareText,
+                isOverGoal ? styles.goalCompareWarningText : styles.goalCompareSuccessText,
+              ]}
+            >
+              목표 대비 {formatGoalComparePercent(overGoalPercent)}%
+            </Text>
           </View>
         )}
       </View>
@@ -223,6 +260,11 @@ const buildProgressLabels = (maxMinutes: number): string[] => {
   });
 };
 
+const formatGoalComparePercent = (percent: number): string => {
+  const rounded = Number(percent.toFixed(1));
+  return Number.isInteger(rounded) ? String(rounded) : rounded.toFixed(1);
+};
+
 const styles = StyleSheet.create({
   goalBanner: {
     backgroundColor: brown[100],
@@ -232,11 +274,23 @@ const styles = StyleSheet.create({
     paddingBottom: spacing[20],
     gap: 18,
   },
-  waitingMembersBanner: {
+  centeredStatusBanner: {
     backgroundColor: brown[100],
-    minHeight: 233,
+    height: GUIDE_BANNER_HEIGHT,
     paddingHorizontal: spacing[16],
-    paddingTop: 49,
+  },
+  centeredStatusVisibleArea: {
+    height: GUIDE_BANNER_VISIBLE_HEIGHT,
+    justifyContent: 'center',
+  },
+  centeredStatusContent: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing[12],
+  },
+  centeredStatusImageSlot: {
+    flex: 1,
+    alignItems: 'center',
   },
   dailyAuthReadyBanner: {
     backgroundColor: brown[100],
@@ -264,7 +318,7 @@ const styles = StyleSheet.create({
     flex: 1,
     gap: spacing[4],
   },
-  waitingMembersTextContainer: {
+  centeredStatusTextContainer: {
     width: 201,
     gap: spacing[8],
   },
@@ -288,6 +342,18 @@ const styles = StyleSheet.create({
     letterSpacing: -0.24,
     color: brown[600],
   },
+  setWaitingTitle: {
+    ...typography.accent.title2,
+    fontSize: 21.047,
+    lineHeight: 27.361,
+    letterSpacing: -0.42,
+    color: brown[600],
+  },
+  setWaitingSubtitle: {
+    ...typography.primary.body3R,
+    letterSpacing: -0.24,
+    color: brown[600],
+  },
   dailyAuthWarningTitle: {
     ...typography.accent.title2,
     color: WHITE,
@@ -301,11 +367,12 @@ const styles = StyleSheet.create({
     height: 58,
   },
   waitingMembersImage: {
-    position: 'absolute',
-    top: 49,
-    right: 53,
     width: 51,
     height: 71,
+  },
+  setWaitingImage: {
+    width: 61,
+    height: 62,
   },
   buttonIcon: {
     width: 16,
@@ -316,9 +383,9 @@ const styles = StyleSheet.create({
   },
   verifiedBanner: {
     backgroundColor: brown[100],
-    minHeight: 240,
+    minHeight: 233,
     paddingHorizontal: spacing[16],
-    paddingTop: spacing[28],
+    paddingTop: 26,
     paddingBottom: spacing[20],
     gap: spacing[20],
   },
@@ -331,6 +398,7 @@ const styles = StyleSheet.create({
   verifiedLabel: {
     ...typography.primary.body3R,
     color: gray[900],
+    marginTop: spacing[4],
   },
   verifiedValue: {
     ...typography.accent.h1,
@@ -344,14 +412,25 @@ const styles = StyleSheet.create({
     paddingHorizontal: spacing[8],
     paddingVertical: spacing[4],
     borderRadius: radius.full,
+    marginTop: -spacing[4],
+  },
+  goalCompareWarningPill: {
     backgroundColor: system.red.opacity10,
+  },
+  goalCompareSuccessPill: {
+    backgroundColor: system.green.opacity10,
   },
   goalCompareText: {
     ...typography.primary.body3R,
+  },
+  goalCompareWarningText: {
     color: system.red.opacity100,
   },
+  goalCompareSuccessText: {
+    color: system.green.opacity100,
+  },
   progressGroup: {
-    gap: spacing[4],
+    gap: spacing[8],
   },
   progressTrack: {
     width: PROGRESS_BAR_WIDTH,

@@ -1,25 +1,31 @@
 import { router, useLocalSearchParams } from 'expo-router';
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
   ActivityIndicator,
-  Pressable,
+  ScrollView,
   StyleSheet,
   Text,
   View,
-  type GestureResponderEvent,
+  type NativeScrollEvent,
+  type NativeSyntheticEvent,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { getUserUsageGoalTime, UserUsageGoalTimeRequestUsageGoalType } from '@/api';
-import { AppLogo, Button, HeaderAction, Icon } from '@/components';
+import { AppLogo, Button, HeaderAction } from '@/components';
 import { formatHHMMToDisplay, formatMinutesAsHourMinute } from '@/lib/formatDuration';
 import { primitiveColors, radius, spacing, typography } from '@/lib/token';
-import { useGoalTimeStepper } from './useGoalTimeStepper';
 
-const { brown, gray, green } = primitiveColors;
+const { brown, gray } = primitiveColors;
 
-const EDIT_MIN_MINUTES = 30;
-const EDIT_MAX_MINUTES = 24 * 60 - 10;
+const INITIAL_GOAL_MINUTES = 60;
+const MIN_GOAL_MINUTES = 0;
+const MAX_GOAL_MINUTES = 23 * 60 + 59;
+const WHEEL_ITEM_HEIGHT = 28;
+const WHEEL_VISIBLE_ITEMS = 5;
+const WHEEL_HEIGHT = WHEEL_ITEM_HEIGHT * WHEEL_VISIBLE_ITEMS;
+const HOUR_OPTIONS = Array.from({ length: 24 }, (_, index) => index);
+const MINUTE_OPTIONS = Array.from({ length: 60 }, (_, index) => index);
 
 type GoalSetupMode = 'initial' | 'edit';
 
@@ -33,13 +39,16 @@ export default function GoalSetupScreen({ mode = 'initial' }: GoalSetupScreenPro
   const [existingGoalMinutes, setExistingGoalMinutes] = useState<number | null>(null);
   const [isLoading, setIsLoading] = useState(isEditMode);
   const [isSaving, setIsSaving] = useState(false);
-  const { canDecrease, canIncrease, clearHold, minutes, setMinutes, startDecrease, startIncrease } =
-    useGoalTimeStepper(
-      isEditMode ? { minMinutes: EDIT_MIN_MINUTES, maxMinutes: EDIT_MAX_MINUTES } : undefined
-    );
+  const [minutes, setMinutes] = useState(INITIAL_GOAL_MINUTES);
 
   const screenTimeDisplay = !isEditMode ? formatHHMMToDisplay(value) : null;
   const isUnchanged = isEditMode && existingGoalMinutes != null && minutes === existingGoalMinutes;
+  const selectedHour = Math.floor(minutes / 60);
+  const selectedMinute = minutes % 60;
+
+  const setClampedMinutes = useCallback((nextMinutes: number) => {
+    setMinutes(Math.min(MAX_GOAL_MINUTES, Math.max(MIN_GOAL_MINUTES, nextMinutes)));
+  }, []);
 
   useEffect(() => {
     if (!isEditMode) return;
@@ -54,8 +63,9 @@ export default function GoalSetupScreen({ mode = 'initial' }: GoalSetupScreenPro
           (goal) => goal.usageGoalType === UserUsageGoalTimeRequestUsageGoalType.TOTAL_USAGE
         );
         if (total?.goalMinutes != null) {
-          setMinutes(total.goalMinutes);
-          setExistingGoalMinutes(total.goalMinutes);
+          const clampedGoalMinutes = Math.min(MAX_GOAL_MINUTES, Math.max(0, total.goalMinutes));
+          setMinutes(clampedGoalMinutes);
+          setExistingGoalMinutes(clampedGoalMinutes);
         }
       } finally {
         if (!cancelled) setIsLoading(false);
@@ -65,7 +75,21 @@ export default function GoalSetupScreen({ mode = 'initial' }: GoalSetupScreenPro
     return () => {
       cancelled = true;
     };
-  }, [isEditMode, setMinutes]);
+  }, [isEditMode]);
+
+  const handleHourChange = useCallback(
+    (hour: number) => {
+      setClampedMinutes(hour * 60 + selectedMinute);
+    },
+    [selectedMinute, setClampedMinutes]
+  );
+
+  const handleMinuteChange = useCallback(
+    (minute: number) => {
+      setClampedMinutes(selectedHour * 60 + minute);
+    },
+    [selectedHour, setClampedMinutes]
+  );
 
   const handleCancel = () => {
     router.back();
@@ -107,82 +131,45 @@ export default function GoalSetupScreen({ mode = 'initial' }: GoalSetupScreenPro
         </View>
       </SafeAreaView>
 
-      <View style={[styles.body, isEditMode ? styles.editBody : styles.initialBody]}>
-        <View style={[styles.textGroup, isEditMode ? styles.editTextGroup : null]}>
-          <Text style={styles.title}>개인 목표 스크린 타임 설정</Text>
-          <Text style={styles.description}>
-            {isEditMode
-              ? '2주에 한 번 변경할 수 있어요.'
-              : '마이페이지에서 2주에 한 번 변경할 수 있어요.'}
-          </Text>
+      <View style={styles.body}>
+        <View style={styles.textGroup}>
+          <Text style={styles.title}>개인 목표 스크린타임 설정</Text>
+          <Text style={styles.description}>2주에 한 번 변경할 수 있어요.</Text>
         </View>
 
         {isEditMode ? (
           <SummaryCard
             label="기존 목표"
-            mode={mode}
             value={
               existingGoalMinutes != null ? formatMinutesAsHourMinute(existingGoalMinutes) : '-'
             }
           />
-        ) : screenTimeDisplay ? (
-          <SummaryCard label="내 스크린 타임" mode={mode} value={screenTimeDisplay} />
-        ) : null}
+        ) : (
+          <SummaryCard label="내 스크린 타임" value={screenTimeDisplay ?? '-'} />
+        )}
 
         {isLoading ? (
           <View style={styles.loadingWrap}>
             <ActivityIndicator color={gray[400]} />
           </View>
         ) : (
-          <View style={isEditMode ? styles.editStepperWrap : styles.initialStepperWrap}>
-            <View style={styles.stepper}>
-              <StepButton
-                kind="minus"
-                mode={mode}
-                onPressIn={startDecrease}
-                onPressOut={clearHold}
-                disabled={!canDecrease}
-              />
-              <Text style={styles.stepperValue}>{formatMinutesAsHourMinute(minutes)}</Text>
-              <StepButton
-                kind="plus"
-                mode={mode}
-                onPressIn={startIncrease}
-                onPressOut={clearHold}
-                disabled={!canIncrease}
-              />
-            </View>
-            <Text style={styles.stepperCaption}>하루 기준</Text>
-          </View>
+          <GoalTimeWheelPicker
+            hour={selectedHour}
+            minute={selectedMinute}
+            onHourChange={handleHourChange}
+            onMinuteChange={handleMinuteChange}
+          />
         )}
       </View>
 
-      <SafeAreaView edges={['bottom']} style={isEditMode ? styles.editCta : styles.initialCta}>
-        {isEditMode ? (
-          <>
-            <Button
-              label="취소"
-              color="assistive"
-              onPress={handleCancel}
-              style={styles.cancelButton}
-            />
-            <Button
-              label={isSaving ? '저장 중...' : '저장하기'}
-              color="primary"
-              disabled={isLoading || isSaving || isUnchanged}
-              onPress={handleSave}
-              style={styles.saveButton}
-            />
-          </>
-        ) : (
-          <Button
-            label={isSaving ? '저장 중...' : '저장하기'}
-            color="primary"
-            onPress={handleSave}
-            disabled={isSaving}
-            style={styles.fullButton}
-          />
-        )}
+      <SafeAreaView edges={['bottom']} style={styles.cta}>
+        <Button
+          label={isSaving ? '저장 중...' : '저장하기'}
+          color="primary"
+          onPress={handleSave}
+          disabled={isLoading || isSaving || isUnchanged}
+          style={styles.fullButton}
+        />
       </SafeAreaView>
     </View>
   );
@@ -190,51 +177,177 @@ export default function GoalSetupScreen({ mode = 'initial' }: GoalSetupScreenPro
 
 type SummaryCardProps = {
   label: string;
-  mode: GoalSetupMode;
   value: string;
 };
 
-function SummaryCard({ label, mode, value }: SummaryCardProps) {
+function SummaryCard({ label, value }: SummaryCardProps) {
   return (
-    <View style={[styles.summary, mode === 'edit' ? styles.editSummary : null]}>
+    <View style={styles.summary}>
       <Text style={styles.summaryLabel}>{label}</Text>
       <Text style={styles.summaryValue}>{value}</Text>
     </View>
   );
 }
 
-type StepButtonProps = {
-  kind: 'plus' | 'minus';
-  mode: GoalSetupMode;
-  onPressIn: (e: GestureResponderEvent) => void;
-  onPressOut: (e: GestureResponderEvent) => void;
-  disabled?: boolean;
+type GoalTimeWheelPickerProps = {
+  hour: number;
+  minute: number;
+  onHourChange: (hour: number) => void;
+  onMinuteChange: (minute: number) => void;
 };
 
-function StepButton({ kind, mode, onPressIn, onPressOut, disabled }: StepButtonProps) {
-  const isEditMode = mode === 'edit';
-  const iconName = isEditMode ? (kind === 'plus' ? 'plusCircle' : 'minusCircle') : kind;
+function GoalTimeWheelPicker({
+  hour,
+  minute,
+  onHourChange,
+  onMinuteChange,
+}: GoalTimeWheelPickerProps) {
+  return (
+    <View style={styles.pickerCard}>
+      <Text style={styles.pickerTitle}>Time</Text>
+      <View style={styles.pickerDivider} />
+      <View style={styles.wheelWrap}>
+        <View pointerEvents="none" style={styles.selectionPill} />
+        <NumberWheel
+          options={HOUR_OPTIONS}
+          selectedValue={hour}
+          unit="hour"
+          onValueChange={onHourChange}
+        />
+        <NumberWheel
+          options={MINUTE_OPTIONS}
+          selectedValue={minute}
+          unit="min"
+          onValueChange={onMinuteChange}
+        />
+      </View>
+    </View>
+  );
+}
+
+type NumberWheelProps = {
+  options: number[];
+  selectedValue: number;
+  unit: 'hour' | 'min';
+  onValueChange: (value: number) => void;
+};
+
+function NumberWheel({ options, selectedValue, unit, onValueChange }: NumberWheelProps) {
+  const scrollRef = useRef<ScrollView>(null);
+  const dragEndTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const momentumStartedRef = useRef(false);
+  const userSelectedIndexRef = useRef<number | null>(null);
+  const selectedIndex = useMemo(
+    () =>
+      Math.max(
+        0,
+        options.findIndex((option) => option === selectedValue)
+      ),
+    [options, selectedValue]
+  );
+
+  useEffect(() => {
+    if (userSelectedIndexRef.current === selectedIndex) {
+      userSelectedIndexRef.current = null;
+      return;
+    }
+
+    requestAnimationFrame(() => {
+      scrollRef.current?.scrollTo({
+        y: selectedIndex * WHEEL_ITEM_HEIGHT,
+        animated: false,
+      });
+    });
+  }, [selectedIndex]);
+
+  useEffect(
+    () => () => {
+      if (dragEndTimeoutRef.current) {
+        clearTimeout(dragEndTimeoutRef.current);
+      }
+    },
+    []
+  );
+
+  const settleScroll = useCallback(
+    (offsetY: number) => {
+      const rawIndex = Math.round(offsetY / WHEEL_ITEM_HEIGHT);
+      const nextIndex = Math.min(options.length - 1, Math.max(0, rawIndex));
+      const nextValue = options[nextIndex];
+      userSelectedIndexRef.current = nextIndex;
+      scrollRef.current?.scrollTo({
+        y: nextIndex * WHEEL_ITEM_HEIGHT,
+        animated: true,
+      });
+      if (nextValue !== selectedValue) {
+        onValueChange(nextValue);
+      }
+    },
+    [onValueChange, options, selectedValue]
+  );
+
+  const handleScrollEndDrag = useCallback(
+    (event: NativeSyntheticEvent<NativeScrollEvent>) => {
+      const offsetY = event.nativeEvent.contentOffset.y;
+      if (dragEndTimeoutRef.current) {
+        clearTimeout(dragEndTimeoutRef.current);
+      }
+
+      dragEndTimeoutRef.current = setTimeout(() => {
+        if (!momentumStartedRef.current) {
+          settleScroll(offsetY);
+        }
+      }, 80);
+    },
+    [settleScroll]
+  );
+
+  const handleMomentumScrollBegin = useCallback(() => {
+    momentumStartedRef.current = true;
+    if (dragEndTimeoutRef.current) {
+      clearTimeout(dragEndTimeoutRef.current);
+      dragEndTimeoutRef.current = null;
+    }
+  }, []);
+
+  const handleMomentumScrollEnd = useCallback(
+    (event: NativeSyntheticEvent<NativeScrollEvent>) => {
+      momentumStartedRef.current = false;
+      settleScroll(event.nativeEvent.contentOffset.y);
+    },
+    [settleScroll]
+  );
 
   return (
-    <Pressable
-      onPressIn={disabled ? undefined : onPressIn}
-      onPressOut={disabled ? undefined : onPressOut}
-      disabled={disabled}
-      hitSlop={isEditMode ? 8 : undefined}
-      style={({ pressed }) => [
-        isEditMode ? styles.editStepButton : styles.initialStepButton,
-        pressed && !disabled && !isEditMode ? styles.initialStepButtonPressed : null,
-        disabled ? styles.stepButtonDisabled : null,
-      ]}
-      accessibilityRole="button"
-    >
-      <Icon
-        name={iconName}
-        size={isEditMode ? 57 : 28}
-        weight={isEditMode ? 'fill' : undefined}
-        color={isEditMode ? gray[900] : '#FFFFFF'}
-      />
-    </Pressable>
+    <View style={styles.wheelGroup}>
+      <ScrollView
+        ref={scrollRef}
+        style={styles.wheelColumn}
+        contentContainerStyle={styles.wheelContent}
+        showsVerticalScrollIndicator={false}
+        snapToInterval={WHEEL_ITEM_HEIGHT}
+        decelerationRate="fast"
+        bounces={false}
+        onMomentumScrollBegin={handleMomentumScrollBegin}
+        onMomentumScrollEnd={handleMomentumScrollEnd}
+        onScrollEndDrag={handleScrollEndDrag}
+        scrollEventThrottle={16}
+      >
+        {options.map((option) => {
+          const selected = option === selectedValue;
+          return (
+            <View key={option} style={styles.wheelItem}>
+              <Text style={[styles.wheelText, selected ? styles.selectedWheelNumber : null]}>
+                {option}
+              </Text>
+            </View>
+          );
+        })}
+      </ScrollView>
+      <Text pointerEvents="none" style={styles.selectedWheelUnit}>
+        {unit}
+      </Text>
+    </View>
   );
 }
 
@@ -258,29 +371,22 @@ const styles = StyleSheet.create({
   body: {
     flex: 1,
     paddingHorizontal: spacing[16],
-  },
-  initialBody: {
-    paddingTop: spacing[12],
-    gap: spacing[32],
-  },
-  editBody: {
     paddingTop: spacing[20],
   },
-  textGroup: {
-    gap: spacing[4],
-  },
-  editTextGroup: {
-    gap: spacing[12],
-  },
+  textGroup: {},
   title: {
     ...typography.accent.h3,
     color: gray[900],
+    letterSpacing: -0.52,
   },
   description: {
+    marginTop: spacing[12],
     ...typography.primary.body2R,
     color: gray[400],
+    letterSpacing: -0.28,
   },
   summary: {
+    marginTop: spacing[40],
     backgroundColor: gray[50],
     borderRadius: radius[16],
     padding: spacing[16],
@@ -288,84 +394,102 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'space-between',
   },
-  editSummary: {
-    marginTop: spacing[28],
-  },
   summaryLabel: {
     ...typography.primary.body3R,
     color: gray[500],
+    letterSpacing: -0.24,
   },
   summaryValue: {
     ...typography.primary.body1B,
     color: gray[500],
+    letterSpacing: -0.32,
   },
-  initialStepperWrap: {
-    marginTop: spacing[28],
-    alignItems: 'center',
-    gap: spacing[16],
-  },
-  editStepperWrap: {
-    marginTop: spacing[80],
-    alignItems: 'center',
-    gap: spacing[16],
-  },
-  stepper: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
+  pickerCard: {
+    marginTop: spacing[20],
+    height: 253,
     width: '100%',
+    borderRadius: 22,
+    backgroundColor: '#FFFFFF',
+    paddingHorizontal: spacing[16],
+    paddingTop: spacing[12],
+    overflow: 'hidden',
   },
-  stepperValue: {
-    ...typography.accent.h1,
-    fontSize: 57,
-    lineHeight: 57 * 1.3,
+  pickerTitle: {
+    fontSize: 16,
+    lineHeight: 24,
+    fontWeight: '400',
     color: '#000000',
+    letterSpacing: 0,
   },
-  stepperCaption: {
-    ...typography.primary.title1B,
-    color: '#000000',
+  pickerDivider: {
+    marginTop: spacing[8],
+    height: StyleSheet.hairlineWidth,
+    backgroundColor: gray[100],
   },
-  initialStepButton: {
-    width: 57,
-    height: 57,
-    borderRadius: 28.5,
-    backgroundColor: green[300],
+  wheelWrap: {
+    marginTop: spacing[16],
+    height: WHEEL_HEIGHT,
+    flexDirection: 'row',
+    justifyContent: 'center',
     alignItems: 'center',
+    overflow: 'hidden',
+  },
+  selectionPill: {
+    position: 'absolute',
+    left: -8,
+    right: -8,
+    top: WHEEL_HEIGHT / 2 - 16,
+    height: 32,
+    borderRadius: 16,
+    backgroundColor: gray[50],
+  },
+  wheelGroup: {
+    width: 82,
+    height: WHEEL_HEIGHT,
+  },
+  wheelColumn: {
+    width: 28,
+    height: WHEEL_HEIGHT,
+  },
+  wheelContent: {
+    paddingVertical: (WHEEL_HEIGHT - WHEEL_ITEM_HEIGHT) / 2,
+  },
+  wheelItem: {
+    height: WHEEL_ITEM_HEIGHT,
+    alignItems: 'flex-end',
     justifyContent: 'center',
   },
-  editStepButton: {
-    width: 57,
-    height: 57,
-    alignItems: 'center',
-    justifyContent: 'center',
+  wheelText: {
+    fontSize: 20,
+    lineHeight: WHEEL_ITEM_HEIGHT,
+    fontWeight: '400',
+    color: gray[300],
+    textAlign: 'right',
   },
-  initialStepButtonPressed: {
-    opacity: 0.85,
+  selectedWheelNumber: {
+    color: '#000000',
   },
-  stepButtonDisabled: {
-    opacity: 0.4,
+  selectedWheelUnit: {
+    position: 'absolute',
+    top: WHEEL_HEIGHT / 2 - WHEEL_ITEM_HEIGHT / 2,
+    left: 36,
+    fontSize: 20,
+    lineHeight: WHEEL_ITEM_HEIGHT,
+    fontWeight: '700',
+    color: '#000000',
+    textAlign: 'left',
   },
   loadingWrap: {
-    flex: 1,
+    marginTop: spacing[20],
+    height: 253,
     alignItems: 'center',
     justifyContent: 'center',
   },
-  initialCta: {
+  cta: {
     paddingHorizontal: spacing[16],
     paddingTop: spacing[16],
-    paddingBottom: spacing[44],
-  },
-  editCta: {
-    flexDirection: 'row',
-    gap: spacing[8],
-    paddingHorizontal: spacing[16],
-    paddingTop: spacing[16],
-  },
-  cancelButton: {
-    width: 108,
-  },
-  saveButton: {
-    flex: 1,
+    paddingBottom: 26,
+    backgroundColor: brown[50],
   },
   fullButton: {
     alignSelf: 'stretch',
