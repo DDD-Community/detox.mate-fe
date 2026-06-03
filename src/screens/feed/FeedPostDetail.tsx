@@ -36,6 +36,7 @@ const IMPRESSION_ICON = require('../../../assets/feed_emotion.png');
 const DUPLICATE_REACTION_MESSAGE = '이미 같은 리액션을 남겼습니다';
 const COMMENT_MAX_LENGTH = 1000;
 const COMMENT_MAX_LENGTH_MESSAGE = '댓글은 최대 1000자까지 입력할 수 있어요';
+const COMMENT_LENGTH_TOAST_COOLDOWN_MS = 1500;
 
 type CommentItem = {
   id: string;
@@ -211,6 +212,7 @@ export default function FeedPostDetail() {
   const [commentText, setCommentText] = useState('');
   const [fetchedPokes, setFetchedPokes] = useState<PokeEntry[]>([]);
   const pendingReactionCodesRef = useRef<Set<string>>(new Set());
+  const commentLimitToastShownAtRef = useRef(0);
 
   useEffect(() => {
     if (!feedItem.challengeRecordId) return;
@@ -385,6 +387,23 @@ export default function FeedPostDetail() {
     } finally {
       pendingReactionCodesRef.current.delete(reactionCode);
     }
+  };
+
+  const showCommentLengthLimitToast = () => {
+    const now = Date.now();
+    if (now - commentLimitToastShownAtRef.current < COMMENT_LENGTH_TOAST_COOLDOWN_MS) return;
+    commentLimitToastShownAtRef.current = now;
+    useNetworkErrorToastStore.getState().showMessage(COMMENT_MAX_LENGTH_MESSAGE);
+  };
+
+  const handleChangeCommentText = (nextText: string) => {
+    if (nextText.length <= COMMENT_MAX_LENGTH) {
+      setCommentText(nextText);
+      return;
+    }
+
+    setCommentText(nextText.slice(0, COMMENT_MAX_LENGTH));
+    showCommentLengthLimitToast();
   };
 
   const handleSendComment = async () => {
@@ -661,8 +680,7 @@ export default function FeedPostDetail() {
               placeholder="응원 메시지를 남겨보세요"
               placeholderTextColor={gray[400]}
               value={commentText}
-              onChangeText={setCommentText}
-              maxLength={COMMENT_MAX_LENGTH}
+              onChangeText={handleChangeCommentText}
               returnKeyType="send"
               onSubmitEditing={handleSendComment}
             />
