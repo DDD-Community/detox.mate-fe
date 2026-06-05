@@ -147,6 +147,7 @@ export default function FeedPostDetail() {
     myReaction,
     groupChallengeId,
     fromFeedHome,
+    readOnly,
   } = useLocalSearchParams<{
     item: string;
     goalState: GoalState;
@@ -154,8 +155,10 @@ export default function FeedPostDetail() {
     myReaction: string;
     groupChallengeId: string;
     fromFeedHome?: string;
+    readOnly?: string;
   }>();
 
+  const isReadOnly = readOnly === '1';
   const insets = useSafeAreaInsets();
   const feedItem = JSON.parse(itemJson as string) as FeedItem;
   const state: GoalState = goalState ?? 'authReady';
@@ -302,6 +305,14 @@ export default function FeedPostDetail() {
     });
   };
 
+  const handleProfilePress = () => {
+    if (feedItem.isMe) {
+      router.push('/(group)/mypage');
+      return;
+    }
+    navigateToProfile(feedItem.id);
+  };
+
   const handleReact = async (reaction: string) => {
     const reactionCode = normalizeReactionCode(reaction);
     if (!reactionCode) return;
@@ -373,7 +384,7 @@ export default function FeedPostDetail() {
           <View style={styles.card}>
             {feedItem.isVerified ? (
               <>
-                <View style={styles.verifiedHeader}>
+                <Pressable style={styles.verifiedHeader} onPress={handleProfilePress}>
                   <View style={styles.avatarWithLabel}>
                     <ProfileAvatar source={feedItem.avatarSource} />
                     <View style={styles.statusLabelAnchor}>
@@ -388,7 +399,7 @@ export default function FeedPostDetail() {
                   {feedItem.verifiedTimeAgo != null && (
                     <Text style={styles.timeAgo}>{feedItem.verifiedTimeAgo}</Text>
                   )}
-                </View>
+                </Pressable>
 
                 {usesPostLayout ? (
                   <>
@@ -423,14 +434,14 @@ export default function FeedPostDetail() {
               </>
             ) : (
               <>
-                <View style={styles.memberRow}>
+                <Pressable style={styles.memberRow} onPress={handleProfilePress}>
                   <ProfileAvatar source={feedItem.avatarSource} />
                   <Text style={styles.memberName}>{feedItem.name}</Text>
-                </View>
+                </Pressable>
 
                 <Text style={styles.statusText}>{BODY_TEXT[state]}</Text>
 
-                {!feedItem.isMe && state !== 'setWaiting' && (
+                {!isReadOnly && !feedItem.isMe && state !== 'setWaiting' && (
                   <Pressable
                     style={[styles.pokeButton, isPoked && styles.pokeButtonDisabled]}
                     disabled={isPoked}
@@ -572,7 +583,7 @@ export default function FeedPostDetail() {
         </View>
       </ScrollView>
 
-      {state === 'authReady' &&
+      {!isReadOnly && state === 'authReady' &&
         (showReactionPicker ? (
           <>
             <Pressable style={styles.pickerOverlay} onPress={() => setShowReactionPicker(false)} />

@@ -11,28 +11,12 @@ import {
 } from 'react-native';
 import { Icon } from '../../components/Icon';
 import apiClient from '../../api/client';
+import type { GroupChallengeRecordFeedResponse, MemberResponse } from '../../api/generated/model';
+import { memberStore } from '../../lib/memberStore';
 import { primitiveColors, radius, spacing, typography } from '../../lib/token';
 import FeedCard, { type FeedItem, type PokeEntry, type ReactionEntry } from './FeedCard';
 
 const { gray, brown } = primitiveColors;
-
-type ChallengeRecord = {
-  challengeRecordId: number;
-  userId: string;
-  name: string;
-  avatarUrl?: string;
-  isMe: boolean;
-  isVerified: boolean;
-  isGoalAchieved?: boolean;
-  verifiedTimeAgo?: string;
-  photoUrl?: string;
-  postText?: string;
-  retroText?: string;
-  screenTime?: string;
-  commentCount: number;
-  reactionCount: number;
-  pokeCount: number;
-};
 
 type GroupChallengeResponse = {
   startAt?: string | null;
@@ -42,6 +26,45 @@ type GroupChallengeResponse = {
 const AVATAR_SRC = require('../../../assets/basic-profile-turtle-hi.png');
 const EMPTY_REACTIONS: ReactionEntry[] = [];
 const EMPTY_POKES: PokeEntry[] = [];
+
+function formatMinutes(minutes: number | null | undefined): string | undefined {
+  if (minutes == null) return undefined;
+  const h = Math.floor(minutes / 60);
+  const m = minutes % 60;
+  if (h > 0 && m > 0) return `${h}h ${m}m`;
+  if (h > 0) return `${h}h`;
+  return `${m}m`;
+}
+
+function mapMemberToFeedItem(m: MemberResponse): FeedItem {
+  const isVerified = m.activityRecord != null;
+  const isGoalAchieved = m.activityRecord?.allAchieved === true;
+  const activityImageUrl = m.activityRecord?.activityImageUrl;
+  const hasActivityImage = activityImageUrl != null && activityImageUrl.length > 0;
+  const totalUsage = m.activityRecord?.details?.find((d) => d.usageGoalType === 'TOTAL_USAGE');
+  return {
+    id: String(m.userId ?? ''),
+    challengeRecordId: m.challengeRecordId,
+    name: m.displayName ?? '',
+    isMe: m.isMe === true,
+    avatarSource: m.profileImageUrl ? { uri: m.profileImageUrl } : AVATAR_SRC,
+    commentCount: m.commentCount ?? 0,
+    reactionCount: m.reactionCount ?? 0,
+    pokeCount: m.pokeCount ?? 0,
+    reactions: EMPTY_REACTIONS,
+    pokes: EMPTY_POKES,
+    isVerified,
+    isGoalAchieved: isVerified ? isGoalAchieved : undefined,
+    photoSource: hasActivityImage && activityImageUrl ? { uri: activityImageUrl } : undefined,
+    postText:
+      isGoalAchieved || hasActivityImage
+        ? (m.activityRecord?.reflectionText ?? undefined)
+        : undefined,
+    retroText:
+      isVerified && !isGoalAchieved ? (m.activityRecord?.reflectionText ?? undefined) : undefined,
+    screenTime: formatMinutes(totalUsage?.usedMinutes),
+  };
+}
 
 function formatDisplayDate(dateStr: string): string {
   const [y, m, d] = dateStr.split('-');
@@ -78,27 +101,6 @@ function yesterdayString(): string {
   return shiftDate(todayString(), -1);
 }
 
-function recordToFeedItem(r: ChallengeRecord): FeedItem {
-  return {
-    id: String(r.challengeRecordId),
-    challengeRecordId: r.challengeRecordId,
-    name: r.name,
-    isMe: r.isMe,
-    avatarSource: r.avatarUrl ? { uri: r.avatarUrl } : AVATAR_SRC,
-    commentCount: r.commentCount,
-    reactionCount: r.reactionCount,
-    pokeCount: r.pokeCount,
-    reactions: EMPTY_REACTIONS,
-    pokes: EMPTY_POKES,
-    isVerified: r.isVerified,
-    isGoalAchieved: r.isGoalAchieved,
-    verifiedTimeAgo: r.verifiedTimeAgo,
-    photoSource: r.photoUrl ? { uri: r.photoUrl } : undefined,
-    postText: r.postText,
-    retroText: r.retroText,
-    screenTime: r.screenTime,
-  };
-}
 
 export default function CalendarHistoryScreen() {
   const {
@@ -173,11 +175,11 @@ export default function CalendarHistoryScreen() {
     setLoading(true);
     const fetch = async () => {
       try {
-        const res = await apiClient.get<ChallengeRecord[]>(
+        const res = await apiClient.get<GroupChallengeRecordFeedResponse>(
           `/group-challenges/${groupChallengeId}/challenge-records`,
           { params: { date } }
         );
-        setItems(res.data.map(recordToFeedItem));
+        setItems((res.data.members ?? []).map(mapMemberToFeedItem));
       } catch {
         setItems([]);
       } finally {
@@ -192,6 +194,41 @@ export default function CalendarHistoryScreen() {
     if (newDate > lastSelectableDate) return;
 
     setDate(newDate);
+  };
+
+  const openMemberProfile = (item: FeedItem) => {
+    if (item.isMe) {
+      router.push('/(group)/mypage');
+      return;
+    }
+    const info = memberStore.get(Number(item.id));
+    if (!info) return;
+    router.push({
+      pathname: '/(group)/mypage',
+      params: {
+        memberId: String(info.groupMemberId),
+        friendName: info.displayName,
+        friendUserId: item.id,
+        friendGroupId: String(info.groupId),
+        challengeRecordId: String(info.challengeRecordId),
+      },
+    });
+  };
+
+  const openPostDetail = (item: FeedItem) => {
+    if (!item.challengeRecordId) return;
+    router.push({
+      pathname: '/(feed)/post-detail',
+      params: {
+        item: JSON.stringify(item),
+        goalState: 'authReady',
+        isPoked: '0',
+        myReaction: '',
+        groupChallengeId: groupChallengeId ?? '',
+        fromFeedHome: '1',
+        readOnly: '1',
+      },
+    });
   };
 
   return (
@@ -231,8 +268,15 @@ export default function CalendarHistoryScreen() {
         </View>
       ) : (
         <View style={styles.feedList}>
-          {items.map((item) => (
-            <FeedCard key={item.id} item={item} goalState="authReady" historyMode={true} />
+          {items.map((item, idx) => (
+            <FeedCard
+              key={`${idx}-${item.id}`}
+              item={item}
+              goalState="authReady"
+              historyMode={true}
+              onBodyPress={item.isVerified ? () => openPostDetail(item) : undefined}
+              onProfilePress={() => openMemberProfile(item)}
+            />
           ))}
         </View>
       )}
