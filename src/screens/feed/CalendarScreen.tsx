@@ -1,8 +1,15 @@
 import { router, useLocalSearchParams } from 'expo-router';
 import { useEffect, useRef, useState } from 'react';
-import { ActivityIndicator, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import {
+  ActivityIndicator,
+  Pressable,
+  ScrollView,
+  StyleSheet,
+  Text,
+  View,
+} from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { Icon } from '../../components';
+import { HeaderAction, Icon } from '../../components';
 import apiClient from '../../api/client';
 import { primitiveColors, radius, spacing, typography } from '../../lib/token';
 
@@ -35,10 +42,9 @@ type CalendarDay = {
   key: string;
 };
 
-function getYesterday(): Date {
+function getToday(): Date {
   const date = new Date();
   date.setHours(0, 0, 0, 0);
-  date.setDate(date.getDate() - 1);
   return date;
 }
 
@@ -129,11 +135,11 @@ export default function CalendarScreen() {
   const { groupChallengeId } = useLocalSearchParams<{ groupChallengeId: string }>();
   const [calendarData, setCalendarData] = useState<CalendarResponse | null>(null);
   const [loading, setLoading] = useState(true);
-  const [yesterday] = useState(getYesterday);
-  const [selectedDate, setSelectedDate] = useState(yesterday);
-  const [visibleMonth, setVisibleMonth] = useState(startOfMonth(yesterday));
+  const [today] = useState(getToday);
+  const [selectedDate, setSelectedDate] = useState(today);
+  const [visibleMonth, setVisibleMonth] = useState(startOfMonth(today));
   const [firstActiveDate, setFirstActiveDate] = useState<Date | null>(null);
-  const [lastActiveDate, setLastActiveDate] = useState(yesterday);
+  const [lastActiveDate, setLastActiveDate] = useState(today);
   const [streakToastVisible, setStreakToastVisible] = useState(false);
   const streakToastTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
@@ -161,8 +167,8 @@ export default function CalendarScreen() {
         const challengeStartDate = parseDateParam(challengeRes?.data.startAt ?? undefined);
         const summaryStartDate = parseDateParam(res.data.summary?.startDate);
         const challengeEndDate = parseDateParam(challengeRes?.data.endAt ?? undefined);
-        const minDate = challengeStartDate ?? summaryStartDate ?? yesterday;
-        const maxDate = challengeEndDate ? earlierDate(challengeEndDate, yesterday) : yesterday;
+        const minDate = challengeStartDate ?? summaryStartDate ?? today;
+        const maxDate = challengeEndDate ? earlierDate(challengeEndDate, today) : today;
         const nextSelectedDate = clampDate(maxDate, minDate, maxDate);
 
         setFirstActiveDate(minDate);
@@ -205,12 +211,19 @@ export default function CalendarScreen() {
     if (streakToastTimerRef.current) {
       clearTimeout(streakToastTimerRef.current);
     }
-
     setStreakToastVisible(true);
     streakToastTimerRef.current = setTimeout(() => {
       setStreakToastVisible(false);
       streakToastTimerRef.current = null;
     }, STREAK_TOAST_DURATION_MS);
+  };
+
+  const handleDismissStreakToast = () => {
+    if (streakToastTimerRef.current) {
+      clearTimeout(streakToastTimerRef.current);
+      streakToastTimerRef.current = null;
+    }
+    setStreakToastVisible(false);
   };
 
   const calendarRows = getCalendarRows(visibleMonth);
@@ -225,18 +238,12 @@ export default function CalendarScreen() {
     <View style={styles.root}>
       <SafeAreaView edges={['top']}>
         <View style={styles.header}>
-          <Text style={styles.headerTitle} numberOfLines={1}>
-            캘린더
-          </Text>
-          <Pressable
+          <HeaderAction
+            label="캘린더"
             onPress={() => router.back()}
-            hitSlop={8}
-            style={styles.headerCloseButton}
-            accessibilityRole="button"
-            accessibilityLabel="닫기"
-          >
-            <Icon name="x" size={24} color={gray[900]} />
-          </Pressable>
+            accessibilityLabel="뒤로가기"
+            textStyle={styles.headerTitle}
+          />
         </View>
       </SafeAreaView>
 
@@ -248,8 +255,7 @@ export default function CalendarScreen() {
             <View style={styles.streakCard}>
               <View style={styles.streakLeft}>
                 <View style={styles.streakTitleRow}>
-                  <Text style={styles.streakFire}>🔥</Text>
-                  <Text style={styles.streakLabel}>그룹 스트릭</Text>
+                  <Text style={styles.streakLabel}>🔥 그룹 스트릭</Text>
                   <Pressable
                     onPress={handleStreakInfoPress}
                     hitSlop={8}
@@ -372,6 +378,9 @@ export default function CalendarScreen() {
           </>
         )}
       </ScrollView>
+      {streakToastVisible && (
+        <Pressable style={StyleSheet.absoluteFill} onPress={handleDismissStreakToast} />
+      )}
     </View>
   );
 }
@@ -389,19 +398,9 @@ const styles = StyleSheet.create({
   },
   header: {
     height: 54,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
     paddingHorizontal: spacing[16],
-    backgroundColor: brown[50],
-  },
-  headerCloseButton: {
-    position: 'absolute',
-    right: spacing[16],
-    width: 40,
-    height: 40,
-    alignItems: 'center',
     justifyContent: 'center',
+    backgroundColor: brown[50],
   },
   headerTitle: {
     ...typography.accent.title2,
@@ -431,10 +430,6 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: spacing[4],
-  },
-  streakFire: {
-    fontSize: 12,
-    lineHeight: 18,
   },
   streakLabel: {
     ...typography.primary.body3B,

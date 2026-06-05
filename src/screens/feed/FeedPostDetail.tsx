@@ -15,11 +15,10 @@ import {
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import apiClient from '../../api/client';
-import { Icon, Toast, useToastVisibility } from '../../components';
+import { HeaderAction, Icon } from '../../components';
 import { memberStore } from '../../lib/memberStore';
 import { pokeStore } from '../../lib/pokeStore';
 import { primitiveColors, radius, spacing, typography } from '../../lib/token';
-import { useNetworkErrorToastStore } from '../../stores/networkErrorToastStore';
 import type { GoalState } from './ActionGuideBanner';
 import type { FeedItem, PokeEntry, ReactionEntry } from './FeedCard';
 import ReactionPicker, {
@@ -33,12 +32,6 @@ const WHITE = '#FFFFFF';
 const AVATAR_SOURCE = require('../../../assets/basic-profile-turtle-hi.png');
 const POCK_ICON = require('../../../assets/pock.png');
 const IMPRESSION_ICON = require('../../../assets/feed_emotion.png');
-const DUPLICATE_REACTION_MESSAGE = '이미 같은 리액션을 남겼습니다';
-const COMMENT_MAX_LENGTH = 1000;
-const COMMENT_MAX_LENGTH_MESSAGE = '댓글은 최대 1000자까지 입력할 수 있어요';
-const COMMENT_LENGTH_TOAST_COOLDOWN_MS = 1500;
-const COMMENT_INPUT_HEIGHT = 44;
-const COMMENT_TOAST_GAP = 20;
 
 type CommentItem = {
   id: string;
@@ -154,6 +147,7 @@ export default function FeedPostDetail() {
     myReaction,
     groupChallengeId,
     fromFeedHome,
+    readOnly,
   } = useLocalSearchParams<{
     item: string;
     goalState: GoalState;
@@ -161,12 +155,11 @@ export default function FeedPostDetail() {
     myReaction: string;
     groupChallengeId: string;
     fromFeedHome?: string;
+    readOnly?: string;
   }>();
 
+  const isReadOnly = readOnly === '1';
   const insets = useSafeAreaInsets();
-  const commentInputBottomPadding = Math.max(insets.bottom, spacing[12]);
-  const commentToastBottomOffset =
-    commentInputBottomPadding + spacing[16] + COMMENT_INPUT_HEIGHT + COMMENT_TOAST_GAP;
   const feedItem = JSON.parse(itemJson as string) as FeedItem;
   const state: GoalState = goalState ?? 'authReady';
   const hasFailurePhoto =
@@ -176,7 +169,6 @@ export default function FeedPostDetail() {
   const statusLabelColor = feedItem.isGoalAchieved ? system.green.opacity100 : gray[400];
   const screentimeAccentColor = feedItem.isGoalAchieved ? system.green.opacity100 : gray[500];
   const screentimeBackgroundColor = feedItem.isGoalAchieved ? system.green.opacity10 : gray[50];
-  const myUserIdRef = useRef<number | null>(null);
 
   const ownInList = (feedItem.reactions ?? [])
     .filter((r) => r.userId === 'me')
@@ -194,11 +186,10 @@ export default function FeedPostDetail() {
       emoji: reaction,
     }));
 
+  const myUserIdRef = useRef<number | null>(null);
   useEffect(() => {
     SecureStore.getItemAsync('currentUserId').then((v) => {
-      const currentUserId = v ? Number(v) : null;
-      myUserIdRef.current =
-        currentUserId != null && Number.isFinite(currentUserId) ? currentUserId : null;
+      myUserIdRef.current = v ? Number(v) : null;
     });
   }, []);
 
@@ -216,9 +207,6 @@ export default function FeedPostDetail() {
   const [showReactionPicker, setShowReactionPicker] = useState(false);
   const [commentText, setCommentText] = useState('');
   const [fetchedPokes, setFetchedPokes] = useState<PokeEntry[]>([]);
-  const pendingReactionCodesRef = useRef<Set<string>>(new Set());
-  const commentLimitToastShownAtRef = useRef(0);
-  const duplicateReactionToast = useToastVisibility();
 
   useEffect(() => {
     if (!feedItem.challengeRecordId) return;
@@ -253,13 +241,7 @@ export default function FeedPostDetail() {
       const res = await apiClient.get<DetailResponse>(
         `/group-challenges/${groupChallengeId}/challenge-records/${feedItem.challengeRecordId}`
       );
-      let myId = myUserIdRef.current;
-      if (myId == null) {
-        const storedUserId = await SecureStore.getItemAsync('currentUserId');
-        const parsedUserId = storedUserId ? Number(storedUserId) : null;
-        myId = parsedUserId != null && Number.isFinite(parsedUserId) ? parsedUserId : null;
-        myUserIdRef.current = myId;
-      }
+      const myId = myUserIdRef.current;
       const serverReactions: ReactionEntry[] = res.data.reactions.summary.map((r) => ({
         userId: String(r.userId),
         name: myId != null && r.userId === myId ? '나' : r.displayName,
@@ -268,13 +250,6 @@ export default function FeedPostDetail() {
       }));
       setReactions(serverReactions);
       setReactionCount(res.data.reactionCount);
-      if (myId != null) {
-        const serverMyReactionEmojis = res.data.reactions.summary
-          .filter((r) => r.userId === myId)
-          .map((r) => normalizeReactionCode(r.reactionBody))
-          .filter((reaction): reaction is NonNullable<typeof reaction> => !!reaction);
-        setMyReactionEmojis(serverMyReactionEmojis);
-      }
 
       const mappedPokes: PokeEntry[] = res.data.pokedUsers.map((u) => ({
         userId: String(u.userId),
@@ -296,15 +271,6 @@ export default function FeedPostDetail() {
 
   const displayPokes: PokeEntry[] = fetchedPokes.length > 0 ? fetchedPokes : (feedItem.pokes ?? []);
   const sortedComments = [...comments].sort((a, b) => a.createdAt - b.createdAt);
-  const getMyAvatarSource = useCallback((): CommentItem['avatarSource'] => {
-    const currentUserId = myUserIdRef.current;
-    const profileImageUrl =
-      currentUserId != null ? memberStore.get(currentUserId)?.profileImageUrl : undefined;
-
-    if (profileImageUrl) return { uri: profileImageUrl };
-    if (feedItem.isMe) return feedItem.avatarSource;
-    return AVATAR_SOURCE as number;
-  }, [feedItem.avatarSource, feedItem.isMe]);
 
   const handleHeaderBack = () => {
     if (fromFeedHome === '1' && router.canGoBack()) {
@@ -323,14 +289,6 @@ export default function FeedPostDetail() {
     });
   };
 
-  const handlePostAuthorProfilePress = () => {
-    if (feedItem.isMe) {
-      router.push('/(group)/mypage');
-      return;
-    }
-    navigateToProfile(feedItem.id);
-  };
-
   const navigateToProfile = (userId: string) => {
     if (userId === 'me') return;
     const info = memberStore.get(Number(userId));
@@ -342,34 +300,36 @@ export default function FeedPostDetail() {
         friendName: info.displayName,
         friendUserId: userId,
         friendGroupId: String(info.groupId),
-        groupChallengeId: groupChallengeId ?? '',
         challengeRecordId: String(info.challengeRecordId),
-        isPoked: isPoked ? '1' : '0',
       },
     });
+  };
+
+  const handleProfilePress = () => {
+    if (feedItem.isMe) {
+      router.push('/(group)/mypage');
+      return;
+    }
+    navigateToProfile(feedItem.id);
   };
 
   const handleReact = async (reaction: string) => {
     const reactionCode = normalizeReactionCode(reaction);
     if (!reactionCode) return;
-    if (!feedItem.challengeRecordId) return;
 
     const hasThis = myReactionEmojis.some((current) => isSameReaction(current, reactionCode));
-    if (hasThis || pendingReactionCodesRef.current.has(reactionCode)) {
-      duplicateReactionToast.showWithMessage(DUPLICATE_REACTION_MESSAGE);
-      return;
-    }
-    pendingReactionCodesRef.current.add(reactionCode);
+    if (hasThis) return;
 
     const entry: ReactionEntry = {
       userId: 'me',
       name: '나',
-      avatarSource: getMyAvatarSource(),
+      avatarSource: AVATAR_SOURCE as number,
       emoji: reactionCode,
     };
     setReactions((prev) => [entry, ...prev]);
     setMyReactionEmojis((prev) => [...prev, reactionCode]);
     setReactionCount((prev) => prev + 1);
+    if (!feedItem.challengeRecordId) return;
     try {
       const res = await apiClient.post<{ reactionId: number }>(
         `/challenge-records/${feedItem.challengeRecordId}/reactions`,
@@ -377,54 +337,17 @@ export default function FeedPostDetail() {
       );
       setMyReactionIds((prev) => ({ ...prev, [reactionCode]: res.data.reactionId }));
       await fetchDetail();
-    } catch {
-      setReactions((prev) => {
-        const optimisticIndex = prev.findIndex(
-          (item) => item.userId === 'me' && isSameReaction(item.emoji, reactionCode)
-        );
-        if (optimisticIndex < 0) return prev;
-        return prev.filter((_, index) => index !== optimisticIndex);
-      });
-      setMyReactionEmojis((prev) =>
-        prev.filter((current) => !isSameReaction(current, reactionCode))
-      );
-      setReactionCount((prev) => Math.max(0, prev - 1));
-      await fetchDetail();
-    } finally {
-      pendingReactionCodesRef.current.delete(reactionCode);
-    }
-  };
-
-  const showCommentLengthLimitToast = () => {
-    const now = Date.now();
-    if (now - commentLimitToastShownAtRef.current < COMMENT_LENGTH_TOAST_COOLDOWN_MS) return;
-    commentLimitToastShownAtRef.current = now;
-    useNetworkErrorToastStore.getState().showMessage(COMMENT_MAX_LENGTH_MESSAGE);
-  };
-
-  const handleChangeCommentText = (nextText: string) => {
-    if (nextText.length <= COMMENT_MAX_LENGTH) {
-      setCommentText(nextText);
-      return;
-    }
-
-    setCommentText(nextText.slice(0, COMMENT_MAX_LENGTH));
-    showCommentLengthLimitToast();
+    } catch {}
   };
 
   const handleSendComment = async () => {
     const text = commentText.trim();
     if (!text) return;
-    if (text.length > COMMENT_MAX_LENGTH) {
-      useNetworkErrorToastStore.getState().showMessage(COMMENT_MAX_LENGTH_MESSAGE);
-      return;
-    }
-
     setCommentText('');
     const newComment: CommentItem = {
       id: String(Date.now()),
       authorName: '나',
-      avatarSource: getMyAvatarSource(),
+      avatarSource: AVATAR_SOURCE as number,
       text,
       createdAt: Date.now(),
       timeAgoLabel: '방금 전',
@@ -444,21 +367,16 @@ export default function FeedPostDetail() {
       style={styles.root}
       behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
     >
-      <View style={[styles.header, { paddingTop: insets.top }]}>
-        <View style={styles.headerContent}>
-          <Pressable
-            onPress={handleHeaderBack}
-            hitSlop={8}
-            style={styles.headerBackButton}
-            accessibilityRole="button"
-            accessibilityLabel="뒤로가기"
-          >
-            <Icon name="caretLeft" size={24} color={gray[900]} />
-          </Pressable>
-          <Text style={styles.headerTitle} numberOfLines={1}>
-            게시물
-          </Text>
-        </View>
+      <View style={[styles.header, { paddingTop: insets.top + spacing[14] }]}>
+        <HeaderAction
+          label="게시물"
+          onPress={handleHeaderBack}
+          iconSize={20}
+          iconColor={gray[900]}
+          style={styles.headerBackButton}
+          textStyle={styles.headerTitle}
+          accessibilityLabel="뒤로가기"
+        />
       </View>
 
       <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
@@ -466,24 +384,22 @@ export default function FeedPostDetail() {
           <View style={styles.card}>
             {feedItem.isVerified ? (
               <>
-                <View style={styles.verifiedHeader}>
-                  <Pressable style={styles.profileButton} onPress={handlePostAuthorProfilePress}>
-                    <View style={styles.avatarWithLabel}>
-                      <ProfileAvatar source={feedItem.avatarSource} />
-                      <View style={styles.statusLabelAnchor}>
-                        <View style={[styles.statusLabel, { backgroundColor: statusLabelColor }]}>
-                          <Text style={styles.statusLabelText}>
-                            {feedItem.isGoalAchieved ? '목표 성공' : '목표 실패'}
-                          </Text>
-                        </View>
+                <Pressable style={styles.verifiedHeader} onPress={handleProfilePress}>
+                  <View style={styles.avatarWithLabel}>
+                    <ProfileAvatar source={feedItem.avatarSource} />
+                    <View style={styles.statusLabelAnchor}>
+                      <View style={[styles.statusLabel, { backgroundColor: statusLabelColor }]}>
+                        <Text style={styles.statusLabelText}>
+                          {feedItem.isGoalAchieved ? '목표 성공' : '목표 실패'}
+                        </Text>
                       </View>
                     </View>
-                    <Text style={[styles.memberName, { flexShrink: 0 }]}>{feedItem.name}</Text>
-                  </Pressable>
+                  </View>
+                  <Text style={[styles.memberName, { flexShrink: 0 }]}>{feedItem.name}</Text>
                   {feedItem.verifiedTimeAgo != null && (
                     <Text style={styles.timeAgo}>{feedItem.verifiedTimeAgo}</Text>
                   )}
-                </View>
+                </Pressable>
 
                 {usesPostLayout ? (
                   <>
@@ -518,14 +434,14 @@ export default function FeedPostDetail() {
               </>
             ) : (
               <>
-                <View style={styles.memberRow}>
+                <Pressable style={styles.memberRow} onPress={handleProfilePress}>
                   <ProfileAvatar source={feedItem.avatarSource} />
                   <Text style={styles.memberName}>{feedItem.name}</Text>
-                </View>
+                </Pressable>
 
                 <Text style={styles.statusText}>{BODY_TEXT[state]}</Text>
 
-                {!feedItem.isMe && state !== 'setWaiting' && (
+                {!isReadOnly && !feedItem.isMe && state !== 'setWaiting' && (
                   <Pressable
                     style={[styles.pokeButton, isPoked && styles.pokeButtonDisabled]}
                     disabled={isPoked}
@@ -538,7 +454,7 @@ export default function FeedPostDetail() {
                         const myEntry: PokeEntry = {
                           userId: 'me',
                           name: '나',
-                          avatarSource: getMyAvatarSource(),
+                          avatarSource: AVATAR_SOURCE as number,
                         };
                         return [myEntry, ...prev];
                       });
@@ -667,7 +583,7 @@ export default function FeedPostDetail() {
         </View>
       </ScrollView>
 
-      {state === 'authReady' &&
+      {!isReadOnly && state === 'authReady' &&
         (showReactionPicker ? (
           <>
             <Pressable style={styles.pickerOverlay} onPress={() => setShowReactionPicker(false)} />
@@ -685,13 +601,13 @@ export default function FeedPostDetail() {
             </View>
           </>
         ) : (
-          <View style={[styles.inputBar, { paddingBottom: commentInputBottomPadding }]}>
+          <View style={[styles.inputBar, { paddingBottom: Math.max(insets.bottom, spacing[12]) }]}>
             <TextInput
               style={styles.textInput}
               placeholder="응원 메시지를 남겨보세요"
               placeholderTextColor={gray[400]}
               value={commentText}
-              onChangeText={handleChangeCommentText}
+              onChangeText={setCommentText}
               returnKeyType="send"
               onSubmitEditing={handleSendComment}
             />
@@ -711,12 +627,6 @@ export default function FeedPostDetail() {
             )}
           </View>
         ))}
-      <Toast
-        visible={duplicateReactionToast.visible}
-        message={duplicateReactionToast.message}
-        icon={<Icon name="warningCircle" size={16} weight="fill" color={system.red.opacity100} />}
-        bottomOffset={commentToastBottomOffset}
-      />
     </KeyboardAvoidingView>
   );
 }
@@ -727,22 +637,18 @@ const styles = StyleSheet.create({
     backgroundColor: brown[50],
   },
   header: {
-    backgroundColor: brown[50],
-  },
-  headerContent: {
-    height: 54,
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'center',
     paddingHorizontal: spacing[16],
+    paddingBottom: spacing[14],
+    gap: spacing[8],
+    backgroundColor: brown[50],
   },
   headerBackButton: {
-    position: 'absolute',
-    left: spacing[16],
-    width: 40,
-    height: 40,
+    minHeight: 24,
+    flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'center',
+    gap: spacing[8],
   },
   headerTitle: {
     ...typography.accent.title2,
@@ -765,11 +671,6 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     gap: spacing[8],
     marginBottom: spacing[8],
-  },
-  profileButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: spacing[8],
   },
   avatarWithLabel: {
     alignItems: 'center',
@@ -1024,8 +925,8 @@ const styles = StyleSheet.create({
     borderTopColor: gray[50],
   },
   impressionBtn: {
-    width: COMMENT_INPUT_HEIGHT,
-    height: COMMENT_INPUT_HEIGHT,
+    width: 44,
+    height: 44,
     borderRadius: radius.full,
     backgroundColor: gray[50],
     alignItems: 'center',
@@ -1037,7 +938,7 @@ const styles = StyleSheet.create({
   },
   textInput: {
     flex: 1,
-    height: COMMENT_INPUT_HEIGHT,
+    height: 44,
     backgroundColor: WHITE,
     borderRadius: radius.full,
     paddingHorizontal: spacing[16],
@@ -1045,8 +946,8 @@ const styles = StyleSheet.create({
     color: gray[900],
   },
   sendBtn: {
-    width: COMMENT_INPUT_HEIGHT,
-    height: COMMENT_INPUT_HEIGHT,
+    width: 44,
+    height: 44,
     borderRadius: radius.full,
     backgroundColor: green[300],
     alignItems: 'center',
