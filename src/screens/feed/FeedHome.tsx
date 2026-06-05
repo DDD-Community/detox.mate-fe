@@ -1,6 +1,7 @@
 import { router, useFocusEffect, useLocalSearchParams } from 'expo-router';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
+  Alert,
   ActivityIndicator,
   Image,
   Pressable,
@@ -607,6 +608,7 @@ function ActiveFeed({
         !pokedMemberIds.includes(targetItem.id);
 
       if (canPoke) {
+        Alert.alert(`${targetItem.name}님을 콕 찔렀어요!`);
         onPoke(targetItem.id, targetItem.challengeRecordId);
       }
       scrollToFeedItem(targetItem.id);
