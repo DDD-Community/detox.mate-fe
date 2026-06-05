@@ -14,6 +14,7 @@ import { CheckIcon } from 'phosphor-react-native/src/icons/Check';
 import { CheckCircleIcon } from 'phosphor-react-native/src/icons/CheckCircle';
 import { CopyIcon } from 'phosphor-react-native/src/icons/Copy';
 import { GearSixIcon } from 'phosphor-react-native/src/icons/GearSix';
+import { HouseIcon } from 'phosphor-react-native/src/icons/House';
 import { ImageSquareIcon } from 'phosphor-react-native/src/icons/ImageSquare';
 import { InfoIcon } from 'phosphor-react-native/src/icons/Info';
 import { MinusIcon } from 'phosphor-react-native/src/icons/Minus';
@@ -30,6 +31,7 @@ import { TargetIcon } from 'phosphor-react-native/src/icons/Target';
 import { UploadSimpleIcon } from 'phosphor-react-native/src/icons/UploadSimple';
 import { UserIcon } from 'phosphor-react-native/src/icons/User';
 import { WarningCircleIcon } from 'phosphor-react-native/src/icons/WarningCircle';
+import { XIcon } from 'phosphor-react-native/src/icons/X';
 
 export const iconComponents = {
   arrowUp: ArrowUpIcon,
@@ -47,6 +49,7 @@ export const iconComponents = {
   checkCircle: CheckCircleIcon,
   copy: CopyIcon,
   gearSix: GearSixIcon,
+  house: HouseIcon,
   imageSquare: ImageSquareIcon,
   info: InfoIcon,
   minus: MinusIcon,
@@ -63,6 +66,7 @@ export const iconComponents = {
   uploadSimple: UploadSimpleIcon,
   user: UserIcon,
   warningCircle: WarningCircleIcon,
+  x: XIcon,
 } as const satisfies Record<string, PhosphorIcon>;
 
 export const iconNames = Object.keys(iconComponents) as IconName[];

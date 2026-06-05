@@ -18,7 +18,7 @@ const PAGES = [
     image: require('../../../assets/turtle-with-ai.png'),
     imageStyle: { width: 288, height: 251, top: 195 },
     title: '매일 어제의\n스크린 타임을 인증해요',
-    subtitle: '스크린샷을 올리면 스크린 타임을 분석해요\n실패하면 한 줄 반성문을 남겨야 해요',
+    subtitle: '스크린샷을 올리면 스크린 타임을 스캔해요\n실패하면 한 줄 반성문을 남겨야 해요',
     info: null,
   },
   {

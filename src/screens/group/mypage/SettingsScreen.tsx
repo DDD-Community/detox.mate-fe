@@ -13,9 +13,13 @@ import {
   registerDevicePushToken,
   unregisterDevicePushToken,
 } from '@/lib/fcmToken';
-import { HeaderAction, Icon } from '@/components';
+import { Icon } from '@/components';
 import { env } from '@/config/env';
 import { primitiveColors, radius, spacing, typography } from '@/lib/token';
+import {
+  APP_ACCESS_PERMISSION_GUIDE_SEEN_KEY,
+  TERMS_ACCEPTED_KEY,
+} from '@/screens/auth/authStorageKeys';
 import { LogoutConfirmAlert } from './LogoutConfirmAlert';
 import { NotificationPermissionAlert } from './NotificationPermissionAlert';
 import { WithdrawConfirmAlert } from './WithdrawConfirmAlert';
@@ -276,8 +280,10 @@ export default function SettingsScreen() {
       await SecureStore.deleteItemAsync('accessTokenKey');
       await SecureStore.deleteItemAsync('currentUserId');
       await SecureStore.deleteItemAsync('isNewUser');
+      await SecureStore.deleteItemAsync(TERMS_ACCEPTED_KEY);
+      await SecureStore.deleteItemAsync(APP_ACCESS_PERMISSION_GUIDE_SEEN_KEY);
       setIsWithdrawAlertOpen(false);
-      router.replace('/(auth)/login');
+      router.replace('/(auth)/onboarding');
     } finally {
       setIsWithdrawing(false);
     }
@@ -287,7 +293,18 @@ export default function SettingsScreen() {
     <View style={styles.root}>
       <SafeAreaView edges={['top']}>
         <View style={styles.header}>
-          <HeaderAction label="설정" onPress={handleBack} accessibilityLabel="뒤로가기" />
+          <Pressable
+            onPress={handleBack}
+            hitSlop={8}
+            style={styles.headerBackButton}
+            accessibilityRole="button"
+            accessibilityLabel="뒤로가기"
+          >
+            <Icon name="caretLeft" size={24} color={gray[900]} />
+          </Pressable>
+          <Text style={styles.headerTitle} numberOfLines={1}>
+            설정
+          </Text>
         </View>
       </SafeAreaView>
 
@@ -346,8 +363,22 @@ const styles = StyleSheet.create({
   },
   header: {
     height: 54,
-    paddingHorizontal: spacing[16],
+    flexDirection: 'row',
+    alignItems: 'center',
     justifyContent: 'center',
+    paddingHorizontal: spacing[16],
+  },
+  headerBackButton: {
+    position: 'absolute',
+    left: spacing[16],
+    width: 40,
+    height: 40,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  headerTitle: {
+    ...typography.accent.title2,
+    color: gray[800],
   },
   body: {
     flex: 1,

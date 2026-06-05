@@ -5,7 +5,9 @@ type MyPageSearchParams = {
   friendName?: string;
   friendUserId?: string;
   challengeRecordId?: string;
+  groupChallengeId?: string;
   friendGroupId?: string;
+  isPoked?: string;
 };
 
 export type MyPageParams =
@@ -16,12 +18,21 @@ export type MyPageParams =
       friendName?: string;
       friendUserId?: string;
       challengeRecordId?: string;
+      groupChallengeId?: string;
       friendGroupId?: string;
+      isPoked?: string;
     };
 
 export function useMyPageParams(): MyPageParams {
-  const { memberId, friendName, friendUserId, challengeRecordId, friendGroupId } =
-    useLocalSearchParams<MyPageSearchParams>();
+  const {
+    memberId,
+    friendName,
+    friendUserId,
+    challengeRecordId,
+    groupChallengeId,
+    friendGroupId,
+    isPoked,
+  } = useLocalSearchParams<MyPageSearchParams>();
 
   if (!memberId) {
     return { mode: 'me' };
@@ -33,6 +44,8 @@ export function useMyPageParams(): MyPageParams {
     friendName,
     friendUserId,
     challengeRecordId,
+    groupChallengeId,
     friendGroupId,
+    isPoked,
   };
 }

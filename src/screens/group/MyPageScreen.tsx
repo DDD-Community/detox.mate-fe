@@ -1,5 +1,5 @@
 import { router } from 'expo-router';
-import { ScrollView, StyleSheet, View } from 'react-native';
+import { Alert, ScrollView, StyleSheet, View } from 'react-native';
 
 import { primitiveColors, spacing } from '@/lib/token';
 import { MyPageBody } from './mypage/MyPageBody';
@@ -22,7 +22,14 @@ export default function MyPageScreen() {
   const friendName = isFriend ? myPageParams.friendName : undefined;
   const friendUserId = isFriend ? myPageParams.friendUserId : undefined;
   const challengeRecordId = isFriend ? myPageParams.challengeRecordId : undefined;
-  const { isPoking, poke } = useFriendPoke({ challengeRecordId, friendUserId });
+  const groupChallengeId = isFriend ? myPageParams.groupChallengeId : undefined;
+  const initialIsPoked = isFriend ? myPageParams.isPoked === '1' : false;
+  const { isPoking, isPoked, poke } = useFriendPoke({
+    challengeRecordId,
+    groupChallengeId,
+    friendUserId,
+    initialIsPoked,
+  });
 
   const {
     isImageSheetOpen,
@@ -46,6 +53,10 @@ export default function MyPageScreen() {
 
   const handleSettings = () => {
     router.push('/(group)/settings');
+  };
+
+  const handleHome = () => {
+    router.replace('/(group)/home');
   };
 
   const handleEditName = () => {
@@ -109,6 +120,11 @@ export default function MyPageScreen() {
     achievedDays,
   } = weeklyStatus;
 
+  const handlePoke = () => {
+    Alert.alert(`${displayName}님을 콕 찔렀어요!`);
+    poke();
+  };
+
   return (
     <View style={styles.root}>
       <ScrollView
@@ -125,6 +141,7 @@ export default function MyPageScreen() {
           hasProfileBackground={hasProfileBackground}
           isUpdatingProfileImage={isUpdatingProfileImage}
           onBack={handleBack}
+          onHome={handleHome}
           onSettings={handleSettings}
           onEditName={handleEditName}
           onEditProfileImage={handleEditProfileImage}
@@ -135,6 +152,7 @@ export default function MyPageScreen() {
           isLoading={isLoading}
           isFriendGoalSet={isFriendGoalSet}
           isPoking={isPoking}
+          isPoked={isPoked}
           hasGoalSet={hasGoalSet}
           hasJoinedGroup={hasJoinedGroup}
           diffMinutes={diffMinutes}
@@ -145,7 +163,7 @@ export default function MyPageScreen() {
           achievedDays={achievedDays}
           joinedGroups={joinedGroups}
           daysUntilGoalChange={daysUntilGoalChange}
-          onPoke={poke}
+          onPoke={handlePoke}
           onSetGoal={handleSetGoal}
           onCreateGroup={handleCreateGroup}
           onEnterInviteCode={handleEnterInviteCode}
@@ -160,7 +178,6 @@ export default function MyPageScreen() {
         onSelectDefault={selectDefaultImage}
         onSelectGallery={selectGalleryImage}
       />
-
     </View>
   );
 }

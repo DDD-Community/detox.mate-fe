@@ -1,7 +1,7 @@
 type MemberInfo = {
   groupMemberId: number;
   groupId: number;
-  challengeRecordId: number;
+  challengeRecordId?: number;
   displayName: string;
   profileImageUrl?: string;
 };
@@ -14,7 +14,7 @@ export const memberStore = {
     members: Array<{
       userId: number;
       groupMemberId: number;
-      challengeRecordId: number;
+      challengeRecordId?: number;
       displayName: string;
       profileImageUrl?: string;
     }>,

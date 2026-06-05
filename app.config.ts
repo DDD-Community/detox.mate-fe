@@ -36,6 +36,7 @@ const config: ExpoConfig = {
   ios: {
     bundleIdentifier: isProduction ? 'com.detoxmate.app' : 'com.detoxmate.app.dev',
     googleServicesFile: iosGoogleServicesFile,
+    supportsTablet: false,
     entitlements: {
       'aps-environment': 'production',
       'com.apple.developer.applesignin': ['Default'],

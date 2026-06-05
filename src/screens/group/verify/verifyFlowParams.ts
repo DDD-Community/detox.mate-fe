@@ -14,6 +14,9 @@ export interface VerifyFlowParams {
   goal?: string;
   groupChallengeParticipantId?: string;
   verifyRoot?: VerifyRoot;
+  ocrImageUri?: string;
+  ocrImageObjectKey?: string;
+  ocrRecordDate?: string;
 }
 
 export interface VerifyValueParams extends VerifyFlowParams {
@@ -25,11 +28,17 @@ export const buildVerifyFlowParams = ({
   goal,
   groupChallengeParticipantId,
   verifyRoot,
+  ocrImageUri,
+  ocrImageObjectKey,
+  ocrRecordDate,
 }: VerifyFlowParams) => ({
   ...(mode ? { mode } : {}),
   ...(goal ? { goal } : {}),
   ...(groupChallengeParticipantId ? { groupChallengeParticipantId } : {}),
   ...(verifyRoot ? { verifyRoot } : {}),
+  ...(ocrImageUri ? { ocrImageUri } : {}),
+  ...(ocrImageObjectKey ? { ocrImageObjectKey } : {}),
+  ...(ocrRecordDate ? { ocrRecordDate } : {}),
 });
 
 export const buildVerifyValueParams = ({ value, ...flowParams }: VerifyValueParams) => ({
