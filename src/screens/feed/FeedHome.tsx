@@ -1,4 +1,5 @@
 import { router, useFocusEffect, useLocalSearchParams } from 'expo-router';
+import * as SecureStore from 'expo-secure-store';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
   Alert,
@@ -256,6 +257,11 @@ export default function FeedHome() {
 
   const fetchGoalState = useCallback(async () => {
     try {
+      const needsReset = await SecureStore.getItemAsync('needsGoalReset');
+      if (needsReset === 'true') {
+        setGoalState('notSet');
+        return;
+      }
       const response = await getUserUsageGoalTime().getCurrentGoalTimes();
       const total = response.goals?.find(
         (g) => g.usageGoalType === CurrentUsageGoalTimeResponseUsageGoalType.TOTAL_USAGE

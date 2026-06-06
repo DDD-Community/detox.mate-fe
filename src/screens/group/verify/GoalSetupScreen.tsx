@@ -1,4 +1,5 @@
 import { router, useLocalSearchParams } from 'expo-router';
+import * as SecureStore from 'expo-secure-store';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
   ActivityIndicator,
@@ -108,6 +109,7 @@ export default function GoalSetupScreen({ mode = 'initial' }: GoalSetupScreenPro
           },
         ],
       });
+      await SecureStore.deleteItemAsync('needsGoalReset');
 
       if (isEditMode) {
         router.back();
