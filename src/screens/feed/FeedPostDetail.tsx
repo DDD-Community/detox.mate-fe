@@ -161,6 +161,7 @@ export default function FeedPostDetail() {
   const isReadOnly = readOnly === '1';
   const insets = useSafeAreaInsets();
   const feedItem = JSON.parse(itemJson as string) as FeedItem;
+  const feedAuthorName = feedItem.isMe ? '나' : feedItem.name;
   const state: GoalState = goalState ?? 'authReady';
   const hasFailurePhoto =
     feedItem.isVerified === true && !feedItem.isGoalAchieved && feedItem.photoSource != null;
@@ -186,10 +187,10 @@ export default function FeedPostDetail() {
       emoji: reaction,
     }));
 
-  const myUserIdRef = useRef<number | null>(null);
+  const [myUserId, setMyUserId] = useState<number | null>(null);
   useEffect(() => {
     SecureStore.getItemAsync('currentUserId').then((v) => {
-      myUserIdRef.current = v ? Number(v) : null;
+      setMyUserId(v ? Number(v) : null);
     });
   }, []);
 
@@ -215,10 +216,9 @@ export default function FeedPostDetail() {
         const res = await apiClient.get<CommentsResponse>(
           `/challenge-records/${feedItem.challengeRecordId}/comments`
         );
-        const myId = myUserIdRef.current;
         const mapped = res.data.items.map((c) => ({
           id: String(c.commentId),
-          authorName: myId != null && c.author.userId === myId ? '나' : c.author.displayName,
+          authorName: myUserId != null && c.author.userId === myUserId ? '나' : c.author.displayName,
           avatarSource: c.author.profileImageUrl
             ? { uri: c.author.profileImageUrl }
             : AVATAR_SOURCE,
@@ -233,7 +233,7 @@ export default function FeedPostDetail() {
       }
     };
     fetchComments();
-  }, [feedItem.challengeRecordId]);
+  }, [feedItem.challengeRecordId, myUserId]);
 
   const fetchDetail = useCallback(async () => {
     if (!groupChallengeId || !feedItem.challengeRecordId) return;
@@ -241,10 +241,9 @@ export default function FeedPostDetail() {
       const res = await apiClient.get<DetailResponse>(
         `/group-challenges/${groupChallengeId}/challenge-records/${feedItem.challengeRecordId}`
       );
-      const myId = myUserIdRef.current;
       const serverReactions: ReactionEntry[] = res.data.reactions.summary.map((r) => ({
         userId: String(r.userId),
-        name: myId != null && r.userId === myId ? '나' : r.displayName,
+        name: myUserId != null && r.userId === myUserId ? '나' : r.displayName,
         avatarSource: r.profileImageUrl ? { uri: r.profileImageUrl } : (AVATAR_SOURCE as number),
         emoji: normalizeReactionCode(r.reactionBody) ?? r.reactionBody,
       }));
@@ -253,7 +252,7 @@ export default function FeedPostDetail() {
 
       const mappedPokes: PokeEntry[] = res.data.pokedUsers.map((u) => ({
         userId: String(u.userId),
-        name: myId != null && u.userId === myId ? '나' : u.displayName,
+        name: myUserId != null && u.userId === myUserId ? '나' : u.displayName,
         avatarSource: u.profileImageUrl ? { uri: u.profileImageUrl } : (AVATAR_SOURCE as number),
       }));
       setFetchedPokes((prev) => {
@@ -263,7 +262,7 @@ export default function FeedPostDetail() {
     } catch {
       // keep existing state on error
     }
-  }, [groupChallengeId, feedItem.challengeRecordId]);
+  }, [groupChallengeId, feedItem.challengeRecordId, myUserId]);
 
   useEffect(() => {
     fetchDetail();
@@ -395,7 +394,7 @@ export default function FeedPostDetail() {
                       </View>
                     </View>
                   </View>
-                  <Text style={[styles.memberName, { flexShrink: 0 }]}>{feedItem.name}</Text>
+                  <Text style={[styles.memberName, { flexShrink: 0 }]}>{feedAuthorName}</Text>
                   {feedItem.verifiedTimeAgo != null && (
                     <Text style={styles.timeAgo}>{feedItem.verifiedTimeAgo}</Text>
                   )}
@@ -436,7 +435,7 @@ export default function FeedPostDetail() {
               <>
                 <Pressable style={styles.memberRow} onPress={handleProfilePress}>
                   <ProfileAvatar source={feedItem.avatarSource} />
-                  <Text style={styles.memberName}>{feedItem.name}</Text>
+                  <Text style={styles.memberName}>{feedAuthorName}</Text>
                 </Pressable>
 
                 <Text style={styles.statusText}>{BODY_TEXT[state]}</Text>
