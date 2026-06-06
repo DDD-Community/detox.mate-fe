@@ -1,10 +1,23 @@
 import { useFocusEffect, useRouter } from 'expo-router';
 import { useCallback, useState } from 'react';
-import { ActivityIndicator, Image, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import {
+  ActivityIndicator,
+  Image,
+  Pressable,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
+} from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { getGroup } from '../../api/generated/group/group';
+import { Icon } from '../../components/Icon';
 import { primitiveColors } from '../../lib/token/primitive/colors';
 import { radius } from '../../lib/token/primitive/radius';
+import { spacing } from '../../lib/token/primitive/spacing';
 import { typography } from '../../lib/token/primitive/typography';
+
+const LOGO = require('../../../assets/logo-icon-kr.png');
 
 const { brown, gray } = primitiveColors;
 
@@ -54,6 +67,19 @@ export default function GroupHomeScreen() {
 
   return (
     <View style={styles.root}>
+      <SafeAreaView edges={['top']}>
+        <View style={styles.header}>
+          <Image source={LOGO} style={styles.logo} resizeMode="contain" />
+          <Pressable
+            style={styles.iconButton}
+            hitSlop={8}
+            onPress={() => router.push('/(group)/mypage')}
+          >
+            <Icon name="user" size={24} color={gray[800]} />
+          </Pressable>
+        </View>
+      </SafeAreaView>
+
       {isCheckingGroups ? (
         <View style={styles.loadingBody}>
           <ActivityIndicator color={gray[400]} />
@@ -107,6 +133,23 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: brown[50],
   },
+  header: {
+    height: 54,
+    paddingHorizontal: spacing[16],
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+  },
+  logo: {
+    height: 24,
+    width: 120,
+  },
+  iconButton: {
+    width: 24,
+    height: 24,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
   loadingBody: {
     flex: 1,
     alignItems: 'center',
@@ -117,14 +160,14 @@ const styles = StyleSheet.create({
   },
   turtle: {
     position: 'absolute',
-    top: 177,
+    top: 77,
     alignSelf: 'center',
     width: 236,
     height: 218,
   },
   copyFrame: {
     position: 'absolute',
-    top: 435,
+    top: 335,
     left: 0,
     right: 0,
     alignItems: 'center',
@@ -143,7 +186,7 @@ const styles = StyleSheet.create({
   },
   cardRow: {
     position: 'absolute',
-    top: 558,
+    top: 458,
     left: 16,
     right: 16,
     flexDirection: 'row',
