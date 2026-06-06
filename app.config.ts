@@ -30,7 +30,7 @@ const config: ExpoConfig = {
   userInterfaceStyle: 'light',
   splash: {
     image: './assets/splash_logo.png',
-    resizeMode: 'contain',
+    resizeMode: 'native',
     backgroundColor: '#1D9E75',
   },
   ios: {
