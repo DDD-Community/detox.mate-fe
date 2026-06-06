@@ -245,7 +245,9 @@ const styles = StyleSheet.create({
   },
   input: {
     flex: 1,
-    ...typography.primary.body1R,
+    fontFamily: typography.primary.body1R.fontFamily,
+    fontSize: typography.primary.body1R.fontSize,
+    fontWeight: typography.primary.body1R.fontWeight,
     color: gray[900],
     padding: 0,
   },
