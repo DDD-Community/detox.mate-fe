@@ -147,8 +147,7 @@ export default function FeedCard({
         <View ref={footerWrapperRef} style={styles.footerWrapper}>
           <View style={styles.footer}>
             <Pressable
-              style={[styles.footerButton, goalState === 'notSet' && styles.footerButtonDisabled]}
-              disabled={goalState === 'notSet'}
+              style={styles.footerButton}
               onPress={() => {
                 footerWrapperRef.current?.measureInWindow((x, y, width, height) => {
                   onReactionPress?.(item, { x, y, width, height });

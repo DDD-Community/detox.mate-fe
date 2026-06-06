@@ -582,7 +582,7 @@ export default function FeedPostDetail() {
         </View>
       </ScrollView>
 
-      {!isReadOnly && state === 'authReady' &&
+      {!isReadOnly &&
         (showReactionPicker ? (
           <>
             <Pressable style={styles.pickerOverlay} onPress={() => setShowReactionPicker(false)} />
