@@ -134,6 +134,7 @@ export default function MyPageScreen() {
       >
         <MyPageProfileHeader
           isFriend={isFriend}
+          canGoBack={router.canGoBack()}
           displayName={displayName}
           dayCount={dayCount}
           achievementRate={achievementRate}

@@ -26,6 +26,7 @@ function ProfileChip({ label }: ProfileChipProps) {
 
 interface MyPageProfileHeaderProps {
   isFriend: boolean;
+  canGoBack?: boolean;
   displayName: string;
   dayCount: number;
   achievementRate: number;
@@ -41,6 +42,7 @@ interface MyPageProfileHeaderProps {
 
 export function MyPageProfileHeader({
   isFriend,
+  canGoBack = false,
   displayName,
   dayCount,
   achievementRate,
@@ -80,9 +82,20 @@ export function MyPageProfileHeader({
             />
           ) : (
             <>
-              <Text style={[styles.headerTitle, hasProfileBackground && styles.photoText]}>
-                마이페이지
-              </Text>
+              {canGoBack ? (
+                <HeaderAction
+                  label="마이페이지"
+                  onPress={onBack}
+                  iconColor={foregroundColor}
+                  style={styles.headerLeft}
+                  textStyle={[styles.headerTitle, hasProfileBackground && styles.photoText]}
+                  accessibilityLabel="뒤로가기"
+                />
+              ) : (
+                <Text style={[styles.headerTitle, hasProfileBackground && styles.photoText]}>
+                  마이페이지
+                </Text>
+              )}
               <View style={styles.headerActions}>
                 <Pressable
                   onPress={onHome}
