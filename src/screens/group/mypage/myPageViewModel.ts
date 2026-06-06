@@ -1,18 +1,6 @@
 import type { GroupMemberProfileResponse, GroupResponse, MyProfileResponse } from '@/api';
 import { formatMinutesAsHourMinute } from '@/lib/formatDuration';
 
-const getCertifiedDayAverageUsedMinutes = (
-  averageUsedMinutes: number | null | undefined,
-  totalDays: number | null | undefined,
-  certifiedDays: number | null | undefined
-) => {
-  if (averageUsedMinutes == null) return undefined;
-  if (!certifiedDays || certifiedDays <= 0) return averageUsedMinutes;
-  if (!totalDays || totalDays <= 0) return averageUsedMinutes;
-
-  return Math.round((averageUsedMinutes * totalDays) / certifiedDays);
-};
-
 const getDifferenceMinutes = (
   averageUsedMinutes: number | undefined,
   goalMinutes: number | null | undefined,
@@ -46,11 +34,7 @@ export function buildMyPageViewModel({
 }: BuildMyPageViewModelOptions) {
   const activeProfile = isFriend ? friendProfile : memberProfile;
   const weekly = activeProfile?.weeklySummary;
-  const averageUsedMinutes = getCertifiedDayAverageUsedMinutes(
-    weekly?.averageUsedMinutes,
-    weekly?.totalDays,
-    weekly?.certifiedDays
-  );
+  const averageUsedMinutes = weekly?.averageUsedMinutes;
   const displayProfileImageUri = isFriend
     ? (friendProfile?.profileImageUrl ?? null)
     : profileImageUri;
