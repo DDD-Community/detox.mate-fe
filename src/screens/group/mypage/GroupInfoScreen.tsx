@@ -127,6 +127,7 @@ export default function GroupInfoScreen() {
     setIsLeaving(true);
     try {
       await getGroup().leaveGroup(groupId);
+      await SecureStore.setItemAsync('needsGoalReset', 'true');
       setIsLeaveAlertOpen(false);
       // 그룹 탈퇴 성공 → 그룹 없음 화면으로 이동
       router.replace('/(group)/home');

@@ -1,4 +1,5 @@
 import { useFocusEffect } from 'expo-router';
+import * as SecureStore from 'expo-secure-store';
 import { useCallback, useState } from 'react';
 
 import {
@@ -55,7 +56,8 @@ export function useMyPageData({ params, onProfileImageUriChange }: UseMyPageData
 
           setProfile(me);
           onProfileImageUriChange(me.profileImageUrl ?? null);
-          setHasGoalSet((goalsResponse.goals?.length ?? 0) > 0);
+          const needsReset = await SecureStore.getItemAsync('needsGoalReset');
+          setHasGoalSet(needsReset !== 'true' && (goalsResponse.goals?.length ?? 0) > 0);
 
           const groupIds = (myGroups ?? [])
             .map((item) => item.id)
