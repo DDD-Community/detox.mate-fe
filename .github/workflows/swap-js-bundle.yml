@@ -1,0 +1,122 @@
+name: JS Bundle 갈아끼우기
+
+on:
+  workflow_dispatch:
+    inputs:
+      target:
+        description: 'Update target channel'
+        required: true
+        default: development
+        type: choice
+        options:
+          - development
+          - production
+      app_version:
+        description: 'Runtime/app version to target. Example: 1.0.3'
+        required: true
+        type: string
+      message:
+        description: 'Update message'
+        required: true
+        type: string
+      rollout_percentage:
+        description: 'Production rollout percentage. 100 publishes to all users.'
+        required: true
+        default: '10'
+        type: choice
+        options:
+          - '10'
+          - '25'
+          - '50'
+          - '100'
+
+permissions:
+  contents: read
+
+jobs:
+  publish:
+    name: Publish OTA update
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup mise
+        uses: jdx/mise-action@v2
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Setup EAS
+        uses: expo/expo-github-action@v8
+        with:
+          eas-version: latest
+          token: ${{ secrets.EXPO_TOKEN }}
+
+      - name: Validate update inputs
+        env:
+          TARGET: ${{ inputs.target }}
+          APP_VERSION: ${{ inputs.app_version }}
+          ROLLOUT_PERCENTAGE: ${{ inputs.rollout_percentage }}
+        run: |
+          if ! [[ "$APP_VERSION" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+            echo "::error::app_version must use semantic version format, for example 1.0.3"
+            exit 1
+          fi
+
+          if [ "$TARGET" = "production" ] && [ "$GITHUB_REF_NAME" != "dev" ]; then
+            echo "::error::Production OTA updates must run from dev. Current branch: $GITHUB_REF_NAME"
+            exit 1
+          fi
+
+          if ! [[ "$ROLLOUT_PERCENTAGE" =~ ^(10|25|50|100)$ ]]; then
+            echo "::error::rollout_percentage must be one of 10, 25, 50, or 100"
+            exit 1
+          fi
+
+      - name: Verify app config
+        env:
+          APP_ENV: ${{ inputs.target }}
+          APP_VERSION: ${{ inputs.app_version }}
+          APP_BUILD_CHANNEL: ${{ inputs.target }}
+          APP_GIT_SHA: ${{ github.sha }}
+        run: |
+          export APP_GIT_SHA="${APP_GIT_SHA::7}"
+          pnpm exec expo config --type public
+
+      - name: Publish update
+        env:
+          TARGET: ${{ inputs.target }}
+          APP_ENV: ${{ inputs.target }}
+          APP_VERSION: ${{ inputs.app_version }}
+          APP_BUILD_CHANNEL: ${{ inputs.target }}
+          APP_GIT_SHA: ${{ github.sha }}
+          MESSAGE: ${{ inputs.message }}
+          ROLLOUT_PERCENTAGE: ${{ inputs.rollout_percentage }}
+        run: |
+          export APP_GIT_SHA="${APP_GIT_SHA::7}"
+
+          rollout_args=()
+          if [ "$TARGET" = "production" ] && [ "$ROLLOUT_PERCENTAGE" != "100" ]; then
+            rollout_args+=(--rollout-percentage "$ROLLOUT_PERCENTAGE")
+          fi
+
+          eas update \
+            --channel "$TARGET" \
+            --environment "$TARGET" \
+            --message "$MESSAGE" \
+            --non-interactive \
+            "${rollout_args[@]}"
+
+          {
+            echo "## JS Bundle Swap"
+            echo ""
+            echo "| Field | Value |"
+            echo "| --- | --- |"
+            echo "| Target | \`$TARGET\` |"
+            echo "| App/runtime version | \`$APP_VERSION\` |"
+            echo "| Git SHA | \`$APP_GIT_SHA\` |"
+            echo "| Rollout | \`${ROLLOUT_PERCENTAGE}%\` |"
+            echo "| Message | \`$MESSAGE\` |"
+          } >> "$GITHUB_STEP_SUMMARY"
