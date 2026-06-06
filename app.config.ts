@@ -49,7 +49,7 @@ const config: ExpoConfig = {
   },
   android: {
     adaptiveIcon: {
-      foregroundImage: './assets/adaptive-icon.png',
+      foregroundImage: './assets/icon.png',
       backgroundColor: '#ffffff',
     },
     predictiveBackGestureEnabled: false,
