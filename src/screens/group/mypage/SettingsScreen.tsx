@@ -218,15 +218,15 @@ export default function SettingsScreen() {
   };
 
   const handleContact = () => {
-    // TODO: 문의하기 — Linking.openURL or 문의 화면 이동
+    Linking.openURL('https://docs.google.com/forms/d/e/1FAIpQLSew334-Pk-oTV-kJsT_OOn6CPOqhH14CySHF07ZzgC9RuKwaA/viewform');
   };
 
   const handleTerms = () => {
-    // TODO: 서비스 이용 약관 링크
+    Linking.openURL('https://app.notion.com/p/happysisyphe/342ad7a38ce58022b466ffec4ca39482?source=copy_link');
   };
 
   const handlePrivacy = () => {
-    // TODO: 개인정보 처리방침 링크
+    Linking.openURL('https://app.notion.com/p/happysisyphe/342ad7a38ce580e1ba8ac09e06c96dca?source=copy_link');
   };
 
   const handleOpenLogoutAlert = () => {
