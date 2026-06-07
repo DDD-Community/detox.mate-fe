@@ -105,7 +105,7 @@ export default function GroupCreateScreen() {
                 setGroupName(t.slice(0, GROUP_NAME_MAX_LENGTH));
                 setError(null);
               }}
-              placeholder="그룹 이름을 입력해주세요"
+              placeholder="그룹 이름을 입력해 주세요"
               placeholderTextColor={gray[300]}
               maxLength={GROUP_NAME_MAX_LENGTH}
             />
@@ -128,7 +128,7 @@ export default function GroupCreateScreen() {
             {'\n'}그룹이 생성됐어요!
           </Text>
           <Text style={styles.completeSubtitle}>
-            초대 코드를 친구에게 공유해서 함께 시작해보세요
+            초대 코드를 친구에게 공유해서 함께 시작해 보세요
           </Text>
 
           <View style={styles.gap24} />

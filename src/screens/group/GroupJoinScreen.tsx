@@ -57,11 +57,11 @@ export default function GroupJoinScreen() {
       const status = e?.response?.status;
       console.log(status);
       if (status === 409) {
-        setError('초대 코드를 다시 확인해주세요');
+        setError('초대 코드를 다시 확인해 주세요');
       } else if (status === 404) {
-        setError('초대 코드를 다시 확인해주세요');
+        setError('초대 코드를 다시 확인해 주세요');
       } else {
-        setError('초대 코드를 다시 확인해주세요');
+        setError('초대 코드를 다시 확인해 주세요');
       }
     } finally {
       setLoading(false);
@@ -105,7 +105,7 @@ export default function GroupJoinScreen() {
               style={styles.input}
               value={inviteCode}
               onChangeText={handleCodeChange}
-              placeholder="초대 코드를 입력해주세요"
+              placeholder="초대 코드를 입력해 주세요"
               placeholderTextColor={gray[300]}
               autoCapitalize="characters"
               maxLength={INVITE_CODE_MAX_LENGTH}
@@ -141,7 +141,7 @@ export default function GroupJoinScreen() {
             {'\n'}그룹에 참여했어요!
           </Text>
           <Text style={styles.completeSubtitle}>
-            초대 코드를 친구에게 공유해서 함께 시작해보세요
+            초대 코드를 친구에게 공유해서 함께 시작해 보세요
           </Text>
 
           <View style={styles.gap24} />

@@ -325,10 +325,7 @@ export default function FeedHome() {
         ...(groupName ? { name: groupName } : {}),
         ...(inviteCode ? { inviteCode } : {}),
       });
-      const resolveIsMe = (m: MemberResponse) =>
-        m.isMe === true ||
-        (currentUserIdRef.current != null && m.userId === currentUserIdRef.current);
-      setFeedItems(sortedFeedItems.map((m) => ({ ...mapMemberToFeedItem(m), isMe: resolveIsMe(m) })));
+      setFeedItems(sortedFeedItems.map(mapMemberToFeedItem));
       setMembers(sortedMembers.map(mapMemberToMemberItem));
       const goalSetCount = apiMembers.filter(hasTotalUsageGoal).length;
 
@@ -849,7 +846,7 @@ function EmptyFeedCard({ onInvite }: { onInvite: () => void }) {
           resizeMode="contain"
         />
         <Text style={styles.emptySubtitle}>
-          피드가 없어요{'\n'}친구를 초대하여 함께 디톡스를 시작해보세요
+          피드가 없어요{'\n'}친구를 초대하여 함께 디톡스를 시작해 보세요
         </Text>
       </View>
       <Button

@@ -15,7 +15,7 @@ const CLEAR_PROFILE_IMAGE_OBJECT_KEY = '';
 
 const IMAGE_PICKER_OPEN_DELAY_MS = 300;
 const PROFILE_IMAGE_UPDATE_ERROR_MESSAGE =
-  '프로필 이미지를 변경하지 못했어요. 잠시 후 다시 시도해주세요';
+  '프로필 이미지를 변경하지 못했어요. 잠시 후 다시 시도해 주세요';
 
 export function useProfileImageUpdater() {
   const [isImageSheetOpen, setIsImageSheetOpen] = useState(false);

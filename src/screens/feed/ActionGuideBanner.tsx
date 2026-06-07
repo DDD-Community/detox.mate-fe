@@ -45,8 +45,8 @@ function GoalBanner() {
     <View style={styles.goalBanner}>
       <View style={styles.topRow}>
         <View style={styles.textContainer}>
-          <Text style={styles.goalTitle}>디톡스 첫날이신가요?</Text>
-          <Text style={styles.goalSubtitle}>내 평균 스크린 타임을 업로드해보세요!</Text>
+          <Text style={styles.goalTitle}>디톡스 첫 날이신가요?</Text>
+          <Text style={styles.goalSubtitle}>내 평균 스크린 타임을 업로드해 보세요!</Text>
         </View>
         <Image
           source={require('../../../assets/feed_daily_calender.png')}
