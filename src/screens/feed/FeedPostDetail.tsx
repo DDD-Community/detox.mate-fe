@@ -438,9 +438,9 @@ export default function FeedPostDetail() {
                   <Text style={styles.memberName}>{feedAuthorName}</Text>
                 </Pressable>
 
-                <Text style={styles.statusText}>{BODY_TEXT[state]}</Text>
+                <Text style={styles.statusText}>{BODY_TEXT[feedItem.memberGoalState ?? state]}</Text>
 
-                {!isReadOnly && !feedItem.isMe && state !== 'setWaiting' && (
+                {!isReadOnly && !feedItem.isMe && feedItem.memberGoalState !== 'setWaiting' && (
                   <Pressable
                     style={[styles.pokeButton, isPoked && styles.pokeButtonDisabled]}
                     disabled={isPoked}

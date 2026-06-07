@@ -123,8 +123,8 @@ const getActionGuideBannerState = ({
   now: Date;
 }): ActionGuideBannerState => {
   if (goalState === 'notSet') return 'notSet';
-  if (goalSetMemberCount < 2) return 'waitingForMembers';
   if (goalState === 'setWaiting') return 'setWaiting';
+  if (goalSetMemberCount < 2) return 'waitingForMembers';
   if (isMyVerified) return 'verified';
   if (getMinutesUntilTomorrow(now) <= 60) return 'deadlineSoon';
   return 'authReady';
