@@ -6,6 +6,8 @@ const isProduction = appEnv === 'production';
 const appVersion = process.env.APP_VERSION ?? '1.0.0';
 const buildChannel = process.env.APP_BUILD_CHANNEL ?? 'local';
 const easProjectId = '0387da46-8602-45c5-b927-229815033a44';
+const sentryDsn = process.env.EXPO_PUBLIC_SENTRY_DSN || undefined;
+const sentryUrl = process.env.SENTRY_URL ?? 'https://sentry.io/';
 const gitSha =
   process.env.APP_GIT_SHA ??
   (() => {
@@ -70,6 +72,14 @@ const config: ExpoConfig = {
   },
   plugins: [
     [
+      '@sentry/react-native',
+      {
+        organization: process.env.SENTRY_ORG,
+        project: process.env.SENTRY_PROJECT,
+        url: sentryUrl,
+      },
+    ],
+    [
       'expo-secure-store',
       {
         faceIDPermission: 'Allow $(PRODUCT_NAME) to access your Face ID biometric data.',
@@ -104,6 +114,7 @@ const config: ExpoConfig = {
     appVersion,
     buildChannel,
     gitSha,
+    ...(sentryDsn ? { sentryDsn } : {}),
     apiBaseUrl: isProduction ? 'https://api.detoxmate.co.kr' : 'https://api-dev.detoxmate.co.kr',
     router: {},
     eas: {

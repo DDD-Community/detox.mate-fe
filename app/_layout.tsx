@@ -6,7 +6,9 @@ import { fontSources } from '../src/lib/token/primitive/fonts';
 import { NetworkErrorToast } from '../src/components/NetworkErrorToast';
 import { subscribeToDevicePushTokenRefresh } from '../src/lib/fcmToken';
 import { AppErrorBoundary } from '../src/components/AppErrorBoundary';
+import { initSentry } from '../src/observability/sentry';
 
+initSentry();
 SplashScreen.preventAutoHideAsync();
 
 const STORYBOOK_ENABLED = process.env.EXPO_PUBLIC_STORYBOOK === 'true';

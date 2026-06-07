@@ -1,7 +1,8 @@
 import { env } from '../../config/env';
+import { captureObservedError } from '../../observability/sentry';
 import type { AppError } from './types';
 
-type ErrorLogContext = {
+export type ErrorLogContext = {
   scope?: string;
   operation?: string;
   path?: string;
@@ -11,7 +12,7 @@ type ErrorLogContext = {
   [key: string]: unknown;
 };
 
-const sanitizeContext = (error: AppError, context?: ErrorLogContext) => ({
+export const sanitizeErrorLogContext = (error: AppError, context?: ErrorLogContext) => ({
   ...context,
   type: error.type,
   status: context?.status ?? error.status,
@@ -20,9 +21,11 @@ const sanitizeContext = (error: AppError, context?: ErrorLogContext) => ({
 });
 
 export function logError(error: AppError, context?: ErrorLogContext) {
+  captureObservedError(error, context);
+
   if (env.appEnv !== 'development') return;
 
-  const payload = sanitizeContext(error, context);
+  const payload = sanitizeErrorLogContext(error, context);
   if (error.type === 'server' || error.type === 'unknown') {
     console.error('[AppError]', payload);
     return;

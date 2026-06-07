@@ -5,6 +5,7 @@ type ExpoExtra = {
   appVersion?: unknown;
   buildChannel?: unknown;
   gitSha?: unknown;
+  sentryDsn?: unknown;
   apiBaseUrl?: unknown;
 };
 
@@ -13,6 +14,7 @@ const appEnv = extra?.appEnv;
 const appVersion = extra?.appVersion;
 const buildChannel = extra?.buildChannel;
 const gitSha = extra?.gitSha;
+const sentryDsn = extra?.sentryDsn;
 const apiBaseUrl = extra?.apiBaseUrl;
 
 if (appEnv !== 'development' && appEnv !== 'production') {
@@ -31,6 +33,10 @@ if (gitSha !== null && gitSha !== undefined && typeof gitSha !== 'string') {
   throw new Error('Invalid Expo config value: extra.gitSha');
 }
 
+if (sentryDsn !== null && sentryDsn !== undefined && typeof sentryDsn !== 'string') {
+  throw new Error('Invalid Expo config value: extra.sentryDsn');
+}
+
 if (typeof apiBaseUrl !== 'string' || apiBaseUrl.length === 0) {
   throw new Error('Missing Expo config value: extra.apiBaseUrl');
 }
@@ -40,5 +46,6 @@ export const env = {
   appVersion,
   buildChannel,
   gitSha: gitSha ?? null,
+  sentryDsn: sentryDsn ?? null,
   apiBaseUrl,
 } as const;
