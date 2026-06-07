@@ -289,7 +289,7 @@ export default function FeedHome() {
         feedApi.getGroupChallengeOverview(numericGroupChallengeId),
         feedApi.getTodayChallengeRecords(numericGroupChallengeId),
       ]);
-      const apiMembers = today.members ?? [];
+      const apiMembers = (today.members ?? []).filter((m) => m.isMe || !m.isUserWithdrawn);
       const sortedMembers = [...apiMembers].sort(compareChallengeMembers);
       const sortedFeedItems = [...apiMembers].sort(compareFeedCards);
       const groupId = overview.groupId ?? today.groupId;

@@ -179,7 +179,7 @@ export default function CalendarHistoryScreen() {
           `/group-challenges/${groupChallengeId}/challenge-records`,
           { params: { date } }
         );
-        setItems((res.data.members ?? []).map(mapMemberToFeedItem));
+        setItems((res.data.members ?? []).filter((m) => !m.isUserWithdrawn).map(mapMemberToFeedItem));
       } catch {
         setItems([]);
       } finally {
