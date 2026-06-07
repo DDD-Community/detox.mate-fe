@@ -29,6 +29,7 @@ flowchart LR
   - 수동 OTA 배포 workflow
   - production OTA는 `dev` 브랜치에서만 실행 가능
   - production은 기본 10% rollout으로 시작
+  - native 영향 가능 파일이 변경되면 `eas update` 전에 실패
 
 ## 환경 매핑
 
@@ -75,6 +76,17 @@ EAS Build가 필요한 변경:
 
 애매하면 EAS Build가 필요한 변경으로 취급한다.
 
+workflow도 이 기준을 보수적으로 검사한다. 다음 파일이 대상 변경분에 포함되면 OTA 배포는 실패한다.
+
+- `app.config.*`, `eas.json`
+- `package.json`, lockfile
+- `ios/**`, `android/**`
+- `modules/**`, `plugins/**`, `firebase/**`, `patches/**`
+- `metro.config.*`, `babel.config.*`
+- `assets/icon.png`, `assets/adaptive-icon.png`, `assets/splash_logo.png`
+
+production은 `app_version`에 맞는 `prd-v<version>-*` tag부터 현재 HEAD까지 비교한다. development는 같은 tag가 있으면 그 tag를 쓰고, 없으면 `origin/dev`와 현재 HEAD를 비교한다.
+
 ### 2. 대상 runtime version 확인
 
 OTA는 `APP_VERSION`이 같은 앱에만 적용된다.
@@ -112,7 +124,7 @@ eas update \
   --non-interactive
 ```
 
-production에서 `rollout_percentage`가 `100`이 아니면 `--rollout-percentage`가 추가된다.
+native 변경 guard가 통과한 뒤에만 위 명령이 실행된다. production에서 `rollout_percentage`가 `100`이 아니면 `--rollout-percentage`가 추가된다.
 
 ## 배포 흐름
 

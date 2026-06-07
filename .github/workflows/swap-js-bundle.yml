@@ -41,6 +41,8 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
 
       - name: Setup mise
         uses: jdx/mise-action@v2
@@ -74,6 +76,60 @@ jobs:
             echo "::error::rollout_percentage must be one of 10, 25, 50, or 100"
             exit 1
           fi
+
+      - name: Block native changes
+        env:
+          TARGET: ${{ inputs.target }}
+          APP_VERSION: ${{ inputs.app_version }}
+        run: |
+          set -euo pipefail
+
+          base_ref="$(git tag --list "prd-v${APP_VERSION}-*" --sort=-creatordate | head -n 1)"
+
+          if [ -z "$base_ref" ] && [ "$TARGET" = "production" ]; then
+            echo "::error::No production release tag found for app_version=$APP_VERSION. Expected tag pattern: prd-v${APP_VERSION}-*"
+            exit 1
+          fi
+
+          if [ -z "$base_ref" ]; then
+            git fetch origin dev --depth=1
+            base_ref="origin/dev"
+          fi
+
+          changed_files="$(git diff --name-only "$base_ref" HEAD)"
+          blocked_files=()
+
+          while IFS= read -r file; do
+            [ -z "$file" ] && continue
+
+            case "$file" in
+              app.config.*|eas.json|package.json|pnpm-lock.yaml|package-lock.json|yarn.lock|bun.lockb|metro.config.*|babel.config.*|ios/*|android/*|modules/*|plugins/*|firebase/*|patches/*|assets/icon.png|assets/adaptive-icon.png|assets/splash_logo.png)
+                blocked_files+=("$file")
+                ;;
+            esac
+          done <<< "$changed_files"
+
+          if [ "${#blocked_files[@]}" -gt 0 ]; then
+            echo "::error::Native-sensitive changes were found. Ship a new EAS Build instead of an OTA update."
+            printf '%s\n' "${blocked_files[@]}"
+            {
+              echo "## Native change guard failed"
+              echo ""
+              echo "Base: \`$base_ref\`"
+              echo ""
+              echo "Blocked files:"
+              printf '%s\n' "${blocked_files[@]}" | sed 's/^/- `/' | sed 's/$/`/'
+            } >> "$GITHUB_STEP_SUMMARY"
+            exit 1
+          fi
+
+          {
+            echo "## Native change guard"
+            echo ""
+            echo "Base: \`$base_ref\`"
+            echo ""
+            echo "No native-sensitive files changed."
+          } >> "$GITHUB_STEP_SUMMARY"
 
       - name: Verify app config
         env:
