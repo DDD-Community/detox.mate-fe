@@ -187,6 +187,9 @@ export default function CalendarHistoryScreen() {
         };
         const deduped = members
           .filter((m) => !m.isUserWithdrawn)
+          .filter((m) =>
+            (m.goals ?? []).some((g) => g.effectiveDate != null && g.effectiveDate <= date)
+          )
           .reduce<typeof members>((acc, m) => {
             const idx = acc.findIndex((e) => e.userId === m.userId);
             if (idx === -1) return [...acc, m];
