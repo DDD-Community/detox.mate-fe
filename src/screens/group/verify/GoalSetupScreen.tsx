@@ -14,6 +14,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { getUserUsageGoalTime, UserUsageGoalTimeRequestUsageGoalType } from '@/api';
 import { AppLogo, Button, HeaderAction } from '@/components';
+import { logError, normalizeError } from '@/api/errors';
 import { formatHHMMToDisplay, formatMinutesAsHourMinute } from '@/lib/formatDuration';
 import { primitiveColors, radius, spacing, typography } from '@/lib/token';
 
@@ -68,6 +69,13 @@ export default function GoalSetupScreen({ mode = 'initial' }: GoalSetupScreenPro
           setMinutes(clampedGoalMinutes);
           setExistingGoalMinutes(clampedGoalMinutes);
         }
+      } catch (error) {
+        if (!cancelled) {
+          logError(normalizeError(error), {
+            scope: 'goal.setup',
+            operation: 'loadCurrentGoalTimes',
+          });
+        }
       } finally {
         if (!cancelled) setIsLoading(false);
       }
@@ -116,6 +124,8 @@ export default function GoalSetupScreen({ mode = 'initial' }: GoalSetupScreenPro
       } else {
         router.replace('/(feed)/home');
       }
+    } catch (error) {
+      logError(normalizeError(error), { scope: 'goal.setup', operation: 'saveGoalTimes' });
     } finally {
       setIsSaving(false);
     }

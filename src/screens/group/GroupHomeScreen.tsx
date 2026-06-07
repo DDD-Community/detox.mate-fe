@@ -10,6 +10,7 @@ import {
   View,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { logError, normalizeError } from '../../api/errors';
 import { getGroup } from '../../api/generated/group/group';
 import { Icon } from '../../components/Icon';
 import { primitiveColors } from '../../lib/token/primitive/colors';
@@ -50,7 +51,10 @@ export default function GroupHomeScreen() {
             });
             return;
           }
-        } catch {
+        } catch (error) {
+          if (!cancelled) {
+            logError(normalizeError(error), { scope: 'group.home', operation: 'loadMyGroups' });
+          }
           // 네트워크 토스트가 표시되므로 이 화면은 빈 그룹 상태로 복구한다.
         } finally {
           if (!cancelled) {

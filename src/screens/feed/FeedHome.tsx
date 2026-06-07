@@ -276,7 +276,8 @@ export default function FeedHome() {
       } else {
         setGoalState('authReady');
       }
-    } catch {
+    } catch (error) {
+      logError(normalizeError(error), { scope: 'feed.home', operation: 'loadGoalState' });
       // keep current state on error
     }
   }, []);
@@ -335,7 +336,8 @@ export default function FeedHome() {
         .map((m) => String(m.userId));
       setPokedMemberIds(pokedIds);
       pokedIds.forEach((id) => pokeStore.add(id));
-    } catch {
+    } catch (error) {
+      logError(normalizeError(error), { scope: 'feed.home', operation: 'loadFeedData' });
       // keep existing state on error
     }
   }, []);
@@ -358,6 +360,8 @@ export default function FeedHome() {
         setMembers([]);
         setGoalSetMemberCount(0);
       }
+    } catch (error) {
+      logError(normalizeError(error), { scope: 'feed.home', operation: 'loadGroupChallenge' });
     } finally {
       if (!initialLoadDone.current) {
         setLoading(false);
