@@ -30,7 +30,7 @@ export default function VerifyMethodScreen() {
           <Text style={styles.title}>
             {mode === 'verify' ? '어제의 스크린 타임\n인증하기' : '내 스크린 타임\n인증하기'}
           </Text>
-          <Text style={styles.description}>둘 중 하나를 선택해주세요.</Text>
+          <Text style={styles.description}>둘 중 하나를 선택해 주세요.</Text>
         </View>
 
         <View style={styles.actions}>

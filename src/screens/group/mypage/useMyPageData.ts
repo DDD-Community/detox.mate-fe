@@ -56,8 +56,12 @@ export function useMyPageData({ params, onProfileImageUriChange }: UseMyPageData
 
           setProfile(me);
           onProfileImageUriChange(me.profileImageUrl ?? null);
+          const hasGoal = (goalsResponse.goals?.length ?? 0) > 0;
           const needsReset = await SecureStore.getItemAsync('needsGoalReset');
-          setHasGoalSet(needsReset !== 'true' && (goalsResponse.goals?.length ?? 0) > 0);
+          if (hasGoal && needsReset === 'true') {
+            await SecureStore.deleteItemAsync('needsGoalReset');
+          }
+          setHasGoalSet(hasGoal);
 
           const groupIds = (myGroups ?? [])
             .map((item) => item.id)

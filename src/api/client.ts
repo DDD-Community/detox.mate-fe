@@ -1,9 +1,9 @@
 import axios, { AxiosError } from 'axios';
 import { router } from 'expo-router';
 import * as SecureStore from 'expo-secure-store';
-import { clearAuthSession, refreshAccessToken } from './auth';
-import { useNetworkErrorToastStore } from '../stores/networkErrorToastStore';
 import { env } from '../config/env';
+import { useNetworkErrorToastStore } from '../stores/networkErrorToastStore';
+import { clearAuthSession, refreshAccessToken } from './auth';
 
 const apiClient = axios.create({
   baseURL: env.apiBaseUrl,
@@ -41,7 +41,7 @@ const isNetworkError = (error: AxiosError) =>
     error.code === 'ETIMEDOUT' ||
     error.message === 'Network Error');
 
-const DEFAULT_ERROR_MESSAGE = '요청을 처리하지 못했어요. 잠시 후 다시 시도해주세요';
+const DEFAULT_ERROR_MESSAGE = '요청을 처리하지 못했어요. 잠시 후 다시 시도해 주세요';
 
 const extractErrorMessage = (data: unknown): string | undefined => {
   if (!data || typeof data !== 'object') return undefined;

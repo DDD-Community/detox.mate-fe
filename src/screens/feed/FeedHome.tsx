@@ -140,6 +140,21 @@ const formatTimeAgo = (isoDate: string): string => {
   return `${Math.floor(hours / 24)}일 전`;
 };
 
+const getTodayString = (): string => {
+  const now = new Date();
+  const y = now.getFullYear();
+  const mo = String(now.getMonth() + 1).padStart(2, '0');
+  const d = String(now.getDate()).padStart(2, '0');
+  return `${y}-${mo}-${d}`;
+};
+
+const getMemberGoalState = (m: MemberResponse): GoalState => {
+  if (!m.goals || m.goals.length === 0) return 'notSet';
+  const today = getTodayString();
+  const hasEffectiveGoal = m.goals.some((g) => g.effectiveDate != null && g.effectiveDate <= today);
+  return hasEffectiveGoal ? 'authReady' : 'setWaiting';
+};
+
 const mapMemberToFeedItem = (m: MemberResponse): FeedItem => {
   const isVerified = m.activityRecord != null;
   const isGoalAchieved = m.activityRecord?.allAchieved === true;
@@ -172,6 +187,7 @@ const mapMemberToFeedItem = (m: MemberResponse): FeedItem => {
     goal: formatMinutesAsHHMM(totalGoal?.goalMinutes),
     usedMinutes: totalUsage?.usedMinutes,
     goalMinutes: totalGoal?.goalMinutes,
+    memberGoalState: getMemberGoalState(m),
     verifiedTimeAgo:
       isVerified && m.activityRecord?.submittedAt
         ? formatTimeAgo(m.activityRecord.submittedAt)
@@ -247,6 +263,13 @@ export default function FeedHome() {
   const [group, setGroup] = useState<FeedGroup | null>(null);
   const [groupChallengeId, setGroupChallengeId] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
+  const currentUserIdRef = useRef<number | null>(null);
+
+  useEffect(() => {
+    SecureStore.getItemAsync('currentUserId').then((v) => {
+      currentUserIdRef.current = v ? Number(v) : null;
+    });
+  }, []);
   const [goalState, setGoalState] = useState<GoalState>('notSet');
   const [goalSetMemberCount, setGoalSetMemberCount] = useState(0);
   const [members, setMembers] = useState<MemberItem[]>([]);
@@ -257,18 +280,20 @@ export default function FeedHome() {
 
   const fetchGoalState = useCallback(async () => {
     try {
-      const needsReset = await SecureStore.getItemAsync('needsGoalReset');
-      if (needsReset === 'true') {
-        setGoalState('notSet');
-        return;
-      }
-      const response = await getUserUsageGoalTime().getCurrentGoalTimes();
+      const [needsReset, response] = await Promise.all([
+        SecureStore.getItemAsync('needsGoalReset'),
+        getUserUsageGoalTime().getCurrentGoalTimes(),
+      ]);
       const total = response.goals?.find(
         (g) => g.usageGoalType === CurrentUsageGoalTimeResponseUsageGoalType.TOTAL_USAGE
       );
       if (!total) {
         setGoalState('notSet');
         return;
+      }
+      // 서버에 목표가 있으면 stale 플래그 제거
+      if (needsReset === 'true') {
+        await SecureStore.deleteItemAsync('needsGoalReset');
       }
       if (total.createdAt && isCreatedToday(total.createdAt)) {
         setGoalState('setWaiting');
@@ -821,7 +846,7 @@ function EmptyFeedCard({ onInvite }: { onInvite: () => void }) {
           resizeMode="contain"
         />
         <Text style={styles.emptySubtitle}>
-          피드가 없어요{'\n'}친구를 초대하여 함께 디톡스를 시작해보세요
+          피드가 없어요{'\n'}친구를 초대하여 함께 디톡스를 시작해 보세요
         </Text>
       </View>
       <Button
