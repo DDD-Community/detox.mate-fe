@@ -179,7 +179,25 @@ export default function CalendarHistoryScreen() {
           `/group-challenges/${groupChallengeId}/challenge-records`,
           { params: { date } }
         );
-        setItems((res.data.members ?? []).filter((m) => !m.isUserWithdrawn).map(mapMemberToFeedItem));
+        const members = res.data.members ?? [];
+        const score = (m: (typeof members)[number]) => {
+          if (m.activityRecord != null) return 2;
+          if ((m.reactionCount ?? 0) > 0 || (m.commentCount ?? 0) > 0) return 1;
+          return 0;
+        };
+        const deduped = members
+          .filter((m) => !m.isUserWithdrawn)
+          .reduce<typeof members>((acc, m) => {
+            const idx = acc.findIndex((e) => e.userId === m.userId);
+            if (idx === -1) return [...acc, m];
+            if (score(m) > score(acc[idx])) {
+              const next = [...acc];
+              next[idx] = m;
+              return next;
+            }
+            return acc;
+          }, []);
+        setItems(deduped.map(mapMemberToFeedItem));
       } catch {
         setItems([]);
       } finally {
