@@ -234,7 +234,6 @@ export default function CalendarHistoryScreen() {
   };
 
   const openPostDetail = (item: FeedItem) => {
-    if (!item.challengeRecordId) return;
     router.push({
       pathname: '/(feed)/post-detail',
       params: {
@@ -292,7 +291,7 @@ export default function CalendarHistoryScreen() {
               item={item}
               goalState="authReady"
               historyMode={true}
-              onBodyPress={item.isVerified ? () => openPostDetail(item) : undefined}
+              onBodyPress={() => openPostDetail(item)}
               onProfilePress={() => openMemberProfile(item)}
             />
           ))}
