@@ -140,6 +140,21 @@ const formatTimeAgo = (isoDate: string): string => {
   return `${Math.floor(hours / 24)}일 전`;
 };
 
+const getTodayString = (): string => {
+  const now = new Date();
+  const y = now.getFullYear();
+  const mo = String(now.getMonth() + 1).padStart(2, '0');
+  const d = String(now.getDate()).padStart(2, '0');
+  return `${y}-${mo}-${d}`;
+};
+
+const getMemberGoalState = (m: MemberResponse): GoalState => {
+  if (!m.goals || m.goals.length === 0) return 'notSet';
+  const today = getTodayString();
+  const hasEffectiveGoal = m.goals.some((g) => g.effectiveDate != null && g.effectiveDate <= today);
+  return hasEffectiveGoal ? 'authReady' : 'setWaiting';
+};
+
 const mapMemberToFeedItem = (m: MemberResponse): FeedItem => {
   const isVerified = m.activityRecord != null;
   const isGoalAchieved = m.activityRecord?.allAchieved === true;
@@ -172,6 +187,7 @@ const mapMemberToFeedItem = (m: MemberResponse): FeedItem => {
     goal: formatMinutesAsHHMM(totalGoal?.goalMinutes),
     usedMinutes: totalUsage?.usedMinutes,
     goalMinutes: totalGoal?.goalMinutes,
+    memberGoalState: getMemberGoalState(m),
     verifiedTimeAgo:
       isVerified && m.activityRecord?.submittedAt
         ? formatTimeAgo(m.activityRecord.submittedAt)

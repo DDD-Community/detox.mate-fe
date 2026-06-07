@@ -44,6 +44,7 @@ export type FeedItem = {
   goal?: string;
   usedMinutes?: number;
   goalMinutes?: number;
+  memberGoalState?: GoalState;
 };
 
 function ProfileAvatar({ source }: { source: FeedItem['avatarSource'] }) {
@@ -169,7 +170,7 @@ export default function FeedCard({
 
   // ── Unverified card ──
   const showPokeButton = !historyMode && !item.isMe && goalState !== 'setWaiting';
-  const unverifiedBodyText = historyMode ? '인증하지 않았어요' : BODY_TEXT[goalState];
+  const unverifiedBodyText = historyMode ? '인증하지 않았어요' : BODY_TEXT[item.memberGoalState ?? goalState];
 
   return (
     <Pressable
