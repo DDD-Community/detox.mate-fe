@@ -263,6 +263,13 @@ export default function FeedHome() {
   const [group, setGroup] = useState<FeedGroup | null>(null);
   const [groupChallengeId, setGroupChallengeId] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
+  const currentUserIdRef = useRef<number | null>(null);
+
+  useEffect(() => {
+    SecureStore.getItemAsync('currentUserId').then((v) => {
+      currentUserIdRef.current = v ? Number(v) : null;
+    });
+  }, []);
   const [goalState, setGoalState] = useState<GoalState>('notSet');
   const [goalSetMemberCount, setGoalSetMemberCount] = useState(0);
   const [members, setMembers] = useState<MemberItem[]>([]);
@@ -273,18 +280,20 @@ export default function FeedHome() {
 
   const fetchGoalState = useCallback(async () => {
     try {
-      const needsReset = await SecureStore.getItemAsync('needsGoalReset');
-      if (needsReset === 'true') {
-        setGoalState('notSet');
-        return;
-      }
-      const response = await getUserUsageGoalTime().getCurrentGoalTimes();
+      const [needsReset, response] = await Promise.all([
+        SecureStore.getItemAsync('needsGoalReset'),
+        getUserUsageGoalTime().getCurrentGoalTimes(),
+      ]);
       const total = response.goals?.find(
         (g) => g.usageGoalType === CurrentUsageGoalTimeResponseUsageGoalType.TOTAL_USAGE
       );
       if (!total) {
         setGoalState('notSet');
         return;
+      }
+      // 서버에 목표가 있으면 stale 플래그 제거
+      if (needsReset === 'true') {
+        await SecureStore.deleteItemAsync('needsGoalReset');
       }
       if (total.createdAt && isCreatedToday(total.createdAt)) {
         setGoalState('setWaiting');
@@ -316,7 +325,10 @@ export default function FeedHome() {
         ...(groupName ? { name: groupName } : {}),
         ...(inviteCode ? { inviteCode } : {}),
       });
-      setFeedItems(sortedFeedItems.map(mapMemberToFeedItem));
+      const resolveIsMe = (m: MemberResponse) =>
+        m.isMe === true ||
+        (currentUserIdRef.current != null && m.userId === currentUserIdRef.current);
+      setFeedItems(sortedFeedItems.map((m) => ({ ...mapMemberToFeedItem(m), isMe: resolveIsMe(m) })));
       setMembers(sortedMembers.map(mapMemberToMemberItem));
       const goalSetCount = apiMembers.filter(hasTotalUsageGoal).length;
 

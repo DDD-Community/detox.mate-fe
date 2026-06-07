@@ -109,7 +109,7 @@ export default function FeedCard({
                   </View>
                 </View>
               </View>
-              <Text style={styles.memberName}>{item.name}</Text>
+              <Text style={styles.memberName}>{item.isMe ? '나' : item.name}</Text>
             </Pressable>
             {item.verifiedTimeAgo != null && (
               <Text style={styles.timeAgo}>{item.verifiedTimeAgo}</Text>
