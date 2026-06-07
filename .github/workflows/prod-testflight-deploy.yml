@@ -1,0 +1,277 @@
+name: Deploy Prod to TestFlight
+
+on:
+  workflow_dispatch:
+    inputs:
+      version_bump:
+        description: 'Version bump from the previous PRD release. Use custom to enter an exact version.'
+        required: true
+        default: patch
+        type: choice
+        options:
+          - patch
+          - minor
+          - major
+          - custom
+      custom_app_version:
+        description: 'Required only when version_bump is custom. Example: 1.2.3'
+        required: false
+        type: string
+
+permissions:
+  contents: write
+
+jobs:
+  release-context:
+    name: Resolve TestFlight context
+    runs-on: ubuntu-latest
+    outputs:
+      app-version: ${{ steps.context.outputs.app-version }}
+      previous-tag: ${{ steps.context.outputs.previous-tag }}
+      previous-version: ${{ steps.context.outputs.previous-version }}
+      release-tag: ${{ steps.context.outputs.release-tag }}
+      release-title: ${{ steps.context.outputs.release-title }}
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Resolve previous PRD release
+        id: context
+        env:
+          VERSION_BUMP: ${{ inputs.version_bump }}
+          CUSTOM_APP_VERSION: ${{ inputs.custom_app_version }}
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          if [ "$GITHUB_REF_NAME" != "dev" ]; then
+            echo "::error::Prod TestFlight deploy must run from dev. Current branch: $GITHUB_REF_NAME"
+            exit 1
+          fi
+
+          previous_tag=""
+          while IFS= read -r tag; do
+            if git rev-parse -q --verify "refs/tags/$tag" >/dev/null && git merge-base --is-ancestor "$tag" HEAD; then
+              previous_tag="$tag"
+              break
+            fi
+          done < <(gh release list --limit 100 --json tagName --jq '.[] | select(.tagName | startswith("prd-v")) | .tagName')
+
+          previous_version="1.0.0"
+          if [[ "$previous_tag" =~ ^prd-v([0-9]+\.[0-9]+\.[0-9]+)-[0-9]+$ ]]; then
+            previous_version="${BASH_REMATCH[1]}"
+          fi
+
+          if [ "$VERSION_BUMP" = "custom" ]; then
+            app_version="$CUSTOM_APP_VERSION"
+          else
+            IFS='.' read -r major minor patch <<< "$previous_version"
+            case "$VERSION_BUMP" in
+              major)
+                app_version="$((major + 1)).0.0"
+                ;;
+              minor)
+                app_version="${major}.$((minor + 1)).0"
+                ;;
+              patch)
+                app_version="${major}.${minor}.$((patch + 1))"
+                ;;
+              *)
+                echo "::error::Unsupported version_bump: $VERSION_BUMP"
+                exit 1
+                ;;
+            esac
+          fi
+
+          if ! [[ "$app_version" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+            echo "::error::Resolved app version must use semantic version format, for example 1.0.1"
+            exit 1
+          fi
+
+          if [ "$VERSION_BUMP" = "custom" ] && [ "$app_version" = "$previous_version" ]; then
+            echo "::error::custom_app_version must be different from the previous PRD version"
+            exit 1
+          fi
+
+          release_tag="prod-tf-v${app_version}-${GITHUB_RUN_NUMBER}"
+          release_title="Prod TestFlight v${app_version} #${GITHUB_RUN_NUMBER}"
+
+          {
+            echo "app-version=$app_version"
+            echo "previous-tag=$previous_tag"
+            echo "previous-version=$previous_version"
+            echo "release-tag=$release_tag"
+            echo "release-title=$release_title"
+          } >> "$GITHUB_OUTPUT"
+
+          {
+            echo "## Prod TestFlight deployment"
+            echo ""
+            echo "| Field | Value |"
+            echo "| --- | --- |"
+            echo "| Version bump | \`$VERSION_BUMP\` |"
+            echo "| Previous PRD version | \`$previous_version\` |"
+            echo "| App version | \`$app_version\` |"
+            echo "| Previous PRD release | \`${previous_tag:-none}\` |"
+            echo "| TestFlight release tag | \`$release_tag\` |"
+          } >> "$GITHUB_STEP_SUMMARY"
+
+  build:
+    name: Build iOS Prod
+    runs-on: ubuntu-latest
+    needs: release-context
+    outputs:
+      build-id: ${{ steps.build.outputs.build-id }}
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup mise
+        uses: jdx/mise-action@v2
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Setup EAS
+        uses: expo/expo-github-action@v8
+        with:
+          eas-version: latest
+          token: ${{ secrets.EXPO_TOKEN }}
+
+      - name: Verify prod app config
+        env:
+          APP_ENV: production
+          APP_VERSION: ${{ needs.release-context.outputs.app-version }}
+          APP_BUILD_CHANNEL: production
+          APP_GIT_SHA: ${{ github.sha }}
+        run: |
+          export APP_GIT_SHA="${APP_GIT_SHA::7}"
+          pnpm exec expo config --type public
+
+      - name: Build iOS Prod
+        id: build
+        env:
+          APP_ENV: production
+          APP_VERSION: ${{ needs.release-context.outputs.app-version }}
+          APP_BUILD_CHANNEL: production
+          APP_GIT_SHA: ${{ github.sha }}
+        run: |
+          export APP_GIT_SHA="${APP_GIT_SHA::7}"
+          BUILD_JSON=$(eas build --platform ios --profile production --non-interactive --json)
+          BUILD_ID=$(echo "$BUILD_JSON" | jq -r '.[0].id')
+          if [ -z "$BUILD_ID" ] || [ "$BUILD_ID" = "null" ]; then
+            echo "::error::Failed to extract build ID"
+            echo "$BUILD_JSON"
+            exit 1
+          fi
+          echo "build-id=$BUILD_ID" >> "$GITHUB_OUTPUT"
+          echo "Build ID: $BUILD_ID"
+
+  submit:
+    name: Submit to App Store Connect
+    runs-on: ubuntu-latest
+    needs: build
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup mise
+        uses: jdx/mise-action@v2
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Setup EAS
+        uses: expo/expo-github-action@v8
+        with:
+          eas-version: latest
+          token: ${{ secrets.EXPO_TOKEN }}
+
+      - name: Submit to App Store Connect
+        run: eas submit --platform ios --id ${{ needs.build.outputs.build-id }} --profile production --non-interactive
+
+  testflight-release:
+    name: Create TestFlight release record
+    runs-on: ubuntu-latest
+    needs:
+      - build
+      - release-context
+      - submit
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Create TestFlight pre-release
+        env:
+          APP_VERSION: ${{ needs.release-context.outputs.app-version }}
+          PREVIOUS_TAG: ${{ needs.release-context.outputs.previous-tag }}
+          RELEASE_TAG: ${{ needs.release-context.outputs.release-tag }}
+          RELEASE_TITLE: ${{ needs.release-context.outputs.release-title }}
+          BUILD_ID: ${{ needs.build.outputs.build-id }}
+          ASC_APP_ID: '6771277684'
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          {
+            echo "## Prod TestFlight deployment"
+            echo ""
+            echo "- App version: \`$APP_VERSION\`"
+            echo "- EAS build ID: \`$BUILD_ID\`"
+            echo "- App Store Connect app ID: \`$ASC_APP_ID\`"
+            echo "- Commit: \`$GITHUB_SHA\`"
+            echo "- Workflow run: $GITHUB_SERVER_URL/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID"
+            echo ""
+            echo "## Promotion metadata"
+            echo ""
+            echo "\`\`\`properties"
+            echo "app_version=$APP_VERSION"
+            echo "commit_sha=$GITHUB_SHA"
+            echo "eas_build_id=$BUILD_ID"
+            echo "asc_app_id=$ASC_APP_ID"
+            echo "workflow_run=$GITHUB_SERVER_URL/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID"
+            echo "\`\`\`"
+            echo ""
+            echo "## Changes"
+            echo ""
+            if [ -n "$PREVIOUS_TAG" ]; then
+              git log --pretty=format:'- %s (%h)' "$PREVIOUS_TAG"..HEAD
+            else
+              git log --pretty=format:'- %s (%h)' HEAD
+            fi
+          } > release-notes.md
+
+          gh release create "$RELEASE_TAG" \
+            --target "$GITHUB_SHA" \
+            --title "$RELEASE_TITLE" \
+            --notes-file release-notes.md \
+            --prerelease
+
+          cat release-notes.md >> "$GITHUB_STEP_SUMMARY"
+
+  notify:
+    name: Notify Discord
+    runs-on: ubuntu-latest
+    needs:
+      - build
+      - release-context
+      - testflight-release
+
+    steps:
+      - name: Notify Discord
+        env:
+          APP_VERSION: ${{ needs.release-context.outputs.app-version }}
+          RELEASE_TAG: ${{ needs.release-context.outputs.release-tag }}
+          BUILD_ID: ${{ needs.build.outputs.build-id }}
+        run: |
+          content="**Prod TestFlight 배포 성공**\\nApp version: ${APP_VERSION}\\nRelease: ${RELEASE_TAG}\\nEAS build ID: ${BUILD_ID}\\n검증 완료 후 \`Promote Prod TestFlight to Release\` workflow로 운영 릴리즈 기록을 생성하세요."
+          payload="$(jq -n --arg content "$content" '{content: $content}')"
+
+          curl -s -X POST \
+            -H "Content-Type: application/json" \
+            -d "$payload" \
+            "${{ secrets.DISCORD_WEBHOOK_URL_DEV_DEPOLY }}"

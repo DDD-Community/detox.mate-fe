@@ -61,3 +61,7 @@ EXPO_PUBLIC_MOCK_SCREEN_TIME_ANALYSIS=true EXPO_PUBLIC_MOCK_SCREEN_TIME_ANALYSIS
 pnpm format:check
 pnpm format
 ```
+
+## 배포
+
+- JS 변경분 OTA 배포: [JS Bundle 갈아끼우기 운영 가이드](docs/js-bundle-swap.md)

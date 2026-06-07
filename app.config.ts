@@ -5,6 +5,7 @@ const appEnv = process.env.APP_ENV === 'production' ? 'production' : 'developmen
 const isProduction = appEnv === 'production';
 const appVersion = process.env.APP_VERSION ?? '1.0.0';
 const buildChannel = process.env.APP_BUILD_CHANNEL ?? 'local';
+const easProjectId = '0387da46-8602-45c5-b927-229815033a44';
 const gitSha =
   process.env.APP_GIT_SHA ??
   (() => {
@@ -25,6 +26,14 @@ const config: ExpoConfig = {
   owner: 'detoxmate',
   scheme: 'detoxmate',
   version: appVersion,
+  runtimeVersion: {
+    policy: 'appVersion',
+  },
+  updates: {
+    url: `https://u.expo.dev/${easProjectId}`,
+    checkAutomatically: 'ON_LOAD',
+    fallbackToCacheTimeout: 0,
+  },
   orientation: 'portrait',
   icon: './assets/icon.png',
   userInterfaceStyle: 'light',
@@ -98,7 +107,7 @@ const config: ExpoConfig = {
     apiBaseUrl: isProduction ? 'https://api.detoxmate.co.kr' : 'https://api-dev.detoxmate.co.kr',
     router: {},
     eas: {
-      projectId: '0387da46-8602-45c5-b927-229815033a44',
+      projectId: easProjectId,
     },
   },
 };
