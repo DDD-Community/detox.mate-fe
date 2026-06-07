@@ -128,6 +128,31 @@ native 변경 guard가 통과한 뒤에만 위 명령이 실행된다. productio
 
 ## 배포 흐름
 
+### Production binary 배포와 운영 승격
+
+EAS Build 횟수를 아끼기 위해 production binary 배포는 TestFlight 검증과 운영 릴리즈 기록을 분리한다.
+
+```mermaid
+flowchart TB
+  Dev[dev branch] --> TF[Deploy Prod to TestFlight]
+  TF --> Build[EAS Build 1회]
+  Build --> ASC[App Store Connect / TestFlight]
+  TF --> TfRelease[prod-tf-v* GitHub pre-release]
+
+  TfRelease --> QA[Prod TestFlight 검증]
+  QA --> Promote[Promote Prod TestFlight to Release]
+  Promote --> PrdRelease[prd-v* GitHub release]
+  Promote --> MainPR[main release PR]
+  ASC --> Manual[같은 build를 App Store 버전에 수동 선택]
+  Manual --> Review[App Review 제출]
+```
+
+`Deploy Prod to TestFlight` workflow는 production profile로 새 binary를 빌드하고 App Store Connect/TestFlight에 업로드한다. 이때 `prod-tf-v<version>-<run>` pre-release를 만들고, release body에 app version, commit SHA, EAS build ID를 기록한다.
+
+`Promote Prod TestFlight to Release` workflow는 `prod-tf-v*` tag를 입력받아 검증된 build metadata를 읽는다. 이 workflow는 `eas build`나 `eas submit`을 다시 실행하지 않고, `prd-v*` release와 main release PR만 만든다.
+
+App Store Connect에서 같은 TestFlight build를 App Store version에 선택하고 App Review에 제출하는 단계는 수동으로 진행한다.
+
 ### DEV TestFlight 검증
 
 ```mermaid
@@ -182,6 +207,19 @@ eas update:rollback
 rollback 후 수정본을 다시 배포할 때는 같은 `target`, 같은 `app_version`을 사용한다.
 
 ## 개발자 체크리스트
+
+Prod TestFlight binary 배포 전:
+
+- `Deploy Prod to TestFlight` workflow를 `dev` 브랜치에서 실행
+- `version_bump` 또는 `custom_app_version`이 의도한 App Store version인지 확인
+- 성공 후 생성된 `prod-tf-v*` pre-release tag를 기록
+
+Prod 운영 승격 전:
+
+- TestFlight에서 production API 기준 주요 플로우 검증
+- `Promote Prod TestFlight to Release` workflow에 검증된 `prod-tf-v*` tag 입력
+- workflow가 새 EAS Build 없이 `prd-v*` release와 main release PR만 생성하는지 확인
+- App Store Connect에서 같은 build를 App Store version에 선택하고 App Review 제출
 
 OTA 배포 전:
 

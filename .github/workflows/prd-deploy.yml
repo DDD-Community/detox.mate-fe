@@ -1,21 +1,11 @@
-name: Deploy PRD to App Store Connect
+name: Promote Prod TestFlight to Release
 
 on:
   workflow_dispatch:
     inputs:
-      version_bump:
-        description: 'Version bump from the previous PRD release. Use custom to enter an exact version.'
+      testflight_release_tag:
+        description: 'Prod TestFlight release tag to promote. Example: prod-tf-v1.2.3-123'
         required: true
-        default: patch
-        type: choice
-        options:
-          - patch
-          - minor
-          - major
-          - custom
-      custom_app_version:
-        description: 'Required only when version_bump is custom. Example: 1.2.3'
-        required: false
         type: string
 
 permissions:
@@ -24,14 +14,19 @@ permissions:
 
 jobs:
   release-context:
-    name: Resolve release context
+    name: Resolve promotion context
     runs-on: ubuntu-latest
     outputs:
       app-version: ${{ steps.context.outputs.app-version }}
       previous-tag: ${{ steps.context.outputs.previous-tag }}
-      previous-version: ${{ steps.context.outputs.previous-version }}
       release-tag: ${{ steps.context.outputs.release-tag }}
       release-title: ${{ steps.context.outputs.release-title }}
+      testflight-release-tag: ${{ steps.context.outputs.testflight-release-tag }}
+      testflight-release-url: ${{ steps.context.outputs.testflight-release-url }}
+      commit-sha: ${{ steps.context.outputs.commit-sha }}
+      build-id: ${{ steps.context.outputs.build-id }}
+      asc-app-id: ${{ steps.context.outputs.asc-app-id }}
+      workflow-run: ${{ steps.context.outputs.workflow-run }}
 
     steps:
       - name: Checkout
@@ -39,15 +34,58 @@ jobs:
         with:
           fetch-depth: 0
 
-      - name: Resolve previous PRD release
+      - name: Resolve TestFlight release
         id: context
         env:
-          VERSION_BUMP: ${{ inputs.version_bump }}
-          CUSTOM_APP_VERSION: ${{ inputs.custom_app_version }}
+          TESTFLIGHT_RELEASE_TAG: ${{ inputs.testflight_release_tag }}
           GH_TOKEN: ${{ github.token }}
         run: |
           if [ "$GITHUB_REF_NAME" != "dev" ]; then
-            echo "::error::PRD deploy must run from dev. Current branch: $GITHUB_REF_NAME"
+            echo "::error::PRD promotion must run from dev. Current branch: $GITHUB_REF_NAME"
+            exit 1
+          fi
+
+          if ! [[ "$TESTFLIGHT_RELEASE_TAG" =~ ^prod-tf-v[0-9]+\.[0-9]+\.[0-9]+-[0-9]+$ ]]; then
+            echo "::error::testflight_release_tag must match prod-tf-v<version>-<run_number>"
+            exit 1
+          fi
+
+          release_json="$(gh release view "$TESTFLIGHT_RELEASE_TAG" --json body,isPrerelease,targetCommitish,url)"
+          is_prerelease="$(echo "$release_json" | jq -r '.isPrerelease')"
+          release_url="$(echo "$release_json" | jq -r '.url')"
+          target_commitish="$(echo "$release_json" | jq -r '.targetCommitish')"
+          release_body="$(echo "$release_json" | jq -r '.body')"
+
+          if [ "$is_prerelease" != "true" ]; then
+            echo "::error::$TESTFLIGHT_RELEASE_TAG is not a prerelease record"
+            exit 1
+          fi
+
+          metadata="$(printf '%s\n' "$release_body" | awk '/^```properties$/ {capture=1; next} /^```$/ && capture {capture=0} capture')"
+
+          app_version="$(printf '%s\n' "$metadata" | awk -F= '$1 == "app_version" {print $2; exit}')"
+          commit_sha="$(printf '%s\n' "$metadata" | awk -F= '$1 == "commit_sha" {print $2; exit}')"
+          build_id="$(printf '%s\n' "$metadata" | awk -F= '$1 == "eas_build_id" {print $2; exit}')"
+          asc_app_id="$(printf '%s\n' "$metadata" | awk -F= '$1 == "asc_app_id" {print $2; exit}')"
+          workflow_run="$(printf '%s\n' "$metadata" | awk -F= '$1 == "workflow_run" {print $2; exit}')"
+
+          if [ -z "$app_version" ] || [ -z "$commit_sha" ] || [ -z "$build_id" ] || [ -z "$asc_app_id" ] || [ -z "$workflow_run" ]; then
+            echo "::error::Missing promotion metadata in $TESTFLIGHT_RELEASE_TAG"
+            exit 1
+          fi
+
+          if ! [[ "$app_version" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+            echo "::error::Invalid app_version in promotion metadata: $app_version"
+            exit 1
+          fi
+
+          if [ "$target_commitish" != "$commit_sha" ]; then
+            echo "::error::Release target commit ($target_commitish) does not match metadata commit ($commit_sha)"
+            exit 1
+          fi
+
+          if [ "$GITHUB_SHA" != "$commit_sha" ]; then
+            echo "::error::Current dev HEAD ($GITHUB_SHA) does not match TestFlight commit ($commit_sha)"
             exit 1
           fi
 
@@ -59,150 +97,40 @@ jobs:
             fi
           done < <(gh release list --limit 100 --json tagName --jq '.[] | select(.tagName | startswith("prd-v")) | .tagName')
 
-          previous_version="1.0.0"
-          if [[ "$previous_tag" =~ ^prd-v([0-9]+\.[0-9]+\.[0-9]+)-[0-9]+$ ]]; then
-            previous_version="${BASH_REMATCH[1]}"
-          fi
-
-          if [ "$VERSION_BUMP" = "custom" ]; then
-            app_version="$CUSTOM_APP_VERSION"
-          else
-            IFS='.' read -r major minor patch <<< "$previous_version"
-            case "$VERSION_BUMP" in
-              major)
-                app_version="$((major + 1)).0.0"
-                ;;
-              minor)
-                app_version="${major}.$((minor + 1)).0"
-                ;;
-              patch)
-                app_version="${major}.${minor}.$((patch + 1))"
-                ;;
-              *)
-                echo "::error::Unsupported version_bump: $VERSION_BUMP"
-                exit 1
-                ;;
-            esac
-          fi
-
-          if ! [[ "$app_version" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
-            echo "::error::Resolved app version must use semantic version format, for example 1.0.1"
-            exit 1
-          fi
-
-          if [ "$VERSION_BUMP" = "custom" ] && [ "$app_version" = "$previous_version" ]; then
-            echo "::error::custom_app_version must be different from the previous PRD version"
-            exit 1
-          fi
-
           release_tag="prd-v${app_version}-${GITHUB_RUN_NUMBER}"
           release_title="PRD v${app_version} #${GITHUB_RUN_NUMBER}"
 
           {
             echo "app-version=$app_version"
             echo "previous-tag=$previous_tag"
-            echo "previous-version=$previous_version"
             echo "release-tag=$release_tag"
             echo "release-title=$release_title"
+            echo "testflight-release-tag=$TESTFLIGHT_RELEASE_TAG"
+            echo "testflight-release-url=$release_url"
+            echo "commit-sha=$commit_sha"
+            echo "build-id=$build_id"
+            echo "asc-app-id=$asc_app_id"
+            echo "workflow-run=$workflow_run"
           } >> "$GITHUB_OUTPUT"
 
           {
-            echo "## PRD deployment"
+            echo "## PRD promotion"
             echo ""
             echo "| Field | Value |"
             echo "| --- | --- |"
-            echo "| Version bump | \`$VERSION_BUMP\` |"
-            echo "| Previous PRD version | \`$previous_version\` |"
+            echo "| TestFlight release | \`$TESTFLIGHT_RELEASE_TAG\` |"
             echo "| App version | \`$app_version\` |"
-            echo "| Previous PRD release | \`${previous_tag:-none}\` |"
-            echo "| New release tag | \`$release_tag\` |"
+            echo "| EAS build ID | \`$build_id\` |"
+            echo "| Commit | \`$commit_sha\` |"
+            echo "| New PRD release tag | \`$release_tag\` |"
             echo ""
-            echo "> GitHub Actions cannot show a dynamic placeholder before \`Run workflow\`. This summary is the runtime confirmation of the previous PRD version and comparison base."
+            echo "> No EAS Build or EAS Submit runs in this workflow. Select the same build in App Store Connect and submit it for review manually."
           } >> "$GITHUB_STEP_SUMMARY"
-
-  build:
-    name: Build iOS PRD
-    runs-on: ubuntu-latest
-    needs: release-context
-    outputs:
-      build-id: ${{ steps.build.outputs.build-id }}
-
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-
-      - name: Setup mise
-        uses: jdx/mise-action@v2
-
-      - name: Install dependencies
-        run: pnpm install --frozen-lockfile
-
-      - name: Setup EAS
-        uses: expo/expo-github-action@v8
-        with:
-          eas-version: latest
-          token: ${{ secrets.EXPO_TOKEN }}
-
-      - name: Verify PRD app config
-        env:
-          APP_ENV: production
-          APP_VERSION: ${{ needs.release-context.outputs.app-version }}
-          APP_BUILD_CHANNEL: production
-          APP_GIT_SHA: ${{ github.sha }}
-        run: |
-          export APP_GIT_SHA="${APP_GIT_SHA::7}"
-          pnpm exec expo config --type public
-
-      - name: Build iOS PRD
-        id: build
-        env:
-          APP_ENV: production
-          APP_VERSION: ${{ needs.release-context.outputs.app-version }}
-          APP_BUILD_CHANNEL: production
-          APP_GIT_SHA: ${{ github.sha }}
-        run: |
-          export APP_GIT_SHA="${APP_GIT_SHA::7}"
-          BUILD_JSON=$(eas build --platform ios --profile production --non-interactive --json)
-          BUILD_ID=$(echo "$BUILD_JSON" | jq -r '.[0].id')
-          if [ -z "$BUILD_ID" ] || [ "$BUILD_ID" = "null" ]; then
-            echo "::error::Failed to extract build ID"
-            echo "$BUILD_JSON"
-            exit 1
-          fi
-          echo "build-id=$BUILD_ID" >> "$GITHUB_OUTPUT"
-          echo "Build ID: $BUILD_ID"
-
-  submit:
-    name: Submit to App Store Connect
-    runs-on: ubuntu-latest
-    needs: build
-
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-
-      - name: Setup mise
-        uses: jdx/mise-action@v2
-
-      - name: Install dependencies
-        run: pnpm install --frozen-lockfile
-
-      - name: Setup EAS
-        uses: expo/expo-github-action@v8
-        with:
-          eas-version: latest
-          token: ${{ secrets.EXPO_TOKEN }}
-
-      - name: Submit to App Store Connect
-        run: eas submit --platform ios --id ${{ needs.build.outputs.build-id }} --profile production --non-interactive
 
   release-notes:
     name: Create release notes
     runs-on: ubuntu-latest
-    needs:
-      - build
-      - release-context
-      - submit
+    needs: release-context
 
     steps:
       - name: Checkout
@@ -216,15 +144,31 @@ jobs:
           PREVIOUS_TAG: ${{ needs.release-context.outputs.previous-tag }}
           RELEASE_TAG: ${{ needs.release-context.outputs.release-tag }}
           RELEASE_TITLE: ${{ needs.release-context.outputs.release-title }}
-          BUILD_ID: ${{ needs.build.outputs.build-id }}
+          TESTFLIGHT_RELEASE_TAG: ${{ needs.release-context.outputs.testflight-release-tag }}
+          TESTFLIGHT_RELEASE_URL: ${{ needs.release-context.outputs.testflight-release-url }}
+          COMMIT_SHA: ${{ needs.release-context.outputs.commit-sha }}
+          BUILD_ID: ${{ needs.release-context.outputs.build-id }}
+          ASC_APP_ID: ${{ needs.release-context.outputs.asc-app-id }}
+          WORKFLOW_RUN: ${{ needs.release-context.outputs.workflow-run }}
           GH_TOKEN: ${{ github.token }}
         run: |
           {
-            echo "## PRD deployment"
+            echo "## PRD promotion"
             echo ""
             echo "- App version: \`$APP_VERSION\`"
             echo "- EAS build ID: \`$BUILD_ID\`"
-            echo "- Workflow run: $GITHUB_SERVER_URL/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID"
+            echo "- App Store Connect app ID: \`$ASC_APP_ID\`"
+            echo "- TestFlight release: [$TESTFLIGHT_RELEASE_TAG]($TESTFLIGHT_RELEASE_URL)"
+            echo "- TestFlight workflow run: $WORKFLOW_RUN"
+            echo "- Promotion workflow run: $GITHUB_SERVER_URL/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID"
+            echo "- Commit: \`$COMMIT_SHA\`"
+            echo ""
+            echo "## Manual App Store Connect checklist"
+            echo ""
+            echo "- [ ] App Store Connect에서 앱 버전 \`$APP_VERSION\` 선택"
+            echo "- [ ] TestFlight에서 검증한 동일 build를 App Store 버전에 선택"
+            echo "- [ ] 심사 정보 확인 후 App Review 제출"
+            echo "- [ ] 승인 후 출시 방식 확인"
             echo ""
             echo "## Changes"
             echo ""
@@ -236,7 +180,7 @@ jobs:
           } > release-notes.md
 
           gh release create "$RELEASE_TAG" \
-            --target "$GITHUB_SHA" \
+            --target "$COMMIT_SHA" \
             --title "$RELEASE_TITLE" \
             --notes-file release-notes.md
 
@@ -246,7 +190,6 @@ jobs:
     name: Create main release PR
     runs-on: ubuntu-latest
     needs:
-      - build
       - release-context
       - release-notes
     outputs:
@@ -264,7 +207,10 @@ jobs:
           APP_VERSION: ${{ needs.release-context.outputs.app-version }}
           RELEASE_TAG: ${{ needs.release-context.outputs.release-tag }}
           RELEASE_TITLE: ${{ needs.release-context.outputs.release-title }}
-          BUILD_ID: ${{ needs.build.outputs.build-id }}
+          TESTFLIGHT_RELEASE_TAG: ${{ needs.release-context.outputs.testflight-release-tag }}
+          TESTFLIGHT_RELEASE_URL: ${{ needs.release-context.outputs.testflight-release-url }}
+          BUILD_ID: ${{ needs.release-context.outputs.build-id }}
+          ASC_APP_ID: ${{ needs.release-context.outputs.asc-app-id }}
           GH_TOKEN: ${{ github.token }}
         run: |
           git fetch origin main dev
@@ -282,25 +228,26 @@ jobs:
           {
             echo "## PRD 릴리즈 반영"
             echo ""
-            echo "이 PR은 PRD 배포 workflow가 App Store Connect 업로드와 GitHub Release 생성을 완료한 뒤 자동 생성했습니다."
+            echo "이 PR은 검증된 Prod TestFlight build를 운영 릴리즈 기록으로 승격한 뒤 자동 생성했습니다."
             echo ""
             echo "## 배포 정보"
             echo ""
             echo "- 앱 버전: \`$APP_VERSION\`"
             echo "- 릴리즈 태그: \`$RELEASE_TAG\`"
+            echo "- TestFlight 릴리즈: [$TESTFLIGHT_RELEASE_TAG]($TESTFLIGHT_RELEASE_URL)"
             echo "- EAS build ID: \`$BUILD_ID\`"
+            echo "- App Store Connect app ID: \`$ASC_APP_ID\`"
             echo "- Workflow run: $GITHUB_SERVER_URL/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID"
+            echo ""
+            echo "## App Store Connect 수동 체크리스트"
+            echo ""
+            echo "- [ ] App Store Connect에서 앱 버전 \`$APP_VERSION\` 선택"
+            echo "- [ ] TestFlight에서 검증한 동일 build를 App Store 버전에 선택"
+            echo "- [ ] App Review 제출"
             echo ""
             echo "## main에 반영될 커밋"
             echo ""
             git log --pretty=format:'- %s (%h)' origin/main..origin/dev
-            echo ""
-            echo ""
-            echo "## 체크리스트"
-            echo ""
-            echo "- [ ] App Store Connect 빌드 업로드 확인"
-            echo "- [ ] GitHub Release Note 확인"
-            echo "- [ ] main 병합 전 릴리즈 범위 확인"
           } > release-pr-body.md
 
           title="release: PRD v${APP_VERSION}"
@@ -334,8 +281,10 @@ jobs:
         env:
           RELEASE_TAG: ${{ needs.release-context.outputs.release-tag }}
           RELEASE_PR_URL: ${{ needs.release-pr.outputs.pr-url }}
+          APP_VERSION: ${{ needs.release-context.outputs.app-version }}
+          BUILD_ID: ${{ needs.release-context.outputs.build-id }}
         run: |
-          content="**PRD App Store Connect 업로드 성공**\\nRelease: ${RELEASE_TAG}"
+          content="**PRD 릴리즈 승격 완료**\\nRelease: ${RELEASE_TAG}\\nApp version: ${APP_VERSION}\\nEAS build ID: ${BUILD_ID}\\nApp Store Connect에서 같은 TestFlight build를 선택해 App Review에 제출하세요."
           if [ -n "$RELEASE_PR_URL" ]; then
             content="${content}\\nMain release PR: ${RELEASE_PR_URL}"
           fi
