@@ -169,7 +169,7 @@ export default function FeedCard({
   }
 
   // ── Unverified card ──
-  const showPokeButton = !historyMode && !item.isMe && goalState !== 'setWaiting';
+  const showPokeButton = !historyMode && !item.isMe && item.memberGoalState !== 'setWaiting';
   const unverifiedBodyText = historyMode ? '인증하지 않았어요' : BODY_TEXT[item.memberGoalState ?? goalState];
 
   return (
