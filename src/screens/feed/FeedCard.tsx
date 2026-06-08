@@ -87,8 +87,7 @@ export default function FeedCard({
   const footerWrapperRef = useRef<View>(null);
 
   if (item.isVerified) {
-    const hasFailurePhoto = !item.isGoalAchieved && item.photoSource != null;
-    const usesPostLayout = item.isGoalAchieved || hasFailurePhoto;
+    const usesPostLayout = item.isGoalAchieved === true;
     const postText = item.postText ?? item.retroText;
     const labelBg = item.isGoalAchieved ? system.green.opacity100 : gray[400];
     const labelText = item.isGoalAchieved ? '목표 성공' : '목표 실패';
@@ -126,10 +125,15 @@ export default function FeedCard({
             {postText != null && <Text style={styles.postText}>{postText}</Text>}
           </>
         ) : (
-          <View style={styles.retroCard}>
-            <Text style={styles.retroLabel}>한 줄 회고</Text>
-            <Text style={styles.retroText}>{item.retroText}</Text>
-          </View>
+          <>
+            {item.photoSource != null && (
+              <Image source={item.photoSource} style={styles.photo} resizeMode="cover" />
+            )}
+            <View style={styles.retroCard}>
+              <Text style={styles.retroLabel}>한 줄 회고</Text>
+              <Text style={styles.retroText}>{item.retroText}</Text>
+            </View>
+          </>
         )}
 
         {/* Screentime */}
@@ -170,7 +174,9 @@ export default function FeedCard({
 
   // ── Unverified card ──
   const showPokeButton = !historyMode && !item.isMe && item.memberGoalState !== 'setWaiting';
-  const unverifiedBodyText = historyMode ? '인증하지 않았어요' : BODY_TEXT[item.memberGoalState ?? goalState];
+  const unverifiedBodyText = historyMode
+    ? '인증하지 않았어요'
+    : BODY_TEXT[item.memberGoalState ?? goalState];
 
   return (
     <Pressable
@@ -321,6 +327,7 @@ const styles = StyleSheet.create({
     borderRadius: 12,
     paddingHorizontal: spacing[12],
     paddingVertical: spacing[16],
+    marginTop: -8,
   },
   screentimeLabel: {
     ...typography.primary.body3R,
