@@ -1,6 +1,6 @@
 import { router, useLocalSearchParams } from 'expo-router';
 import * as SecureStore from 'expo-secure-store';
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import {
   Alert,
   Image,
@@ -163,9 +163,7 @@ export default function FeedPostDetail() {
   const feedItem = JSON.parse(itemJson as string) as FeedItem;
   const feedAuthorName = feedItem.isMe ? '나' : feedItem.name;
   const state: GoalState = goalState ?? 'authReady';
-  const hasFailurePhoto =
-    feedItem.isVerified === true && !feedItem.isGoalAchieved && feedItem.photoSource != null;
-  const usesPostLayout = feedItem.isGoalAchieved || hasFailurePhoto;
+  const usesPostLayout = feedItem.isGoalAchieved === true;
   const postText = feedItem.postText ?? feedItem.retroText;
   const statusLabelColor = feedItem.isGoalAchieved ? system.green.opacity100 : gray[400];
   const screentimeAccentColor = feedItem.isGoalAchieved ? system.green.opacity100 : gray[500];
@@ -218,7 +216,8 @@ export default function FeedPostDetail() {
         );
         const mapped = res.data.items.map((c) => ({
           id: String(c.commentId),
-          authorName: myUserId != null && c.author.userId === myUserId ? '나' : c.author.displayName,
+          authorName:
+            myUserId != null && c.author.userId === myUserId ? '나' : c.author.displayName,
           avatarSource: c.author.profileImageUrl
             ? { uri: c.author.profileImageUrl }
             : AVATAR_SOURCE,
@@ -412,10 +411,19 @@ export default function FeedPostDetail() {
                     {postText != null && <Text style={styles.postText}>{postText}</Text>}
                   </>
                 ) : (
-                  <View style={styles.retroCard}>
-                    <Text style={styles.retroLabel}>한 줄 회고</Text>
-                    <Text style={styles.retroText}>{feedItem.retroText}</Text>
-                  </View>
+                  <>
+                    {feedItem.photoSource != null && (
+                      <Image
+                        source={feedItem.photoSource}
+                        style={styles.photo}
+                        resizeMode="cover"
+                      />
+                    )}
+                    <View style={styles.retroCard}>
+                      <Text style={styles.retroLabel}>한 줄 회고</Text>
+                      <Text style={styles.retroText}>{feedItem.retroText}</Text>
+                    </View>
+                  </>
                 )}
 
                 {feedItem.screenTime != null && (
@@ -438,7 +446,9 @@ export default function FeedPostDetail() {
                   <Text style={styles.memberName}>{feedAuthorName}</Text>
                 </Pressable>
 
-                <Text style={styles.statusText}>{BODY_TEXT[feedItem.memberGoalState ?? state]}</Text>
+                <Text style={styles.statusText}>
+                  {BODY_TEXT[feedItem.memberGoalState ?? state]}
+                </Text>
 
                 {!isReadOnly && !feedItem.isMe && feedItem.memberGoalState !== 'setWaiting' && (
                   <Pressable
@@ -663,7 +673,7 @@ const styles = StyleSheet.create({
     paddingBottom: spacing[56],
   },
   card: {
-    gap: spacing[12],
+    gap: spacing[16],
   },
   verifiedHeader: {
     flexDirection: 'row',
