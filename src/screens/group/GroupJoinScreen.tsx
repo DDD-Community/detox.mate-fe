@@ -1,5 +1,6 @@
 import * as Clipboard from 'expo-clipboard';
-import { Stack, useRouter } from 'expo-router';
+import { getInviteShareUrl } from '../../lib/airbridge';
+import { Stack, useLocalSearchParams, useRouter } from 'expo-router';
 import React, { useEffect, useState } from 'react';
 import {
   BackHandler,
@@ -22,8 +23,11 @@ const INVITE_CODE_MAX_LENGTH = 5;
 
 export default function GroupJoinScreen() {
   const router = useRouter();
+  const { inviteCode: paramInviteCode } = useLocalSearchParams<{ inviteCode?: string }>();
   const [step, setStep] = useState<1 | 2>(1);
-  const [inviteCode, setInviteCode] = useState('');
+  const [inviteCode, setInviteCode] = useState(
+    paramInviteCode ? paramInviteCode.toUpperCase().slice(0, INVITE_CODE_MAX_LENGTH) : ''
+  );
   const [groupName, setGroupName] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -75,7 +79,7 @@ export default function GroupJoinScreen() {
 
   const handleShare = async () => {
     await Share.share({
-      message: `우리 함께 디지털 디톡스해요! 💉\n디톡스 메이트 그룹 초대 코드: ${inviteCode}`,
+      message: `우리 함께 디지털 디톡스해요! 💉\n디톡스 메이트 그룹 초대 코드: ${inviteCode}\n${getInviteShareUrl(inviteCode)}`,
     });
   };
 

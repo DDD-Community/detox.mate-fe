@@ -20,6 +20,8 @@
     "@react-native-firebase/app": "24.0.0",
     "@react-native-firebase/messaging": "24.0.0",
     "@react-native-seoul/kakao-login": "^5.4.2",
+    "airbridge-expo-sdk": "^4.9.1",
+    "airbridge-react-native-sdk": "^4.9.0",
     "axios": "^1.15.0",
     "expo": "~55.0.26",
     "expo-apple-authentication": "^55.0.13",

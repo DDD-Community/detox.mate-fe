@@ -46,6 +46,7 @@ const config: ExpoConfig = {
     bundleIdentifier: isProduction ? 'com.detoxmate.app' : 'com.detoxmate.app.dev',
     googleServicesFile: iosGoogleServicesFile,
     supportsTablet: false,
+    associatedDomains: ['applinks:detoxmate.airbridge.io'],
     entitlements: {
       'aps-environment': 'production',
       'com.apple.developer.applesignin': ['Default'],
@@ -69,6 +70,13 @@ const config: ExpoConfig = {
     favicon: './assets/favicon.png',
   },
   plugins: [
+    [
+      'airbridge-expo-sdk',
+      {
+        appName: 'detoxmate',
+        appToken: 'de33f6fd010d4db794542d3a0c05b7a4',
+      },
+    ],
     [
       'expo-secure-store',
       {
