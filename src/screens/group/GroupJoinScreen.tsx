@@ -1,4 +1,5 @@
 import * as Clipboard from 'expo-clipboard';
+import { getInviteShareUrl } from '../../lib/airbridge';
 import { Stack, useRouter } from 'expo-router';
 import React, { useEffect, useState } from 'react';
 import {
@@ -75,7 +76,7 @@ export default function GroupJoinScreen() {
 
   const handleShare = async () => {
     await Share.share({
-      message: `우리 함께 디지털 디톡스해요! 💉\n디톡스 메이트 그룹 초대 코드: ${inviteCode}`,
+      message: `우리 함께 디지털 디톡스해요! 💉\n디톡스 메이트 그룹 초대 코드: ${inviteCode}\n${getInviteShareUrl(inviteCode)}`,
     });
   };
 

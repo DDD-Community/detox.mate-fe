@@ -71,6 +71,13 @@ const config: ExpoConfig = {
   },
   plugins: [
     [
+      'airbridge-expo-sdk',
+      {
+        appName: 'detoxmate',
+        appToken: 'de33f6fd010d4db794542d3a0c05b7a4',
+      },
+    ],
+    [
       'expo-secure-store',
       {
         faceIDPermission: 'Allow $(PRODUCT_NAME) to access your Face ID biometric data.',

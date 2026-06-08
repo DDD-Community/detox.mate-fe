@@ -5,6 +5,7 @@ import { useEffect, type ComponentType } from 'react';
 import { fontSources } from '../src/lib/token/primitive/fonts';
 import { NetworkErrorToast } from '../src/components/NetworkErrorToast';
 import { subscribeToDevicePushTokenRefresh } from '../src/lib/fcmToken';
+import { initAirbridge } from '../src/lib/airbridge';
 
 SplashScreen.preventAutoHideAsync();
 
@@ -21,6 +22,10 @@ export default function RootLayout() {
       SplashScreen.hideAsync();
     }
   }, [fontsLoaded, fontError]);
+
+  useEffect(() => {
+    initAirbridge();
+  }, []);
 
   // FCM registration token 갱신 감지 → 서버에 새 토큰 재등록
   useEffect(() => {
