@@ -1,6 +1,6 @@
 import * as Clipboard from 'expo-clipboard';
 import { getInviteShareUrl } from '../../lib/airbridge';
-import { Stack, useRouter } from 'expo-router';
+import { Stack, useLocalSearchParams, useRouter } from 'expo-router';
 import React, { useEffect, useState } from 'react';
 import {
   BackHandler,
@@ -23,8 +23,11 @@ const INVITE_CODE_MAX_LENGTH = 5;
 
 export default function GroupJoinScreen() {
   const router = useRouter();
+  const { inviteCode: paramInviteCode } = useLocalSearchParams<{ inviteCode?: string }>();
   const [step, setStep] = useState<1 | 2>(1);
-  const [inviteCode, setInviteCode] = useState('');
+  const [inviteCode, setInviteCode] = useState(
+    paramInviteCode ? paramInviteCode.toUpperCase().slice(0, INVITE_CODE_MAX_LENGTH) : ''
+  );
   const [groupName, setGroupName] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);

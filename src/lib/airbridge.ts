@@ -17,7 +17,7 @@ function handleInviteDeeplink(deeplink: string) {
     const url = new URL(deeplink);
     const inviteCode = url.searchParams.get('invite_code');
     if (inviteCode) {
-      router.push({ pathname: '/join', params: { inviteCode } });
+      router.replace({ pathname: '/join', params: { inviteCode } });
     }
   } catch {
     // 파싱 실패 시 무시
