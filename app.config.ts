@@ -46,6 +46,7 @@ const config: ExpoConfig = {
     bundleIdentifier: isProduction ? 'com.detoxmate.app' : 'com.detoxmate.app.dev',
     googleServicesFile: iosGoogleServicesFile,
     supportsTablet: false,
+    associatedDomains: ['applinks:detoxmate.airbridge.io'],
     entitlements: {
       'aps-environment': 'production',
       'com.apple.developer.applesignin': ['Default'],
