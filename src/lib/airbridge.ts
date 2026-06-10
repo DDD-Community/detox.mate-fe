@@ -5,9 +5,7 @@ const APP_NAME = 'detoxmate';
 const APP_TOKEN = 'de33f6fd010d4db794542d3a0c05b7a4';
 
 export function initAirbridge() {
-  const airbridge = Airbridge.createDependency.Airbridge();
-
-  airbridge.deeplinkModule.setOnDeeplinkReceived((deeplink: string) => {
+  Airbridge.setOnDeeplinkReceived((deeplink: string) => {
     handleInviteDeeplink(deeplink);
   });
 }
