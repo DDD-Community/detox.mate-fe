@@ -271,7 +271,7 @@ export default function FeedPostDetail() {
   const sortedComments = [...comments].sort((a, b) => a.createdAt - b.createdAt);
 
   const handleHeaderBack = () => {
-    if (fromFeedHome === '1' && router.canGoBack()) {
+    if (router.canGoBack()) {
       router.back();
       return;
     }
