@@ -149,6 +149,7 @@ const getTodayString = (): string => {
 };
 
 const getMemberGoalState = (m: MemberResponse): GoalState => {
+  if (m.dailyStatus === 'GOAL_ACTIVATION_PENDING') return 'setWaiting';
   if (!m.goals || m.goals.length === 0) return 'notSet';
   const today = getTodayString();
   const hasEffectiveGoal = m.goals.some((g) => g.effectiveDate != null && g.effectiveDate <= today);
