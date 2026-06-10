@@ -241,7 +241,7 @@ const mapMemberToMemberItem = (m: MemberResponse): MemberItem => ({
   name: m.displayName ?? '',
   isMe: m.isMe === true,
   avatarSource: m.profileImageUrl ? { uri: m.profileImageUrl } : AVATAR_SRC,
-  badgeCount: (m.pokeCount ?? 0) > 0 ? m.pokeCount : undefined,
+  badgeCount: getMemberGoalState(m) === 'authReady' && (m.pokeCount ?? 0) > 0 ? m.pokeCount : undefined,
   isVerified: m.activityRecord != null,
   isGoalAchieved: m.activityRecord?.allAchieved === true,
 });

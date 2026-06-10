@@ -89,7 +89,7 @@ export default function FeedCard({
   if (item.isVerified) {
     const usesPostLayout = item.isGoalAchieved === true;
     const postText = item.postText ?? item.retroText;
-    const labelBg = item.isGoalAchieved ? system.green.opacity100 : gray[400];
+    const labelBg = item.isGoalAchieved ? system.green.opacity100 : system.red.opacity100;
     const labelText = item.isGoalAchieved ? '목표 성공' : '목표 실패';
     const screentimeAccentColor = item.isGoalAchieved ? system.green.opacity100 : gray[500];
     const screentimeBackgroundColor = item.isGoalAchieved ? system.green.opacity10 : gray[50];
@@ -116,6 +116,18 @@ export default function FeedCard({
           </View>
         </View>
 
+        {/* Screentime */}
+        {item.screenTime != null && (
+          <View style={[styles.screentimeRow, { backgroundColor: screentimeBackgroundColor }]}>
+            <Text style={[styles.screentimeLabel, { color: screentimeAccentColor }]}>
+              스크린 타임
+            </Text>
+            <Text style={[styles.screentimeValue, { color: screentimeAccentColor }]}>
+              {item.screenTime}
+            </Text>
+          </View>
+        )}
+
         {/* Content */}
         {usesPostLayout ? (
           <>
@@ -134,18 +146,6 @@ export default function FeedCard({
               <Text style={styles.retroText}>{item.retroText}</Text>
             </View>
           </>
-        )}
-
-        {/* Screentime */}
-        {item.screenTime != null && (
-          <View style={[styles.screentimeRow, { backgroundColor: screentimeBackgroundColor }]}>
-            <Text style={[styles.screentimeLabel, { color: screentimeAccentColor }]}>
-              스크린 타임
-            </Text>
-            <Text style={[styles.screentimeValue, { color: screentimeAccentColor }]}>
-              {item.screenTime}
-            </Text>
-          </View>
         )}
 
         {/* Footer */}

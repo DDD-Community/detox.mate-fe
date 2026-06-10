@@ -271,7 +271,7 @@ export default function FeedPostDetail() {
   const sortedComments = [...comments].sort((a, b) => a.createdAt - b.createdAt);
 
   const handleHeaderBack = () => {
-    if (fromFeedHome === '1' && router.canGoBack()) {
+    if (router.canGoBack()) {
       router.back();
       return;
     }
@@ -399,6 +399,19 @@ export default function FeedPostDetail() {
                   )}
                 </Pressable>
 
+                {feedItem.screenTime != null && (
+                  <View
+                    style={[styles.screentimeRow, { backgroundColor: screentimeBackgroundColor }]}
+                  >
+                    <Text style={[styles.screentimeLabel, { color: screentimeAccentColor }]}>
+                      {feedItem.isMe ? '내 스크린 타임' : '스크린 타임'}
+                    </Text>
+                    <Text style={[styles.screentimeValue, { color: screentimeAccentColor }]}>
+                      {feedItem.screenTime}
+                    </Text>
+                  </View>
+                )}
+
                 {usesPostLayout ? (
                   <>
                     {feedItem.photoSource != null && (
@@ -424,19 +437,6 @@ export default function FeedPostDetail() {
                       <Text style={styles.retroText}>{feedItem.retroText}</Text>
                     </View>
                   </>
-                )}
-
-                {feedItem.screenTime != null && (
-                  <View
-                    style={[styles.screentimeRow, { backgroundColor: screentimeBackgroundColor }]}
-                  >
-                    <Text style={[styles.screentimeLabel, { color: screentimeAccentColor }]}>
-                      {feedItem.isMe ? '내 스크린 타임' : '스크린 타임'}
-                    </Text>
-                    <Text style={[styles.screentimeValue, { color: screentimeAccentColor }]}>
-                      {feedItem.screenTime}
-                    </Text>
-                  </View>
                 )}
               </>
             ) : (
