@@ -592,50 +592,49 @@ export default function FeedPostDetail() {
         </View>
       </ScrollView>
 
-      {!isReadOnly &&
-        (showReactionPicker ? (
-          <>
-            <Pressable style={styles.pickerOverlay} onPress={() => setShowReactionPicker(false)} />
-            <View
-              style={[styles.pickerBar, { paddingBottom: Math.max(insets.bottom, spacing[12]) }]}
-            >
-              <ReactionPicker
-                selectedReactions={myReactionEmojis}
-                style={styles.bottomReactionPicker}
-                onSelect={(reactionCode) => {
-                  handleReact(reactionCode);
-                  setShowReactionPicker(false);
-                }}
-              />
-            </View>
-          </>
-        ) : (
-          <View style={[styles.inputBar, { paddingBottom: Math.max(insets.bottom, spacing[12]) }]}>
-            <TextInput
-              style={styles.textInput}
-              placeholder="응원 메시지를 남겨보세요"
-              placeholderTextColor={gray[400]}
-              value={commentText}
-              onChangeText={setCommentText}
-              returnKeyType="send"
-              onSubmitEditing={handleSendComment}
+      {showReactionPicker ? (
+        <>
+          <Pressable style={styles.pickerOverlay} onPress={() => setShowReactionPicker(false)} />
+          <View
+            style={[styles.pickerBar, { paddingBottom: Math.max(insets.bottom, spacing[12]) }]}
+          >
+            <ReactionPicker
+              selectedReactions={myReactionEmojis}
+              style={styles.bottomReactionPicker}
+              onSelect={(reactionCode) => {
+                handleReact(reactionCode);
+                setShowReactionPicker(false);
+              }}
             />
-
-            {commentText.trim().length > 0 ? (
-              <Pressable style={styles.sendBtn} onPress={handleSendComment}>
-                <Icon name="paperPlaneRight" size={20} color={WHITE} />
-              </Pressable>
-            ) : (
-              <Pressable style={styles.impressionBtn} onPress={() => setShowReactionPicker(true)}>
-                <Image
-                  source={IMPRESSION_ICON}
-                  style={styles.impressionIcon}
-                  resizeMode="contain"
-                />
-              </Pressable>
-            )}
           </View>
-        ))}
+        </>
+      ) : (
+        <View style={[styles.inputBar, { paddingBottom: Math.max(insets.bottom, spacing[12]) }]}>
+          <TextInput
+            style={styles.textInput}
+            placeholder="응원 메시지를 남겨보세요"
+            placeholderTextColor={gray[400]}
+            value={commentText}
+            onChangeText={setCommentText}
+            returnKeyType="send"
+            onSubmitEditing={handleSendComment}
+          />
+
+          {commentText.trim().length > 0 ? (
+            <Pressable style={styles.sendBtn} onPress={handleSendComment}>
+              <Icon name="paperPlaneRight" size={20} color={WHITE} />
+            </Pressable>
+          ) : (
+            <Pressable style={styles.impressionBtn} onPress={() => setShowReactionPicker(true)}>
+              <Image
+                source={IMPRESSION_ICON}
+                style={styles.impressionIcon}
+                resizeMode="contain"
+              />
+            </Pressable>
+          )}
+        </View>
+      )}
     </KeyboardAvoidingView>
   );
 }
