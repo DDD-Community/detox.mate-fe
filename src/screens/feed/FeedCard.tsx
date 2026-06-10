@@ -116,6 +116,18 @@ export default function FeedCard({
           </View>
         </View>
 
+        {/* Screentime */}
+        {item.screenTime != null && (
+          <View style={[styles.screentimeRow, { backgroundColor: screentimeBackgroundColor }]}>
+            <Text style={[styles.screentimeLabel, { color: screentimeAccentColor }]}>
+              스크린 타임
+            </Text>
+            <Text style={[styles.screentimeValue, { color: screentimeAccentColor }]}>
+              {item.screenTime}
+            </Text>
+          </View>
+        )}
+
         {/* Content */}
         {usesPostLayout ? (
           <>
@@ -134,18 +146,6 @@ export default function FeedCard({
               <Text style={styles.retroText}>{item.retroText}</Text>
             </View>
           </>
-        )}
-
-        {/* Screentime */}
-        {item.screenTime != null && (
-          <View style={[styles.screentimeRow, { backgroundColor: screentimeBackgroundColor }]}>
-            <Text style={[styles.screentimeLabel, { color: screentimeAccentColor }]}>
-              스크린 타임
-            </Text>
-            <Text style={[styles.screentimeValue, { color: screentimeAccentColor }]}>
-              {item.screenTime}
-            </Text>
-          </View>
         )}
 
         {/* Footer */}
