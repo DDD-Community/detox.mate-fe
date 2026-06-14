@@ -5,5 +5,7 @@ export * from './Chip';
 export * from './ClipboardCopyToast';
 export * from './HeaderAction';
 export * from './Icon';
+export * from './LoggingButton';
+export * from './LoggingPage';
 export * from './NetworkErrorToast';
 export * from './Toast';
