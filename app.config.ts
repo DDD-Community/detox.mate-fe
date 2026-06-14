@@ -1,5 +1,6 @@
 import type { ExpoConfig } from 'expo/config';
 import { execSync } from 'node:child_process';
+import { existsSync } from 'node:fs';
 
 const appEnv = process.env.APP_ENV === 'production' ? 'production' : 'development';
 const isProduction = appEnv === 'production';
@@ -66,7 +67,9 @@ const config: ExpoConfig = {
     },
     predictiveBackGestureEnabled: false,
     package: 'com.detoxmate.fe',
-    googleServicesFile: androidGoogleServicesFile,
+    ...(existsSync(androidGoogleServicesFile)
+      ? { googleServicesFile: androidGoogleServicesFile }
+      : {}),
   },
   web: {
     favicon: './assets/favicon.png',
@@ -78,6 +81,9 @@ const config: ExpoConfig = {
         organization: process.env.SENTRY_ORG,
         project: process.env.SENTRY_PROJECT,
         url: sentryUrl,
+      },
+    ],
+    [
       'airbridge-expo-sdk',
       {
         appName: 'detoxmate',
