@@ -41,11 +41,11 @@ importers:
         specifier: ~7.11.0
         version: 7.11.0(expo@55.0.26)(react-native@0.83.6(@babel/core@7.29.0)(@react-native/metro-config@0.85.2(@babel/core@7.29.0))(@types/react@19.2.15)(react@19.2.0))(react@19.2.0)
       airbridge-expo-sdk:
-        specifier: ^4.9.1
-        version: 4.9.1(airbridge-react-native-sdk@4.9.0(react-native@0.83.6(@babel/core@7.29.0)(@react-native/metro-config@0.85.2(@babel/core@7.29.0))(@types/react@19.2.15)(react@19.2.0)))
+        specifier: 4.8.0
+        version: 4.8.0(airbridge-react-native-sdk@4.8.0(react-native@0.83.6(@babel/core@7.29.0)(@react-native/metro-config@0.85.2(@babel/core@7.29.0))(@types/react@19.2.15)(react@19.2.0)))
       airbridge-react-native-sdk:
-        specifier: ^4.9.0
-        version: 4.9.0(react-native@0.83.6(@babel/core@7.29.0)(@react-native/metro-config@0.85.2(@babel/core@7.29.0))(@types/react@19.2.15)(react@19.2.0))
+        specifier: 4.8.0
+        version: 4.8.0(react-native@0.83.6(@babel/core@7.29.0)(@react-native/metro-config@0.85.2(@babel/core@7.29.0))(@types/react@19.2.15)(react@19.2.0))
       axios:
         specifier: ^1.15.0
         version: 1.15.0
@@ -2564,13 +2564,13 @@ packages:
     resolution: {integrity: sha512-MnA+YT8fwfJPgBx3m60MNqakm30XOkyIoH1y6huTQvC0PwZG7ki8NacLBcrPbNoo8vEZy7Jpuk7+jMO+CUovTQ==}
     engines: {node: '>= 14'}
 
-  airbridge-expo-sdk@4.9.1:
-    resolution: {integrity: sha512-sovvstFJRq2FxYlfMQ8SZJ1JD88h6YwF0rTQqG4czksEYOj+ER35T1N7jTo+Ui2dH2sSJz2vCFFKFzFcks6Xig==}
+  airbridge-expo-sdk@4.8.0:
+    resolution: {integrity: sha512-MWGYmwf6AmAAhfMW6ZZcWmUrbkjUZPKHmDPaGlYrmdtS/PHMBxEqc8DGXoxuIgpKJwCgUEFLydXL0YTc/IxM+g==}
     peerDependencies:
-      airbridge-react-native-sdk: ^4.9.0
+      airbridge-react-native-sdk: ^4.8.0
 
-  airbridge-react-native-sdk@4.9.0:
-    resolution: {integrity: sha512-u+uFRMWlrlQXEgV5r9zvXM6BjJb8RREyIfzFFMxnmfNarNQkl3Jndn/KpcOLk8SVRGNvZWS60MjZGLsZ679Z9Q==}
+  airbridge-react-native-sdk@4.8.0:
+    resolution: {integrity: sha512-BCE4xFXwcxhp4my7TxrTD+yFe9gBr9dp7t15dGPOnh6Xbx2zNvzwaWrFzAK6u1PGhNTDRPUlmwDuqbJNnCjCRQ==}
     peerDependencies:
       react-native: '>= 0.60'
 
@@ -8626,15 +8626,15 @@ snapshots:
 
   agent-base@7.1.4: {}
 
-  airbridge-expo-sdk@4.9.1(airbridge-react-native-sdk@4.9.0(react-native@0.83.6(@babel/core@7.29.0)(@react-native/metro-config@0.85.2(@babel/core@7.29.0))(@types/react@19.2.15)(react@19.2.0))):
+  airbridge-expo-sdk@4.8.0(airbridge-react-native-sdk@4.8.0(react-native@0.83.6(@babel/core@7.29.0)(@react-native/metro-config@0.85.2(@babel/core@7.29.0))(@types/react@19.2.15)(react@19.2.0))):
     dependencies:
       '@expo/config-plugins': 10.1.2
       '@expo/config-types': 53.0.5
-      airbridge-react-native-sdk: 4.9.0(react-native@0.83.6(@babel/core@7.29.0)(@react-native/metro-config@0.85.2(@babel/core@7.29.0))(@types/react@19.2.15)(react@19.2.0))
+      airbridge-react-native-sdk: 4.8.0(react-native@0.83.6(@babel/core@7.29.0)(@react-native/metro-config@0.85.2(@babel/core@7.29.0))(@types/react@19.2.15)(react@19.2.0))
     transitivePeerDependencies:
       - supports-color
 
-  airbridge-react-native-sdk@4.9.0(react-native@0.83.6(@babel/core@7.29.0)(@react-native/metro-config@0.85.2(@babel/core@7.29.0))(@types/react@19.2.15)(react@19.2.0)):
+  airbridge-react-native-sdk@4.8.0(react-native@0.83.6(@babel/core@7.29.0)(@react-native/metro-config@0.85.2(@babel/core@7.29.0))(@types/react@19.2.15)(react@19.2.0)):
     dependencies:
       react-native: 0.83.6(@babel/core@7.29.0)(@react-native/metro-config@0.85.2(@babel/core@7.29.0))(@types/react@19.2.15)(react@19.2.0)
 
