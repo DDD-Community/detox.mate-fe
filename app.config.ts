@@ -119,6 +119,9 @@ const config: ExpoConfig = {
     appVersion,
     buildChannel,
     gitSha,
+    amplitudeApiKey: isProduction
+      ? process.env.EXPO_PUBLIC_AMPLITUDE_API_KEY_PROD
+      : process.env.EXPO_PUBLIC_AMPLITUDE_API_KEY_DEV,
     ...(sentryDsn ? { sentryDsn } : {}),
     apiBaseUrl: isProduction ? 'https://api.detoxmate.co.kr' : 'https://api-dev.detoxmate.co.kr',
     router: {},

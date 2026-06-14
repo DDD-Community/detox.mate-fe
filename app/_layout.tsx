@@ -8,6 +8,7 @@ import { subscribeToDevicePushTokenRefresh } from '../src/lib/fcmToken';
 import { AppErrorBoundary } from '../src/components/AppErrorBoundary';
 import { initSentry } from '../src/observability/sentry';
 import { initAirbridge } from '../src/lib/airbridge';
+import { initAnalytics } from '../src/lib/analytics';
 
 initSentry();
 SplashScreen.preventAutoHideAsync();
@@ -27,6 +28,7 @@ export default function RootLayout() {
   }, [fontsLoaded, fontError]);
 
   useEffect(() => {
+    initAnalytics();
     initAirbridge();
   }, []);
 
