@@ -1,0 +1,4 @@
+interface:
+  display_name: 'Amplitude Logging'
+  short_description: 'DetoxMate analytics logging conventions'
+  default_prompt: 'Use $amplitude-logging to add or review DetoxMate Amplitude logs for a feature.'
