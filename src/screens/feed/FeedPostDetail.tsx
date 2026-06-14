@@ -16,7 +16,8 @@ import {
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import apiClient from '../../api/client';
 import { logError, normalizeError } from '../../api/errors';
-import { HeaderAction, Icon } from '../../components';
+import { HeaderAction, Icon, LoggingButton, LoggingPage } from '../../components';
+import { trackButtonClick } from '../../lib/analytics';
 import { memberStore } from '../../lib/memberStore';
 import { pokeStore } from '../../lib/pokeStore';
 import { primitiveColors, radius, spacing, typography } from '../../lib/token';
@@ -327,6 +328,8 @@ export default function FeedPostDetail() {
     const hasThis = myReactionEmojis.some((current) => isSameReaction(current, reactionCode));
     if (hasThis) return;
 
+    trackButtonClick('Feed Post Detail Reaction Select Clicked', 'FeedPostDetail', '리액션 선택');
+
     const entry: ReactionEntry = {
       userId: 'me',
       name: '나',
@@ -350,6 +353,7 @@ export default function FeedPostDetail() {
   const handleSendComment = async () => {
     const text = commentText.trim();
     if (!text) return;
+    trackButtonClick('Feed Post Detail Comment Submit Clicked', 'FeedPostDetail', '댓글 보내기');
     setCommentText('');
     const newComment: CommentItem = {
       id: String(Date.now()),
@@ -383,281 +387,326 @@ export default function FeedPostDetail() {
   };
 
   return (
-    <KeyboardAvoidingView
-      style={styles.root}
-      behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-    >
-      <View style={[styles.header, { paddingTop: insets.top + spacing[14] }]}>
-        <HeaderAction
-          label="게시물"
-          onPress={handleHeaderBack}
-          iconSize={20}
-          iconColor={gray[900]}
-          style={styles.headerBackButton}
-          textStyle={styles.headerTitle}
-          accessibilityLabel="뒤로가기"
-        />
-      </View>
-
-      <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
-        <View style={styles.postArea}>
-          <View style={styles.card}>
-            {feedItem.isVerified ? (
-              <>
-                <Pressable style={styles.verifiedHeader} onPress={handleProfilePress}>
-                  <View style={styles.avatarWithLabel}>
-                    <ProfileAvatar source={feedItem.avatarSource} />
-                    <View style={styles.statusLabelAnchor}>
-                      <View style={[styles.statusLabel, { backgroundColor: statusLabelColor }]}>
-                        <Text style={styles.statusLabelText}>
-                          {feedItem.isGoalAchieved ? '목표 성공' : '목표 실패'}
-                        </Text>
-                      </View>
-                    </View>
-                  </View>
-                  <Text style={[styles.memberName, { flexShrink: 0 }]}>{feedAuthorName}</Text>
-                  {feedItem.verifiedTimeAgo != null && (
-                    <Text style={styles.timeAgo}>{feedItem.verifiedTimeAgo}</Text>
-                  )}
-                </Pressable>
-
-                {feedItem.screenTime != null && (
-                  <View
-                    style={[styles.screentimeRow, { backgroundColor: screentimeBackgroundColor }]}
-                  >
-                    <Text style={[styles.screentimeLabel, { color: screentimeAccentColor }]}>
-                      {feedItem.isMe ? '내 스크린 타임' : '스크린 타임'}
-                    </Text>
-                    <Text style={[styles.screentimeValue, { color: screentimeAccentColor }]}>
-                      {feedItem.screenTime}
-                    </Text>
-                  </View>
-                )}
-
-                {usesPostLayout ? (
-                  <>
-                    {feedItem.photoSource != null && (
-                      <Image
-                        source={feedItem.photoSource}
-                        style={styles.photo}
-                        resizeMode="cover"
-                      />
-                    )}
-                    {postText != null && <Text style={styles.postText}>{postText}</Text>}
-                  </>
-                ) : (
-                  <>
-                    {feedItem.photoSource != null && (
-                      <Image
-                        source={feedItem.photoSource}
-                        style={styles.photo}
-                        resizeMode="cover"
-                      />
-                    )}
-                    <View style={styles.retroCard}>
-                      <Text style={styles.retroLabel}>한 줄 회고</Text>
-                      <Text style={styles.retroText}>{feedItem.retroText}</Text>
-                    </View>
-                  </>
-                )}
-              </>
-            ) : (
-              <>
-                <Pressable style={styles.memberRow} onPress={handleProfilePress}>
-                  <ProfileAvatar source={feedItem.avatarSource} />
-                  <Text style={styles.memberName}>{feedAuthorName}</Text>
-                </Pressable>
-
-                <Text style={styles.statusText}>
-                  {BODY_TEXT[feedItem.memberGoalState ?? state]}
-                </Text>
-
-                {!isReadOnly && !feedItem.isMe && feedItem.memberGoalState !== 'setWaiting' && (
-                  <Pressable
-                    style={[styles.pokeButton, isPoked && styles.pokeButtonDisabled]}
-                    disabled={isPoked}
-                    onPress={async () => {
-                      Alert.alert(`${feedItem.name}님을 콕 찔렀어요!`);
-                      pokeStore.add(feedItem.id);
-                      setIsPoked(true);
-                      setFetchedPokes((prev) => {
-                        if (prev.some((p) => p.userId === 'me')) return prev;
-                        const myEntry: PokeEntry = {
-                          userId: 'me',
-                          name: '나',
-                          avatarSource: AVATAR_SOURCE as number,
-                        };
-                        return [myEntry, ...prev];
-                      });
-                      setPokeCount((prev) => prev + 1);
-                      if (feedItem.challengeRecordId) {
-                        try {
-                          await apiClient.post(
-                            `/challenge-records/${feedItem.challengeRecordId}/pokes/${feedItem.id}`
-                          );
-                        } catch {
-                          // 에러 무시
-                        }
-                      }
-                    }}
-                  >
-                    <Image source={POCK_ICON} style={styles.pockIcon} resizeMode="contain" />
-                    <Text style={[styles.pokeButtonText, isPoked && styles.pokeButtonTextDisabled]}>
-                      콕 찌르기
-                    </Text>
-                  </Pressable>
-                )}
-              </>
-            )}
-          </View>
+    <LoggingPage eventName="Feed Post Detail Viewed" properties={{ pageName: 'FeedPostDetail' }}>
+      <KeyboardAvoidingView
+        style={styles.root}
+        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+      >
+        <View style={[styles.header, { paddingTop: insets.top + spacing[14] }]}>
+          <LoggingButton
+            eventName="Feed Post Detail Back Clicked"
+            properties={{ pageName: 'FeedPostDetail', buttonName: '뒤로가기' }}
+          >
+            <HeaderAction
+              label="게시물"
+              onPress={handleHeaderBack}
+              iconSize={20}
+              iconColor={gray[900]}
+              style={styles.headerBackButton}
+              textStyle={styles.headerTitle}
+              accessibilityLabel="뒤로가기"
+            />
+          </LoggingButton>
         </View>
 
-        <View style={styles.engagementPanel}>
-          {feedItem.isVerified ? (
-            <View style={styles.section}>
-              <SectionHeading label="리액션" count={reactionCount} />
-              {reactions.length > 0 && (
-                <ScrollView
-                  horizontal
-                  showsHorizontalScrollIndicator={false}
-                  contentContainerStyle={styles.pokeRow}
-                >
-                  {reactions.map((r) => {
-                    const reactionSource = getReactionSource(r.emoji);
-                    return (
-                      <Pressable
-                        key={`${r.userId}-${r.emoji}`}
-                        style={styles.pokeAvatarItem}
-                        onPress={() => navigateToProfile(r.userId)}
-                      >
-                        <View style={styles.pokeAvatarWrapper}>
-                          <ProfileAvatar source={r.avatarSource} variant="engagement" />
-                          <View style={styles.pokeEmoji}>
-                            {reactionSource ? (
-                              <Image
-                                source={reactionSource}
-                                style={styles.reactionEmojiImage}
-                                resizeMode="contain"
-                              />
-                            ) : (
-                              <Text style={styles.pokeEmojiText}>{r.emoji}</Text>
-                            )}
+        <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
+          <View style={styles.postArea}>
+            <View style={styles.card}>
+              {feedItem.isVerified ? (
+                <>
+                  <LoggingButton
+                    eventName="Feed Post Detail Profile Open Clicked"
+                    properties={{ pageName: 'FeedPostDetail', buttonName: '작성자 프로필' }}
+                  >
+                    <Pressable style={styles.verifiedHeader} onPress={handleProfilePress}>
+                      <View style={styles.avatarWithLabel}>
+                        <ProfileAvatar source={feedItem.avatarSource} />
+                        <View style={styles.statusLabelAnchor}>
+                          <View style={[styles.statusLabel, { backgroundColor: statusLabelColor }]}>
+                            <Text style={styles.statusLabelText}>
+                              {feedItem.isGoalAchieved ? '목표 성공' : '목표 실패'}
+                            </Text>
                           </View>
                         </View>
-                        <Text style={styles.pokeAvatarName}>
-                          {r.name.length >= 5 ? `${r.name.slice(0, 4)}...` : r.name}
+                      </View>
+                      <Text style={[styles.memberName, { flexShrink: 0 }]}>{feedAuthorName}</Text>
+                      {feedItem.verifiedTimeAgo != null && (
+                        <Text style={styles.timeAgo}>{feedItem.verifiedTimeAgo}</Text>
+                      )}
+                    </Pressable>
+                  </LoggingButton>
+
+                  {feedItem.screenTime != null && (
+                    <View
+                      style={[styles.screentimeRow, { backgroundColor: screentimeBackgroundColor }]}
+                    >
+                      <Text style={[styles.screentimeLabel, { color: screentimeAccentColor }]}>
+                        {feedItem.isMe ? '내 스크린 타임' : '스크린 타임'}
+                      </Text>
+                      <Text style={[styles.screentimeValue, { color: screentimeAccentColor }]}>
+                        {feedItem.screenTime}
+                      </Text>
+                    </View>
+                  )}
+
+                  {usesPostLayout ? (
+                    <>
+                      {feedItem.photoSource != null && (
+                        <Image
+                          source={feedItem.photoSource}
+                          style={styles.photo}
+                          resizeMode="cover"
+                        />
+                      )}
+                      {postText != null && <Text style={styles.postText}>{postText}</Text>}
+                    </>
+                  ) : (
+                    <>
+                      {feedItem.photoSource != null && (
+                        <Image
+                          source={feedItem.photoSource}
+                          style={styles.photo}
+                          resizeMode="cover"
+                        />
+                      )}
+                      <View style={styles.retroCard}>
+                        <Text style={styles.retroLabel}>한 줄 회고</Text>
+                        <Text style={styles.retroText}>{feedItem.retroText}</Text>
+                      </View>
+                    </>
+                  )}
+                </>
+              ) : (
+                <>
+                  <LoggingButton
+                    eventName="Feed Post Detail Profile Open Clicked"
+                    properties={{ pageName: 'FeedPostDetail', buttonName: '작성자 프로필' }}
+                  >
+                    <Pressable style={styles.memberRow} onPress={handleProfilePress}>
+                      <ProfileAvatar source={feedItem.avatarSource} />
+                      <Text style={styles.memberName}>{feedAuthorName}</Text>
+                    </Pressable>
+                  </LoggingButton>
+
+                  <Text style={styles.statusText}>
+                    {BODY_TEXT[feedItem.memberGoalState ?? state]}
+                  </Text>
+
+                  {!isReadOnly && !feedItem.isMe && feedItem.memberGoalState !== 'setWaiting' && (
+                    <LoggingButton
+                      eventName="Feed Post Detail Poke Clicked"
+                      properties={{ pageName: 'FeedPostDetail', buttonName: '콕 찌르기' }}
+                    >
+                      <Pressable
+                        style={[styles.pokeButton, isPoked && styles.pokeButtonDisabled]}
+                        disabled={isPoked}
+                        onPress={async () => {
+                          Alert.alert(`${feedItem.name}님을 콕 찔렀어요!`);
+                          pokeStore.add(feedItem.id);
+                          setIsPoked(true);
+                          setFetchedPokes((prev) => {
+                            if (prev.some((p) => p.userId === 'me')) return prev;
+                            const myEntry: PokeEntry = {
+                              userId: 'me',
+                              name: '나',
+                              avatarSource: AVATAR_SOURCE as number,
+                            };
+                            return [myEntry, ...prev];
+                          });
+                          setPokeCount((prev) => prev + 1);
+                          if (feedItem.challengeRecordId) {
+                            try {
+                              await apiClient.post(
+                                `/challenge-records/${feedItem.challengeRecordId}/pokes/${feedItem.id}`
+                              );
+                            } catch {
+                              // 에러 무시
+                            }
+                          }
+                        }}
+                      >
+                        <Image source={POCK_ICON} style={styles.pockIcon} resizeMode="contain" />
+                        <Text
+                          style={[styles.pokeButtonText, isPoked && styles.pokeButtonTextDisabled]}
+                        >
+                          콕 찌르기
                         </Text>
                       </Pressable>
-                    );
-                  })}
-                </ScrollView>
+                    </LoggingButton>
+                  )}
+                </>
               )}
             </View>
-          ) : (
+          </View>
+
+          <View style={styles.engagementPanel}>
+            {feedItem.isVerified ? (
+              <View style={styles.section}>
+                <SectionHeading label="리액션" count={reactionCount} />
+                {reactions.length > 0 && (
+                  <ScrollView
+                    horizontal
+                    showsHorizontalScrollIndicator={false}
+                    contentContainerStyle={styles.pokeRow}
+                  >
+                    {reactions.map((r) => {
+                      const reactionSource = getReactionSource(r.emoji);
+                      return (
+                        <LoggingButton
+                          key={`${r.userId}-${r.emoji}`}
+                          eventName="Feed Post Detail Reaction User Profile Open Clicked"
+                          properties={{
+                            pageName: 'FeedPostDetail',
+                            buttonName: '리액션 유저 프로필',
+                          }}
+                        >
+                          <Pressable
+                            style={styles.pokeAvatarItem}
+                            onPress={() => navigateToProfile(r.userId)}
+                          >
+                            <View style={styles.pokeAvatarWrapper}>
+                              <ProfileAvatar source={r.avatarSource} variant="engagement" />
+                              <View style={styles.pokeEmoji}>
+                                {reactionSource ? (
+                                  <Image
+                                    source={reactionSource}
+                                    style={styles.reactionEmojiImage}
+                                    resizeMode="contain"
+                                  />
+                                ) : (
+                                  <Text style={styles.pokeEmojiText}>{r.emoji}</Text>
+                                )}
+                              </View>
+                            </View>
+                            <Text style={styles.pokeAvatarName}>
+                              {r.name.length >= 5 ? `${r.name.slice(0, 4)}...` : r.name}
+                            </Text>
+                          </Pressable>
+                        </LoggingButton>
+                      );
+                    })}
+                  </ScrollView>
+                )}
+              </View>
+            ) : (
+              <View style={styles.section}>
+                <SectionHeading label="콕 찌름" count={pokeCount} />
+                {displayPokes.length > 0 && (
+                  <ScrollView
+                    horizontal
+                    showsHorizontalScrollIndicator={false}
+                    contentContainerStyle={styles.pokeRow}
+                  >
+                    {displayPokes.map((p) => (
+                      <LoggingButton
+                        key={p.userId}
+                        eventName="Feed Post Detail Poke User Profile Open Clicked"
+                        properties={{
+                          pageName: 'FeedPostDetail',
+                          buttonName: '콕 찌른 유저 프로필',
+                        }}
+                      >
+                        <Pressable
+                          style={styles.pokeAvatarItem}
+                          onPress={() => navigateToProfile(p.userId)}
+                        >
+                          <View style={styles.pokeAvatarWrapper}>
+                            <ProfileAvatar source={p.avatarSource} variant="engagement" />
+                            <View style={styles.pokeEmoji}>
+                              <Image
+                                source={POCK_ICON}
+                                style={styles.pokeEmojiImage}
+                                resizeMode="contain"
+                              />
+                            </View>
+                          </View>
+                          <Text style={styles.pokeAvatarName}>
+                            {p.name.length >= 5 ? `${p.name.slice(0, 4)}...` : p.name}
+                          </Text>
+                        </Pressable>
+                      </LoggingButton>
+                    ))}
+                  </ScrollView>
+                )}
+              </View>
+            )}
+
             <View style={styles.section}>
-              <SectionHeading label="콕 찌름" count={pokeCount} />
-              {displayPokes.length > 0 && (
-                <ScrollView
-                  horizontal
-                  showsHorizontalScrollIndicator={false}
-                  contentContainerStyle={styles.pokeRow}
-                >
-                  {displayPokes.map((p) => (
-                    <Pressable
-                      key={p.userId}
-                      style={styles.pokeAvatarItem}
-                      onPress={() => navigateToProfile(p.userId)}
-                    >
-                      <View style={styles.pokeAvatarWrapper}>
-                        <ProfileAvatar source={p.avatarSource} variant="engagement" />
-                        <View style={styles.pokeEmoji}>
-                          <Image
-                            source={POCK_ICON}
-                            style={styles.pokeEmojiImage}
-                            resizeMode="contain"
-                          />
-                        </View>
+              <SectionHeading label="댓글" count={commentCount} />
+              <View style={styles.commentList}>
+                {sortedComments.map((comment, index) => (
+                  <View
+                    key={comment.id}
+                    style={[
+                      styles.commentItem,
+                      index < sortedComments.length - 1 && styles.commentDivider,
+                    ]}
+                  >
+                    <ProfileAvatar source={comment.avatarSource} variant="comment" />
+                    <View style={styles.commentContent}>
+                      <View style={styles.commentMeta}>
+                        <Text style={styles.commentAuthor}>{comment.authorName}</Text>
+                        <Text style={styles.commentTime}>{comment.timeAgoLabel}</Text>
                       </View>
-                      <Text style={styles.pokeAvatarName}>
-                        {p.name.length >= 5 ? `${p.name.slice(0, 4)}...` : p.name}
-                      </Text>
-                    </Pressable>
-                  ))}
-                </ScrollView>
-              )}
-            </View>
-          )}
-
-          <View style={styles.section}>
-            <SectionHeading label="댓글" count={commentCount} />
-            <View style={styles.commentList}>
-              {sortedComments.map((comment, index) => (
-                <View
-                  key={comment.id}
-                  style={[
-                    styles.commentItem,
-                    index < sortedComments.length - 1 && styles.commentDivider,
-                  ]}
-                >
-                  <ProfileAvatar source={comment.avatarSource} variant="comment" />
-                  <View style={styles.commentContent}>
-                    <View style={styles.commentMeta}>
-                      <Text style={styles.commentAuthor}>{comment.authorName}</Text>
-                      <Text style={styles.commentTime}>{comment.timeAgoLabel}</Text>
+                      <Text style={styles.commentText}>{comment.text}</Text>
                     </View>
-                    <Text style={styles.commentText}>{comment.text}</Text>
                   </View>
-                </View>
-              ))}
+                ))}
+              </View>
             </View>
           </View>
-        </View>
-      </ScrollView>
+        </ScrollView>
 
-      {showReactionPicker ? (
-        <>
-          <Pressable style={styles.pickerOverlay} onPress={() => setShowReactionPicker(false)} />
-          <View
-            style={[styles.pickerBar, { paddingBottom: Math.max(insets.bottom, spacing[12]) }]}
-          >
-            <ReactionPicker
-              selectedReactions={myReactionEmojis}
-              style={styles.bottomReactionPicker}
-              onSelect={(reactionCode) => {
-                handleReact(reactionCode);
-                setShowReactionPicker(false);
-              }}
-            />
-          </View>
-        </>
-      ) : (
-        <View style={[styles.inputBar, { paddingBottom: Math.max(insets.bottom, spacing[12]) }]}>
-          <TextInput
-            style={styles.textInput}
-            placeholder="응원 메시지를 남겨보세요"
-            placeholderTextColor={gray[400]}
-            value={commentText}
-            onChangeText={setCommentText}
-            returnKeyType="send"
-            onSubmitEditing={handleSendComment}
-          />
-
-          {commentText.trim().length > 0 ? (
-            <Pressable style={styles.sendBtn} onPress={handleSendComment}>
-              <Icon name="paperPlaneRight" size={20} color={WHITE} />
-            </Pressable>
-          ) : (
-            <Pressable style={styles.impressionBtn} onPress={() => setShowReactionPicker(true)}>
-              <Image
-                source={IMPRESSION_ICON}
-                style={styles.impressionIcon}
-                resizeMode="contain"
+        {showReactionPicker ? (
+          <>
+            <Pressable style={styles.pickerOverlay} onPress={() => setShowReactionPicker(false)} />
+            <View
+              style={[styles.pickerBar, { paddingBottom: Math.max(insets.bottom, spacing[12]) }]}
+            >
+              <ReactionPicker
+                selectedReactions={myReactionEmojis}
+                style={styles.bottomReactionPicker}
+                onSelect={(reactionCode) => {
+                  handleReact(reactionCode);
+                  setShowReactionPicker(false);
+                }}
               />
-            </Pressable>
-          )}
-        </View>
-      )}
-    </KeyboardAvoidingView>
+            </View>
+          </>
+        ) : (
+          <View style={[styles.inputBar, { paddingBottom: Math.max(insets.bottom, spacing[12]) }]}>
+            <TextInput
+              style={styles.textInput}
+              placeholder="응원 메시지를 남겨보세요"
+              placeholderTextColor={gray[400]}
+              value={commentText}
+              onChangeText={setCommentText}
+              returnKeyType="send"
+              onSubmitEditing={handleSendComment}
+            />
+
+            {commentText.trim().length > 0 ? (
+              <Pressable style={styles.sendBtn} onPress={handleSendComment}>
+                <Icon name="paperPlaneRight" size={20} color={WHITE} />
+              </Pressable>
+            ) : (
+              <LoggingButton
+                eventName="Feed Post Detail Reaction Picker Open Clicked"
+                properties={{ pageName: 'FeedPostDetail', buttonName: '리액션 열기' }}
+              >
+                <Pressable style={styles.impressionBtn} onPress={() => setShowReactionPicker(true)}>
+                  <Image
+                    source={IMPRESSION_ICON}
+                    style={styles.impressionIcon}
+                    resizeMode="contain"
+                  />
+                </Pressable>
+              </LoggingButton>
+            )}
+          </View>
+        )}
+      </KeyboardAvoidingView>
+    </LoggingPage>
   );
 }
 

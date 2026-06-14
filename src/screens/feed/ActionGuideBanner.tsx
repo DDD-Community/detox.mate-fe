@@ -1,5 +1,6 @@
 import { router } from 'expo-router';
 import { Image, StyleSheet, Text, View } from 'react-native';
+import { LoggingButton } from '../../components';
 import { Button } from '../../components/Button';
 import { Icon } from '../../components/Icon';
 import { primitiveColors, radius, spacing, typography } from '../../lib/token';
@@ -54,19 +55,27 @@ function GoalBanner() {
           resizeMode="contain"
         />
       </View>
-      <Button
-        label="목표 설정하기"
-        leadingIcon={<Icon name="target" size={16} color={WHITE} />}
-        color="assistive"
-        size="sm"
-        onPress={() =>
-          router.push({
-            pathname: '/(feed)/verify',
-            params: { mode: 'initial', verifyRoot: 'feed' },
-          })
-        }
-        style={styles.bannerButton}
-      />
+      <LoggingButton
+        eventName="Feed Home Goal Setup Start Clicked"
+        properties={{
+          pageName: 'FeedHome',
+          buttonName: '목표 설정하기',
+        }}
+      >
+        <Button
+          label="목표 설정하기"
+          leadingIcon={<Icon name="target" size={16} color={WHITE} />}
+          color="assistive"
+          size="sm"
+          onPress={() => {
+            router.push({
+              pathname: '/(feed)/verify',
+              params: { mode: 'initial', verifyRoot: 'feed' },
+            });
+          }}
+          style={styles.bannerButton}
+        />
+      </LoggingButton>
     </View>
   );
 }
@@ -125,6 +134,20 @@ function DailyAuthBanner({
 }: Pick<Props, 'verifyParams'> & { tone: 'ready' | 'warning' }) {
   const isWarning = tone === 'warning';
 
+  const handlePress = () => {
+    router.push({
+      pathname: '/(feed)/verify',
+      params: {
+        mode: 'verify',
+        verifyRoot: 'feed',
+        ...(verifyParams?.goal ? { goal: verifyParams.goal } : {}),
+        ...(verifyParams?.groupChallengeParticipantId
+          ? { groupChallengeParticipantId: verifyParams.groupChallengeParticipantId }
+          : {}),
+      },
+    });
+  };
+
   return (
     <View style={isWarning ? styles.dailyAuthWarningBanner : styles.dailyAuthReadyBanner}>
       <View style={styles.topRow}>
@@ -146,32 +169,28 @@ function DailyAuthBanner({
           resizeMode="contain"
         />
       </View>
-      <Button
-        label="인증하기"
-        leadingIcon={
-          <Image
-            source={require('../../../assets/icon_fl_Camera.png')}
-            style={styles.buttonIcon}
-            resizeMode="contain"
-          />
-        }
-        color="assistive"
-        size="sm"
-        onPress={() =>
-          router.push({
-            pathname: '/(feed)/verify',
-            params: {
-              mode: 'verify',
-              verifyRoot: 'feed',
-              ...(verifyParams?.goal ? { goal: verifyParams.goal } : {}),
-              ...(verifyParams?.groupChallengeParticipantId
-                ? { groupChallengeParticipantId: verifyParams.groupChallengeParticipantId }
-                : {}),
-            },
-          })
-        }
-        style={styles.bannerButton}
-      />
+      <LoggingButton
+        eventName="Feed Home Daily Verification Start Clicked"
+        properties={{
+          pageName: 'FeedHome',
+          buttonName: '인증하기',
+        }}
+      >
+        <Button
+          label="인증하기"
+          leadingIcon={
+            <Image
+              source={require('../../../assets/icon_fl_Camera.png')}
+              style={styles.buttonIcon}
+              resizeMode="contain"
+            />
+          }
+          color="assistive"
+          size="sm"
+          onPress={handlePress}
+          style={styles.bannerButton}
+        />
+      </LoggingButton>
     </View>
   );
 }

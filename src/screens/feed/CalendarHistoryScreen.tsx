@@ -9,9 +9,9 @@ import {
   TouchableOpacity,
   View,
 } from 'react-native';
-import { Icon } from '../../components/Icon';
 import apiClient from '../../api/client';
 import type { GroupChallengeRecordFeedResponse, MemberResponse } from '../../api/generated/model';
+import { Icon, LoggingButton, LoggingPage } from '../../components';
 import { memberStore } from '../../lib/memberStore';
 import { primitiveColors, radius, spacing, typography } from '../../lib/token';
 import FeedCard, { type FeedItem, type PokeEntry, type ReactionEntry } from './FeedCard';
@@ -100,7 +100,6 @@ function todayString(): string {
 function yesterdayString(): string {
   return shiftDate(todayString(), -1);
 }
-
 
 export default function CalendarHistoryScreen() {
   const {
@@ -252,55 +251,73 @@ export default function CalendarHistoryScreen() {
   };
 
   return (
-    <ScrollView style={styles.root} contentContainerStyle={styles.content}>
-      {/* Header */}
-      <View style={styles.header}>
-        <TouchableOpacity onPress={() => router.back()} style={styles.backBtn}>
-          <Icon name="caretLeft" size={20} color={gray[900]} />
-        </TouchableOpacity>
-
-        <View style={styles.dateNav}>
-          <TouchableOpacity
-            style={[styles.arrowBtn, isAtOrBeforeFirstDate && styles.arrowDisabled]}
-            disabled={isAtOrBeforeFirstDate}
-            onPress={() => goTo(shiftDate(date, -1))}
+    <LoggingPage eventName="Calendar History Viewed" properties={{ pageName: 'CalendarHistory' }}>
+      <ScrollView style={styles.root} contentContainerStyle={styles.content}>
+        {/* Header */}
+        <View style={styles.header}>
+          <LoggingButton
+            eventName="Calendar History Back Clicked"
+            properties={{ pageName: 'CalendarHistory', buttonName: '뒤로가기' }}
           >
-            <Icon name="caretLeft" size={20} color={gray[900]} />
-          </TouchableOpacity>
-          <Text style={styles.dateText}>{formatDisplayDate(date)}</Text>
-          <TouchableOpacity
-            style={[styles.arrowBtn, isAtOrAfterLastDate && styles.arrowDisabled]}
-            disabled={isAtOrAfterLastDate}
-            onPress={() => goTo(shiftDate(date, 1))}
-          >
-            <Icon name="caretRight" size={20} color={gray[900]} />
-          </TouchableOpacity>
+            <TouchableOpacity onPress={() => router.back()} style={styles.backBtn}>
+              <Icon name="caretLeft" size={20} color={gray[900]} />
+            </TouchableOpacity>
+          </LoggingButton>
+
+          <View style={styles.dateNav}>
+            <LoggingButton
+              eventName="Calendar History Previous Date Clicked"
+              properties={{ pageName: 'CalendarHistory', buttonName: '이전 날짜' }}
+            >
+              <TouchableOpacity
+                style={[styles.arrowBtn, isAtOrBeforeFirstDate && styles.arrowDisabled]}
+                disabled={isAtOrBeforeFirstDate}
+                onPress={() => goTo(shiftDate(date, -1))}
+              >
+                <Icon name="caretLeft" size={20} color={gray[900]} />
+              </TouchableOpacity>
+            </LoggingButton>
+            <Text style={styles.dateText}>{formatDisplayDate(date)}</Text>
+            <LoggingButton
+              eventName="Calendar History Next Date Clicked"
+              properties={{ pageName: 'CalendarHistory', buttonName: '다음 날짜' }}
+            >
+              <TouchableOpacity
+                style={[styles.arrowBtn, isAtOrAfterLastDate && styles.arrowDisabled]}
+                disabled={isAtOrAfterLastDate}
+                onPress={() => goTo(shiftDate(date, 1))}
+              >
+                <Icon name="caretRight" size={20} color={gray[900]} />
+              </TouchableOpacity>
+            </LoggingButton>
+          </View>
+
+          <View style={styles.backBtn} />
         </View>
 
-        <View style={styles.backBtn} />
-      </View>
-
-      {loading ? (
-        <ActivityIndicator color={gray[400]} style={{ marginTop: spacing[32] }} />
-      ) : items.length === 0 ? (
-        <View style={styles.empty}>
-          <Text style={styles.emptyText}>이 날의 인증 기록이 없어요</Text>
-        </View>
-      ) : (
-        <View style={styles.feedList}>
-          {items.map((item, idx) => (
-            <FeedCard
-              key={`${idx}-${item.id}`}
-              item={item}
-              goalState="authReady"
-              historyMode={true}
-              onBodyPress={() => openPostDetail(item)}
-              onProfilePress={() => openMemberProfile(item)}
-            />
-          ))}
-        </View>
-      )}
-    </ScrollView>
+        {loading ? (
+          <ActivityIndicator color={gray[400]} style={{ marginTop: spacing[32] }} />
+        ) : items.length === 0 ? (
+          <View style={styles.empty}>
+            <Text style={styles.emptyText}>이 날의 인증 기록이 없어요</Text>
+          </View>
+        ) : (
+          <View style={styles.feedList}>
+            {items.map((item, idx) => (
+              <FeedCard
+                key={`${idx}-${item.id}`}
+                item={item}
+                goalState="authReady"
+                historyMode={true}
+                analyticsContext="CalendarHistory"
+                onBodyPress={() => openPostDetail(item)}
+                onProfilePress={() => openMemberProfile(item)}
+              />
+            ))}
+          </View>
+        )}
+      </ScrollView>
+    </LoggingPage>
   );
 }
 

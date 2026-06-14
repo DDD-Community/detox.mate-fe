@@ -1,6 +1,7 @@
 import { router, useLocalSearchParams } from 'expo-router';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 
+import { LoggingButton, LoggingPage } from '@/components';
 import { primitiveColors } from '@/lib/token';
 import {
   buildVerifyFlowParams,
@@ -50,21 +51,35 @@ export default function VerifyErrorScreen() {
   };
 
   return (
-    <View style={styles.overlay}>
-      <View style={styles.alert}>
-        <View style={styles.material}>
-          <View style={styles.materialBase} />
-          <View style={styles.materialDodge} />
+    <LoggingPage
+      eventName="Verify Error Viewed"
+      properties={{ pageName: 'VerifyError', verify_mode: mode ?? 'initial' }}
+    >
+      <View style={styles.overlay}>
+        <View style={styles.alert}>
+          <View style={styles.material}>
+            <View style={styles.materialBase} />
+            <View style={styles.materialDodge} />
+          </View>
+          <View style={styles.textGroup}>
+            <Text style={styles.title}>날짜를 인식할 수 없습니다.</Text>
+            <Text style={styles.description}>날짜가 포함되게 캡쳐해 주세요.</Text>
+          </View>
+          <LoggingButton
+            eventName="Verify Error Retake Screenshot Clicked"
+            properties={{
+              pageName: 'VerifyError',
+              buttonName: '다시 캡쳐하러 가기',
+              verify_mode: mode ?? 'initial',
+            }}
+          >
+            <Pressable style={styles.button} onPress={handleRetake}>
+              <Text style={styles.buttonLabel}>다시 캡쳐하러 가기</Text>
+            </Pressable>
+          </LoggingButton>
         </View>
-        <View style={styles.textGroup}>
-          <Text style={styles.title}>날짜를 인식할 수 없습니다.</Text>
-          <Text style={styles.description}>날짜가 포함되게 캡쳐해 주세요.</Text>
-        </View>
-        <Pressable style={styles.button} onPress={handleRetake}>
-          <Text style={styles.buttonLabel}>다시 캡쳐하러 가기</Text>
-        </Pressable>
       </View>
-    </View>
+    </LoggingPage>
   );
 }
 

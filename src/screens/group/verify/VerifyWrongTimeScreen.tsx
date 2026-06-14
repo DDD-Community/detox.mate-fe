@@ -4,6 +4,7 @@ import { Pressable, StyleSheet, Text, View } from 'react-native';
 
 import { getScreenTimeOcrErrorReport } from '@/api/generated/screen-time-ocr-error-report/screen-time-ocr-error-report';
 import { PresignedUrlRequestUploadPurpose } from '@/api/generated/model';
+import { LoggingButton, LoggingPage } from '@/components';
 import { parseHHMMToMinutes } from '@/lib/formatDuration';
 import { primitiveColors, typography } from '@/lib/token';
 import { uploadImage } from '@/lib/uploadImage';
@@ -90,24 +91,51 @@ export default function VerifyWrongTimeScreen() {
   };
 
   return (
-    <View style={styles.overlay}>
-      <View style={styles.alert}>
-        <Text style={styles.title}>접수 되었습니다</Text>
-        <Text style={styles.body}>{'사진을 검토한 뒤\n수일 내로 반영해 드릴게요'}</Text>
-        <View style={styles.actions}>
-          <Pressable style={styles.closeButton} onPress={handleClose} disabled={isSubmittingReport}>
-            <Text style={styles.closeLabel}>닫기</Text>
-          </Pressable>
-          <Pressable
-            style={styles.confirmButton}
-            onPress={handleConfirm}
-            disabled={isSubmittingReport}
-          >
-            <Text style={styles.confirmLabel}>확인</Text>
-          </Pressable>
+    <LoggingPage
+      eventName="Verify Wrong Time Viewed"
+      properties={{ pageName: 'VerifyWrongTime', goal_achieved: goalAchieved }}
+    >
+      <View style={styles.overlay}>
+        <View style={styles.alert}>
+          <Text style={styles.title}>접수 되었습니다</Text>
+          <Text style={styles.body}>{'사진을 검토한 뒤\n수일 내로 반영해 드릴게요'}</Text>
+          <View style={styles.actions}>
+            <LoggingButton
+              eventName="Verify Wrong Time Close Clicked"
+              properties={{
+                pageName: 'VerifyWrongTime',
+                buttonName: '닫기',
+                goal_achieved: goalAchieved,
+              }}
+            >
+              <Pressable
+                style={styles.closeButton}
+                onPress={handleClose}
+                disabled={isSubmittingReport}
+              >
+                <Text style={styles.closeLabel}>닫기</Text>
+              </Pressable>
+            </LoggingButton>
+            <LoggingButton
+              eventName="Verify Wrong Time Confirm Clicked"
+              properties={{
+                pageName: 'VerifyWrongTime',
+                buttonName: '확인',
+                goal_achieved: goalAchieved,
+              }}
+            >
+              <Pressable
+                style={styles.confirmButton}
+                onPress={handleConfirm}
+                disabled={isSubmittingReport}
+              >
+                <Text style={styles.confirmLabel}>확인</Text>
+              </Pressable>
+            </LoggingButton>
+          </View>
         </View>
       </View>
-    </View>
+    </LoggingPage>
   );
 }
 

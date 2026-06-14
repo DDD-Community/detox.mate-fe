@@ -1,31 +1,46 @@
-import { router } from 'expo-router';
+import { router, useLocalSearchParams } from 'expo-router';
 import { Image, Pressable, StyleSheet, Text, View } from 'react-native';
 
 import ONBOARDING_CHECK_IMAGE from '@assets/onboarding-check.png';
 
+import { LoggingButton, LoggingPage } from '@/components';
 import { primitiveColors, typography } from '@/lib/token';
 import { VerifyBottomSheet } from './VerifyBottomSheet';
+import type { VerifyMode } from './verifyFlowParams';
 
 const { green } = primitiveColors;
 
 export default function VerifyCompleteScreen() {
+  const { mode } = useLocalSearchParams<{ mode?: VerifyMode }>();
+
   const handleGoHome = () => {
     router.replace('/(feed)/home');
   };
 
   return (
-    <VerifyBottomSheet onDismiss={() => router.back()}>
-      <View style={styles.content}>
-        <View style={styles.heading}>
-          <Image source={ONBOARDING_CHECK_IMAGE} style={styles.checkIcon} resizeMode="contain" />
-          <Text style={styles.title}>{'인증 완료 !\n오늘도 잘 해냈어요 !'}</Text>
-        </View>
+    <LoggingPage eventName="Verify Complete Viewed" properties={{ pageName: 'VerifyComplete' }}>
+      <VerifyBottomSheet onDismiss={() => router.back()}>
+        <View style={styles.content}>
+          <View style={styles.heading}>
+            <Image source={ONBOARDING_CHECK_IMAGE} style={styles.checkIcon} resizeMode="contain" />
+            <Text style={styles.title}>{'인증 완료 !\n오늘도 잘 해냈어요 !'}</Text>
+          </View>
 
-        <Pressable style={styles.button} onPress={handleGoHome}>
-          <Text style={styles.buttonLabel}>홈으로 돌아가기</Text>
-        </Pressable>
-      </View>
-    </VerifyBottomSheet>
+          <LoggingButton
+            eventName="Verify Complete Go Home Clicked"
+            properties={{
+              pageName: 'VerifyComplete',
+              buttonName: '홈으로 돌아가기',
+              verify_mode: mode ?? 'verify',
+            }}
+          >
+            <Pressable style={styles.button} onPress={handleGoHome}>
+              <Text style={styles.buttonLabel}>홈으로 돌아가기</Text>
+            </Pressable>
+          </LoggingButton>
+        </View>
+      </VerifyBottomSheet>
+    </LoggingPage>
   );
 }
 

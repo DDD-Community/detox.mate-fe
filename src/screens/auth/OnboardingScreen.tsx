@@ -1,6 +1,7 @@
 import { useRouter } from 'expo-router';
 import React, { useState } from 'react';
 import { Image, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { LoggingButton, LoggingPage } from '../../components';
 import { primitiveColors } from '../../lib/token/primitive/colors';
 import { typography } from '../../lib/token/primitive/typography';
 
@@ -47,73 +48,93 @@ export default function OnboardingScreen() {
   };
 
   return (
-    <View style={styles.root}>
-      <View style={styles.stepIndicator}>
-        {PAGES.map((_, i) => {
-          const isActive = i === step;
-          const isStar = i === PAGES.length - 1;
-          return (
+    <LoggingPage
+      eventName="Onboarding Viewed"
+      properties={{ pageName: 'Onboarding', step: step + 1 }}
+      logKey={step}
+    >
+      <View style={styles.root}>
+        <View style={styles.stepIndicator}>
+          {PAGES.map((_, i) => {
+            const isActive = i === step;
+            const isStar = i === PAGES.length - 1;
+            return (
+              <Image
+                key={i}
+                source={
+                  isStar
+                    ? isActive
+                      ? require('../../../assets/onboarding-star-green.png')
+                      : require('../../../assets/onboarding-star-gray.png')
+                    : isActive
+                      ? require('../../../assets/onboarding-step-green.png')
+                      : require('../../../assets/onboarding-step-gray.png')
+                }
+                style={isStar ? styles.stepDotStar : styles.stepDot}
+                resizeMode="contain"
+              />
+            );
+          })}
+        </View>
+
+        <Image
+          source={page.image}
+          style={[styles.characterImage, page.imageStyle]}
+          resizeMode="contain"
+        />
+
+        <View style={styles.textSection}>
+          <Text style={styles.title}>{page.title}</Text>
+          <Text style={styles.subtitle}>{page.subtitle}</Text>
+        </View>
+
+        {page.info ? (
+          <View style={styles.infoBox}>
             <Image
-              key={i}
-              source={
-                isStar
-                  ? isActive
-                    ? require('../../../assets/onboarding-star-green.png')
-                    : require('../../../assets/onboarding-star-gray.png')
-                  : isActive
-                    ? require('../../../assets/onboarding-step-green.png')
-                    : require('../../../assets/onboarding-step-gray.png')
-              }
-              style={isStar ? styles.stepDotStar : styles.stepDot}
+              source={require('../../../assets/onboarding-info.png')}
+              style={styles.infoIcon}
               resizeMode="contain"
             />
-          );
-        })}
-      </View>
+            <Text style={styles.infoText} numberOfLines={1}>
+              {page.info}
+            </Text>
+          </View>
+        ) : null}
 
-      <Image
-        source={page.image}
-        style={[styles.characterImage, page.imageStyle]}
-        resizeMode="contain"
-      />
-
-      <View style={styles.textSection}>
-        <Text style={styles.title}>{page.title}</Text>
-        <Text style={styles.subtitle}>{page.subtitle}</Text>
-      </View>
-
-      {page.info ? (
-        <View style={styles.infoBox}>
-          <Image
-            source={require('../../../assets/onboarding-info.png')}
-            style={styles.infoIcon}
-            resizeMode="contain"
-          />
-          <Text style={styles.infoText} numberOfLines={1}>
-            {page.info}
-          </Text>
-        </View>
-      ) : null}
-
-      <View style={[styles.buttonSection, !isFirst && styles.buttonRow]}>
-        {!isFirst && (
-          <TouchableOpacity
-            style={styles.prevButton}
-            onPress={() => setStep((s) => s - 1)}
-            activeOpacity={0.85}
+        <View style={[styles.buttonSection, !isFirst && styles.buttonRow]}>
+          {!isFirst && (
+            <LoggingButton
+              eventName="Onboarding Previous Clicked"
+              properties={{ pageName: 'Onboarding', buttonName: '이전', step: step + 1 }}
+            >
+              <TouchableOpacity
+                style={styles.prevButton}
+                onPress={() => setStep((s) => s - 1)}
+                activeOpacity={0.85}
+              >
+                <Text style={styles.prevText}>이전</Text>
+              </TouchableOpacity>
+            </LoggingButton>
+          )}
+          <LoggingButton
+            eventName={isLast ? 'Onboarding Start Clicked' : 'Onboarding Next Clicked'}
+            properties={{
+              pageName: 'Onboarding',
+              buttonName: isLast ? '시작하기' : '다음',
+              step: step + 1,
+            }}
           >
-            <Text style={styles.prevText}>이전</Text>
-          </TouchableOpacity>
-        )}
-        <TouchableOpacity
-          style={[styles.nextButton, !isFirst && styles.nextButtonFlex]}
-          onPress={handleNext}
-          activeOpacity={0.85}
-        >
-          <Text style={styles.nextText}>{isLast ? '시작하기' : '다음'}</Text>
-        </TouchableOpacity>
+            <TouchableOpacity
+              style={[styles.nextButton, !isFirst && styles.nextButtonFlex]}
+              onPress={handleNext}
+              activeOpacity={0.85}
+            >
+              <Text style={styles.nextText}>{isLast ? '시작하기' : '다음'}</Text>
+            </TouchableOpacity>
+          </LoggingButton>
+        </View>
       </View>
-    </View>
+    </LoggingPage>
   );
 }
 

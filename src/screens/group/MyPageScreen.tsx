@@ -1,6 +1,7 @@
 import { router } from 'expo-router';
 import { Alert, ScrollView, StyleSheet, View } from 'react-native';
 
+import { LoggingPage } from '@/components';
 import { primitiveColors, spacing } from '@/lib/token';
 import { MyPageBody } from './mypage/MyPageBody';
 import { MyPageProfileHeader } from './mypage/MyPageProfileHeader';
@@ -126,60 +127,65 @@ export default function MyPageScreen() {
   };
 
   return (
-    <View style={styles.root}>
-      <ScrollView
-        style={styles.screenScroll}
-        contentContainerStyle={styles.screenContent}
-        showsVerticalScrollIndicator={false}
-      >
-        <MyPageProfileHeader
-          isFriend={isFriend}
-          canGoBack={router.canGoBack()}
-          displayName={displayName}
-          dayCount={dayCount}
-          achievementRate={achievementRate}
-          displayProfileImageUri={displayProfileImageUri}
-          hasProfileBackground={hasProfileBackground}
-          isUpdatingProfileImage={isUpdatingProfileImage}
-          onBack={handleBack}
-          onHome={handleHome}
-          onSettings={handleSettings}
-          onEditName={handleEditName}
-          onEditProfileImage={handleEditProfileImage}
-        />
+    <LoggingPage
+      eventName="My Page Viewed"
+      properties={{ pageName: 'MyPage', profile_mode: isFriend ? 'friend' : 'me' }}
+    >
+      <View style={styles.root}>
+        <ScrollView
+          style={styles.screenScroll}
+          contentContainerStyle={styles.screenContent}
+          showsVerticalScrollIndicator={false}
+        >
+          <MyPageProfileHeader
+            isFriend={isFriend}
+            canGoBack={router.canGoBack()}
+            displayName={displayName}
+            dayCount={dayCount}
+            achievementRate={achievementRate}
+            displayProfileImageUri={displayProfileImageUri}
+            hasProfileBackground={hasProfileBackground}
+            isUpdatingProfileImage={isUpdatingProfileImage}
+            onBack={handleBack}
+            onHome={handleHome}
+            onSettings={handleSettings}
+            onEditName={handleEditName}
+            onEditProfileImage={handleEditProfileImage}
+          />
 
-        <MyPageBody
-          isFriend={isFriend}
-          isLoading={isLoading}
-          isFriendGoalSet={isFriendGoalSet}
-          isPoking={isPoking}
-          isPoked={isPoked}
-          hasGoalSet={hasGoalSet}
-          hasJoinedGroup={hasJoinedGroup}
-          diffMinutes={diffMinutes}
-          avgScreenTime={avgScreenTime}
-          goalScreenTime={goalScreenTime}
-          certifiedDays={certifiedDays}
-          totalVerifyDays={totalVerifyDays}
-          achievedDays={achievedDays}
-          joinedGroups={joinedGroups}
-          daysUntilGoalChange={daysUntilGoalChange}
-          onPoke={handlePoke}
-          onSetGoal={handleSetGoal}
-          onCreateGroup={handleCreateGroup}
-          onEnterInviteCode={handleEnterInviteCode}
-          onGroupPress={handleGroupPress}
-          onChangeGoal={handleChangeGoal}
-        />
-      </ScrollView>
+          <MyPageBody
+            isFriend={isFriend}
+            isLoading={isLoading}
+            isFriendGoalSet={isFriendGoalSet}
+            isPoking={isPoking}
+            isPoked={isPoked}
+            hasGoalSet={hasGoalSet}
+            hasJoinedGroup={hasJoinedGroup}
+            diffMinutes={diffMinutes}
+            avgScreenTime={avgScreenTime}
+            goalScreenTime={goalScreenTime}
+            certifiedDays={certifiedDays}
+            totalVerifyDays={totalVerifyDays}
+            achievedDays={achievedDays}
+            joinedGroups={joinedGroups}
+            daysUntilGoalChange={daysUntilGoalChange}
+            onPoke={handlePoke}
+            onSetGoal={handleSetGoal}
+            onCreateGroup={handleCreateGroup}
+            onEnterInviteCode={handleEnterInviteCode}
+            onGroupPress={handleGroupPress}
+            onChangeGoal={handleChangeGoal}
+          />
+        </ScrollView>
 
-      <ProfileImageBottomSheet
-        visible={isImageSheetOpen}
-        onClose={closeImageSheet}
-        onSelectDefault={selectDefaultImage}
-        onSelectGallery={selectGalleryImage}
-      />
-    </View>
+        <ProfileImageBottomSheet
+          visible={isImageSheetOpen}
+          onClose={closeImageSheet}
+          onSelectDefault={selectDefaultImage}
+          onSelectGallery={selectGalleryImage}
+        />
+      </View>
+    </LoggingPage>
   );
 }
 
