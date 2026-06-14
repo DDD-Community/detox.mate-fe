@@ -40,6 +40,8 @@ export * from './feedDetailReactionSummary';
 export * from './feedDetailResponse';
 export * from './feedDetailResponseGoalStatus';
 export * from './feedDetailUsageDetail';
+export * from './firstScreenTimeCreateRequest';
+export * from './firstScreenTimeResponse';
 export * from './fixtureCheckDatesResponse';
 export * from './fixtureSummaryResponse';
 export * from './fixtureUserResponse';

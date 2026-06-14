@@ -4,6 +4,7 @@ import { sha256 } from '@noble/hashes/sha256';
 import { bytesToHex } from '@noble/hashes/utils';
 import * as SecureStore from 'expo-secure-store';
 import { env } from '@/config/env';
+import { resetAnalyticsUser } from '@/lib/analytics';
 import apiClient from './client';
 import { getDevAuth } from './generated/dev-auth/dev-auth';
 import type { AuthLoginResponse } from './generated/model';
@@ -151,6 +152,7 @@ export async function clearAuthSession(): Promise<void> {
   await SecureStore.deleteItemAsync('refreshTokenKey');
   await SecureStore.deleteItemAsync('accessTokenKey');
   await SecureStore.deleteItemAsync('currentUserId');
+  resetAnalyticsUser();
 }
 
 export async function logout(): Promise<void> {

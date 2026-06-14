@@ -5,6 +5,10 @@ const appEnv = process.env.APP_ENV === 'production' ? 'production' : 'developmen
 const isProduction = appEnv === 'production';
 const appVersion = process.env.APP_VERSION ?? '1.0.0';
 const buildChannel = process.env.APP_BUILD_CHANNEL ?? 'local';
+const amplitudeApiKey =
+  process.env.AMPLITUDE_API_KEY ??
+  (isProduction ? process.env.AMPLITUDE_PROD_API_KEY : process.env.AMPLITUDE_DEV_API_KEY) ??
+  '';
 const easProjectId = '0387da46-8602-45c5-b927-229815033a44';
 const gitSha =
   process.env.APP_GIT_SHA ??
@@ -113,6 +117,7 @@ const config: ExpoConfig = {
     buildChannel,
     gitSha,
     apiBaseUrl: isProduction ? 'https://api.detoxmate.co.kr' : 'https://api-dev.detoxmate.co.kr',
+    amplitudeApiKey,
     router: {},
     eas: {
       projectId: easProjectId,

@@ -63,7 +63,14 @@ export function ScreenTimeAnalyzeTestScreen({ onClose }: ScreenTimeAnalyzeTestSc
             <Pressable
               disabled={!selectedImageUri || isAnalyzing}
               style={[styles.button, (!selectedImageUri || isAnalyzing) && styles.buttonDisabled]}
-              onPress={() => void analyzeImage()}
+              onPress={async () => {
+                await analyzeImage();
+
+                if (analysisResult?.ok) {
+                  console.log('analysisResult', analysisResult);
+                  analysisResult.value;
+                }
+              }}
             >
               <Text style={styles.buttonText}>스캔하기</Text>
             </Pressable>

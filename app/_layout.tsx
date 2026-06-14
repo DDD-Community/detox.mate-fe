@@ -6,6 +6,7 @@ import { fontSources } from '../src/lib/token/primitive/fonts';
 import { NetworkErrorToast } from '../src/components/NetworkErrorToast';
 import { subscribeToDevicePushTokenRefresh } from '../src/lib/fcmToken';
 import { initAirbridge } from '../src/lib/airbridge';
+import { initAnalytics, trackEvent } from '../src/lib/analytics';
 
 SplashScreen.preventAutoHideAsync();
 
@@ -25,6 +26,14 @@ export default function RootLayout() {
 
   useEffect(() => {
     initAirbridge();
+  }, []);
+
+  useEffect(() => {
+    initAnalytics()
+      .then(() => {
+        trackEvent('App Opened');
+      })
+      .catch(() => undefined);
   }, []);
 
   // FCM registration token 갱신 감지 → 서버에 새 토큰 재등록

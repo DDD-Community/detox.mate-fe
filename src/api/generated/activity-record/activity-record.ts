@@ -14,7 +14,7 @@ import type {
 import { customAxios } from '../../mutator';
 
 export const getActivityRecord = () => {
-  const create1 = (activityRecordCreateRequest: ActivityRecordCreateRequest) => {
+  const create2 = (activityRecordCreateRequest: ActivityRecordCreateRequest) => {
     return customAxios<ActivityRecordCreateResponse>({
       url: `/activity-records`,
       method: 'POST',
@@ -32,10 +32,10 @@ export const getActivityRecord = () => {
       data: activityRecordAchievementCheckRequest,
     });
   };
-  return { create1, checkAchievement };
+  return { create2, checkAchievement };
 };
-export type Create1Result = NonNullable<
-  Awaited<ReturnType<ReturnType<typeof getActivityRecord>['create1']>>
+export type Create2Result = NonNullable<
+  Awaited<ReturnType<ReturnType<typeof getActivityRecord>['create2']>>
 >;
 export type CheckAchievementResult = NonNullable<
   Awaited<ReturnType<ReturnType<typeof getActivityRecord>['checkAchievement']>>

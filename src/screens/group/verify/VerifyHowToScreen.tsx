@@ -35,7 +35,7 @@ export default function VerifyHowToScreen() {
           <View style={styles.textGroup}>
             <Text style={styles.title}>이렇게 찍어주세요</Text>
             <Text style={styles.description}>
-              [설정 > 스크린 타임] 에서{'\n'}
+              {'[설정 > 스크린 타임] 에서\n'}
               <Text style={{ fontFamily: 'NanumSquareRoundEB' }}>어제</Text>의 총 스크린 타임이
               보이도록 캡쳐해 주세요
             </Text>

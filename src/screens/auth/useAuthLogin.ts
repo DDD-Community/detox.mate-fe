@@ -11,6 +11,7 @@ import {
   loginWithTestUser,
 } from '@/api/auth';
 import { registerDevicePushToken } from '@/lib/fcmToken';
+import { identifyUser, initAnalytics, trackEvent } from '@/lib/analytics';
 import { APP_ACCESS_PERMISSION_GUIDE_SEEN_KEY, TERMS_ACCEPTED_KEY } from './authStorageKeys';
 
 export type LoginProvider = 'kakao' | 'apple' | 'test';
@@ -47,7 +48,16 @@ export function useAuthLogin({ onLoginFailure }: UseAuthLoginOptions = {}) {
 
     setPendingProvider(provider);
     try {
-      await login();
+      const loginResponse = await login();
+      await initAnalytics();
+      identifyUser(loginResponse.id, {
+        login_provider: provider,
+        is_new_user: loginResponse.isNewUser,
+      });
+      trackEvent('Login Completed', {
+        login_provider: provider,
+        is_new_user: loginResponse.isNewUser,
+      });
       await SecureStore.setItemAsync(TERMS_ACCEPTED_KEY, 'true');
       try {
         await registerDevicePushToken();
