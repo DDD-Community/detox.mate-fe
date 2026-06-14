@@ -1,7 +1,8 @@
-import axios, { AxiosError } from 'axios';
+import axios, { AxiosError, type AxiosRequestConfig } from 'axios';
 import { router } from 'expo-router';
 import * as SecureStore from 'expo-secure-store';
 import { env } from '../config/env';
+import { canRetryRequest, handleRequestError, logError, normalizeError } from './errors';
 import { useNetworkErrorToastStore } from '../stores/networkErrorToastStore';
 import { clearAuthSession, refreshAccessToken } from './auth';
 
@@ -34,6 +35,14 @@ apiClient.interceptors.request.use(async (config) => {
   return config;
 });
 
+const shouldSuppressGlobalError = (config: AxiosRequestConfig | undefined, presentation: string) =>
+  Boolean(
+    config?.skipGlobalError ||
+    config?.skipAuthRefresh ||
+    presentation === 'inline' ||
+    presentation === 'dialog' ||
+    presentation === 'silent'
+  );
 const isNetworkError = (error: AxiosError) =>
   !error.response &&
   (error.code === 'ERR_NETWORK' ||
@@ -70,29 +79,43 @@ apiClient.interceptors.response.use(
         await refreshPromise;
         return apiClient(originalRequest);
       } catch (refreshError) {
+        const appError = normalizeError(refreshError);
+        logError(appError, { scope: 'auth.refresh', operation: 'refreshAccessToken' });
         await clearAuthSession();
         router.replace({ pathname: '/login', params: { reason: 'sessionExpired' } });
-        return Promise.reject(refreshError);
+        return Promise.reject(appError);
       }
     }
 
-    if (isNetworkError(error) && error.config) {
-      const { enqueueNetworkRetry } = useNetworkErrorToastStore.getState();
-      return new Promise((resolve, reject) => {
-        enqueueNetworkRetry({
-          retry: () => apiClient(error.config!).then(resolve).catch(reject),
-          cancel: () => reject(error),
-        });
+    const handled = handleRequestError(error, originalRequest?.errorPolicy);
+    const suppressGlobalError = shouldSuppressGlobalError(originalRequest, handled.presentation);
+
+    if (handled.shouldLog) {
+      logError(handled.error, {
+        scope: 'api',
+        path: originalRequest?.url,
+        method: originalRequest?.method,
       });
     }
 
-    // 그 외 응답 에러(4xx/5xx)는 토스트로 안내
-    if (error.response && !error.config?.skipAuthRefresh) {
-      const message = extractErrorMessage(error.response.data) ?? DEFAULT_ERROR_MESSAGE;
-      useNetworkErrorToastStore.getState().showMessage(message);
+    if (
+      (handled.error.type === 'network' || handled.error.type === 'timeout') &&
+      canRetryRequest(originalRequest, handled.error) &&
+      originalRequest &&
+      !suppressGlobalError
+    ) {
+      const { enqueueNetworkRetryRequest } = useNetworkErrorToastStore.getState();
+      return await enqueueNetworkRetryRequest({
+        retry: () => apiClient(originalRequest),
+        cancelError: handled.error,
+      });
     }
 
-    return Promise.reject(error);
+    if (handled.presentation === 'toast' && !suppressGlobalError) {
+      useNetworkErrorToastStore.getState().showMessage(handled.message);
+    }
+
+    return Promise.reject(handled.error);
   }
 );
 

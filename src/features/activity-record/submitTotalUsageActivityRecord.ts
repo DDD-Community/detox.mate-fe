@@ -1,5 +1,8 @@
-import { getActivityRecord } from '../../api/generated/activity-record/activity-record';
-import { ActivityRecordDetailRequestUsageGoalType } from '../../api/generated/model';
+import {
+  ActivityRecordDetailRequestUsageGoalType,
+  type ActivityRecordCreateResponse,
+} from '../../api/generated/model';
+import { customAxios } from '../../api/mutator';
 
 type SubmitTotalUsageActivityRecordParams = {
   value?: string;
@@ -32,15 +35,23 @@ export async function submitTotalUsageActivityRecord({
     throw new Error('인증 기록 등록에 필요한 참여자 정보가 없습니다.');
   }
 
-  return getActivityRecord().create1({
-    groupChallengeParticipantId: participantId,
-    reflectionText,
-    details: [
-      {
-        usageGoalType: ActivityRecordDetailRequestUsageGoalType.TOTAL_USAGE,
-        usedMinutes: parseScreenTimeValueToMinutes(value),
-      },
-    ],
-    activityImageObjectKey,
+  return customAxios<ActivityRecordCreateResponse>({
+    url: '/activity-records',
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    data: {
+      groupChallengeParticipantId: participantId,
+      reflectionText,
+      details: [
+        {
+          usageGoalType: ActivityRecordDetailRequestUsageGoalType.TOTAL_USAGE,
+          usedMinutes: parseScreenTimeValueToMinutes(value),
+        },
+      ],
+      activityImageObjectKey,
+    },
+    errorPolicy: { presentation: 'dialog', context: 'activityRecord.create' },
+    retryPolicy: 'none',
+    skipGlobalError: true,
   });
 }

@@ -15,5 +15,5 @@ export interface UpdateMyProfileRequest {
    * @minLength 0
    * @maxLength 1024
    */
-  profileImageObjectKey?: string;
+  profileImageObjectKey?: string | null;
 }

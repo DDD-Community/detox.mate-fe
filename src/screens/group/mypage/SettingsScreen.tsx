@@ -8,6 +8,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { logout } from '@/api/auth';
 import { getUser } from '@/api';
+import { logError, normalizeError } from '@/api/errors';
 import {
   ensureDevicePushTokenRegistered,
   registerDevicePushToken,
@@ -161,6 +162,10 @@ export default function SettingsScreen() {
     try {
       await patchPushNotificationEnabled(enabled);
     } catch (e) {
+      logError(normalizeError(e), {
+        scope: 'notification.push',
+        operation: 'updatePushPreference',
+      });
       updateUserPushPreference(previous);
       return;
     }
@@ -171,8 +176,11 @@ export default function SettingsScreen() {
       } else {
         await unregisterDevicePushToken();
       }
-    } catch {
-      // ignore
+    } catch (error) {
+      logError(normalizeError(error), {
+        scope: 'notification.push',
+        operation: enabled ? 'registerDevicePushToken' : 'unregisterDevicePushToken',
+      });
     }
   };
 

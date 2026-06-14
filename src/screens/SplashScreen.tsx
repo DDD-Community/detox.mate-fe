@@ -3,6 +3,7 @@ import { useRouter } from 'expo-router';
 import { useEffect } from 'react';
 import { Image, StyleSheet, View } from 'react-native';
 
+import { logError, normalizeError } from '../api/errors';
 import { getGroup } from '../api/generated/group/group';
 import { getGroupChallenge } from '../api/generated/group-challenge/group-challenge';
 import { TERMS_ACCEPTED_KEY } from './auth/authStorageKeys';
@@ -73,8 +74,13 @@ export default function SplashScreen() {
           pathname: '/(feed)/home',
           params: feedRouteParams,
         });
-      } catch {
+      } catch (error) {
         if (cancelled) return;
+
+        logError(normalizeError(error), {
+          scope: 'app.bootstrap',
+          operation: 'resolveInitialRoute',
+        });
 
         const currentAccessToken = await SecureStore.getItemAsync('accessTokenKey');
         if (cancelled) return;

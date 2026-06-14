@@ -15,6 +15,7 @@ import {
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import apiClient from '../../api/client';
+import { logError, normalizeError } from '../../api/errors';
 import { HeaderAction, Icon } from '../../components';
 import { memberStore } from '../../lib/memberStore';
 import { pokeStore } from '../../lib/pokeStore';
@@ -212,7 +213,12 @@ export default function FeedPostDetail() {
     const fetchComments = async () => {
       try {
         const res = await apiClient.get<CommentsResponse>(
-          `/challenge-records/${feedItem.challengeRecordId}/comments`
+          `/challenge-records/${feedItem.challengeRecordId}/comments`,
+          {
+            errorPolicy: { presentation: 'silent', log: false },
+            retryPolicy: 'none',
+            skipGlobalError: true,
+          }
         );
         const mapped = res.data.items.map((c) => ({
           id: String(c.commentId),
@@ -227,8 +233,11 @@ export default function FeedPostDetail() {
         }));
         setComments(mapped);
         setCommentCount(res.data.totalCount);
-      } catch {
-        // keep existing state on error
+      } catch (error) {
+        logError(normalizeError(error), {
+          scope: 'feed.comment',
+          operation: 'listComments',
+        });
       }
     };
     fetchComments();
@@ -354,10 +363,23 @@ export default function FeedPostDetail() {
     setCommentCount((prev) => prev + 1);
     if (!feedItem.challengeRecordId) return;
     try {
-      await apiClient.post(`/challenge-records/${feedItem.challengeRecordId}/comments`, {
-        commentBody: text,
+      await apiClient.post(
+        `/challenge-records/${feedItem.challengeRecordId}/comments`,
+        {
+          commentBody: text,
+        },
+        {
+          errorPolicy: { presentation: 'silent', log: false },
+          retryPolicy: 'none',
+          skipGlobalError: true,
+        }
+      );
+    } catch (error) {
+      logError(normalizeError(error), {
+        scope: 'feed.comment',
+        operation: 'createComment',
       });
-    } catch {}
+    }
   };
 
   return (

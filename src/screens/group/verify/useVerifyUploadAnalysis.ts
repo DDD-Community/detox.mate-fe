@@ -2,6 +2,7 @@ import { router } from 'expo-router';
 import { useState } from 'react';
 
 import { ActivityRecordDetailRequestUsageGoalType, getActivityRecord } from '@/api';
+import { logError, normalizeError } from '@/api/errors';
 import { analyzeScreenTimeImage } from '@/features/screen-time-analyze';
 import { parseHHMMToMinutes } from '@/lib/formatDuration';
 import { pickImageFromLibrary } from './useImageLibraryPicker';
@@ -104,6 +105,11 @@ export function useVerifyUploadAnalysis({
       router.replace({
         pathname: getVerifyPath('done', verifyRoot),
         params: { value: result.value, ...forwardParams, ...reportParams },
+      });
+    } catch (error) {
+      logError(normalizeError(error), {
+        scope: 'verify.upload',
+        operation: 'analyzeAndCheckAchievement',
       });
     } finally {
       setIsAnalyzing(false);

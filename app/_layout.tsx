@@ -5,8 +5,11 @@ import { useEffect, type ComponentType } from 'react';
 import { fontSources } from '../src/lib/token/primitive/fonts';
 import { NetworkErrorToast } from '../src/components/NetworkErrorToast';
 import { subscribeToDevicePushTokenRefresh } from '../src/lib/fcmToken';
+import { AppErrorBoundary } from '../src/components/AppErrorBoundary';
+import { initSentry } from '../src/observability/sentry';
 import { initAirbridge } from '../src/lib/airbridge';
 
+initSentry();
 SplashScreen.preventAutoHideAsync();
 
 const STORYBOOK_ENABLED = process.env.EXPO_PUBLIC_STORYBOOK === 'true';
@@ -40,7 +43,9 @@ export default function RootLayout() {
 
   return (
     <>
-      <Stack screenOptions={{ headerShown: false }} />
+      <AppErrorBoundary>
+        <Stack screenOptions={{ headerShown: false }} />
+      </AppErrorBoundary>
       <NetworkErrorToast />
     </>
   );

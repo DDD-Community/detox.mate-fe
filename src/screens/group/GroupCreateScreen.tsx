@@ -13,13 +13,27 @@ import {
   View,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import apiClient from '../../api/client';
+import {
+  getUserErrorMessage,
+  logError,
+  normalizeError,
+  type RequestErrorPolicy,
+} from '../../api/errors';
+import type { GroupResponse } from '../../api/generated/model';
+import { customAxios } from '../../api/mutator';
 import { ClipboardCopyToast, useClipboardCopyToast } from '../../components';
 import { Icon } from '../../components/Icon';
 import { primitiveColors, radius, spacing, typography } from '../../lib/token';
 
 const { green, gray, brown } = primitiveColors;
 const GROUP_NAME_MAX_LENGTH = 12;
+const GROUP_CREATE_ERROR_POLICY: RequestErrorPolicy = {
+  presentation: 'inline',
+  messagesByStatus: {
+    409: '이미 그룹에 속해 있어요',
+  },
+};
+const GROUP_CREATE_FALLBACK_MESSAGE = '그룹 생성에 실패했어요. 다시 시도해 주세요';
 
 export default function GroupCreateScreen() {
   const router = useRouter();
@@ -45,18 +59,25 @@ export default function GroupCreateScreen() {
     setLoading(true);
     setError(null);
     try {
-      const res = await apiClient.post('/groups', { name: groupName.trim() });
-      console.log(res);
-      setInviteCode(res.data.inviteCode);
+      const data = await customAxios<GroupResponse>({
+        url: '/groups',
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        data: { name: groupName.trim() },
+        errorPolicy: GROUP_CREATE_ERROR_POLICY,
+        retryPolicy: 'none',
+        skipGlobalError: true,
+      });
+      setInviteCode(data.inviteCode ?? '');
       setStep(2);
-    } catch (e: any) {
-      const status = e?.response?.status;
-      console.log(e?.response);
-      if (status === 409) {
-        setError('이미 그룹에 속해 있어요');
-      } else {
-        setError('그룹 생성에 실패했어요. 다시 시도해 주세요');
-      }
+    } catch (error) {
+      const appError = normalizeError(error);
+      logError(appError, { scope: 'group.create', operation: 'createGroup' });
+      const message =
+        appError.status === 409
+          ? getUserErrorMessage(appError, GROUP_CREATE_ERROR_POLICY)
+          : GROUP_CREATE_FALLBACK_MESSAGE;
+      setError(message);
     } finally {
       setLoading(false);
     }
