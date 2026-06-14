@@ -2,21 +2,14 @@
 
 ## 목적
 
-이 문서는 현재 FE 코드 기준으로 모든 주요 화면과 버튼에 어떤 Amplitude 로그를 붙일지 정리한다.
+이 문서는 현재 FE 코드 기준 Amplitude eventName과 property의 기준 목록이다.
 
 분석 목적은 다음 두 가지다.
 
 - 코호트 분석: 어떤 조건의 유저가 계속 사용하는지 확인한다.
 - 퍼널 분석: 사용자가 핵심 행동까지 도달하는 과정에서 어디서 이탈하는지 확인한다.
 
-## 기본 원칙
-
-- 화면 진입은 `{Page Name} Viewed`처럼 고유한 eventName으로 기록하고, `event_type = screen_view`를 함께 보낸다.
-- 버튼 클릭은 `{Page Name} {Action} Clicked`처럼 고유한 eventName으로 기록하고, `button_name`에는 사용자가 보는 실제 버튼명 또는 아이콘의 실제 역할명을 넣는다.
-- 퍼널 단계나 코호트 기준이 되는 제품 행동은 별도 eventName으로 기록한다.
-- API 성공 또는 실제 상태 전환 이벤트가 있는 행동은 클릭/시도 로그를 별도로 남기지 않는다.
-- dev/prod 구분은 Amplitude API key와 프로젝트 분리로 처리한다. 이벤트 property에 `environment`, `build_channel`은 넣지 않는다.
-- 이름, 닉네임, 초대 코드 원문, 댓글 본문, 회고 본문, 이미지 URL 같은 개인정보 또는 민감 정보는 보내지 않는다.
+로그 추가 규칙과 중복 로그 판단 기준은 [amplitude-logging-convention.md](./amplitude-logging-convention.md)를 따른다.
 
 ## 공통 property
 
@@ -30,12 +23,6 @@
 | `verify_mode` | 인증 플로우      | `initial`, `verify`                                      |
 
 ## 화면 조회 로그
-
-모든 화면 진입 시 다음 형태로 기록한다.
-
-```ts
-trackScreenView('Feed Home Viewed', 'FeedHome');
-```
 
 | route                                                     | page_name                       | eventName                                  | properties                                                |
 | --------------------------------------------------------- | ------------------------------- | ------------------------------------------ | --------------------------------------------------------- |
@@ -69,12 +56,6 @@ trackScreenView('Feed Home Viewed', 'FeedHome');
 | `/(group)/verify/complete`, `/(feed)/verify/complete`     | `VerifyComplete`                | `Verify Complete Viewed`                   | `event_type`, `page_name`                                 |
 
 ## 버튼 및 상호작용 로그
-
-일반 버튼 클릭은 다음 형태로 기록한다.
-
-```ts
-trackButtonClick('Feed Home Daily Verification Start Clicked', 'FeedHome', '인증하기');
-```
 
 | page_name                       | 버튼/상호작용               | button_name                   | eventName                                                         | properties                                                |
 | ------------------------------- | --------------------------- | ----------------------------- | ----------------------------------------------------------------- | --------------------------------------------------------- |
