@@ -1,13 +1,13 @@
 import { Pressable, StyleSheet, Text } from 'react-native';
 
+import { primitiveColors, typography } from '../../lib/token';
+import { useNetworkErrorToastStore } from '../../stores/networkErrorToastStore';
 import { Icon } from '../Icon';
 import { Toast } from '../Toast';
-import { useNetworkErrorToastStore } from '../../stores/networkErrorToastStore';
-import { primitiveColors, typography } from '../../lib/token';
 
 const { system } = primitiveColors;
 
-const NETWORK_ERROR_MESSAGE = '네트워크 연결 상태 확인 후, 다시 시도해주세요';
+const NETWORK_ERROR_MESSAGE = '네트워크 연결 상태 확인 후, 다시 시도해 주세요';
 
 export function NetworkErrorToast() {
   const visible = useNetworkErrorToastStore((s) => s.visible);

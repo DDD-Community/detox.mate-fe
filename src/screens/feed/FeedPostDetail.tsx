@@ -1,6 +1,6 @@
 import { router, useLocalSearchParams } from 'expo-router';
 import * as SecureStore from 'expo-secure-store';
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import {
   Alert,
   Image,
@@ -164,9 +164,7 @@ export default function FeedPostDetail() {
   const feedItem = JSON.parse(itemJson as string) as FeedItem;
   const feedAuthorName = feedItem.isMe ? '나' : feedItem.name;
   const state: GoalState = goalState ?? 'authReady';
-  const hasFailurePhoto =
-    feedItem.isVerified === true && !feedItem.isGoalAchieved && feedItem.photoSource != null;
-  const usesPostLayout = feedItem.isGoalAchieved || hasFailurePhoto;
+  const usesPostLayout = feedItem.isGoalAchieved === true;
   const postText = feedItem.postText ?? feedItem.retroText;
   const statusLabelColor = feedItem.isGoalAchieved ? system.green.opacity100 : gray[400];
   const screentimeAccentColor = feedItem.isGoalAchieved ? system.green.opacity100 : gray[500];
@@ -282,7 +280,7 @@ export default function FeedPostDetail() {
   const sortedComments = [...comments].sort((a, b) => a.createdAt - b.createdAt);
 
   const handleHeaderBack = () => {
-    if (fromFeedHome === '1' && router.canGoBack()) {
+    if (router.canGoBack()) {
       router.back();
       return;
     }
@@ -423,24 +421,6 @@ export default function FeedPostDetail() {
                   )}
                 </Pressable>
 
-                {usesPostLayout ? (
-                  <>
-                    {feedItem.photoSource != null && (
-                      <Image
-                        source={feedItem.photoSource}
-                        style={styles.photo}
-                        resizeMode="cover"
-                      />
-                    )}
-                    {postText != null && <Text style={styles.postText}>{postText}</Text>}
-                  </>
-                ) : (
-                  <View style={styles.retroCard}>
-                    <Text style={styles.retroLabel}>한 줄 회고</Text>
-                    <Text style={styles.retroText}>{feedItem.retroText}</Text>
-                  </View>
-                )}
-
                 {feedItem.screenTime != null && (
                   <View
                     style={[styles.screentimeRow, { backgroundColor: screentimeBackgroundColor }]}
@@ -453,6 +433,33 @@ export default function FeedPostDetail() {
                     </Text>
                   </View>
                 )}
+
+                {usesPostLayout ? (
+                  <>
+                    {feedItem.photoSource != null && (
+                      <Image
+                        source={feedItem.photoSource}
+                        style={styles.photo}
+                        resizeMode="cover"
+                      />
+                    )}
+                    {postText != null && <Text style={styles.postText}>{postText}</Text>}
+                  </>
+                ) : (
+                  <>
+                    {feedItem.photoSource != null && (
+                      <Image
+                        source={feedItem.photoSource}
+                        style={styles.photo}
+                        resizeMode="cover"
+                      />
+                    )}
+                    <View style={styles.retroCard}>
+                      <Text style={styles.retroLabel}>한 줄 회고</Text>
+                      <Text style={styles.retroText}>{feedItem.retroText}</Text>
+                    </View>
+                  </>
+                )}
               </>
             ) : (
               <>
@@ -461,9 +468,11 @@ export default function FeedPostDetail() {
                   <Text style={styles.memberName}>{feedAuthorName}</Text>
                 </Pressable>
 
-                <Text style={styles.statusText}>{BODY_TEXT[state]}</Text>
+                <Text style={styles.statusText}>
+                  {BODY_TEXT[feedItem.memberGoalState ?? state]}
+                </Text>
 
-                {!isReadOnly && !feedItem.isMe && state !== 'setWaiting' && (
+                {!isReadOnly && !feedItem.isMe && feedItem.memberGoalState !== 'setWaiting' && (
                   <Pressable
                     style={[styles.pokeButton, isPoked && styles.pokeButtonDisabled]}
                     disabled={isPoked}
@@ -605,50 +614,49 @@ export default function FeedPostDetail() {
         </View>
       </ScrollView>
 
-      {!isReadOnly &&
-        (showReactionPicker ? (
-          <>
-            <Pressable style={styles.pickerOverlay} onPress={() => setShowReactionPicker(false)} />
-            <View
-              style={[styles.pickerBar, { paddingBottom: Math.max(insets.bottom, spacing[12]) }]}
-            >
-              <ReactionPicker
-                selectedReactions={myReactionEmojis}
-                style={styles.bottomReactionPicker}
-                onSelect={(reactionCode) => {
-                  handleReact(reactionCode);
-                  setShowReactionPicker(false);
-                }}
-              />
-            </View>
-          </>
-        ) : (
-          <View style={[styles.inputBar, { paddingBottom: Math.max(insets.bottom, spacing[12]) }]}>
-            <TextInput
-              style={styles.textInput}
-              placeholder="응원 메시지를 남겨보세요"
-              placeholderTextColor={gray[400]}
-              value={commentText}
-              onChangeText={setCommentText}
-              returnKeyType="send"
-              onSubmitEditing={handleSendComment}
+      {showReactionPicker ? (
+        <>
+          <Pressable style={styles.pickerOverlay} onPress={() => setShowReactionPicker(false)} />
+          <View
+            style={[styles.pickerBar, { paddingBottom: Math.max(insets.bottom, spacing[12]) }]}
+          >
+            <ReactionPicker
+              selectedReactions={myReactionEmojis}
+              style={styles.bottomReactionPicker}
+              onSelect={(reactionCode) => {
+                handleReact(reactionCode);
+                setShowReactionPicker(false);
+              }}
             />
-
-            {commentText.trim().length > 0 ? (
-              <Pressable style={styles.sendBtn} onPress={handleSendComment}>
-                <Icon name="paperPlaneRight" size={20} color={WHITE} />
-              </Pressable>
-            ) : (
-              <Pressable style={styles.impressionBtn} onPress={() => setShowReactionPicker(true)}>
-                <Image
-                  source={IMPRESSION_ICON}
-                  style={styles.impressionIcon}
-                  resizeMode="contain"
-                />
-              </Pressable>
-            )}
           </View>
-        ))}
+        </>
+      ) : (
+        <View style={[styles.inputBar, { paddingBottom: Math.max(insets.bottom, spacing[12]) }]}>
+          <TextInput
+            style={styles.textInput}
+            placeholder="응원 메시지를 남겨보세요"
+            placeholderTextColor={gray[400]}
+            value={commentText}
+            onChangeText={setCommentText}
+            returnKeyType="send"
+            onSubmitEditing={handleSendComment}
+          />
+
+          {commentText.trim().length > 0 ? (
+            <Pressable style={styles.sendBtn} onPress={handleSendComment}>
+              <Icon name="paperPlaneRight" size={20} color={WHITE} />
+            </Pressable>
+          ) : (
+            <Pressable style={styles.impressionBtn} onPress={() => setShowReactionPicker(true)}>
+              <Image
+                source={IMPRESSION_ICON}
+                style={styles.impressionIcon}
+                resizeMode="contain"
+              />
+            </Pressable>
+          )}
+        </View>
+      )}
     </KeyboardAvoidingView>
   );
 }
@@ -686,7 +694,7 @@ const styles = StyleSheet.create({
     paddingBottom: spacing[56],
   },
   card: {
-    gap: spacing[12],
+    gap: spacing[16],
   },
   verifiedHeader: {
     flexDirection: 'row',

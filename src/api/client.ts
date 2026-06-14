@@ -1,10 +1,10 @@
 import axios, { AxiosError, type AxiosRequestConfig } from 'axios';
 import { router } from 'expo-router';
 import * as SecureStore from 'expo-secure-store';
-import { clearAuthSession, refreshAccessToken } from './auth';
-import { useNetworkErrorToastStore } from '../stores/networkErrorToastStore';
 import { env } from '../config/env';
 import { canRetryRequest, handleRequestError, logError, normalizeError } from './errors';
+import { useNetworkErrorToastStore } from '../stores/networkErrorToastStore';
+import { clearAuthSession, refreshAccessToken } from './auth';
 
 const apiClient = axios.create({
   baseURL: env.apiBaseUrl,
@@ -43,6 +43,21 @@ const shouldSuppressGlobalError = (config: AxiosRequestConfig | undefined, prese
     presentation === 'dialog' ||
     presentation === 'silent'
   );
+const isNetworkError = (error: AxiosError) =>
+  !error.response &&
+  (error.code === 'ERR_NETWORK' ||
+    error.code === 'ECONNABORTED' ||
+    error.code === 'ETIMEDOUT' ||
+    error.message === 'Network Error');
+
+const DEFAULT_ERROR_MESSAGE = '요청을 처리하지 못했어요. 잠시 후 다시 시도해 주세요';
+
+const extractErrorMessage = (data: unknown): string | undefined => {
+  if (!data || typeof data !== 'object') return undefined;
+  const record = data as Record<string, unknown>;
+  const candidate = record.message ?? record.error ?? record.errorMessage;
+  return typeof candidate === 'string' && candidate.length > 0 ? candidate : undefined;
+};
 
 apiClient.interceptors.response.use(
   (response) => response,

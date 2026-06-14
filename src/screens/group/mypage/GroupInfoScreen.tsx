@@ -17,6 +17,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { getFeed, getGroup, type GroupMemberResponse } from '@/api';
 import { ClipboardCopyToast, Icon, useClipboardCopyToast } from '@/components';
 import { primitiveColors, radius, spacing, typography } from '@/lib/token';
+import { getInviteShareUrl } from '@/lib/airbridge';
 import { LeaveGroupAlert } from './LeaveGroupAlert';
 
 const { brown, gray } = primitiveColors;
@@ -109,7 +110,7 @@ export default function GroupInfoScreen() {
   const handleShareInviteCode = async () => {
     if (!inviteCode) return;
     await Share.share({
-      message: `우리 함께 디지털 디톡스해요! 💉\n디톡스 메이트 그룹 초대 코드: ${inviteCode}`,
+      message: `우리 함께 디지털 디톡스해요! 💉\n디톡스 메이트 그룹 초대 코드: ${inviteCode}\n${getInviteShareUrl(inviteCode)}`,
     });
   };
 

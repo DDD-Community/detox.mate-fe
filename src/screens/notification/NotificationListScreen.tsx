@@ -32,7 +32,7 @@ import type { FeedItem } from '../feed/FeedCard';
 
 const { brown, gray } = primitiveColors;
 
-const DEFAULT_AVATAR = require('../../../assets/turtle-hi.png');
+const DEFAULT_AVATAR = require('../../../assets/basic-profile-turtle-hi.png');
 const EMPTY_IMAGE = require('../../../assets/onboarding-none-feed.png');
 
 interface NotificationSection {
@@ -215,10 +215,9 @@ const mapMemberToFeedItem = (member: MemberResponse): FeedItem => {
     pokes: [],
     isVerified,
     isGoalAchieved: isVerified ? isGoalAchieved : undefined,
-    photoSource:
-      isGoalAchieved && member.activityRecord?.activityImageUrl
-        ? { uri: member.activityRecord.activityImageUrl }
-        : undefined,
+    photoSource: member.activityRecord?.activityImageUrl
+      ? { uri: member.activityRecord.activityImageUrl }
+      : undefined,
     postText: isGoalAchieved ? (member.activityRecord?.reflectionText ?? undefined) : undefined,
     retroText:
       isVerified && !isGoalAchieved
@@ -352,26 +351,39 @@ const routePostDetailByChallengeRecordId = async (
 ): Promise<boolean> => {
   if (!isFiniteNumber(challengeRecordId)) return false;
 
-  if (isFiniteNumber(groupChallengeId)) {
+  let resolvedGroupChallengeId = groupChallengeId;
+
+  // groupChallengeId 미확보 시 getFeedDetail로 조회 (데이터 사용 X, groupChallengeId만 추출)
+  if (!isFiniteNumber(resolvedGroupChallengeId)) {
     try {
-      const member = await getFeed().getGroupChallengeRecordDetail(
-        groupChallengeId,
-        challengeRecordId
-      );
-      return pushPostDetail(groupChallengeId, member);
+      const detail = await getFeed().getFeedDetail(challengeRecordId);
+      if (isFiniteNumber(detail.groupChallengeId)) {
+        resolvedGroupChallengeId = detail.groupChallengeId;
+      }
     } catch {
-      // Deprecated detail endpoint below can recover when only challengeRecordId is reliable.
+      return false;
     }
   }
 
+  if (!isFiniteNumber(resolvedGroupChallengeId)) return false;
+
+  // getTodayChallengeRecords 우선: FeedHome과 동일 소스, 완전한 CDN URL 포함
   try {
-    const detail = await getFeed().getFeedDetail(challengeRecordId);
-    if (!isFiniteNumber(detail.groupChallengeId)) return false;
+    const feed = await getFeed().getTodayChallengeRecords(resolvedGroupChallengeId);
+    cacheFeedMembers(feed.members, feed.groupId);
+    const member = feed.members?.find((m) => m.challengeRecordId === challengeRecordId);
+    if (member) return pushPostDetail(resolvedGroupChallengeId, member, feed.groupId);
+  } catch {
+    // 폴백 진행
+  }
 
-    const item = mapFeedDetailToFeedItem(detail);
-    if (!item) return false;
-
-    return pushFeedItemPostDetail(detail.groupChallengeId, item, detail.poked);
+  // getGroupChallengeRecordDetail 폴백: 완전한 CDN URL 반환
+  try {
+    const member = await getFeed().getGroupChallengeRecordDetail(
+      resolvedGroupChallengeId,
+      challengeRecordId
+    );
+    return pushPostDetail(resolvedGroupChallengeId, member);
   } catch {
     return false;
   }

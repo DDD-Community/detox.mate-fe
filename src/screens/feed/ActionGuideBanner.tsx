@@ -45,8 +45,8 @@ function GoalBanner() {
     <View style={styles.goalBanner}>
       <View style={styles.topRow}>
         <View style={styles.textContainer}>
-          <Text style={styles.goalTitle}>디톡스 첫날이신가요?</Text>
-          <Text style={styles.goalSubtitle}>내 평균 스크린 타임을 업로드해보세요!</Text>
+          <Text style={styles.goalTitle}>디톡스 첫 날이신가요?</Text>
+          <Text style={styles.goalSubtitle}>내 평균 스크린 타임을 업로드해 보세요!</Text>
         </View>
         <Image
           source={require('../../../assets/feed_daily_calender.png')}
@@ -77,7 +77,7 @@ function WaitingForMembersBanner() {
       <View style={styles.centeredStatusVisibleArea}>
         <View style={styles.centeredStatusContent}>
           <View style={styles.centeredStatusTextContainer}>
-            <Text style={styles.waitingMembersTitle}>멤버를 기다려주세요</Text>
+            <Text style={styles.waitingMembersTitle}>멤버를 기다려 주세요</Text>
             <Text style={styles.waitingMembersSubtitle}>
               {'멤버 2명 이상 목표 설정을 해야만\n시작할 수 있어요'}
             </Text>
@@ -130,7 +130,7 @@ function DailyAuthBanner({
       <View style={styles.topRow}>
         <View style={styles.textContainer}>
           <Text style={isWarning ? styles.dailyAuthWarningTitle : styles.goalTitle}>
-            {isWarning ? '오늘의 인증을 잊지 마세요!' : '어제의 디톡스 인증해볼까요?'}
+            {isWarning ? '오늘의 인증을 잊지 마세요!' : '어제의 디톡스 인증해 볼까요?'}
           </Text>
           <Text style={isWarning ? styles.dailyAuthWarningSubtitle : styles.goalSubtitle}>
             {isWarning ? '인증을 못하면 그룹의 연속 기록이 깨져요' : '친구들이 기다리고 있어요 👀'}

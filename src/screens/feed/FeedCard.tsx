@@ -44,6 +44,7 @@ export type FeedItem = {
   goal?: string;
   usedMinutes?: number;
   goalMinutes?: number;
+  memberGoalState?: GoalState;
 };
 
 function ProfileAvatar({ source }: { source: FeedItem['avatarSource'] }) {
@@ -86,10 +87,9 @@ export default function FeedCard({
   const footerWrapperRef = useRef<View>(null);
 
   if (item.isVerified) {
-    const hasFailurePhoto = !item.isGoalAchieved && item.photoSource != null;
-    const usesPostLayout = item.isGoalAchieved || hasFailurePhoto;
+    const usesPostLayout = item.isGoalAchieved === true;
     const postText = item.postText ?? item.retroText;
-    const labelBg = item.isGoalAchieved ? system.green.opacity100 : gray[400];
+    const labelBg = item.isGoalAchieved ? system.green.opacity100 : system.red.opacity100;
     const labelText = item.isGoalAchieved ? '목표 성공' : '목표 실패';
     const screentimeAccentColor = item.isGoalAchieved ? system.green.opacity100 : gray[500];
     const screentimeBackgroundColor = item.isGoalAchieved ? system.green.opacity10 : gray[50];
@@ -108,28 +108,13 @@ export default function FeedCard({
                   </View>
                 </View>
               </View>
-              <Text style={styles.memberName}>{item.name}</Text>
+              <Text style={styles.memberName}>{item.isMe ? '나' : item.name}</Text>
             </Pressable>
             {item.verifiedTimeAgo != null && (
               <Text style={styles.timeAgo}>{item.verifiedTimeAgo}</Text>
             )}
           </View>
         </View>
-
-        {/* Content */}
-        {usesPostLayout ? (
-          <>
-            {item.photoSource != null && (
-              <Image source={item.photoSource} style={styles.photo} resizeMode="cover" />
-            )}
-            {postText != null && <Text style={styles.postText}>{postText}</Text>}
-          </>
-        ) : (
-          <View style={styles.retroCard}>
-            <Text style={styles.retroLabel}>한 줄 회고</Text>
-            <Text style={styles.retroText}>{item.retroText}</Text>
-          </View>
-        )}
 
         {/* Screentime */}
         {item.screenTime != null && (
@@ -141,6 +126,26 @@ export default function FeedCard({
               {item.screenTime}
             </Text>
           </View>
+        )}
+
+        {/* Content */}
+        {usesPostLayout ? (
+          <>
+            {item.photoSource != null && (
+              <Image source={item.photoSource} style={styles.photo} resizeMode="cover" />
+            )}
+            {postText != null && <Text style={styles.postText}>{postText}</Text>}
+          </>
+        ) : (
+          <>
+            {item.photoSource != null && (
+              <Image source={item.photoSource} style={styles.photo} resizeMode="cover" />
+            )}
+            <View style={styles.retroCard}>
+              <Text style={styles.retroLabel}>한 줄 회고</Text>
+              <Text style={styles.retroText}>{item.retroText}</Text>
+            </View>
+          </>
         )}
 
         {/* Footer */}
@@ -168,8 +173,10 @@ export default function FeedCard({
   }
 
   // ── Unverified card ──
-  const showPokeButton = !historyMode && !item.isMe && goalState !== 'setWaiting';
-  const unverifiedBodyText = historyMode ? '인증하지 않았어요' : BODY_TEXT[goalState];
+  const showPokeButton = !historyMode && !item.isMe && item.memberGoalState !== 'setWaiting';
+  const unverifiedBodyText = historyMode
+    ? '인증하지 않았어요'
+    : BODY_TEXT[item.memberGoalState ?? goalState];
 
   return (
     <Pressable
@@ -320,6 +327,7 @@ const styles = StyleSheet.create({
     borderRadius: 12,
     paddingHorizontal: spacing[12],
     paddingVertical: spacing[16],
+    marginTop: -8,
   },
   screentimeLabel: {
     ...typography.primary.body3R,

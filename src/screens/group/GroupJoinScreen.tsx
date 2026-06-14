@@ -1,5 +1,6 @@
 import * as Clipboard from 'expo-clipboard';
-import { Stack, useRouter } from 'expo-router';
+import { getInviteShareUrl } from '../../lib/airbridge';
+import { Stack, useLocalSearchParams, useRouter } from 'expo-router';
 import React, { useEffect, useState } from 'react';
 import {
   BackHandler,
@@ -37,8 +38,11 @@ const GROUP_JOIN_FALLBACK_MESSAGE = '초대 코드를 다시 확인해주세요'
 
 export default function GroupJoinScreen() {
   const router = useRouter();
+  const { inviteCode: paramInviteCode } = useLocalSearchParams<{ inviteCode?: string }>();
   const [step, setStep] = useState<1 | 2>(1);
-  const [inviteCode, setInviteCode] = useState('');
+  const [inviteCode, setInviteCode] = useState(
+    paramInviteCode ? paramInviteCode.toUpperCase().slice(0, INVITE_CODE_MAX_LENGTH) : ''
+  );
   const [groupName, setGroupName] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -83,6 +87,16 @@ export default function GroupJoinScreen() {
           ? getUserErrorMessage(appError, GROUP_JOIN_ERROR_POLICY)
           : GROUP_JOIN_FALLBACK_MESSAGE;
       setError(message);
+    } catch (e: any) {
+      const status = e?.response?.status;
+      console.log(status);
+      if (status === 409) {
+        setError('초대 코드를 다시 확인해 주세요');
+      } else if (status === 404) {
+        setError('초대 코드를 다시 확인해 주세요');
+      } else {
+        setError('초대 코드를 다시 확인해 주세요');
+      }
     } finally {
       setLoading(false);
     }
@@ -95,7 +109,7 @@ export default function GroupJoinScreen() {
 
   const handleShare = async () => {
     await Share.share({
-      message: `우리 함께 디지털 디톡스해요! 💉\n디톡스 메이트 그룹 초대 코드: ${inviteCode}`,
+      message: `우리 함께 디지털 디톡스해요! 💉\n디톡스 메이트 그룹 초대 코드: ${inviteCode}\n${getInviteShareUrl(inviteCode)}`,
     });
   };
 
@@ -125,7 +139,7 @@ export default function GroupJoinScreen() {
               style={styles.input}
               value={inviteCode}
               onChangeText={handleCodeChange}
-              placeholder="초대 코드를 입력해주세요"
+              placeholder="초대 코드를 입력해 주세요"
               placeholderTextColor={gray[300]}
               autoCapitalize="characters"
               maxLength={INVITE_CODE_MAX_LENGTH}
@@ -161,7 +175,7 @@ export default function GroupJoinScreen() {
             {'\n'}그룹에 참여했어요!
           </Text>
           <Text style={styles.completeSubtitle}>
-            초대 코드를 친구에게 공유해서 함께 시작해보세요
+            초대 코드를 친구에게 공유해서 함께 시작해 보세요
           </Text>
 
           <View style={styles.gap24} />

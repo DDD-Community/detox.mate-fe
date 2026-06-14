@@ -1,9 +1,9 @@
+import { useLocalSearchParams } from 'expo-router';
 import { useEffect, useState } from 'react';
 import { Image, Modal, Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
-import { useLocalSearchParams } from 'expo-router';
 
-import LOGO_BLACK from '@assets/logo-black.png';
 import LOGO_APPLE_LOGIN from '@assets/logo-apple-login.png';
+import LOGO_BLACK from '@assets/logo-black.png';
 import LOGO_KAKAO_LOGIN from '@assets/logo-kakao-login.png';
 import TURTLE_HI_IMAGE from '@assets/turtle-hi.png';
 
@@ -15,7 +15,7 @@ import { AuthLoginButton } from './AuthLoginButton';
 import { TEST_USER_KEYS, TestUserKey, useAuthLogin } from './useAuthLogin';
 
 const { brown, gray, system } = primitiveColors;
-const LOGIN_FAILURE_MESSAGE = '로그인에 실패했어요. 잠시 후 다시 시도해주세요.';
+const LOGIN_FAILURE_MESSAGE = '로그인에 실패했어요. 잠시 후 다시 시도해 주세요.';
 const SESSION_EXPIRED_MESSAGE = '로그인 세션이 만료되었습니다.';
 const LOGIN_TOAST_BOTTOM_OFFSET = 204;
 const LOGIN_TOAST_WITH_TEST_BOTTOM_OFFSET = 340;

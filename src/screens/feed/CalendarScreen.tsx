@@ -190,7 +190,8 @@ export default function CalendarScreen() {
     if (
       !firstActiveDate ||
       isBeforeDate(date, firstActiveDate) ||
-      isAfterDate(date, lastActiveDate)
+      isAfterDate(date, lastActiveDate) ||
+      isSameDate(date, today)
     ) {
       return;
     }

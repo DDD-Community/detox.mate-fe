@@ -57,14 +57,14 @@ export default function EditNicknameScreen() {
       </SafeAreaView>
 
       <View style={styles.body}>
-        <Text style={styles.title}>새로운 닉네임을{'\n'}입력해주세요</Text>
+        <Text style={styles.title}>새로운 닉네임을{'\n'}입력해 주세요</Text>
 
         <View style={styles.inputWrap}>
           <TextInput
             style={styles.input}
             value={nickname}
             onChangeText={handleChange}
-            placeholder="닉네임을 입력해주세요"
+            placeholder="닉네임을 입력해 주세요"
             placeholderTextColor={gray[300]}
             maxLength={NICKNAME_MAX_LENGTH}
             autoFocus

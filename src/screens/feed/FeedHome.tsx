@@ -2,8 +2,8 @@ import { router, useFocusEffect, useLocalSearchParams } from 'expo-router';
 import * as SecureStore from 'expo-secure-store';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
-  Alert,
   ActivityIndicator,
+  Alert,
   Image,
   Pressable,
   ScrollView,
@@ -124,8 +124,8 @@ const getActionGuideBannerState = ({
   now: Date;
 }): ActionGuideBannerState => {
   if (goalState === 'notSet') return 'notSet';
-  if (goalSetMemberCount < 2) return 'waitingForMembers';
   if (goalState === 'setWaiting') return 'setWaiting';
+  if (goalSetMemberCount < 2) return 'waitingForMembers';
   if (isMyVerified) return 'verified';
   if (getMinutesUntilTomorrow(now) <= 60) return 'deadlineSoon';
   return 'authReady';
@@ -139,6 +139,22 @@ const formatTimeAgo = (isoDate: string): string => {
   const hours = Math.floor(minutes / 60);
   if (hours < 24) return `${hours}시간 전`;
   return `${Math.floor(hours / 24)}일 전`;
+};
+
+const getTodayString = (): string => {
+  const now = new Date();
+  const y = now.getFullYear();
+  const mo = String(now.getMonth() + 1).padStart(2, '0');
+  const d = String(now.getDate()).padStart(2, '0');
+  return `${y}-${mo}-${d}`;
+};
+
+const getMemberGoalState = (m: MemberResponse): GoalState => {
+  if (m.dailyStatus === 'GOAL_ACTIVATION_PENDING') return 'setWaiting';
+  if (!m.goals || m.goals.length === 0) return 'notSet';
+  const today = getTodayString();
+  const hasEffectiveGoal = m.goals.some((g) => g.effectiveDate != null && g.effectiveDate <= today);
+  return hasEffectiveGoal ? 'authReady' : 'setWaiting';
 };
 
 const mapMemberToFeedItem = (m: MemberResponse): FeedItem => {
@@ -173,6 +189,7 @@ const mapMemberToFeedItem = (m: MemberResponse): FeedItem => {
     goal: formatMinutesAsHHMM(totalGoal?.goalMinutes),
     usedMinutes: totalUsage?.usedMinutes,
     goalMinutes: totalGoal?.goalMinutes,
+    memberGoalState: getMemberGoalState(m),
     verifiedTimeAgo:
       isVerified && m.activityRecord?.submittedAt
         ? formatTimeAgo(m.activityRecord.submittedAt)
@@ -226,7 +243,7 @@ const mapMemberToMemberItem = (m: MemberResponse): MemberItem => ({
   name: m.displayName ?? '',
   isMe: m.isMe === true,
   avatarSource: m.profileImageUrl ? { uri: m.profileImageUrl } : AVATAR_SRC,
-  badgeCount: (m.pokeCount ?? 0) > 0 ? m.pokeCount : undefined,
+  badgeCount: getMemberGoalState(m) === 'authReady' && (m.pokeCount ?? 0) > 0 ? m.pokeCount : undefined,
   isVerified: m.activityRecord != null,
   isGoalAchieved: m.activityRecord?.allAchieved === true,
 });
@@ -248,6 +265,13 @@ export default function FeedHome() {
   const [group, setGroup] = useState<FeedGroup | null>(null);
   const [groupChallengeId, setGroupChallengeId] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
+  const currentUserIdRef = useRef<number | null>(null);
+
+  useEffect(() => {
+    SecureStore.getItemAsync('currentUserId').then((v) => {
+      currentUserIdRef.current = v ? Number(v) : null;
+    });
+  }, []);
   const [goalState, setGoalState] = useState<GoalState>('notSet');
   const [goalSetMemberCount, setGoalSetMemberCount] = useState(0);
   const [members, setMembers] = useState<MemberItem[]>([]);
@@ -258,18 +282,20 @@ export default function FeedHome() {
 
   const fetchGoalState = useCallback(async () => {
     try {
-      const needsReset = await SecureStore.getItemAsync('needsGoalReset');
-      if (needsReset === 'true') {
-        setGoalState('notSet');
-        return;
-      }
-      const response = await getUserUsageGoalTime().getCurrentGoalTimes();
+      const [needsReset, response] = await Promise.all([
+        SecureStore.getItemAsync('needsGoalReset'),
+        getUserUsageGoalTime().getCurrentGoalTimes(),
+      ]);
       const total = response.goals?.find(
         (g) => g.usageGoalType === CurrentUsageGoalTimeResponseUsageGoalType.TOTAL_USAGE
       );
       if (!total) {
         setGoalState('notSet');
         return;
+      }
+      // 서버에 목표가 있으면 stale 플래그 제거
+      if (needsReset === 'true') {
+        await SecureStore.deleteItemAsync('needsGoalReset');
       }
       if (total.createdAt && isCreatedToday(total.createdAt)) {
         setGoalState('setWaiting');
@@ -291,7 +317,7 @@ export default function FeedHome() {
         feedApi.getGroupChallengeOverview(numericGroupChallengeId),
         feedApi.getTodayChallengeRecords(numericGroupChallengeId),
       ]);
-      const apiMembers = today.members ?? [];
+      const apiMembers = (today.members ?? []).filter((m) => m.isMe || !m.isUserWithdrawn);
       const sortedMembers = [...apiMembers].sort(compareChallengeMembers);
       const sortedFeedItems = [...apiMembers].sort(compareFeedCards);
       const groupId = overview.groupId ?? today.groupId;
@@ -305,19 +331,7 @@ export default function FeedHome() {
       setFeedItems(sortedFeedItems.map(mapMemberToFeedItem));
       setMembers(sortedMembers.map(mapMemberToMemberItem));
       const goalSetCount = apiMembers.filter(hasTotalUsageGoal).length;
-      // [임시 디버그] 목표 설정 인원 확인
-      console.log('[DEBUG] goalSetMemberCount:', goalSetCount);
-      console.log(
-        '[DEBUG] members goals:',
-        JSON.stringify(
-          apiMembers.map((m) => ({ name: m.displayName, goals: m.goals })),
-          null,
-          2
-        )
-      );
-      const myMember = apiMembers.find((m) => m.isMe === true);
-      const myGoal = myMember?.goals?.find((g) => g.usageGoalType === 'TOTAL_USAGE');
-      console.log('[DEBUG] 내 목표 시간:', myGoal ? `${myGoal.goalMinutes}분` : '미설정');
+
       setGoalSetMemberCount(goalSetCount);
       if (isUsableId(groupId)) {
         memberStore.setAll(
@@ -847,7 +861,7 @@ function EmptyFeedCard({ onInvite }: { onInvite: () => void }) {
           resizeMode="contain"
         />
         <Text style={styles.emptySubtitle}>
-          피드가 없어요{'\n'}친구를 초대하여 함께 디톡스를 시작해보세요
+          피드가 없어요{'\n'}친구를 초대하여 함께 디톡스를 시작해 보세요
         </Text>
       </View>
       <Button

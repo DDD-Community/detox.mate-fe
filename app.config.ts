@@ -48,6 +48,7 @@ const config: ExpoConfig = {
     bundleIdentifier: isProduction ? 'com.detoxmate.app' : 'com.detoxmate.app.dev',
     googleServicesFile: iosGoogleServicesFile,
     supportsTablet: false,
+    associatedDomains: ['applinks:detoxmate.airbridge.io'],
     entitlements: {
       'aps-environment': 'production',
       'com.apple.developer.applesignin': ['Default'],
@@ -77,6 +78,10 @@ const config: ExpoConfig = {
         organization: process.env.SENTRY_ORG,
         project: process.env.SENTRY_PROJECT,
         url: sentryUrl,
+      'airbridge-expo-sdk',
+      {
+        appName: 'detoxmate',
+        appToken: 'de33f6fd010d4db794542d3a0c05b7a4',
       },
     ],
     [
