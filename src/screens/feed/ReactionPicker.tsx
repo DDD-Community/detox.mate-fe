@@ -40,15 +40,6 @@ const LEGACY_REACTION_MAP: Record<string, ReactionCode> = {
   MUSCLE: 'MUSCLE',
   HAMMER: 'HAMMER',
   SURPRISED: 'SURPRISED',
-  THUMBSUP: 'CLAP',
-  TURTLE: 'LIKED',
-  GLOOMY: 'SURPRISED',
-  '👍': 'CLAP',
-  '👏': 'CLAP',
-  '🔥': 'FIRE',
-  '💪': 'MUSCLE',
-  '🐢': 'LIKED',
-  '🥹': 'SURPRISED',
 };
 
 export function normalizeReactionCode(
