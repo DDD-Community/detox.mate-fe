@@ -93,10 +93,29 @@ const removeControllerSuffix = (spec: OpenAPIObject): OpenAPIObject => {
   return spec;
 };
 
+const allowNullProfileImageObjectKey = (spec: OpenAPIObject): OpenAPIObject => {
+  const updateMyProfileRequest = spec.components?.schemas?.UpdateMyProfileRequest;
+
+  if (!updateMyProfileRequest || '$ref' in updateMyProfileRequest) {
+    return spec;
+  }
+
+  const profileImageObjectKey = updateMyProfileRequest.properties?.profileImageObjectKey as
+    | { nullable?: boolean }
+    | undefined;
+
+  if (profileImageObjectKey) {
+    profileImageObjectKey.nullable = true;
+  }
+
+  return spec;
+};
+
 const transformSpec = (spec: OpenAPIObject): OpenAPIObject => {
   removeControllerSuffix(spec);
   removeCurrentUserQueryParams(spec);
   removeUnusedCurrentUserSchema(spec);
+  allowNullProfileImageObjectKey(spec);
 
   return spec;
 };

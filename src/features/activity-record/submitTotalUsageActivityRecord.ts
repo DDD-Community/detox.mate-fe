@@ -1,4 +1,4 @@
-import { getActivityRecord } from '../../api/generated/activity-record/activity-record';
+import { getActivityRecord } from '@/api';
 import { ActivityRecordDetailRequestUsageGoalType } from '../../api/generated/model';
 
 type SubmitTotalUsageActivityRecordParams = {

@@ -19,6 +19,7 @@ import type {
   NotificationNavigationResponse,
 } from '../../api/generated/model';
 import { CurrentUsageGoalTimeResponseUsageGoalType } from '../../api/generated/model';
+import { logError, normalizeError } from '../../api/errors';
 import { getFeed } from '../../api/generated/feed/feed';
 import { getGroup } from '../../api/generated/group/group';
 import { getNotificationHistory } from '../../api/generated/notification-history/notification-history';
@@ -548,6 +549,11 @@ export default function NotificationListScreen() {
           await getNotificationHistory().getMyNotifications();
         if (cancelled) return;
         setSections(groupNotificationsByCreatedAt(response.notifications));
+      } catch (error) {
+        logError(normalizeError(error), {
+          scope: 'notification.list',
+          operation: 'getMyNotifications',
+        });
       } finally {
         if (!cancelled) setIsLoading(false);
       }
@@ -623,7 +629,11 @@ export default function NotificationListScreen() {
       }
 
       routeByTarget(nav.targetType, nav.targetId, nav.fallbackTargetType, nav.fallbackTargetId);
-    } catch {
+    } catch (error) {
+      logError(normalizeError(error), {
+        scope: 'notification.navigation',
+        operation: 'routeNotification',
+      });
       showWithMessage(DEFAULT_NAVIGATION_ERROR_MESSAGE);
     }
   };

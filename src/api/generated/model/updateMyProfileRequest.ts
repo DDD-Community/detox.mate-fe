@@ -7,5 +7,9 @@
 
 export interface UpdateMyProfileRequest {
   displayName?: string;
-  profileImageObjectKey?: string;
+  /**
+   * @minLength 0
+   * @maxLength 1024
+   */
+  profileImageObjectKey?: string | null;
 }

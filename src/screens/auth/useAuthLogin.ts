@@ -10,6 +10,8 @@ import {
   loginWithKakao,
   loginWithTestUser,
 } from '@/api/auth';
+import { logError, normalizeError } from '@/api/errors';
+import type { AppError } from '@/api/errors/types';
 import { registerDevicePushToken } from '@/lib/fcmToken';
 import { identifyUser, initAnalytics, trackEvent } from '@/lib/analytics';
 import { APP_ACCESS_PERMISSION_GUIDE_SEEN_KEY, TERMS_ACCEPTED_KEY } from './authStorageKeys';
@@ -34,7 +36,7 @@ const waitForPermissionPromptReady = () =>
   new Promise<void>((resolve) => setTimeout(resolve, NATIVE_PERMISSION_PROMPT_DELAY_MS));
 
 interface UseAuthLoginOptions {
-  onLoginFailure?: () => void;
+  onLoginFailure?: (error: AppError) => void;
 }
 
 export function useAuthLogin({ onLoginFailure }: UseAuthLoginOptions = {}) {
@@ -73,8 +75,10 @@ export function useAuthLogin({ onLoginFailure }: UseAuthLoginOptions = {}) {
       } else {
         setPermissionGuideVisible(true);
       }
-    } catch {
-      onLoginFailure?.();
+    } catch (error) {
+      const appError = normalizeError(error);
+      logError(appError, { scope: 'auth.login', provider });
+      onLoginFailure?.(appError);
     } finally {
       setPendingProvider(null);
     }

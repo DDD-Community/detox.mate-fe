@@ -10,6 +10,7 @@ import { Platform } from 'react-native';
 
 import { getFcmToken } from '../api/generated/fcm-token/fcm-token';
 import { RegisterFcmTokenRequestPlatform } from '../api/generated/model';
+import { logError, normalizeError } from '../api/errors';
 
 const STORED_TOKEN_KEY = 'fcmDeviceTokenKey';
 const STORED_TOKEN_PROVIDER_KEY = 'fcmDeviceTokenProviderKey';
@@ -74,7 +75,11 @@ export async function registerDevicePushToken(): Promise<void> {
       const token = await getFcmRegistrationToken();
       if (!token) return;
       await registerTokenIfNeeded(token);
-    } catch {
+    } catch (error) {
+      logError(normalizeError(error), {
+        scope: 'notification.push',
+        operation: 'registerDevicePushToken',
+      });
       return;
     }
   })().finally(() => {
@@ -136,8 +141,11 @@ export function subscribeToDevicePushTokenRefresh(): () => void {
   if (Platform.OS === 'web') return () => undefined;
 
   return onTokenRefresh(getFirebaseMessaging(), (token) => {
-    handleNewDevicePushToken(token).catch(() => {
-      // 갱신 실패는 다음 갱신 또는 SettingsScreen 진입 시점에 재시도됨
+    handleNewDevicePushToken(token).catch((error) => {
+      logError(normalizeError(error), {
+        scope: 'notification.push',
+        operation: 'handleTokenRefresh',
+      });
     });
   });
 }

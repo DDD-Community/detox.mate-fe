@@ -13,13 +13,28 @@ import {
   View,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import apiClient from '../../api/client';
+import {
+  getUserErrorMessage,
+  logError,
+  normalizeError,
+  type RequestErrorPolicy,
+} from '../../api/errors';
+import type { GroupResponse } from '../../api/generated/model';
+import { customAxios } from '../../api/mutator';
 import { ClipboardCopyToast, useClipboardCopyToast } from '../../components';
 import { Icon } from '../../components/Icon';
 import { primitiveColors, radius, spacing, typography } from '../../lib/token';
 
 const { green, gray, brown } = primitiveColors;
 const INVITE_CODE_MAX_LENGTH = 5;
+const GROUP_JOIN_ERROR_POLICY: RequestErrorPolicy = {
+  presentation: 'inline',
+  messagesByStatus: {
+    404: '초대 코드를 다시 확인해주세요',
+    409: '초대 코드를 다시 확인해주세요',
+  },
+};
+const GROUP_JOIN_FALLBACK_MESSAGE = '초대 코드를 다시 확인해주세요';
 
 export default function GroupJoinScreen() {
   const router = useRouter();
@@ -53,10 +68,25 @@ export default function GroupJoinScreen() {
     setLoading(true);
     setError(null);
     try {
-      const res = await apiClient.post('/groups/join', { inviteCode });
-      console.log(res);
-      setGroupName(res.data.name);
+      const data = await customAxios<GroupResponse>({
+        url: '/groups/join',
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        data: { inviteCode },
+        errorPolicy: GROUP_JOIN_ERROR_POLICY,
+        retryPolicy: 'none',
+        skipGlobalError: true,
+      });
+      setGroupName(data.name ?? '');
       setStep(2);
+    } catch (error) {
+      const appError = normalizeError(error);
+      logError(appError, { scope: 'group.join', operation: 'joinGroup' });
+      const message =
+        appError.status === 404 || appError.status === 409
+          ? getUserErrorMessage(appError, GROUP_JOIN_ERROR_POLICY)
+          : GROUP_JOIN_FALLBACK_MESSAGE;
+      setError(message);
     } catch (e: any) {
       const status = e?.response?.status;
       console.log(status);
