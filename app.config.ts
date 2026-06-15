@@ -78,6 +78,9 @@ const config: ExpoConfig = {
         organization: process.env.SENTRY_ORG,
         project: process.env.SENTRY_PROJECT,
         url: sentryUrl,
+      },
+    ],
+    [
       'airbridge-expo-sdk',
       {
         appName: 'detoxmate',
