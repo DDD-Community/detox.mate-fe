@@ -1,8 +1,9 @@
 import { router, useLocalSearchParams } from 'expo-router';
-import { Image, Pressable, StyleSheet, Text, View } from 'react-native';
+import { Alert, Image, Pressable, StyleSheet, Text, View } from 'react-native';
 
 import ONBOARDING_CHECK_IMAGE from '@assets/onboarding-check.png';
 
+import { getFirstScreenTime } from '@/api';
 import { Button, Icon, LoggingButton, LoggingPage } from '@/components';
 import { submitTotalUsageActivityRecord } from '@/features/activity-record/submitTotalUsageActivityRecord';
 import {
@@ -20,6 +21,20 @@ import {
 } from './verifyFlowParams';
 
 const { gray, brown, green, system } = primitiveColors;
+
+const formatDateParam = (date: Date): string => {
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, '0');
+  const day = String(date.getDate()).padStart(2, '0');
+  return `${year}-${month}-${day}`;
+};
+
+const getYesterdayRecordDate = (): string => {
+  const date = new Date();
+  date.setHours(0, 0, 0, 0);
+  date.setDate(date.getDate() - 1);
+  return formatDateParam(date);
+};
 
 export default function VerifyDoneScreen() {
   const {
@@ -50,11 +65,26 @@ export default function VerifyDoneScreen() {
   const diffText =
     hasGoal && goalAchieved ? formatMinutesDiffText(goalMinutes! - valueMinutes!) : '';
 
-  const handleSetGoal = () => {
-    router.replace({
-      pathname: '/(group)/goal',
-      params: value ? { value } : undefined,
-    });
+  const handleSetGoal = async () => {
+    const participantId = groupChallengeParticipantId ? Number(groupChallengeParticipantId) : NaN;
+
+    if (!Number.isFinite(participantId) || valueMinutes == null) {
+      Alert.alert('저장 실패', '첫 스크린타임 저장에 필요한 정보가 없습니다.');
+      return;
+    }
+
+    try {
+      await getFirstScreenTime().create1({
+        groupChallengeParticipantId: participantId,
+        screenTimeMinutes: valueMinutes,
+        recordDate: getYesterdayRecordDate(),
+      });
+
+      router.replace({
+        pathname: '/(group)/goal',
+        params: value ? { value } : undefined,
+      });
+    } catch {}
   };
 
   const handleSkip = async () => {

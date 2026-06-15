@@ -30,7 +30,7 @@ interface Props {
 
 export default function ActionGuideBanner({ bannerState, verifyParams, summary }: Props) {
   const banner = {
-    notSet: <GoalBanner />,
+    notSet: <GoalBanner verifyParams={verifyParams} />,
     waitingForMembers: <WaitingForMembersBanner />,
     setWaiting: <GoalSetWaitingBanner />,
     deadlineSoon: <DailyAuthBanner tone="warning" verifyParams={verifyParams} />,
@@ -41,7 +41,7 @@ export default function ActionGuideBanner({ bannerState, verifyParams, summary }
   return banner;
 }
 
-function GoalBanner() {
+function GoalBanner({ verifyParams }: Pick<Props, 'verifyParams'>) {
   return (
     <View style={styles.goalBanner}>
       <View style={styles.topRow}>
@@ -70,7 +70,13 @@ function GoalBanner() {
           onPress={() => {
             router.push({
               pathname: '/(feed)/verify',
-              params: { mode: 'initial', verifyRoot: 'feed' },
+              params: {
+                mode: 'initial',
+                verifyRoot: 'feed',
+                ...(verifyParams?.groupChallengeParticipantId
+                  ? { groupChallengeParticipantId: verifyParams.groupChallengeParticipantId }
+                  : {}),
+              },
             });
           }}
           style={styles.bannerButton}

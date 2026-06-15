@@ -173,6 +173,13 @@ export type AnalyticsUserProperties = {
 let initialized = false;
 const debugEvents: AnalyticsDebugEvent[] = [];
 
+function logAnalyticsDebug(action: string, payload: AnalyticsProperties = {}) {
+  if (env.appEnv !== 'development') return;
+
+  // eslint-disable-next-line no-console
+  console.info(`[Amplitude] ${action}`, payload);
+}
+
 export function initAnalytics() {
   if (initialized) return;
 
@@ -180,11 +187,20 @@ export function initAnalytics() {
     logLevel: env.appEnv === 'development' ? Types.LogLevel.Debug : Types.LogLevel.Warn,
   });
 
+  logAnalyticsDebug('init', {
+    has_api_key: env.amplitudeApiKey.length > 0,
+  });
+
   initialized = true;
 }
 
 export function setAnalyticsUserId(userId: number | string) {
-  setUserId(String(userId));
+  const analyticsUserId = String(userId);
+
+  setUserId(analyticsUserId);
+  logAnalyticsDebug('setUserId', {
+    user_id: analyticsUserId,
+  });
 }
 
 export function setAnalyticsUserProperties(properties: AnalyticsUserProperties) {
@@ -201,6 +217,7 @@ export function setAnalyticsUserProperties(properties: AnalyticsUserProperties) 
   if (!hasProperty) return;
 
   amplitudeIdentify(identify);
+  logAnalyticsDebug('identify', properties);
 }
 
 export function trackEvent(eventName: AnalyticsEventName, properties: AnalyticsProperties = {}) {
@@ -212,6 +229,10 @@ export function trackEvent(eventName: AnalyticsEventName, properties: AnalyticsP
   });
 
   track(eventName, eventProperties);
+  logAnalyticsDebug('track', {
+    event_name: eventName,
+    ...eventProperties,
+  });
 }
 
 export function trackScreenView(
