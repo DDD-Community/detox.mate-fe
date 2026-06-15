@@ -1,4 +1,5 @@
 import { router, useFocusEffect, useLocalSearchParams } from 'expo-router';
+import { getInviteShareUrl } from '../../lib/airbridge';
 import * as SecureStore from 'expo-secure-store';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
@@ -22,8 +23,10 @@ import {
   type ReactionResponse,
 } from '../../api/generated/model';
 import { getUserUsageGoalTime } from '../../api/generated/user-usage-goal-time/user-usage-goal-time';
+import { LoggingPage } from '../../components';
 import { Button } from '../../components/Button';
 import { Icon } from '../../components/Icon';
+import { trackButtonClick, trackEvent } from '../../lib/analytics';
 import { memberStore } from '../../lib/memberStore';
 import { pokeStore } from '../../lib/pokeStore';
 import { primitiveColors, radius, spacing, typography } from '../../lib/token';
@@ -243,7 +246,8 @@ const mapMemberToMemberItem = (m: MemberResponse): MemberItem => ({
   name: m.displayName ?? '',
   isMe: m.isMe === true,
   avatarSource: m.profileImageUrl ? { uri: m.profileImageUrl } : AVATAR_SRC,
-  badgeCount: getMemberGoalState(m) === 'authReady' && (m.pokeCount ?? 0) > 0 ? m.pokeCount : undefined,
+  badgeCount:
+    getMemberGoalState(m) === 'authReady' && (m.pokeCount ?? 0) > 0 ? m.pokeCount : undefined,
   isVerified: m.activityRecord != null,
   isGoalAchieved: m.activityRecord?.allAchieved === true,
 });
@@ -394,8 +398,9 @@ export default function FeedHome() {
 
   const handleInvite = async () => {
     if (!group?.inviteCode) return;
+    trackEvent('Invite Share Button Clicked', { page_name: 'FeedHome' });
     await Share.share({
-      message: `우리 함께 디지털 디톡스해요! 💉\n디톡스 메이트 그룹 초대 코드: ${group.inviteCode}`,
+      message: `우리 함께 디지털 디톡스해요! 💉\n디톡스 메이트 그룹 초대 코드: ${group.inviteCode}\n${getInviteShareUrl(group.inviteCode)}`,
     });
   };
 
@@ -486,31 +491,33 @@ export default function FeedHome() {
   };
 
   return (
-    <View style={styles.root}>
-      <FeedHeader groupName={group?.name} groupChallengeId={groupChallengeId} />
-      {loading ? (
-        <View style={styles.centered}>
-          <ActivityIndicator color={gray[400]} />
-        </View>
-      ) : group && groupChallengeId ? (
-        <ActiveFeed
-          onInvite={handleInvite}
-          onPoke={handlePoke}
-          onReact={handleReact}
-          feedItems={feedItems}
-          members={members}
-          myReactions={myReactions}
-          pokedMemberIds={pokedMemberIds}
-          goalState={goalState}
-          goalSetMemberCount={goalSetMemberCount}
-          groupChallengeId={groupChallengeId}
-          targetChallengeRecordId={challengeRecordId}
-          scrollChallengeRecordId={scrollChallengeRecordId}
-        />
-      ) : (
-        <InactiveFeed onInvite={handleInvite} />
-      )}
-    </View>
+    <LoggingPage eventName="Feed Home Viewed" properties={{ pageName: 'FeedHome' }}>
+      <View style={styles.root}>
+        <FeedHeader groupName={group?.name} groupChallengeId={groupChallengeId} />
+        {loading ? (
+          <View style={styles.centered}>
+            <ActivityIndicator color={gray[400]} />
+          </View>
+        ) : group && groupChallengeId ? (
+          <ActiveFeed
+            onInvite={handleInvite}
+            onPoke={handlePoke}
+            onReact={handleReact}
+            feedItems={feedItems}
+            members={members}
+            myReactions={myReactions}
+            pokedMemberIds={pokedMemberIds}
+            goalState={goalState}
+            goalSetMemberCount={goalSetMemberCount}
+            groupChallengeId={groupChallengeId}
+            targetChallengeRecordId={challengeRecordId}
+            scrollChallengeRecordId={scrollChallengeRecordId}
+          />
+        ) : (
+          <InactiveFeed onInvite={handleInvite} />
+        )}
+      </View>
+    </LoggingPage>
   );
 }
 
@@ -686,6 +693,7 @@ function ActiveFeed({
     (reactionCode: ReactionCode) => {
       const item = reactionPickerItemRef.current;
       if (!item) return;
+      trackButtonClick('Feed Home Reaction Select Clicked', 'FeedHome', '리액션 선택');
       onReact(item.id, reactionCode);
       setReactionPickerItem(null);
       setPickerLayout(null);
@@ -814,6 +822,7 @@ function ActiveFeed({
                 <FeedCard
                   item={item}
                   goalState={goalState}
+                  analyticsContext="FeedHome"
                   onPoke={onPoke}
                   isPoked={pokedMemberIds.includes(item.id)}
                   onBodyPress={() => openPostDetail(item)}

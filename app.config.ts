@@ -1,5 +1,6 @@
 import type { ExpoConfig } from 'expo/config';
 import { execSync } from 'node:child_process';
+import { existsSync } from 'node:fs';
 
 const appEnv = process.env.APP_ENV === 'production' ? 'production' : 'development';
 const isProduction = appEnv === 'production';
@@ -66,7 +67,9 @@ const config: ExpoConfig = {
     },
     predictiveBackGestureEnabled: false,
     package: 'com.detoxmate.fe',
-    googleServicesFile: androidGoogleServicesFile,
+    ...(existsSync(androidGoogleServicesFile)
+      ? { googleServicesFile: androidGoogleServicesFile }
+      : {}),
   },
   web: {
     favicon: './assets/favicon.png',
@@ -122,6 +125,7 @@ const config: ExpoConfig = {
     appVersion,
     buildChannel,
     gitSha,
+    amplitudeApiKey: process.env.EXPO_PUBLIC_AMPLITUDE_API_KEY,
     ...(sentryDsn ? { sentryDsn } : {}),
     apiBaseUrl: isProduction ? 'https://api.detoxmate.co.kr' : 'https://api-dev.detoxmate.co.kr',
     router: {},

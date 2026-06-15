@@ -13,9 +13,15 @@ importers:
 
   .:
     dependencies:
+      '@amplitude/analytics-react-native':
+        specifier: ^1.5.57
+        version: 1.5.57(react-native@0.83.6(@babel/core@7.29.0)(@react-native/metro-config@0.85.2(@babel/core@7.29.0))(@types/react@19.2.15)(react@19.2.0))(react@19.2.0)
       '@noble/hashes':
         specifier: ^1.8.0
         version: 1.8.0
+      '@react-native-async-storage/async-storage':
+        specifier: ^3.1.1
+        version: 3.1.1(react-native@0.83.6(@babel/core@7.29.0)(@react-native/metro-config@0.85.2(@babel/core@7.29.0))(@types/react@19.2.15)(react@19.2.0))(react@19.2.0)
       '@react-native-community/datetimepicker':
         specifier: ^8.6.0
         version: 8.6.0(expo@55.0.26)(react-native@0.83.6(@babel/core@7.29.0)(@react-native/metro-config@0.85.2(@babel/core@7.29.0))(@types/react@19.2.15)(react@19.2.0))(react@19.2.0)
@@ -24,10 +30,10 @@ importers:
         version: 5.1.2
       '@react-native-firebase/app':
         specifier: 24.0.0
-        version: 24.0.0(expo@55.0.26)(react-native@0.83.6(@babel/core@7.29.0)(@react-native/metro-config@0.85.2(@babel/core@7.29.0))(@types/react@19.2.15)(react@19.2.0))(react@19.2.0)
+        version: 24.0.0(@react-native-async-storage/async-storage@3.1.1(react-native@0.83.6(@babel/core@7.29.0)(@react-native/metro-config@0.85.2(@babel/core@7.29.0))(@types/react@19.2.15)(react@19.2.0))(react@19.2.0))(expo@55.0.26)(react-native@0.83.6(@babel/core@7.29.0)(@react-native/metro-config@0.85.2(@babel/core@7.29.0))(@types/react@19.2.15)(react@19.2.0))(react@19.2.0)
       '@react-native-firebase/messaging':
         specifier: 24.0.0
-        version: 24.0.0(@react-native-firebase/app@24.0.0(expo@55.0.26)(react-native@0.83.6(@babel/core@7.29.0)(@react-native/metro-config@0.85.2(@babel/core@7.29.0))(@types/react@19.2.15)(react@19.2.0))(react@19.2.0))(expo@55.0.26)
+        version: 24.0.0(@react-native-firebase/app@24.0.0(@react-native-async-storage/async-storage@3.1.1(react-native@0.83.6(@babel/core@7.29.0)(@react-native/metro-config@0.85.2(@babel/core@7.29.0))(@types/react@19.2.15)(react@19.2.0))(react@19.2.0))(expo@55.0.26)(react-native@0.83.6(@babel/core@7.29.0)(@react-native/metro-config@0.85.2(@babel/core@7.29.0))(@types/react@19.2.15)(react@19.2.0))(react@19.2.0))(expo@55.0.26)
       '@react-native-seoul/kakao-login':
         specifier: ^5.4.2
         version: 5.4.2(react-native@0.83.6(@babel/core@7.29.0)(@react-native/metro-config@0.85.2(@babel/core@7.29.0))(@types/react@19.2.15)(react@19.2.0))(react@19.2.0)
@@ -35,11 +41,11 @@ importers:
         specifier: ~7.11.0
         version: 7.11.0(expo@55.0.26)(react-native@0.83.6(@babel/core@7.29.0)(@react-native/metro-config@0.85.2(@babel/core@7.29.0))(@types/react@19.2.15)(react@19.2.0))(react@19.2.0)
       airbridge-expo-sdk:
-        specifier: ^4.9.1
-        version: 4.9.1(airbridge-react-native-sdk@4.9.0(react-native@0.83.6(@babel/core@7.29.0)(@react-native/metro-config@0.85.2(@babel/core@7.29.0))(@types/react@19.2.15)(react@19.2.0)))
+        specifier: 4.8.0
+        version: 4.8.0(airbridge-react-native-sdk@4.8.0(react-native@0.83.6(@babel/core@7.29.0)(@react-native/metro-config@0.85.2(@babel/core@7.29.0))(@types/react@19.2.15)(react@19.2.0)))
       airbridge-react-native-sdk:
-        specifier: ^4.9.0
-        version: 4.9.0(react-native@0.83.6(@babel/core@7.29.0)(@react-native/metro-config@0.85.2(@babel/core@7.29.0))(@types/react@19.2.15)(react@19.2.0))
+        specifier: 4.8.0
+        version: 4.8.0(react-native@0.83.6(@babel/core@7.29.0)(@react-native/metro-config@0.85.2(@babel/core@7.29.0))(@types/react@19.2.15)(react@19.2.0))
       axios:
         specifier: ^1.15.0
         version: 1.15.0
@@ -163,6 +169,21 @@ importers:
         version: 4.1.8(@types/node@25.6.0)(vite@8.0.16(@types/node@25.6.0)(esbuild@0.25.12)(jiti@2.6.1)(terser@5.46.1)(yaml@2.8.3))
 
 packages:
+
+  '@amplitude/analytics-connector@1.6.4':
+    resolution: {integrity: sha512-SpIv0IQMNIq6SH3UqFGiaZyGSc7PBZwRdq7lvP0pBxW8i4Ny+8zwI0pV+VMfMHQwWY3wdIbWw5WQphNjpdq1/Q==}
+
+  '@amplitude/analytics-core@2.50.0':
+    resolution: {integrity: sha512-d8/U5aAHAs6XcpvQYpStxBxMxSwjDajZ0f6wMSwPCfxDGEWqcFaYuRKauh+vrn89D6gWcKi1VZ/tKCyhVby9sg==}
+
+  '@amplitude/analytics-react-native@1.5.57':
+    resolution: {integrity: sha512-JfydxAtEjtF19XUfUawFg7lvJlbYPQ89y48ScvpG1bFDOcYf1mHXwqxKedosBCjmZyqUL2poFXoFt8AFTqBcSA==}
+    peerDependencies:
+      react: '*'
+      react-native: '*'
+
+  '@amplitude/ua-parser-js@0.7.33':
+    resolution: {integrity: sha512-wKEtVR4vXuPT9cVEIJkYWnlF++Gx3BdLatPBM+SZ1ztVIvnhdGBZR/mn9x/PzyrMcRlZmyi6L56I2J3doVBnjA==}
 
   '@babel/code-frame@7.10.4':
     resolution: {integrity: sha512-vG6SvB6oYEhvgisZNFRmRCUkLz11c7rp+tbNTynGqc6mS1d5ATd/sGyV6W0KZZnXRKMTzZDRgQT3Ou9jhpAfUg==}
@@ -1582,6 +1603,7 @@ packages:
 
   '@oxc-project/types@0.133.0':
     resolution: {integrity: sha512-KzkdCd6Uxqnf6l3HOw1xfatAlUURA0g14cvBYFyJ5SaNOQbOUvBr9PKArcPcrNIeRsBdgcUzOGrhKveVpvOIGA==}
+
   '@pkgjs/parseargs@0.11.0':
     resolution: {integrity: sha512-+1VkjdD0QBLPodGrJUeqarH8VAIvQODIbwh9XpP5Syisf7YoQgsJKPNFoqqLQlu+VQ/tVSshMR6loPMn8U+dPg==}
     engines: {node: '>=14'}
@@ -1834,6 +1856,17 @@ packages:
     peerDependenciesMeta:
       '@types/react':
         optional: true
+
+  '@react-native-async-storage/async-storage@1.24.0':
+    resolution: {integrity: sha512-W4/vbwUOYOjco0x3toB8QCr7EjIP6nE9G7o8PMguvvjYT5Awg09lyV4enACRx4s++PPulBiBSjL0KTFx2u0Z/g==}
+    peerDependencies:
+      react-native: ^0.0.0-0 || >=0.60 <1.0
+
+  '@react-native-async-storage/async-storage@3.1.1':
+    resolution: {integrity: sha512-z+PnLz1n6ECKhgoHZHkfc+dijXZEyZnNFSajbtE0NEbsJhmX8x9GlOeiMQIKX2E4DUqPSgfIh4FYBv1M49KgPQ==}
+    peerDependencies:
+      react: '*'
+      react-native: '*'
 
   '@react-native-community/datetimepicker@8.6.0':
     resolution: {integrity: sha512-yxPSqNfxgpGaqHQIpatqe6ykeBdU/1pdsk/G3x01mY2bpTflLpmVTLqFSJYd3MiZzxNZcMs/j1dQakUczSjcYA==}
@@ -2466,6 +2499,9 @@ packages:
   '@types/yargs@17.0.35':
     resolution: {integrity: sha512-qUHkeCyQFxMXg79wQfTtfndEC+N9ZZg76HJftDJp+qH2tV7Gj4OJi7l+PiWwJ+pWtW8GwSmqsDj/oymhrTWXjg==}
 
+  '@types/zen-observable@0.8.3':
+    resolution: {integrity: sha512-fbF6oTd4sGGy0xjHPKAt+eS2CrxJ3+6gQ3FGcBoIJR2TLAyCkCyI8JqZNy+FeON0AhVgNJoUumVoZQjBFUqHkw==}
+
   '@ungap/structured-clone@1.3.0':
     resolution: {integrity: sha512-WmoN8qaIAo7WTYWbAZuG8PYEhn5fkz7dZrqTBZ7dtt//lL2Gwms1IcnQ5yHqjDfX8Ft5j4YzDM23f87zBfDe9g==}
     deprecated: Potential CWE-502 - Update to 1.3.1 or higher
@@ -2528,13 +2564,13 @@ packages:
     resolution: {integrity: sha512-MnA+YT8fwfJPgBx3m60MNqakm30XOkyIoH1y6huTQvC0PwZG7ki8NacLBcrPbNoo8vEZy7Jpuk7+jMO+CUovTQ==}
     engines: {node: '>= 14'}
 
-  airbridge-expo-sdk@4.9.1:
-    resolution: {integrity: sha512-sovvstFJRq2FxYlfMQ8SZJ1JD88h6YwF0rTQqG4czksEYOj+ER35T1N7jTo+Ui2dH2sSJz2vCFFKFzFcks6Xig==}
+  airbridge-expo-sdk@4.8.0:
+    resolution: {integrity: sha512-MWGYmwf6AmAAhfMW6ZZcWmUrbkjUZPKHmDPaGlYrmdtS/PHMBxEqc8DGXoxuIgpKJwCgUEFLydXL0YTc/IxM+g==}
     peerDependencies:
-      airbridge-react-native-sdk: ^4.9.0
+      airbridge-react-native-sdk: ^4.8.0
 
-  airbridge-react-native-sdk@4.9.0:
-    resolution: {integrity: sha512-u+uFRMWlrlQXEgV5r9zvXM6BjJb8RREyIfzFFMxnmfNarNQkl3Jndn/KpcOLk8SVRGNvZWS60MjZGLsZ679Z9Q==}
+  airbridge-react-native-sdk@4.8.0:
+    resolution: {integrity: sha512-BCE4xFXwcxhp4my7TxrTD+yFe9gBr9dp7t15dGPOnh6Xbx2zNvzwaWrFzAK6u1PGhNTDRPUlmwDuqbJNnCjCRQ==}
     peerDependencies:
       react-native: '>= 0.60'
 
@@ -3715,6 +3751,9 @@ packages:
   idb@7.1.1:
     resolution: {integrity: sha512-gchesWBzyvGHRO9W8tzUWFDycow5gwjvFKfyV9FF32Y7F50yZMp7mP+T2mJIWFx49zicqyC4uefHM17o6xKIVQ==}
 
+  idb@8.0.3:
+    resolution: {integrity: sha512-LtwtVyVYO5BqRvcsKuB2iUMnHwPVByPCXFXOpuU96IZPPoPN6xjOGxZQ74pgSVVLQWtUOYgyeL4GE98BY5D3wg==}
+
   ieee754@1.2.1:
     resolution: {integrity: sha512-dcyqhDvX1C46lXZcVqCpK+FtMRQVdIMN6/Df5js2zouUsqG7I6sFxitIC+7KYK29KdXOLHdu9zL4sFnoVQnqaA==}
 
@@ -3799,6 +3838,10 @@ packages:
   is-path-inside@4.0.0:
     resolution: {integrity: sha512-lJJV/5dYS+RcL8uQdBDW9c9uWFLLBNRyFhnAKXw5tVqLlKZ4RMGZKv+YQ/IA3OhD+RpbJa1LLFM1FQPGyIXvOA==}
     engines: {node: '>=12'}
+
+  is-plain-obj@2.1.0:
+    resolution: {integrity: sha512-YWnfyRwxL/+SsrWYfOpUtz5b3YD+nyfkHvjbcanzk8zgyO4ASD67uVMRt8k5bM4lLMDnXfriRhOpemw+NfT1eA==}
+    engines: {node: '>=8'}
 
   is-plain-obj@4.1.0:
     resolution: {integrity: sha512-+Pgi+vMuUNkJyExiMBt5IlFoMyKnr5zhJ4Uspz58WOhBF5QoIZkFyNHIbBAtHwzVAgk5RtndVNsDRN61/mmDqg==}
@@ -4106,6 +4149,10 @@ packages:
 
   memoizerific@1.11.3:
     resolution: {integrity: sha512-/EuHYwAPdLtXwAwSZkh/Gutery6pD2KYd44oQLhAvQp/50mpyduZh8Q7PYHXTCJ+wuXxt7oij2LXyIJOOYFPog==}
+
+  merge-options@3.0.4:
+    resolution: {integrity: sha512-2Sug1+knBjkaMsMgf1ctR1Ujx+Ayku4EdJN4Z+C2+JzoeF7A3OZ9KM2GY0CpQS51NR61LTurMJrRKPhSs3ZRTQ==}
+    engines: {node: '>=10'}
 
   merge-stream@2.0.0:
     resolution: {integrity: sha512-abv/qOcuPfk3URPfDzmZU1LKmuw8kT+0nIHvKrKgFrwifol/doWcdA4ZqsWQ8ENrFKkd67Mfpo/LovbIUsbt3w==}
@@ -4832,6 +4879,9 @@ packages:
   safe-buffer@5.2.1:
     resolution: {integrity: sha512-rp3So07KcdmmKbGvgaNxQSJr7bGVSVk5S9Eq1F+ppbRo70+YeaDxkw5Dd8NPN+GD6bjnYm2VuPuCXmpuYvmCXQ==}
 
+  safe-json-stringify@1.2.0:
+    resolution: {integrity: sha512-gH8eh2nZudPQO6TytOvbxnuhYBOvDBBLW52tz5q6X58lJcd/tkmqFR+5Z9adS8aJtURSXWThWy/xJtJwixErvg==}
+
   safe-regex-test@1.1.0:
     resolution: {integrity: sha512-x/+Cz4YrimQxQccJf5mKEbIa1NzeCRNI5Ecl/ekmlYaampdNLPalVyIcCZNNH3MvmqBugV5TMYZXv0ljslUlaw==}
     engines: {node: '>= 0.4'}
@@ -5530,6 +5580,9 @@ packages:
     resolution: {integrity: sha512-CzhO+pFNo8ajLM2d2IW/R93ipy99LWjtwblvC1RsoSUMZgyLbYFr221TnSNT7GjGdYui6P459mw9JH/g/zW2ug==}
     engines: {node: '>=18'}
 
+  zen-observable@0.10.0:
+    resolution: {integrity: sha512-iI3lT0iojZhKwT5DaFy2Ce42n3yFcLdFyOh01G7H0flMY60P8MJuVFEoJoNwXlmAyQ45GrjL6AcZmmlv8A5rbw==}
+
   zod@3.25.76:
     resolution: {integrity: sha512-gzUt/qt81nXsFGKIFcC3YnfEAx5NkunCfnDlvuBSSFS02bcXu4Lmea0AFIUwbLWxWPx3d9p8S5QoaujKcNQxcQ==}
 
@@ -5552,6 +5605,27 @@ packages:
         optional: true
 
 snapshots:
+
+  '@amplitude/analytics-connector@1.6.4': {}
+
+  '@amplitude/analytics-core@2.50.0':
+    dependencies:
+      '@amplitude/analytics-connector': 1.6.4
+      '@types/zen-observable': 0.8.3
+      safe-json-stringify: 1.2.0
+      tslib: 2.8.1
+      zen-observable: 0.10.0
+
+  '@amplitude/analytics-react-native@1.5.57(react-native@0.83.6(@babel/core@7.29.0)(@react-native/metro-config@0.85.2(@babel/core@7.29.0))(@types/react@19.2.15)(react@19.2.0))(react@19.2.0)':
+    dependencies:
+      '@amplitude/analytics-core': 2.50.0
+      '@amplitude/ua-parser-js': 0.7.33
+      '@react-native-async-storage/async-storage': 1.24.0(react-native@0.83.6(@babel/core@7.29.0)(@react-native/metro-config@0.85.2(@babel/core@7.29.0))(@types/react@19.2.15)(react@19.2.0))
+      react: 19.2.0
+      react-native: 0.83.6(@babel/core@7.29.0)(@react-native/metro-config@0.85.2(@babel/core@7.29.0))(@types/react@19.2.15)(react@19.2.0)
+      tslib: 2.8.1
+
+  '@amplitude/ua-parser-js@0.7.33': {}
 
   '@babel/code-frame@7.10.4':
     dependencies:
@@ -6857,10 +6931,10 @@ snapshots:
       idb: 7.1.1
       tslib: 2.8.1
 
-  '@firebase/auth-compat@0.6.3(@firebase/app-compat@0.5.9)(@firebase/app-types@0.9.3)(@firebase/app@0.14.9)':
+  '@firebase/auth-compat@0.6.3(@firebase/app-compat@0.5.9)(@firebase/app-types@0.9.3)(@firebase/app@0.14.9)(@react-native-async-storage/async-storage@3.1.1(react-native@0.83.6(@babel/core@7.29.0)(@react-native/metro-config@0.85.2(@babel/core@7.29.0))(@types/react@19.2.15)(react@19.2.0))(react@19.2.0))':
     dependencies:
       '@firebase/app-compat': 0.5.9
-      '@firebase/auth': 1.12.1(@firebase/app@0.14.9)
+      '@firebase/auth': 1.12.1(@firebase/app@0.14.9)(@react-native-async-storage/async-storage@3.1.1(react-native@0.83.6(@babel/core@7.29.0)(@react-native/metro-config@0.85.2(@babel/core@7.29.0))(@types/react@19.2.15)(react@19.2.0))(react@19.2.0))
       '@firebase/auth-types': 0.13.0(@firebase/app-types@0.9.3)(@firebase/util@1.14.0)
       '@firebase/component': 0.7.1
       '@firebase/util': 1.14.0
@@ -6877,13 +6951,15 @@ snapshots:
       '@firebase/app-types': 0.9.3
       '@firebase/util': 1.14.0
 
-  '@firebase/auth@1.12.1(@firebase/app@0.14.9)':
+  '@firebase/auth@1.12.1(@firebase/app@0.14.9)(@react-native-async-storage/async-storage@3.1.1(react-native@0.83.6(@babel/core@7.29.0)(@react-native/metro-config@0.85.2(@babel/core@7.29.0))(@types/react@19.2.15)(react@19.2.0))(react@19.2.0))':
     dependencies:
       '@firebase/app': 0.14.9
       '@firebase/component': 0.7.1
       '@firebase/logger': 0.5.0
       '@firebase/util': 1.14.0
       tslib: 2.8.1
+    optionalDependencies:
+      '@react-native-async-storage/async-storage': 3.1.1(react-native@0.83.6(@babel/core@7.29.0)(@react-native/metro-config@0.85.2(@babel/core@7.29.0))(@types/react@19.2.15)(react@19.2.0))(react@19.2.0)
 
   '@firebase/component@0.7.1':
     dependencies:
@@ -7367,6 +7443,7 @@ snapshots:
       - typescript
 
   '@oxc-project/types@0.133.0': {}
+
   '@pkgjs/parseargs@0.11.0':
     optional: true
 
@@ -7577,6 +7654,17 @@ snapshots:
     optionalDependencies:
       '@types/react': 19.2.15
 
+  '@react-native-async-storage/async-storage@1.24.0(react-native@0.83.6(@babel/core@7.29.0)(@react-native/metro-config@0.85.2(@babel/core@7.29.0))(@types/react@19.2.15)(react@19.2.0))':
+    dependencies:
+      merge-options: 3.0.4
+      react-native: 0.83.6(@babel/core@7.29.0)(@react-native/metro-config@0.85.2(@babel/core@7.29.0))(@types/react@19.2.15)(react@19.2.0)
+
+  '@react-native-async-storage/async-storage@3.1.1(react-native@0.83.6(@babel/core@7.29.0)(@react-native/metro-config@0.85.2(@babel/core@7.29.0))(@types/react@19.2.15)(react@19.2.0))(react@19.2.0)':
+    dependencies:
+      idb: 8.0.3
+      react: 19.2.0
+      react-native: 0.83.6(@babel/core@7.29.0)(@react-native/metro-config@0.85.2(@babel/core@7.29.0))(@types/react@19.2.15)(react@19.2.0)
+
   '@react-native-community/datetimepicker@8.6.0(expo@55.0.26)(react-native@0.83.6(@babel/core@7.29.0)(@react-native/metro-config@0.85.2(@babel/core@7.29.0))(@types/react@19.2.15)(react@19.2.0))(react@19.2.0)':
     dependencies:
       invariant: 2.2.4
@@ -7587,9 +7675,9 @@ snapshots:
 
   '@react-native-community/slider@5.1.2': {}
 
-  '@react-native-firebase/app@24.0.0(expo@55.0.26)(react-native@0.83.6(@babel/core@7.29.0)(@react-native/metro-config@0.85.2(@babel/core@7.29.0))(@types/react@19.2.15)(react@19.2.0))(react@19.2.0)':
+  '@react-native-firebase/app@24.0.0(@react-native-async-storage/async-storage@3.1.1(react-native@0.83.6(@babel/core@7.29.0)(@react-native/metro-config@0.85.2(@babel/core@7.29.0))(@types/react@19.2.15)(react@19.2.0))(react@19.2.0))(expo@55.0.26)(react-native@0.83.6(@babel/core@7.29.0)(@react-native/metro-config@0.85.2(@babel/core@7.29.0))(@types/react@19.2.15)(react@19.2.0))(react@19.2.0)':
     dependencies:
-      firebase: 12.10.0
+      firebase: 12.10.0(@react-native-async-storage/async-storage@3.1.1(react-native@0.83.6(@babel/core@7.29.0)(@react-native/metro-config@0.85.2(@babel/core@7.29.0))(@types/react@19.2.15)(react@19.2.0))(react@19.2.0))
       react: 19.2.0
       react-native: 0.83.6(@babel/core@7.29.0)(@react-native/metro-config@0.85.2(@babel/core@7.29.0))(@types/react@19.2.15)(react@19.2.0)
     optionalDependencies:
@@ -7597,9 +7685,9 @@ snapshots:
     transitivePeerDependencies:
       - '@react-native-async-storage/async-storage'
 
-  '@react-native-firebase/messaging@24.0.0(@react-native-firebase/app@24.0.0(expo@55.0.26)(react-native@0.83.6(@babel/core@7.29.0)(@react-native/metro-config@0.85.2(@babel/core@7.29.0))(@types/react@19.2.15)(react@19.2.0))(react@19.2.0))(expo@55.0.26)':
+  '@react-native-firebase/messaging@24.0.0(@react-native-firebase/app@24.0.0(@react-native-async-storage/async-storage@3.1.1(react-native@0.83.6(@babel/core@7.29.0)(@react-native/metro-config@0.85.2(@babel/core@7.29.0))(@types/react@19.2.15)(react@19.2.0))(react@19.2.0))(expo@55.0.26)(react-native@0.83.6(@babel/core@7.29.0)(@react-native/metro-config@0.85.2(@babel/core@7.29.0))(@types/react@19.2.15)(react@19.2.0))(react@19.2.0))(expo@55.0.26)':
     dependencies:
-      '@react-native-firebase/app': 24.0.0(expo@55.0.26)(react-native@0.83.6(@babel/core@7.29.0)(@react-native/metro-config@0.85.2(@babel/core@7.29.0))(@types/react@19.2.15)(react@19.2.0))(react@19.2.0)
+      '@react-native-firebase/app': 24.0.0(@react-native-async-storage/async-storage@3.1.1(react-native@0.83.6(@babel/core@7.29.0)(@react-native/metro-config@0.85.2(@babel/core@7.29.0))(@types/react@19.2.15)(react@19.2.0))(react@19.2.0))(expo@55.0.26)(react-native@0.83.6(@babel/core@7.29.0)(@react-native/metro-config@0.85.2(@babel/core@7.29.0))(@types/react@19.2.15)(react@19.2.0))(react@19.2.0)
     optionalDependencies:
       expo: 55.0.26(@babel/core@7.29.0)(@expo/dom-webview@55.0.6)(@expo/metro-runtime@55.0.11)(expo-router@55.0.16)(react-dom@19.2.0(react@19.2.0))(react-native-worklets@0.7.4(patch_hash=21cf47837e5a062b4412ae8b69ded6f213406fe7b1614cf027a213de4f2d9836)(@babel/core@7.29.0)(react-native@0.83.6(@babel/core@7.29.0)(@react-native/metro-config@0.85.2(@babel/core@7.29.0))(@types/react@19.2.15)(react@19.2.0))(react@19.2.0))(react-native@0.83.6(@babel/core@7.29.0)(@react-native/metro-config@0.85.2(@babel/core@7.29.0))(@types/react@19.2.15)(react@19.2.0))(react@19.2.0)(typescript@5.9.3)
 
@@ -8467,6 +8555,8 @@ snapshots:
     dependencies:
       '@types/yargs-parser': 21.0.3
 
+  '@types/zen-observable@0.8.3': {}
+
   '@ungap/structured-clone@1.3.0': {}
 
   '@vitest/expect@4.1.8':
@@ -8536,15 +8626,15 @@ snapshots:
 
   agent-base@7.1.4: {}
 
-  airbridge-expo-sdk@4.9.1(airbridge-react-native-sdk@4.9.0(react-native@0.83.6(@babel/core@7.29.0)(@react-native/metro-config@0.85.2(@babel/core@7.29.0))(@types/react@19.2.15)(react@19.2.0))):
+  airbridge-expo-sdk@4.8.0(airbridge-react-native-sdk@4.8.0(react-native@0.83.6(@babel/core@7.29.0)(@react-native/metro-config@0.85.2(@babel/core@7.29.0))(@types/react@19.2.15)(react@19.2.0))):
     dependencies:
       '@expo/config-plugins': 10.1.2
       '@expo/config-types': 53.0.5
-      airbridge-react-native-sdk: 4.9.0(react-native@0.83.6(@babel/core@7.29.0)(@react-native/metro-config@0.85.2(@babel/core@7.29.0))(@types/react@19.2.15)(react@19.2.0))
+      airbridge-react-native-sdk: 4.8.0(react-native@0.83.6(@babel/core@7.29.0)(@react-native/metro-config@0.85.2(@babel/core@7.29.0))(@types/react@19.2.15)(react@19.2.0))
     transitivePeerDependencies:
       - supports-color
 
-  airbridge-react-native-sdk@4.9.0(react-native@0.83.6(@babel/core@7.29.0)(@react-native/metro-config@0.85.2(@babel/core@7.29.0))(@types/react@19.2.15)(react@19.2.0)):
+  airbridge-react-native-sdk@4.8.0(react-native@0.83.6(@babel/core@7.29.0)(@react-native/metro-config@0.85.2(@babel/core@7.29.0))(@types/react@19.2.15)(react@19.2.0)):
     dependencies:
       react-native: 0.83.6(@babel/core@7.29.0)(@react-native/metro-config@0.85.2(@babel/core@7.29.0))(@types/react@19.2.15)(react@19.2.0)
 
@@ -9662,7 +9752,7 @@ snapshots:
       locate-path: 8.0.0
       unicorn-magic: 0.3.0
 
-  firebase@12.10.0:
+  firebase@12.10.0(@react-native-async-storage/async-storage@3.1.1(react-native@0.83.6(@babel/core@7.29.0)(@react-native/metro-config@0.85.2(@babel/core@7.29.0))(@types/react@19.2.15)(react@19.2.0))(react@19.2.0)):
     dependencies:
       '@firebase/ai': 2.9.0(@firebase/app-types@0.9.3)(@firebase/app@0.14.9)
       '@firebase/analytics': 0.10.20(@firebase/app@0.14.9)
@@ -9672,8 +9762,8 @@ snapshots:
       '@firebase/app-check-compat': 0.4.1(@firebase/app-compat@0.5.9)(@firebase/app@0.14.9)
       '@firebase/app-compat': 0.5.9
       '@firebase/app-types': 0.9.3
-      '@firebase/auth': 1.12.1(@firebase/app@0.14.9)
-      '@firebase/auth-compat': 0.6.3(@firebase/app-compat@0.5.9)(@firebase/app-types@0.9.3)(@firebase/app@0.14.9)
+      '@firebase/auth': 1.12.1(@firebase/app@0.14.9)(@react-native-async-storage/async-storage@3.1.1(react-native@0.83.6(@babel/core@7.29.0)(@react-native/metro-config@0.85.2(@babel/core@7.29.0))(@types/react@19.2.15)(react@19.2.0))(react@19.2.0))
+      '@firebase/auth-compat': 0.6.3(@firebase/app-compat@0.5.9)(@firebase/app-types@0.9.3)(@firebase/app@0.14.9)(@react-native-async-storage/async-storage@3.1.1(react-native@0.83.6(@babel/core@7.29.0)(@react-native/metro-config@0.85.2(@babel/core@7.29.0))(@types/react@19.2.15)(react@19.2.0))(react@19.2.0))
       '@firebase/data-connect': 0.4.0(@firebase/app@0.14.9)
       '@firebase/database': 1.1.1
       '@firebase/database-compat': 2.1.1
@@ -9899,6 +9989,8 @@ snapshots:
 
   idb@7.1.1: {}
 
+  idb@8.0.3: {}
+
   ieee754@1.2.1: {}
 
   ignore@5.3.2: {}
@@ -9969,6 +10061,8 @@ snapshots:
   is-number@7.0.0: {}
 
   is-path-inside@4.0.0: {}
+
+  is-plain-obj@2.1.0: {}
 
   is-plain-obj@4.1.0: {}
 
@@ -10280,6 +10374,10 @@ snapshots:
   memoizerific@1.11.3:
     dependencies:
       map-or-similar: 1.5.0
+
+  merge-options@3.0.4:
+    dependencies:
+      is-plain-obj: 2.1.0
 
   merge-stream@2.0.0: {}
 
@@ -11295,6 +11393,8 @@ snapshots:
 
   safe-buffer@5.2.1: {}
 
+  safe-json-stringify@1.2.0: {}
+
   safe-regex-test@1.1.0:
     dependencies:
       call-bound: 1.0.4
@@ -11865,6 +11965,8 @@ snapshots:
   yocto-queue@1.2.2: {}
 
   yoctocolors@2.1.2: {}
+
+  zen-observable@0.10.0: {}
 
   zod@3.25.76: {}
 

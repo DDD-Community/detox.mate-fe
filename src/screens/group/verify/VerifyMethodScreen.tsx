@@ -1,7 +1,7 @@
 import { router, useLocalSearchParams } from 'expo-router';
 import { StyleSheet, Text, View } from 'react-native';
 
-import { Button, Icon } from '@/components';
+import { Button, Icon, LoggingButton, LoggingPage } from '@/components';
 import { primitiveColors, typography } from '@/lib/token';
 import { useVerifyMethodNavigation } from './useVerifyMethodNavigation';
 import { VerifyBottomSheet } from './VerifyBottomSheet';
@@ -24,33 +24,56 @@ export default function VerifyMethodScreen() {
   });
 
   return (
-    <VerifyBottomSheet onDismiss={() => router.back()}>
-      <View style={styles.content}>
-        <View style={styles.textGroup}>
-          <Text style={styles.title}>
-            {mode === 'verify' ? '어제의 스크린 타임\n인증하기' : '내 스크린 타임\n인증하기'}
-          </Text>
-          <Text style={styles.description}>둘 중 하나를 선택해 주세요.</Text>
-        </View>
+    <LoggingPage
+      eventName="Verify Method Viewed"
+      properties={{ pageName: 'VerifyMethod', verify_mode: mode ?? 'initial' }}
+    >
+      <VerifyBottomSheet onDismiss={() => router.back()}>
+        <View style={styles.content}>
+          <View style={styles.textGroup}>
+            <Text style={styles.title}>
+              {mode === 'verify' ? '어제의 스크린 타임\n인증하기' : '내 스크린 타임\n인증하기'}
+            </Text>
+            <Text style={styles.description}>둘 중 하나를 선택해 주세요.</Text>
+          </View>
 
-        <View style={styles.actions}>
-          <Button
-            label="갤러리로 가기"
-            color="assistive"
-            onPress={handleGallery}
-            style={styles.button}
-            leadingIcon={<Icon name="imageSquare" size={16} color="#FFFFFF" />}
-          />
-          <Button
-            label="설정으로 캡쳐하러 가기"
-            color="assistive"
-            onPress={handleSettings}
-            style={styles.button}
-            leadingIcon={<Icon name="gearSix" size={16} color="#FFFFFF" />}
-          />
+          <View style={styles.actions}>
+            <LoggingButton
+              eventName="Verify Method Gallery Open Clicked"
+              properties={{
+                pageName: 'VerifyMethod',
+                buttonName: '갤러리로 가기',
+                verify_mode: mode ?? 'initial',
+              }}
+            >
+              <Button
+                label="갤러리로 가기"
+                color="assistive"
+                onPress={handleGallery}
+                style={styles.button}
+                leadingIcon={<Icon name="imageSquare" size={16} color="#FFFFFF" />}
+              />
+            </LoggingButton>
+            <LoggingButton
+              eventName="Verify Method Screen Time Settings Open Clicked"
+              properties={{
+                pageName: 'VerifyMethod',
+                buttonName: '설정으로 캡쳐하러 가기',
+                verify_mode: mode ?? 'initial',
+              }}
+            >
+              <Button
+                label="설정으로 캡쳐하러 가기"
+                color="assistive"
+                onPress={handleSettings}
+                style={styles.button}
+                leadingIcon={<Icon name="gearSix" size={16} color="#FFFFFF" />}
+              />
+            </LoggingButton>
+          </View>
         </View>
-      </View>
-    </VerifyBottomSheet>
+      </VerifyBottomSheet>
+    </LoggingPage>
   );
 }
 

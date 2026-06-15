@@ -12,6 +12,7 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { logError, normalizeError } from '../../api/errors';
 import { getGroup } from '../../api/generated/group/group';
+import { LoggingButton, LoggingPage } from '../../components';
 import { Icon } from '../../components/Icon';
 import { primitiveColors } from '../../lib/token/primitive/colors';
 import { radius } from '../../lib/token/primitive/radius';
@@ -69,66 +70,87 @@ export default function GroupHomeScreen() {
     }, [router])
   );
 
+  const handleCreateGroup = () => {
+    router.push('/create');
+  };
+
   return (
-    <View style={styles.root}>
-      <SafeAreaView edges={['top']}>
-        <View style={styles.header}>
-          <Image source={LOGO} style={styles.logo} resizeMode="contain" />
-          <Pressable
-            style={styles.iconButton}
-            hitSlop={8}
-            onPress={() => router.push('/(group)/mypage')}
-          >
-            <Icon name="user" size={24} color={gray[800]} />
-          </Pressable>
-        </View>
-      </SafeAreaView>
-
-      {isCheckingGroups ? (
-        <View style={styles.loadingBody}>
-          <ActivityIndicator color={gray[400]} />
-        </View>
-      ) : (
-        <View style={styles.content}>
-          <Image
-            source={require('../../../assets/turtle-fall.png')}
-            style={styles.turtle}
-            resizeMode="contain"
-          />
-          <View style={styles.copyFrame}>
-            <Text style={styles.title}>아직 그룹이 없어요</Text>
-            <Text style={styles.subtitle}>새 그룹을 만들거나 친구가 만든 그룹에 입장해요</Text>
-          </View>
-
-          <View style={styles.cardRow}>
-            <TouchableOpacity
-              style={styles.card}
-              onPress={() => router.push('/create')}
-              activeOpacity={0.85}
+    <LoggingPage eventName="Group Home Viewed" properties={{ pageName: 'GroupHome' }}>
+      <View style={styles.root}>
+        <SafeAreaView edges={['top']}>
+          <View style={styles.header}>
+            <Image source={LOGO} style={styles.logo} resizeMode="contain" />
+            <LoggingButton
+              eventName="Group Home Mypage Open Clicked"
+              properties={{ pageName: 'GroupHome', buttonName: '마이페이지 아이콘' }}
             >
-              <Image
-                source={require('../../../assets/onboarding-group-plus.png')}
-                style={styles.plusCardIcon}
-                resizeMode="contain"
-              />
-              <Text style={styles.cardLabel}>새 그룹 만들기</Text>
-            </TouchableOpacity>
-            <TouchableOpacity
-              style={styles.card}
-              onPress={() => router.push('/join')}
-              activeOpacity={0.85}
-            >
-              <Image
-                source={require('../../../assets/onboarding-group-invite.png')}
-                style={styles.inviteCardIcon}
-                resizeMode="contain"
-              />
-              <Text style={styles.cardLabel}>초대 코드 입력</Text>
-            </TouchableOpacity>
+              <Pressable
+                style={styles.iconButton}
+                hitSlop={8}
+                onPress={() => router.push('/(group)/mypage')}
+              >
+                <Icon name="user" size={24} color={gray[800]} />
+              </Pressable>
+            </LoggingButton>
           </View>
-        </View>
-      )}
-    </View>
+        </SafeAreaView>
+
+        {isCheckingGroups ? (
+          <View style={styles.loadingBody}>
+            <ActivityIndicator color={gray[400]} />
+          </View>
+        ) : (
+          <View style={styles.content}>
+            <Image
+              source={require('../../../assets/turtle-fall.png')}
+              style={styles.turtle}
+              resizeMode="contain"
+            />
+            <View style={styles.copyFrame}>
+              <Text style={styles.title}>아직 그룹이 없어요</Text>
+              <Text style={styles.subtitle}>새 그룹을 만들거나 친구가 만든 그룹에 입장해요</Text>
+            </View>
+
+            <View style={styles.cardRow}>
+              <LoggingButton
+                eventName="Group Home Group Create Start Clicked"
+                properties={{ pageName: 'GroupHome', buttonName: '새 그룹 만들기' }}
+              >
+                <TouchableOpacity
+                  style={styles.card}
+                  onPress={handleCreateGroup}
+                  activeOpacity={0.85}
+                >
+                  <Image
+                    source={require('../../../assets/onboarding-group-plus.png')}
+                    style={styles.plusCardIcon}
+                    resizeMode="contain"
+                  />
+                  <Text style={styles.cardLabel}>새 그룹 만들기</Text>
+                </TouchableOpacity>
+              </LoggingButton>
+              <LoggingButton
+                eventName="Group Home Group Join Start Clicked"
+                properties={{ pageName: 'GroupHome', buttonName: '초대 코드 입력' }}
+              >
+                <TouchableOpacity
+                  style={styles.card}
+                  onPress={() => router.push('/join')}
+                  activeOpacity={0.85}
+                >
+                  <Image
+                    source={require('../../../assets/onboarding-group-invite.png')}
+                    style={styles.inviteCardIcon}
+                    resizeMode="contain"
+                  />
+                  <Text style={styles.cardLabel}>초대 코드 입력</Text>
+                </TouchableOpacity>
+              </LoggingButton>
+            </View>
+          </View>
+        )}
+      </View>
+    </LoggingPage>
   );
 }
 

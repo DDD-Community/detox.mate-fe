@@ -12,7 +12,7 @@ import {
   type LayoutChangeEvent,
 } from 'react-native';
 
-import { Button, Icon } from '@/components';
+import { Button, Icon, LoggingButton, LoggingPage } from '@/components';
 import { primitiveColors, typography } from '@/lib/token';
 import { useVerifyUploadAnalysis } from './useVerifyUploadAnalysis';
 import { VerifyBottomSheet } from './VerifyBottomSheet';
@@ -102,52 +102,77 @@ export default function VerifyUploadScreen() {
   };
 
   return (
-    <VerifyBottomSheet onDismiss={() => router.back()} dismissDisabled={isAnalyzing}>
-      <View style={styles.content}>
-        <View style={styles.section}>
-          <View style={styles.textGroup}>
-            <Text style={styles.title}>
-              {mode === 'verify'
-                ? '어제의 스크린 타임을\n인증해 주세요'
-                : '내 스크린 타임을\n인증해 주세요'}
-            </Text>
-            <Text style={styles.description}>
-              {'스크린 타임 캡쳐를 업로드해 주세요.\n목표 기반 데이터로 이용돼요.'}
-            </Text>
+    <LoggingPage
+      eventName="Verify Upload Viewed"
+      properties={{ pageName: 'VerifyUpload', verify_mode: mode ?? 'initial' }}
+    >
+      <VerifyBottomSheet onDismiss={() => router.back()} dismissDisabled={isAnalyzing}>
+        <View style={styles.content}>
+          <View style={styles.section}>
+            <View style={styles.textGroup}>
+              <Text style={styles.title}>
+                {mode === 'verify'
+                  ? '어제의 스크린 타임을\n인증해 주세요'
+                  : '내 스크린 타임을\n인증해 주세요'}
+              </Text>
+              <Text style={styles.description}>
+                {'스크린 타임 캡쳐를 업로드해 주세요.\n목표 기반 데이터로 이용돼요.'}
+              </Text>
+            </View>
+
+            {hasImage ? (
+              <View style={styles.previewBox} onLayout={handlePreviewLayout}>
+                <Image
+                  source={{ uri: imageUri }}
+                  style={[styles.preview, previewImageStyle ?? styles.previewFallback]}
+                  resizeMode="cover"
+                  onLoad={handlePreviewLoad}
+                />
+              </View>
+            ) : (
+              <LoggingButton
+                eventName="Verify Upload Screenshot Upload Select Clicked"
+                properties={{
+                  pageName: 'VerifyUpload',
+                  buttonName: '캡처 업로드',
+                  verify_mode: mode ?? 'initial',
+                }}
+              >
+                <Pressable style={styles.dropzone} onPress={handlePickImage}>
+                  <View style={styles.iconCircle}>
+                    <Icon name="uploadSimple" size={23} color="#2B2F38" />
+                  </View>
+                  <View style={styles.dropzoneText}>
+                    <Text style={styles.dropzoneTitle}>캡처 업로드</Text>
+                    <Text style={styles.dropzoneCaption}>AI로 사용시간이 자동 스캔돼요</Text>
+                  </View>
+                </Pressable>
+              </LoggingButton>
+            )}
           </View>
 
-          {hasImage ? (
-            <View style={styles.previewBox} onLayout={handlePreviewLayout}>
-              <Image
-                source={{ uri: imageUri }}
-                style={[styles.preview, previewImageStyle ?? styles.previewFallback]}
-                resizeMode="cover"
-                onLoad={handlePreviewLoad}
-              />
-            </View>
-          ) : (
-            <Pressable style={styles.dropzone} onPress={handlePickImage}>
-              <View style={styles.iconCircle}>
-                <Icon name="uploadSimple" size={23} color="#2B2F38" />
-              </View>
-              <View style={styles.dropzoneText}>
-                <Text style={styles.dropzoneTitle}>캡처 업로드</Text>
-                <Text style={styles.dropzoneCaption}>AI로 사용시간이 자동 스캔돼요</Text>
-              </View>
-            </Pressable>
-          )}
+          <LoggingButton
+            eventName="Verify Upload Screenshot Scan Start Clicked"
+            properties={{
+              pageName: 'VerifyUpload',
+              buttonName: '스캔하기',
+              verify_mode: mode ?? 'initial',
+            }}
+          >
+            <Button
+              label={buttonLabel}
+              color="assistive"
+              onPress={handleAnalyze}
+              disabled={buttonDisabled}
+              style={styles.button}
+              leadingIcon={
+                isAnalyzing ? <ActivityIndicator size="small" color="#FFFFFF" /> : undefined
+              }
+            />
+          </LoggingButton>
         </View>
-
-        <Button
-          label={buttonLabel}
-          color="assistive"
-          onPress={handleAnalyze}
-          disabled={buttonDisabled}
-          style={styles.button}
-          leadingIcon={isAnalyzing ? <ActivityIndicator size="small" color="#FFFFFF" /> : undefined}
-        />
-      </View>
-    </VerifyBottomSheet>
+      </VerifyBottomSheet>
+    </LoggingPage>
   );
 }
 

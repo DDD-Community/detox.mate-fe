@@ -4,7 +4,7 @@ import { Alert, Image, Pressable, StyleSheet, Text, View } from 'react-native';
 import ONBOARDING_CHECK_IMAGE from '@assets/onboarding-check.png';
 
 import { getFirstScreenTime } from '@/api';
-import { Button, Icon } from '@/components';
+import { Button, Icon, LoggingButton, LoggingPage } from '@/components';
 import { submitTotalUsageActivityRecord } from '@/features/activity-record/submitTotalUsageActivityRecord';
 import {
   formatHHMMToDisplay,
@@ -92,6 +92,7 @@ export default function VerifyDoneScreen() {
       await submitTotalUsageActivityRecord({
         value,
         groupChallengeParticipantId,
+        goalAchieved,
       });
     }
     router.replace(getVerifyPath('complete', verifyRoot));
@@ -132,93 +133,165 @@ export default function VerifyDoneScreen() {
 
   if (!isVerifyMode) {
     return (
-      <VerifyBottomSheet onDismiss={() => router.back()}>
-        <View style={styles.content}>
-          <View style={styles.heading}>
-            <Image source={ONBOARDING_CHECK_IMAGE} style={styles.checkIcon} resizeMode="contain" />
-            <Text style={styles.title}>스캔 완료 !</Text>
-          </View>
+      <LoggingPage
+        eventName="Verify Done Viewed"
+        properties={{ pageName: 'VerifyDone', verify_mode: mode ?? 'initial' }}
+      >
+        <VerifyBottomSheet onDismiss={() => router.back()}>
+          <View style={styles.content}>
+            <View style={styles.heading}>
+              <Image
+                source={ONBOARDING_CHECK_IMAGE}
+                style={styles.checkIcon}
+                resizeMode="contain"
+              />
+              <Text style={styles.title}>스캔 완료 !</Text>
+            </View>
 
-          <View style={styles.summary}>
-            <Text style={styles.summaryLabel}>내 스크린 타임</Text>
-            <Text style={styles.summaryValue}>{display}</Text>
-          </View>
+            <View style={styles.summary}>
+              <Text style={styles.summaryLabel}>내 스크린 타임</Text>
+              <Text style={styles.summaryValue}>{display}</Text>
+            </View>
 
-          <Button
-            label="개인 목표 설정하기"
-            color="primary"
-            onPress={handleSetGoal}
-            style={styles.button}
-          />
-        </View>
-      </VerifyBottomSheet>
+            <LoggingButton
+              eventName="Verify Done Goal Setup Start After Scan Clicked"
+              properties={{
+                pageName: 'VerifyDone',
+                buttonName: '개인 목표 설정하기',
+                verify_mode: mode ?? 'initial',
+              }}
+            >
+              <Button
+                label="개인 목표 설정하기"
+                color="primary"
+                onPress={handleSetGoal}
+                style={styles.button}
+              />
+            </LoggingButton>
+          </View>
+        </VerifyBottomSheet>
+      </LoggingPage>
     );
   }
 
   return (
-    <VerifyBottomSheet onDismiss={() => router.back()}>
-      <View style={styles.verifyContent}>
-        <View style={styles.heading}>
-          <Image source={ONBOARDING_CHECK_IMAGE} style={styles.checkIcon} resizeMode="contain" />
-          <Text style={styles.verifyTitle}>{'어제의 스크린 타임\n스캔 완료 !'}</Text>
-        </View>
-
-        <View style={styles.verifySummaryGroup}>
-          <View style={goalAchieved ? styles.verifySummary : styles.verifySummaryMissed}>
-            <Text
-              style={goalAchieved ? styles.verifySummaryLabel : styles.verifySummaryLabelMissed}
-            >
-              내 스크린 타임
-            </Text>
-            <Text
-              style={goalAchieved ? styles.verifySummaryValue : styles.verifySummaryValueMissed}
-            >
-              {goalAchieved ? display : `총 ${display}`}
-            </Text>
+    <LoggingPage
+      eventName="Verify Done Viewed"
+      properties={{
+        pageName: 'VerifyDone',
+        verify_mode: mode ?? 'verify',
+        goal_achieved: goalAchieved,
+      }}
+    >
+      <VerifyBottomSheet onDismiss={() => router.back()}>
+        <View style={styles.verifyContent}>
+          <View style={styles.heading}>
+            <Image source={ONBOARDING_CHECK_IMAGE} style={styles.checkIcon} resizeMode="contain" />
+            <Text style={styles.verifyTitle}>{'어제의 스크린 타임\n스캔 완료 !'}</Text>
           </View>
-          <View style={styles.goalCompareRow}>
-            <Icon
-              name="checkCircle"
-              size={20}
-              weight={goalAchieved ? 'regular' : 'fill'}
-              color={goalAchieved ? green[300] : system.red.opacity100}
-            />
-            <Text style={goalAchieved ? styles.goalCompareText : styles.goalCompareTextMissed}>
-              {goalAchieved
-                ? diffText
-                  ? `좋아요, 목표보다 ${diffText} 덜 썼어요!`
-                  : '좋아요, 스캔을 완료했어요!'
-                : '목표를 미달성 했어요, 조금만 더 힘내보아요!'}
-            </Text>
-          </View>
-        </View>
 
-        {goalAchieved ? (
-          <View style={styles.actionGroup}>
-            <View style={styles.actionRow}>
-              <Pressable style={styles.skipButton} onPress={handleSkip}>
-                <Text style={styles.skipButtonLabel}>건너뛰기</Text>
-              </Pressable>
-              <Pressable style={styles.postButton} onPress={handlePostFeed}>
-                <Text style={styles.postButtonLabel}>게시물 올리기</Text>
-              </Pressable>
+          <View style={styles.verifySummaryGroup}>
+            <View style={goalAchieved ? styles.verifySummary : styles.verifySummaryMissed}>
+              <Text
+                style={goalAchieved ? styles.verifySummaryLabel : styles.verifySummaryLabelMissed}
+              >
+                내 스크린 타임
+              </Text>
+              <Text
+                style={goalAchieved ? styles.verifySummaryValue : styles.verifySummaryValueMissed}
+              >
+                {goalAchieved ? display : `총 ${display}`}
+              </Text>
             </View>
-            <Pressable style={styles.reportButton} onPress={handleReportWrongTime}>
-              <Text style={styles.reportButtonLabel}>시간이 틀려요</Text>
-            </Pressable>
+            <View style={styles.goalCompareRow}>
+              <Icon
+                name="checkCircle"
+                size={20}
+                weight={goalAchieved ? 'regular' : 'fill'}
+                color={goalAchieved ? green[300] : system.red.opacity100}
+              />
+              <Text style={goalAchieved ? styles.goalCompareText : styles.goalCompareTextMissed}>
+                {goalAchieved
+                  ? diffText
+                    ? `좋아요, 목표보다 ${diffText} 덜 썼어요!`
+                    : '좋아요, 스캔을 완료했어요!'
+                  : '목표를 미달성 했어요, 조금만 더 힘내보아요!'}
+              </Text>
+            </View>
           </View>
-        ) : (
-          <View style={styles.actionGroup}>
-            <Pressable style={styles.recordButton} onPress={handleRecordRetro}>
-              <Text style={styles.recordButtonLabel}>회고 기록하기</Text>
-            </Pressable>
-            <Pressable style={styles.reportButton} onPress={handleReportWrongTime}>
-              <Text style={styles.reportButtonLabel}>시간이 틀려요</Text>
-            </Pressable>
-          </View>
-        )}
-      </View>
-    </VerifyBottomSheet>
+
+          {goalAchieved ? (
+            <View style={styles.actionGroup}>
+              <View style={styles.actionRow}>
+                <LoggingButton
+                  eventName="Verify Done Verification Skip Post Clicked"
+                  properties={{
+                    pageName: 'VerifyDone',
+                    buttonName: '건너뛰기',
+                    verify_mode: mode ?? 'verify',
+                  }}
+                >
+                  <Pressable style={styles.skipButton} onPress={handleSkip}>
+                    <Text style={styles.skipButtonLabel}>건너뛰기</Text>
+                  </Pressable>
+                </LoggingButton>
+                <LoggingButton
+                  eventName="Verify Done Post Feed Start Clicked"
+                  properties={{
+                    pageName: 'VerifyDone',
+                    buttonName: '게시물 올리기',
+                    verify_mode: mode ?? 'verify',
+                  }}
+                >
+                  <Pressable style={styles.postButton} onPress={handlePostFeed}>
+                    <Text style={styles.postButtonLabel}>게시물 올리기</Text>
+                  </Pressable>
+                </LoggingButton>
+              </View>
+              <LoggingButton
+                eventName="Verify Done Wrong Time Report Start Clicked"
+                properties={{
+                  pageName: 'VerifyDone',
+                  buttonName: '시간이 틀려요',
+                  goal_achieved: goalAchieved,
+                }}
+              >
+                <Pressable style={styles.reportButton} onPress={handleReportWrongTime}>
+                  <Text style={styles.reportButtonLabel}>시간이 틀려요</Text>
+                </Pressable>
+              </LoggingButton>
+            </View>
+          ) : (
+            <View style={styles.actionGroup}>
+              <LoggingButton
+                eventName="Verify Done Retro Start Clicked"
+                properties={{
+                  pageName: 'VerifyDone',
+                  buttonName: '회고 기록하기',
+                  verify_mode: mode ?? 'verify',
+                }}
+              >
+                <Pressable style={styles.recordButton} onPress={handleRecordRetro}>
+                  <Text style={styles.recordButtonLabel}>회고 기록하기</Text>
+                </Pressable>
+              </LoggingButton>
+              <LoggingButton
+                eventName="Verify Done Wrong Time Report Start Clicked"
+                properties={{
+                  pageName: 'VerifyDone',
+                  buttonName: '시간이 틀려요',
+                  goal_achieved: goalAchieved,
+                }}
+              >
+                <Pressable style={styles.reportButton} onPress={handleReportWrongTime}>
+                  <Text style={styles.reportButtonLabel}>시간이 틀려요</Text>
+                </Pressable>
+              </LoggingButton>
+            </View>
+          )}
+        </View>
+      </VerifyBottomSheet>
+    </LoggingPage>
   );
 }
 

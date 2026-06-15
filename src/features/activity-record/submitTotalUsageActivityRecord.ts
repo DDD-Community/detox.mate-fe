@@ -3,12 +3,14 @@ import {
   type ActivityRecordCreateResponse,
 } from '../../api/generated/model';
 import { customAxios } from '../../api/mutator';
+import { trackEvent } from '../../lib/analytics';
 
 type SubmitTotalUsageActivityRecordParams = {
   value?: string;
   groupChallengeParticipantId?: string | number;
   reflectionText?: string;
   activityImageObjectKey?: string;
+  goalAchieved?: boolean;
 };
 
 export function parseScreenTimeValueToMinutes(value: string | undefined): number {
@@ -28,6 +30,7 @@ export async function submitTotalUsageActivityRecord({
   groupChallengeParticipantId,
   reflectionText,
   activityImageObjectKey,
+  goalAchieved,
 }: SubmitTotalUsageActivityRecordParams) {
   const participantId = parseParticipantId(groupChallengeParticipantId);
 
@@ -35,7 +38,7 @@ export async function submitTotalUsageActivityRecord({
     throw new Error('인증 기록 등록에 필요한 참여자 정보가 없습니다.');
   }
 
-  return customAxios<ActivityRecordCreateResponse>({
+  const response = await customAxios<ActivityRecordCreateResponse>({
     url: '/activity-records',
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
@@ -54,4 +57,8 @@ export async function submitTotalUsageActivityRecord({
     retryPolicy: 'none',
     skipGlobalError: true,
   });
+  trackEvent('Verification Completed', {
+    ...(goalAchieved != null ? { goal_achieved: goalAchieved } : {}),
+  });
+  return response;
 }

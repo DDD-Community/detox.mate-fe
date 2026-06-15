@@ -1,6 +1,7 @@
 import { Modal, Pressable, StyleSheet, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
+import { LoggingButton } from '@/components';
 import { primitiveColors, radius, spacing, typography } from '@/lib/token';
 
 const { gray } = primitiveColors;
@@ -39,18 +40,32 @@ export function ProfileImageBottomSheet({
             <View style={styles.grabber} />
           </View>
           <View style={styles.list}>
-            <Pressable
-              onPress={onSelectDefault}
-              style={({ pressed }) => [styles.row, styles.rowBorder, pressed && styles.rowPressed]}
+            <LoggingButton
+              eventName="Profile Image Bottom Sheet Profile Image Default Select Clicked"
+              properties={{ pageName: 'ProfileImageBottomSheet', buttonName: '기본 이미지' }}
             >
-              <Text style={styles.rowText}>기본 이미지</Text>
-            </Pressable>
-            <Pressable
-              onPress={onSelectGallery}
-              style={({ pressed }) => [styles.row, pressed && styles.rowPressed]}
+              <Pressable
+                onPress={onSelectDefault}
+                style={({ pressed }) => [
+                  styles.row,
+                  styles.rowBorder,
+                  pressed && styles.rowPressed,
+                ]}
+              >
+                <Text style={styles.rowText}>기본 이미지</Text>
+              </Pressable>
+            </LoggingButton>
+            <LoggingButton
+              eventName="Profile Image Bottom Sheet Profile Image Gallery Select Clicked"
+              properties={{ pageName: 'ProfileImageBottomSheet', buttonName: '갤러리에서 선택' }}
             >
-              <Text style={styles.rowText}>갤러리에서 선택</Text>
-            </Pressable>
+              <Pressable
+                onPress={onSelectGallery}
+                style={({ pressed }) => [styles.row, pressed && styles.rowPressed]}
+              >
+                <Text style={styles.rowText}>갤러리에서 선택</Text>
+              </Pressable>
+            </LoggingButton>
           </View>
         </Pressable>
       </Pressable>

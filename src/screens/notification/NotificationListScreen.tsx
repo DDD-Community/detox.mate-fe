@@ -24,7 +24,7 @@ import { getFeed } from '../../api/generated/feed/feed';
 import { getGroup } from '../../api/generated/group/group';
 import { getNotificationHistory } from '../../api/generated/notification-history/notification-history';
 import { getUserUsageGoalTime } from '../../api/generated/user-usage-goal-time/user-usage-goal-time';
-import { Icon, Toast, useToastVisibility } from '../../components';
+import { Icon, LoggingButton, LoggingPage, Toast, useToastVisibility } from '../../components';
 import { memberStore } from '../../lib/memberStore';
 import { primitiveColors, radius, spacing, typography } from '../../lib/token';
 import type { GoalState } from '../feed/ActionGuideBanner';
@@ -639,65 +639,77 @@ export default function NotificationListScreen() {
   };
 
   return (
-    <View style={styles.root}>
-      <SafeAreaView edges={['top']}>
-        <View style={styles.header}>
-          <Text style={styles.headerTitle} numberOfLines={1}>
-            알림
-          </Text>
-          <Pressable
-            onPress={handleBack}
-            hitSlop={8}
-            style={styles.headerCloseButton}
-            accessibilityRole="button"
-            accessibilityLabel="닫기"
-          >
-            <Icon name="x" size={24} color={gray[900]} />
-          </Pressable>
-        </View>
-      </SafeAreaView>
-
-      {isLoading ? (
-        <View style={styles.loadingWrap}>
-          <ActivityIndicator color={gray[400]} />
-        </View>
-      ) : isEmpty ? (
-        <View style={styles.emptyWrap}>
-          <Image source={EMPTY_IMAGE} style={styles.emptyImage} resizeMode="contain" />
-          <Text style={styles.emptyText}>아직 알림이 없어요</Text>
-        </View>
-      ) : (
-        <SectionList
-          sections={sections}
-          keyExtractor={(item, index) => String(item.id ?? index)}
-          stickySectionHeadersEnabled={false}
-          renderSectionHeader={({ section }) => (
-            <View style={styles.sectionHeader}>
-              <Text style={styles.sectionHeaderText}>{section.title}</Text>
-            </View>
-          )}
-          renderItem={({ item }) => (
-            <Pressable
-              onPress={() => handlePressItem(item)}
-              style={({ pressed }) => [styles.row, pressed && styles.rowPressed]}
+    <LoggingPage eventName="Notification List Viewed" properties={{ pageName: 'NotificationList' }}>
+      <View style={styles.root}>
+        <SafeAreaView edges={['top']}>
+          <View style={styles.header}>
+            <Text style={styles.headerTitle} numberOfLines={1}>
+              알림
+            </Text>
+            <LoggingButton
+              eventName="Notification List Close Clicked"
+              properties={{ pageName: 'NotificationList', buttonName: '닫기' }}
             >
-              <Image
-                source={getSenderAvatarSource(item)}
-                style={styles.avatar}
-                resizeMode="cover"
-              />
-              <View style={styles.rowBody}>
-                <Text style={styles.message}>{formatMessage(item)}</Text>
-                <Text style={styles.timeLabel}>{formatRelativeTime(item.createdAt)}</Text>
-              </View>
-            </Pressable>
-          )}
-          contentContainerStyle={styles.listContent}
-        />
-      )}
+              <Pressable
+                onPress={handleBack}
+                hitSlop={8}
+                style={styles.headerCloseButton}
+                accessibilityRole="button"
+                accessibilityLabel="닫기"
+              >
+                <Icon name="x" size={24} color={gray[900]} />
+              </Pressable>
+            </LoggingButton>
+          </View>
+        </SafeAreaView>
 
-      <Toast visible={toastVisible} message={toastMessage} />
-    </View>
+        {isLoading ? (
+          <View style={styles.loadingWrap}>
+            <ActivityIndicator color={gray[400]} />
+          </View>
+        ) : isEmpty ? (
+          <View style={styles.emptyWrap}>
+            <Image source={EMPTY_IMAGE} style={styles.emptyImage} resizeMode="contain" />
+            <Text style={styles.emptyText}>아직 알림이 없어요</Text>
+          </View>
+        ) : (
+          <SectionList
+            sections={sections}
+            keyExtractor={(item, index) => String(item.id ?? index)}
+            stickySectionHeadersEnabled={false}
+            renderSectionHeader={({ section }) => (
+              <View style={styles.sectionHeader}>
+                <Text style={styles.sectionHeaderText}>{section.title}</Text>
+              </View>
+            )}
+            renderItem={({ item }) => (
+              <LoggingButton
+                eventName="Notification List Notification Item Open Clicked"
+                properties={{ pageName: 'NotificationList', buttonName: '알림 항목' }}
+              >
+                <Pressable
+                  onPress={() => handlePressItem(item)}
+                  style={({ pressed }) => [styles.row, pressed && styles.rowPressed]}
+                >
+                  <Image
+                    source={getSenderAvatarSource(item)}
+                    style={styles.avatar}
+                    resizeMode="cover"
+                  />
+                  <View style={styles.rowBody}>
+                    <Text style={styles.message}>{formatMessage(item)}</Text>
+                    <Text style={styles.timeLabel}>{formatRelativeTime(item.createdAt)}</Text>
+                  </View>
+                </Pressable>
+              </LoggingButton>
+            )}
+            contentContainerStyle={styles.listContent}
+          />
+        )}
+
+        <Toast visible={toastVisible} message={toastMessage} />
+      </View>
+    </LoggingPage>
   );
 }
 

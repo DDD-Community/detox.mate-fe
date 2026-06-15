@@ -1,7 +1,7 @@
 import { ActivityIndicator, Image, Pressable, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
-import { Button } from '@/components';
+import { Button, LoggingButton } from '@/components';
 import { primitiveColors, radius, spacing, typography } from '@/lib/token';
 import { JoinedGroupBody, JoinedGroupList, type JoinedGroupItem } from './JoinedGroupBody';
 import { WeeklyStatusCard } from './WeeklyStatusCard';
@@ -100,17 +100,22 @@ export function MyPageBody({
             아직 목표를 설정하지 않았어요.{'\n'}목표 설정 알림을 보내주세요!
           </Text>
         </View>
-        <Pressable
-          accessibilityRole="button"
-          accessibilityLabel="콕 찌르기"
-          accessibilityState={{ disabled: isPokeDisabled }}
-          disabled={isPokeDisabled}
-          onPress={onPoke}
-          style={[styles.pokeCta, isPokeDisabled && styles.pokeCtaDisabled]}
+        <LoggingButton
+          eventName="My Page Poke Clicked"
+          properties={{ pageName: 'MyPage', buttonName: '친구 콕 찌르기' }}
         >
-          <Image source={POCK_IMG} style={styles.pockIcon} resizeMode="contain" />
-          <Text style={styles.pokeCtaText}>콕 찌르기</Text>
-        </Pressable>
+          <Pressable
+            accessibilityRole="button"
+            accessibilityLabel="콕 찌르기"
+            accessibilityState={{ disabled: isPokeDisabled }}
+            disabled={isPokeDisabled}
+            onPress={onPoke}
+            style={[styles.pokeCta, isPokeDisabled && styles.pokeCtaDisabled]}
+          >
+            <Image source={POCK_IMG} style={styles.pockIcon} resizeMode="contain" />
+            <Text style={styles.pokeCtaText}>콕 찌르기</Text>
+          </Pressable>
+        </LoggingButton>
       </View>
     );
   }
@@ -144,20 +149,30 @@ export function MyPageBody({
     return (
       <View style={styles.goalSetBody}>
         <View style={styles.actionCardRow}>
-          <GroupActionCard
-            image={GROUP_PLUS_IMG}
-            imageWidth={30}
-            imageHeight={29}
-            label="새 그룹 만들기"
-            onPress={onCreateGroup}
-          />
-          <GroupActionCard
-            image={GROUP_INVITE_IMG}
-            imageWidth={42}
-            imageHeight={29}
-            label="초대 코드 입력"
-            onPress={onEnterInviteCode}
-          />
+          <LoggingButton
+            eventName="My Page Group Create Start Clicked"
+            properties={{ pageName: 'MyPage', buttonName: '새 그룹 만들기' }}
+          >
+            <GroupActionCard
+              image={GROUP_PLUS_IMG}
+              imageWidth={30}
+              imageHeight={29}
+              label="새 그룹 만들기"
+              onPress={onCreateGroup}
+            />
+          </LoggingButton>
+          <LoggingButton
+            eventName="My Page Group Join Start Clicked"
+            properties={{ pageName: 'MyPage', buttonName: '초대 코드 입력' }}
+          >
+            <GroupActionCard
+              image={GROUP_INVITE_IMG}
+              imageWidth={42}
+              imageHeight={29}
+              label="초대 코드 입력"
+              onPress={onEnterInviteCode}
+            />
+          </LoggingButton>
         </View>
         <Text style={styles.actionHelperText}>새 그룹을 만들거나 친구가 만든 그룹에 입장해요</Text>
       </View>
@@ -195,12 +210,17 @@ export function MyPageBody({
       </View>
 
       <SafeAreaView edges={['bottom']} style={styles.ctaWrap}>
-        <Button
-          label="목표 스크린 타임 설정"
-          color="assistive"
-          onPress={onSetGoal}
-          style={styles.cta}
-        />
+        <LoggingButton
+          eventName="My Page Goal Setup Start Clicked"
+          properties={{ pageName: 'MyPage', buttonName: '목표 스크린 타임 설정' }}
+        >
+          <Button
+            label="목표 스크린 타임 설정"
+            color="assistive"
+            onPress={onSetGoal}
+            style={styles.cta}
+          />
+        </LoggingButton>
       </SafeAreaView>
     </>
   );

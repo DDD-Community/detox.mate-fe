@@ -1,5 +1,6 @@
 import { Modal, Pressable, StyleSheet, Text, View } from 'react-native';
 
+import { LoggingButton } from '@/components';
 import { primitiveColors, spacing, typography } from '@/lib/token';
 
 const { gray, green } = primitiveColors;
@@ -30,27 +31,37 @@ export function LogoutConfirmAlert({
           <Text style={styles.title}>로그아웃 하시겠어요?</Text>
 
           <View style={styles.actions}>
-            <Pressable
-              onPress={onClose}
-              disabled={loading}
-              style={({ pressed }) => [
-                styles.cancelButton,
-                pressed && !loading && styles.cancelPressed,
-              ]}
+            <LoggingButton
+              eventName="Logout Confirm Alert Cancel Clicked"
+              properties={{ pageName: 'LogoutConfirmAlert', buttonName: '취소' }}
             >
-              <Text style={styles.cancelText}>취소</Text>
-            </Pressable>
-            <Pressable
-              onPress={onConfirm}
-              disabled={loading}
-              style={({ pressed }) => [
-                styles.confirmButton,
-                pressed && !loading && styles.confirmPressed,
-                loading && styles.disabled,
-              ]}
+              <Pressable
+                onPress={onClose}
+                disabled={loading}
+                style={({ pressed }) => [
+                  styles.cancelButton,
+                  pressed && !loading && styles.cancelPressed,
+                ]}
+              >
+                <Text style={styles.cancelText}>취소</Text>
+              </Pressable>
+            </LoggingButton>
+            <LoggingButton
+              eventName="Logout Confirm Alert Logout Confirm Clicked"
+              properties={{ pageName: 'LogoutConfirmAlert', buttonName: '로그아웃' }}
             >
-              <Text style={styles.confirmText}>로그아웃</Text>
-            </Pressable>
+              <Pressable
+                onPress={onConfirm}
+                disabled={loading}
+                style={({ pressed }) => [
+                  styles.confirmButton,
+                  pressed && !loading && styles.confirmPressed,
+                  loading && styles.disabled,
+                ]}
+              >
+                <Text style={styles.confirmText}>로그아웃</Text>
+              </Pressable>
+            </LoggingButton>
           </View>
         </Pressable>
       </Pressable>

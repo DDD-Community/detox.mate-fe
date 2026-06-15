@@ -4,7 +4,7 @@ import { Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { getUser } from '@/api';
-import { Button, Icon } from '@/components';
+import { Button, Icon, LoggingButton, LoggingPage } from '@/components';
 import { primitiveColors, radius, spacing, typography } from '@/lib/token';
 
 const { brown, gray } = primitiveColors;
@@ -38,53 +38,65 @@ export default function EditNicknameScreen() {
   };
 
   return (
-    <View style={styles.root}>
-      <SafeAreaView edges={['top']}>
-        <View style={styles.header}>
-          <Pressable
-            onPress={handleBack}
-            hitSlop={8}
-            style={styles.headerBackButton}
-            accessibilityRole="button"
-            accessibilityLabel="뒤로가기"
+    <LoggingPage eventName="Edit Nickname Viewed" properties={{ pageName: 'EditNickname' }}>
+      <View style={styles.root}>
+        <SafeAreaView edges={['top']}>
+          <View style={styles.header}>
+            <LoggingButton
+              eventName="Edit Nickname Back Clicked"
+              properties={{ pageName: 'EditNickname', buttonName: '뒤로가기' }}
+            >
+              <Pressable
+                onPress={handleBack}
+                hitSlop={8}
+                style={styles.headerBackButton}
+                accessibilityRole="button"
+                accessibilityLabel="뒤로가기"
+              >
+                <Icon name="caretLeft" size={24} color={gray[900]} />
+              </Pressable>
+            </LoggingButton>
+            <Text style={styles.headerTitle} numberOfLines={1}>
+              닉네임 변경
+            </Text>
+          </View>
+        </SafeAreaView>
+
+        <View style={styles.body}>
+          <Text style={styles.title}>새로운 닉네임을{'\n'}입력해 주세요</Text>
+
+          <View style={styles.inputWrap}>
+            <TextInput
+              style={styles.input}
+              value={nickname}
+              onChangeText={handleChange}
+              placeholder="닉네임을 입력해 주세요"
+              placeholderTextColor={gray[300]}
+              maxLength={NICKNAME_MAX_LENGTH}
+              autoFocus
+            />
+            <Text style={styles.counter}>
+              {nickname.length}/{NICKNAME_MAX_LENGTH}
+            </Text>
+          </View>
+        </View>
+
+        <SafeAreaView edges={['bottom']} style={styles.ctaWrap}>
+          <LoggingButton
+            eventName="Edit Nickname Nickname Submit Clicked"
+            properties={{ pageName: 'EditNickname', buttonName: '변경 완료' }}
           >
-            <Icon name="caretLeft" size={24} color={gray[900]} />
-          </Pressable>
-          <Text style={styles.headerTitle} numberOfLines={1}>
-            닉네임 변경
-          </Text>
-        </View>
-      </SafeAreaView>
-
-      <View style={styles.body}>
-        <Text style={styles.title}>새로운 닉네임을{'\n'}입력해 주세요</Text>
-
-        <View style={styles.inputWrap}>
-          <TextInput
-            style={styles.input}
-            value={nickname}
-            onChangeText={handleChange}
-            placeholder="닉네임을 입력해 주세요"
-            placeholderTextColor={gray[300]}
-            maxLength={NICKNAME_MAX_LENGTH}
-            autoFocus
-          />
-          <Text style={styles.counter}>
-            {nickname.length}/{NICKNAME_MAX_LENGTH}
-          </Text>
-        </View>
+            <Button
+              label="변경 완료"
+              color="primary"
+              disabled={!isValid || isSubmitting}
+              onPress={handleSubmit}
+              style={styles.cta}
+            />
+          </LoggingButton>
+        </SafeAreaView>
       </View>
-
-      <SafeAreaView edges={['bottom']} style={styles.ctaWrap}>
-        <Button
-          label="변경 완료"
-          color="primary"
-          disabled={!isValid || isSubmitting}
-          onPress={handleSubmit}
-          style={styles.cta}
-        />
-      </SafeAreaView>
-    </View>
+    </LoggingPage>
   );
 }
 

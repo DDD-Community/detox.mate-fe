@@ -1,6 +1,7 @@
 import { useRef, useState } from 'react';
 import { Image, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import Svg, { Circle, Defs, LinearGradient, Path, Stop } from 'react-native-svg';
+import { LoggingButton } from '../../components';
 import { Icon } from '../../components/Icon';
 import { primitiveColors, radius, spacing, typography } from '../../lib/token';
 
@@ -65,11 +66,13 @@ export default function MemberSection({ members, onInvite, onMemberPress }: Prop
         }}
       >
         {members.map((member) => (
-          <MemberAvatar
+          <LoggingButton
             key={member.id}
-            member={member}
-            onPress={() => onMemberPress?.(member.id)}
-          />
+            eventName="Feed Home Member Avatar Press Clicked"
+            properties={{ pageName: 'FeedHome', buttonName: '멤버 아바타' }}
+          >
+            <MemberAvatar member={member} onPress={() => onMemberPress?.(member.id)} />
+          </LoggingButton>
         ))}
         <InviteButton onPress={onInvite} />
       </ScrollView>

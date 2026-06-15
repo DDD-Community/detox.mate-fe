@@ -13,9 +13,10 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { getUserUsageGoalTime, UserUsageGoalTimeRequestUsageGoalType } from '@/api';
-import { AppLogo, Button, HeaderAction } from '@/components';
+import { AppLogo, Button, HeaderAction, LoggingButton, LoggingPage } from '@/components';
 import { logError, normalizeError } from '@/api/errors';
 import { formatHHMMToDisplay, formatMinutesAsHourMinute } from '@/lib/formatDuration';
+import { trackEvent } from '@/lib/analytics';
 import { primitiveColors, radius, spacing, typography } from '@/lib/token';
 
 const { brown, gray } = primitiveColors;
@@ -118,6 +119,7 @@ export default function GoalSetupScreen({ mode = 'initial' }: GoalSetupScreenPro
         ],
       });
       await SecureStore.deleteItemAsync('needsGoalReset');
+      trackEvent('Goal Time Set', { mode });
 
       if (isEditMode) {
         router.back();
@@ -132,58 +134,69 @@ export default function GoalSetupScreen({ mode = 'initial' }: GoalSetupScreenPro
   };
 
   return (
-    <View style={styles.root}>
-      <SafeAreaView edges={['top']}>
-        <View style={isEditMode ? styles.editHeader : styles.initialHeader}>
+    <LoggingPage eventName="Goal Setup Viewed" properties={{ pageName: 'GoalSetup', mode }}>
+      <View style={styles.root}>
+        <SafeAreaView edges={['top']}>
+          <View style={isEditMode ? styles.editHeader : styles.initialHeader}>
+            {isEditMode ? (
+              <LoggingButton
+                eventName="Goal Setup Back Clicked"
+                properties={{ pageName: 'GoalSetup', buttonName: '뒤로가기', mode }}
+              >
+                <HeaderAction
+                  label="목표 설정"
+                  onPress={handleCancel}
+                  accessibilityLabel="뒤로가기"
+                />
+              </LoggingButton>
+            ) : (
+              <AppLogo />
+            )}
+          </View>
+        </SafeAreaView>
+
+        <View style={styles.body}>
+          <View style={styles.textGroup}>
+            <Text style={styles.title}>개인 목표 스크린타임 설정</Text>
+            <Text style={styles.description}>2주에 한 번 변경할 수 있어요.</Text>
+          </View>
+
           {isEditMode ? (
-            <HeaderAction label="목표 설정" onPress={handleCancel} accessibilityLabel="뒤로가기" />
+            <SummaryCard
+              label="기존 목표"
+              value={
+                existingGoalMinutes != null ? formatMinutesAsHourMinute(existingGoalMinutes) : '-'
+              }
+            />
           ) : (
-            <AppLogo />
+            <SummaryCard label="내 스크린 타임" value={screenTimeDisplay ?? '-'} />
+          )}
+
+          {isLoading ? (
+            <View style={styles.loadingWrap}>
+              <ActivityIndicator color={gray[400]} />
+            </View>
+          ) : (
+            <GoalTimeWheelPicker
+              hour={selectedHour}
+              minute={selectedMinute}
+              onHourChange={handleHourChange}
+              onMinuteChange={handleMinuteChange}
+            />
           )}
         </View>
-      </SafeAreaView>
 
-      <View style={styles.body}>
-        <View style={styles.textGroup}>
-          <Text style={styles.title}>개인 목표 스크린타임 설정</Text>
-          <Text style={styles.description}>2주에 한 번 변경할 수 있어요.</Text>
-        </View>
-
-        {isEditMode ? (
-          <SummaryCard
-            label="기존 목표"
-            value={
-              existingGoalMinutes != null ? formatMinutesAsHourMinute(existingGoalMinutes) : '-'
-            }
+        <SafeAreaView edges={['bottom']} style={styles.cta}>
+          <Button
+            label={isSaving ? '저장 중...' : '저장하기'}
+            color="primary"
+            onPress={handleSave}
+            disabled={isLoading || isSaving || isUnchanged}
+            style={styles.fullButton}
           />
-        ) : (
-          <SummaryCard label="내 스크린 타임" value={screenTimeDisplay ?? '-'} />
-        )}
-
-        {isLoading ? (
-          <View style={styles.loadingWrap}>
-            <ActivityIndicator color={gray[400]} />
-          </View>
-        ) : (
-          <GoalTimeWheelPicker
-            hour={selectedHour}
-            minute={selectedMinute}
-            onHourChange={handleHourChange}
-            onMinuteChange={handleMinuteChange}
-          />
-        )}
+        </SafeAreaView>
       </View>
-
-      <SafeAreaView edges={['bottom']} style={styles.cta}>
-        <Button
-          label={isSaving ? '저장 중...' : '저장하기'}
-          color="primary"
-          onPress={handleSave}
-          disabled={isLoading || isSaving || isUnchanged}
-          style={styles.fullButton}
-        />
-      </SafeAreaView>
-    </View>
+    </LoggingPage>
   );
 }
 

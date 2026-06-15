@@ -15,7 +15,14 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { getFeed, getGroup, type GroupMemberResponse } from '@/api';
-import { ClipboardCopyToast, Icon, useClipboardCopyToast } from '@/components';
+import {
+  ClipboardCopyToast,
+  Icon,
+  LoggingButton,
+  LoggingPage,
+  useClipboardCopyToast,
+} from '@/components';
+import { setAnalyticsUserProperties, trackEvent } from '@/lib/analytics';
 import { primitiveColors, radius, spacing, typography } from '@/lib/token';
 import { getInviteShareUrl } from '@/lib/airbridge';
 import { LeaveGroupAlert } from './LeaveGroupAlert';
@@ -66,6 +73,9 @@ export default function GroupInfoScreen() {
 
         const data = await getGroup().getGroup(targetId);
         if (cancelled) return;
+        if (data.myRole === 'OWNER' || data.myRole === 'MEMBER') {
+          setAnalyticsUserProperties({ group_role: data.myRole });
+        }
         setGroupName(data.name ?? '');
         setInviteCode(data.inviteCode ?? '');
         setMembers(data.members ?? []);
@@ -109,6 +119,7 @@ export default function GroupInfoScreen() {
 
   const handleShareInviteCode = async () => {
     if (!inviteCode) return;
+    trackEvent('Invite Share Button Clicked', { page_name: 'GroupInfo' });
     await Share.share({
       message: `우리 함께 디지털 디톡스해요! 💉\n디톡스 메이트 그룹 초대 코드: ${inviteCode}\n${getInviteShareUrl(inviteCode)}`,
     });
@@ -138,124 +149,148 @@ export default function GroupInfoScreen() {
   };
 
   return (
-    <View style={styles.root}>
-      <SafeAreaView edges={['top']}>
-        <View style={styles.header}>
-          <Pressable
-            onPress={handleBack}
-            hitSlop={8}
-            style={styles.headerBackButton}
-            accessibilityRole="button"
-            accessibilityLabel="뒤로가기"
+    <LoggingPage eventName="Group Info Viewed" properties={{ pageName: 'GroupInfo' }}>
+      <View style={styles.root}>
+        <SafeAreaView edges={['top']}>
+          <View style={styles.header}>
+            <LoggingButton
+              eventName="Group Info Back Clicked"
+              properties={{ pageName: 'GroupInfo', buttonName: '뒤로가기' }}
+            >
+              <Pressable
+                onPress={handleBack}
+                hitSlop={8}
+                style={styles.headerBackButton}
+                accessibilityRole="button"
+                accessibilityLabel="뒤로가기"
+              >
+                <Icon name="caretLeft" size={24} color={gray[900]} />
+              </Pressable>
+            </LoggingButton>
+            <Text style={styles.headerTitle} numberOfLines={1}>
+              {groupName}
+            </Text>
+          </View>
+        </SafeAreaView>
+
+        {isLoading ? (
+          <View style={styles.loadingWrap}>
+            <ActivityIndicator color={gray[400]} />
+          </View>
+        ) : (
+          <ScrollView
+            style={styles.bodyScroll}
+            contentContainerStyle={styles.body}
+            showsVerticalScrollIndicator={false}
           >
-            <Icon name="caretLeft" size={24} color={gray[900]} />
-          </Pressable>
-          <Text style={styles.headerTitle} numberOfLines={1}>
-            {groupName}
-          </Text>
-        </View>
-      </SafeAreaView>
+            <Text style={styles.memberCount}>멤버 {members.length}명</Text>
 
-      {isLoading ? (
-        <View style={styles.loadingWrap}>
-          <ActivityIndicator color={gray[400]} />
-        </View>
-      ) : (
-        <ScrollView
-          style={styles.bodyScroll}
-          contentContainerStyle={styles.body}
-          showsVerticalScrollIndicator={false}
-        >
-          <Text style={styles.memberCount}>멤버 {members.length}명</Text>
-
-          <View style={styles.inviteCard}>
-            <View style={styles.codeRow}>
-              <Text style={styles.codeLabel}>초대 코드</Text>
-              <Text style={styles.codeText}>{inviteCode}</Text>
-              <Pressable onPress={handleCopyInviteCode} hitSlop={8}>
-                <Icon name="copy" size={20} color={gray[800]} />
+            <View style={styles.inviteCard}>
+              <View style={styles.codeRow}>
+                <Text style={styles.codeLabel}>초대 코드</Text>
+                <Text style={styles.codeText}>{inviteCode}</Text>
+                <LoggingButton
+                  eventName="Group Info Invite Code Copy Clicked"
+                  properties={{ pageName: 'GroupInfo', buttonName: '초대 코드 복사' }}
+                >
+                  <Pressable onPress={handleCopyInviteCode} hitSlop={8}>
+                    <Icon name="copy" size={20} color={gray[800]} />
+                  </Pressable>
+                </LoggingButton>
+              </View>
+              <Pressable onPress={handleShareInviteCode} style={styles.shareButton}>
+                <Icon name="shareFat" size={18} color={gray[800]} />
+                <Text style={styles.shareText}>친구에게 공유하기</Text>
               </Pressable>
             </View>
-            <Pressable onPress={handleShareInviteCode} style={styles.shareButton}>
-              <Icon name="shareFat" size={18} color={gray[800]} />
-              <Text style={styles.shareText}>친구에게 공유하기</Text>
-            </Pressable>
-          </View>
 
-          <View style={styles.memberList}>
-            {members.map((m) => {
-              const isMe = myUserId != null && m.userId === myUserId;
-              const displayName = m.displayName ?? '';
-              const content = (
-                <>
-                  <View style={styles.memberAvatarFrame}>
-                    <Image
-                      source={m.profileImageUrl ? { uri: m.profileImageUrl } : DEFAULT_AVATAR}
-                      style={styles.memberAvatar}
-                      resizeMode="cover"
-                    />
-                    <View pointerEvents="none" style={styles.memberAvatarBorder} />
-                  </View>
-                  <Text style={styles.memberName} numberOfLines={1}>
-                    {isMe ? '나' : displayName}
-                  </Text>
-                </>
-              );
-
-              if (isMe) {
-                return (
-                  <View key={m.id} style={styles.memberCard}>
-                    {content}
-                  </View>
+            <View style={styles.memberList}>
+              {members.map((m) => {
+                const isMe = myUserId != null && m.userId === myUserId;
+                const displayName = m.displayName ?? '';
+                const content = (
+                  <>
+                    <View style={styles.memberAvatarFrame}>
+                      <Image
+                        source={m.profileImageUrl ? { uri: m.profileImageUrl } : DEFAULT_AVATAR}
+                        style={styles.memberAvatar}
+                        resizeMode="cover"
+                      />
+                      <View pointerEvents="none" style={styles.memberAvatarBorder} />
+                    </View>
+                    <Text style={styles.memberName} numberOfLines={1}>
+                      {isMe ? '나' : displayName}
+                    </Text>
+                  </>
                 );
-              }
 
-              const todayChallengeRecord =
-                m.userId != null ? todayChallengeRecordByUserId[m.userId] : undefined;
-              return (
-                <Pressable
-                  key={m.id}
-                  style={styles.memberCard}
-                  onPress={() =>
-                    router.push({
-                      pathname: '/(group)/mypage',
-                      params: {
-                        memberId: m.id != null ? String(m.id) : '',
-                        friendName: displayName,
-                        friendUserId: m.userId != null ? String(m.userId) : '',
-                        friendGroupId: groupId != null ? String(groupId) : '',
-                        groupChallengeId:
-                          currentGroupChallengeId != null ? String(currentGroupChallengeId) : '',
-                        challengeRecordId:
-                          todayChallengeRecord?.challengeRecordId != null
-                            ? String(todayChallengeRecord.challengeRecordId)
-                            : '',
-                        isPoked: todayChallengeRecord?.isPoked ? '1' : '0',
-                      },
-                    })
-                  }
-                >
-                  {content}
-                </Pressable>
-              );
-            })}
-          </View>
+                if (isMe) {
+                  return (
+                    <View key={m.id} style={styles.memberCard}>
+                      {content}
+                    </View>
+                  );
+                }
 
-          <Pressable onPress={handleOpenLeaveAlert} style={styles.leaveCard}>
-            <Text style={styles.leaveText}>그룹 나가기</Text>
-          </Pressable>
-        </ScrollView>
-      )}
+                const todayChallengeRecord =
+                  m.userId != null ? todayChallengeRecordByUserId[m.userId] : undefined;
+                return (
+                  <LoggingButton
+                    key={m.id}
+                    eventName="Group Info Member Profile Open Clicked"
+                    properties={{ pageName: 'GroupInfo', buttonName: '멤버 카드' }}
+                  >
+                    <Pressable
+                      style={styles.memberCard}
+                      onPress={() =>
+                        router.push({
+                          pathname: '/(group)/mypage',
+                          params: {
+                            memberId: m.id != null ? String(m.id) : '',
+                            friendName: displayName,
+                            friendUserId: m.userId != null ? String(m.userId) : '',
+                            friendGroupId: groupId != null ? String(groupId) : '',
+                            groupChallengeId:
+                              currentGroupChallengeId != null
+                                ? String(currentGroupChallengeId)
+                                : '',
+                            challengeRecordId:
+                              todayChallengeRecord?.challengeRecordId != null
+                                ? String(todayChallengeRecord.challengeRecordId)
+                                : '',
+                            isPoked: todayChallengeRecord?.isPoked ? '1' : '0',
+                          },
+                        })
+                      }
+                    >
+                      {content}
+                    </Pressable>
+                  </LoggingButton>
+                );
+              })}
+            </View>
 
-      <LeaveGroupAlert
-        visible={isLeaveAlertOpen}
-        onClose={handleCloseLeaveAlert}
-        onConfirm={handleConfirmLeave}
-        loading={isLeaving}
-      />
+            <LoggingButton
+              eventName="Group Info Leave Group Alert Open Clicked"
+              properties={{ pageName: 'GroupInfo', buttonName: '그룹 나가기' }}
+            >
+              <Pressable onPress={handleOpenLeaveAlert} style={styles.leaveCard}>
+                <Text style={styles.leaveText}>그룹 나가기</Text>
+              </Pressable>
+            </LoggingButton>
+          </ScrollView>
+        )}
 
-      <ClipboardCopyToast visible={copyToastVisible} position="bottom" bottomOffset={60} />
-    </View>
+        <LeaveGroupAlert
+          visible={isLeaveAlertOpen}
+          onClose={handleCloseLeaveAlert}
+          onConfirm={handleConfirmLeave}
+          loading={isLeaving}
+        />
+
+        <ClipboardCopyToast visible={copyToastVisible} position="bottom" bottomOffset={60} />
+      </View>
+    </LoggingPage>
   );
 }
 

@@ -7,6 +7,7 @@ type ExpoExtra = {
   gitSha?: unknown;
   sentryDsn?: unknown;
   apiBaseUrl?: unknown;
+  amplitudeApiKey?: unknown;
 };
 
 const extra = Constants.expoConfig?.extra as ExpoExtra | undefined;
@@ -16,6 +17,7 @@ const buildChannel = extra?.buildChannel;
 const gitSha = extra?.gitSha;
 const sentryDsn = extra?.sentryDsn;
 const apiBaseUrl = extra?.apiBaseUrl;
+const amplitudeApiKey = extra?.amplitudeApiKey;
 
 if (appEnv !== 'development' && appEnv !== 'production') {
   throw new Error('Missing Expo config value: extra.appEnv');
@@ -41,6 +43,10 @@ if (typeof apiBaseUrl !== 'string' || apiBaseUrl.length === 0) {
   throw new Error('Missing Expo config value: extra.apiBaseUrl');
 }
 
+if (typeof amplitudeApiKey !== 'string' || amplitudeApiKey.length === 0) {
+  throw new Error('Missing Expo config value: extra.amplitudeApiKey');
+}
+
 export const env = {
   appEnv,
   appVersion,
@@ -48,4 +54,5 @@ export const env = {
   gitSha: gitSha ?? null,
   sentryDsn: sentryDsn ?? null,
   apiBaseUrl,
+  amplitudeApiKey,
 } as const;
