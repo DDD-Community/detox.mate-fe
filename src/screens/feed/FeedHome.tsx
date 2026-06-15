@@ -1,4 +1,5 @@
 import { router, useFocusEffect, useLocalSearchParams } from 'expo-router';
+import { getInviteShareUrl } from '../../lib/airbridge';
 import * as SecureStore from 'expo-secure-store';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
@@ -395,7 +396,7 @@ export default function FeedHome() {
   const handleInvite = async () => {
     if (!group?.inviteCode) return;
     await Share.share({
-      message: `우리 함께 디지털 디톡스해요! 💉\n디톡스 메이트 그룹 초대 코드: ${group.inviteCode}`,
+      message: `우리 함께 디지털 디톡스해요! 💉\n디톡스 메이트 그룹 초대 코드: ${group.inviteCode}\n${getInviteShareUrl(group.inviteCode)}`,
     });
   };
 
