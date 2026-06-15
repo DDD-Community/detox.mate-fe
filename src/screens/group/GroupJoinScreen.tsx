@@ -87,16 +87,6 @@ export default function GroupJoinScreen() {
           ? getUserErrorMessage(appError, GROUP_JOIN_ERROR_POLICY)
           : GROUP_JOIN_FALLBACK_MESSAGE;
       setError(message);
-    } catch (e: any) {
-      const status = e?.response?.status;
-      console.log(status);
-      if (status === 409) {
-        setError('초대 코드를 다시 확인해 주세요');
-      } else if (status === 404) {
-        setError('초대 코드를 다시 확인해 주세요');
-      } else {
-        setError('초대 코드를 다시 확인해 주세요');
-      }
     } finally {
       setLoading(false);
     }
