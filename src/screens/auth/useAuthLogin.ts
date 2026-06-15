@@ -13,6 +13,7 @@ import {
 import { logError, normalizeError } from '@/api/errors';
 import type { AppError } from '@/api/errors/types';
 import { registerDevicePushToken } from '@/lib/fcmToken';
+import { setAnalyticsUserId, trackEvent } from '@/lib/analytics';
 import { APP_ACCESS_PERMISSION_GUIDE_SEEN_KEY, TERMS_ACCEPTED_KEY } from './authStorageKeys';
 
 export type LoginProvider = 'kakao' | 'apple' | 'test';
@@ -49,7 +50,10 @@ export function useAuthLogin({ onLoginFailure }: UseAuthLoginOptions = {}) {
 
     setPendingProvider(provider);
     try {
-      await login();
+      const user = await login();
+      setAnalyticsUserId(user.id);
+      trackEvent('Login Completed', { is_new_user: user.isNewUser });
+
       await SecureStore.setItemAsync(TERMS_ACCEPTED_KEY, 'true');
       try {
         await registerDevicePushToken();

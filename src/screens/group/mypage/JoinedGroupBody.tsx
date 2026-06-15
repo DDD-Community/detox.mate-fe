@@ -1,6 +1,6 @@
 import { Image, Pressable, StyleSheet, Text, View } from 'react-native';
 
-import { Button, Icon } from '@/components';
+import { Button, Icon, LoggingButton } from '@/components';
 import { primitiveColors, radius, spacing, typography } from '@/lib/token';
 import { WeeklyStatusCard } from './WeeklyStatusCard';
 
@@ -58,28 +58,30 @@ export function JoinedGroupList({ groups, onGroupPress }: JoinedGroupListProps) 
   return (
     <>
       {groups.map((group) => (
-        <Pressable
+        <LoggingButton
           key={group.id ?? group.name}
-          onPress={() => onGroupPress?.(group.id)}
-          style={styles.groupCard}
+          eventName="My Page Group Info Open Clicked"
+          properties={{ pageName: 'MyPage', buttonName: '그룹 카드' }}
         >
-          <View style={styles.groupCardLeft}>
-            <View style={styles.avatarStack}>
-              {group.members.slice(0, 3).map((m, idx) => (
-                <MemberAvatar
-                  key={`${group.id ?? group.name}-${m.name}-${idx}`}
-                  name={m.name}
-                  profileImageUrl={m.profileImageUrl}
-                  offset={idx * 23}
-                />
-              ))}
+          <Pressable onPress={() => onGroupPress?.(group.id)} style={styles.groupCard}>
+            <View style={styles.groupCardLeft}>
+              <View style={styles.avatarStack}>
+                {group.members.slice(0, 3).map((m, idx) => (
+                  <MemberAvatar
+                    key={`${group.id ?? group.name}-${m.name}-${idx}`}
+                    name={m.name}
+                    profileImageUrl={m.profileImageUrl}
+                    offset={idx * 23}
+                  />
+                ))}
+              </View>
+              <Text style={styles.groupName} numberOfLines={1}>
+                {group.name}
+              </Text>
             </View>
-            <Text style={styles.groupName} numberOfLines={1}>
-              {group.name}
-            </Text>
-          </View>
-          <Icon name="caretRight" size={24} color={gray[200]} />
-        </Pressable>
+            <Icon name="caretRight" size={24} color={gray[200]} />
+          </Pressable>
+        </LoggingButton>
       ))}
     </>
   );
@@ -115,13 +117,18 @@ export function JoinedGroupBody({
       <JoinedGroupList groups={groups} onGroupPress={onGroupPress} />
 
       <View>
-        <Button
-          label="목표 스크린 타임 변경"
-          color="assistive"
-          disabled={daysUntilGoalChange > 0}
-          onPress={onGoalChangePress}
-          style={styles.cta}
-        />
+        <LoggingButton
+          eventName="My Page Goal Time Edit Open Clicked"
+          properties={{ pageName: 'MyPage', buttonName: '목표 스크린 타임 변경' }}
+        >
+          <Button
+            label="목표 스크린 타임 변경"
+            color="assistive"
+            disabled={daysUntilGoalChange > 0}
+            onPress={onGoalChangePress}
+            style={styles.cta}
+          />
+        </LoggingButton>
         {daysUntilGoalChange > 0 ? (
           <View style={styles.changeHintRow}>
             <Icon name="info" size={18} weight="fill" color={gray[500]} />

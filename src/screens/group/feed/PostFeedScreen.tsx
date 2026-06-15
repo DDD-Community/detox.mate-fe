@@ -13,7 +13,7 @@ import {
   TextInput,
   View,
 } from 'react-native';
-import { HeaderAction, Icon } from '../../../components';
+import { HeaderAction, Icon, LoggingButton, LoggingPage } from '../../../components';
 import { submitTotalUsageActivityRecord } from '../../../features/activity-record/submitTotalUsageActivityRecord';
 import { uploadImage } from '../../../lib/uploadImage';
 import { primitiveColors } from '../../../lib/token/primitive/colors';
@@ -48,6 +48,7 @@ export default function PostFeedScreen() {
     await submitTotalUsageActivityRecord({
       value,
       groupChallengeParticipantId,
+      goalAchieved: true,
     });
     router.replace('/(group)/verify/complete');
   };
@@ -70,6 +71,7 @@ export default function PostFeedScreen() {
         groupChallengeParticipantId: participantId,
         reflectionText: text,
         activityImageObjectKey: objectKey,
+        goalAchieved: true,
       });
       router.replace('/(group)/verify/complete');
     } finally {
@@ -78,70 +80,92 @@ export default function PostFeedScreen() {
   };
 
   return (
-    <SafeAreaView style={styles.root}>
-      <View style={styles.header}>
-        <HeaderAction
-          label="게시물 올리기"
-          onPress={() => router.back()}
-          iconColor={gray[900]}
-          style={styles.headerBack}
-          textStyle={styles.headerTitle}
-          accessibilityLabel="뒤로가기"
-        />
-        <Pressable style={styles.headerSkip} onPress={handleSkip}>
-          <Text style={styles.headerSkipLabel}>건너뛰기</Text>
-        </Pressable>
-      </View>
-
-      <KeyboardAvoidingView
-        style={styles.body}
-        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
-      >
-        <Pressable style={styles.dropzone} onPress={handlePickImage}>
-          {imageAsset ? (
-            <Image source={{ uri: imageAsset.uri }} style={styles.preview} resizeMode="cover" />
-          ) : (
-            <>
-              <View style={styles.iconCircle}>
-                <Icon name="uploadSimple" size={23} color="#2B2F38" />
-              </View>
-              <View style={styles.dropzoneText}>
-                <Text style={styles.dropzoneTitle}>사진 업로드 (선택)</Text>
-                <Text style={styles.dropzoneCaption}>디톡스 시간에 무얼 했나요?</Text>
-              </View>
-            </>
-          )}
-        </Pressable>
-
-        <View style={styles.textareaSection}>
-          <Text style={styles.textareaLabel}>직접 입력 (선택)</Text>
-          <View style={styles.textareaBox}>
-            <TextInput
-              style={styles.textarea}
-              placeholder="오늘 대신 뭐 했는지 자유롭게 남겨보세요 🌿"
-              placeholderTextColor={gray[300]}
-              multiline
-              value={text}
-              onChangeText={setText}
-            />
-          </View>
-        </View>
-
-        <View style={styles.cta}>
-          <Pressable
-            style={[styles.postButton, !canPost && styles.postButtonDisabled]}
-            onPress={handlePost}
-            disabled={!canPost}
+    <LoggingPage eventName="Post Feed Viewed" properties={{ pageName: 'PostFeed' }}>
+      <SafeAreaView style={styles.root}>
+        <View style={styles.header}>
+          <LoggingButton
+            eventName="Post Feed Back Clicked"
+            properties={{ pageName: 'PostFeed', buttonName: '뒤로가기' }}
           >
-            {submitting ? (
-              <ActivityIndicator color="#FFFFFF" />
-            ) : (
-              <Text style={styles.postButtonLabel}>게시하기</Text>
-            )}
-          </Pressable>
+            <HeaderAction
+              label="게시물 올리기"
+              onPress={() => router.back()}
+              iconColor={gray[900]}
+              style={styles.headerBack}
+              textStyle={styles.headerTitle}
+              accessibilityLabel="뒤로가기"
+            />
+          </LoggingButton>
+          <LoggingButton
+            eventName="Post Feed Skip Clicked"
+            properties={{ pageName: 'PostFeed', buttonName: '건너뛰기' }}
+          >
+            <Pressable style={styles.headerSkip} onPress={handleSkip}>
+              <Text style={styles.headerSkipLabel}>건너뛰기</Text>
+            </Pressable>
+          </LoggingButton>
         </View>
-      </KeyboardAvoidingView>
-    </SafeAreaView>
+
+        <KeyboardAvoidingView
+          style={styles.body}
+          behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+        >
+          <LoggingButton
+            eventName="Post Feed Photo Upload Select Clicked"
+            properties={{ pageName: 'PostFeed', buttonName: '사진 업로드' }}
+          >
+            <Pressable style={styles.dropzone} onPress={handlePickImage}>
+              {imageAsset ? (
+                <Image source={{ uri: imageAsset.uri }} style={styles.preview} resizeMode="cover" />
+              ) : (
+                <>
+                  <View style={styles.iconCircle}>
+                    <Icon name="uploadSimple" size={23} color="#2B2F38" />
+                  </View>
+                  <View style={styles.dropzoneText}>
+                    <Text style={styles.dropzoneTitle}>사진 업로드 (선택)</Text>
+                    <Text style={styles.dropzoneCaption}>디톡스 시간에 무얼 했나요?</Text>
+                  </View>
+                </>
+              )}
+            </Pressable>
+          </LoggingButton>
+
+          <View style={styles.textareaSection}>
+            <Text style={styles.textareaLabel}>직접 입력 (선택)</Text>
+            <View style={styles.textareaBox}>
+              <TextInput
+                style={styles.textarea}
+                placeholder="오늘 대신 뭐 했는지 자유롭게 남겨보세요 🌿"
+                placeholderTextColor={gray[300]}
+                multiline
+                value={text}
+                onChangeText={setText}
+              />
+            </View>
+          </View>
+
+          <View style={styles.cta}>
+            <LoggingButton
+              eventName="Post Feed Post Submit Clicked"
+              properties={{ pageName: 'PostFeed', buttonName: '게시하기' }}
+            >
+              <Pressable
+                style={[styles.postButton, !canPost && styles.postButtonDisabled]}
+                onPress={handlePost}
+                disabled={!canPost}
+              >
+                {submitting ? (
+                  <ActivityIndicator color="#FFFFFF" />
+                ) : (
+                  <Text style={styles.postButtonLabel}>게시하기</Text>
+                )}
+              </Pressable>
+            </LoggingButton>
+          </View>
+        </KeyboardAvoidingView>
+      </SafeAreaView>
+    </LoggingPage>
   );
 }
 

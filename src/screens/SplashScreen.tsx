@@ -6,6 +6,8 @@ import { Image, StyleSheet, View } from 'react-native';
 import { logError, normalizeError } from '../api/errors';
 import { getGroup } from '../api/generated/group/group';
 import { getGroupChallenge } from '../api/generated/group-challenge/group-challenge';
+import { LoggingPage } from '../components';
+import { trackEvent } from '../lib/analytics';
 import { TERMS_ACCEPTED_KEY } from './auth/authStorageKeys';
 
 type InitialFeedRouteParams = {
@@ -49,6 +51,7 @@ export default function SplashScreen() {
     let cancelled = false;
 
     const redirect = async () => {
+      trackEvent('App Opened');
       await new Promise((resolve) => setTimeout(resolve, 1000));
 
       const accessToken = await SecureStore.getItemAsync('accessTokenKey');
@@ -100,13 +103,15 @@ export default function SplashScreen() {
   }, [router]);
 
   return (
-    <View style={styles.container}>
-      <Image
-        source={require('../../assets/splash_logo.png')}
-        style={styles.image}
-        resizeMode="contain"
-      />
-    </View>
+    <LoggingPage eventName="Splash Viewed" properties={{ pageName: 'Splash' }}>
+      <View style={styles.container}>
+        <Image
+          source={require('../../assets/splash_logo.png')}
+          style={styles.image}
+          resizeMode="contain"
+        />
+      </View>
+    </LoggingPage>
   );
 }
 

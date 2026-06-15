@@ -1,5 +1,6 @@
 import { Modal, Pressable, StyleSheet, Text, View } from 'react-native';
 
+import { LoggingButton } from '@/components';
 import { primitiveColors, spacing, typography } from '@/lib/token';
 
 const { gray, green } = primitiveColors;
@@ -31,18 +32,31 @@ export function NotificationPermissionAlert({
           </View>
 
           <View style={styles.actions}>
-            <Pressable
-              onPress={onConfirm}
-              style={({ pressed }) => [styles.primaryButton, pressed && styles.primaryPressed]}
+            <LoggingButton
+              eventName="Notification Permission Alert App Settings Open Clicked"
+              properties={{ pageName: 'NotificationPermissionAlert', buttonName: '설정으로 가기' }}
             >
-              <Text style={styles.primaryText}>설정으로 가기</Text>
-            </Pressable>
-            <Pressable
-              onPress={onClose}
-              style={({ pressed }) => [styles.secondaryButton, pressed && styles.secondaryPressed]}
+              <Pressable
+                onPress={onConfirm}
+                style={({ pressed }) => [styles.primaryButton, pressed && styles.primaryPressed]}
+              >
+                <Text style={styles.primaryText}>설정으로 가기</Text>
+              </Pressable>
+            </LoggingButton>
+            <LoggingButton
+              eventName="Notification Permission Alert Cancel Clicked"
+              properties={{ pageName: 'NotificationPermissionAlert', buttonName: '취소' }}
             >
-              <Text style={styles.secondaryText}>취소</Text>
-            </Pressable>
+              <Pressable
+                onPress={onClose}
+                style={({ pressed }) => [
+                  styles.secondaryButton,
+                  pressed && styles.secondaryPressed,
+                ]}
+              >
+                <Text style={styles.secondaryText}>취소</Text>
+              </Pressable>
+            </LoggingButton>
           </View>
         </Pressable>
       </Pressable>

@@ -1,6 +1,6 @@
 import { Modal, Pressable, StyleSheet, Text, View } from 'react-native';
 
-import { Icon } from '@/components';
+import { Icon, LoggingButton } from '@/components';
 import { primitiveColors, radius, spacing, typography } from '@/lib/token';
 
 const { gray, system } = primitiveColors;
@@ -42,27 +42,37 @@ export function LeaveGroupAlert({ visible, onClose, onConfirm, loading }: LeaveG
           </View>
 
           <View style={styles.actions}>
-            <Pressable
-              onPress={onClose}
-              disabled={loading}
-              style={({ pressed }) => [
-                styles.cancelButton,
-                pressed && !loading && styles.cancelPressed,
-              ]}
+            <LoggingButton
+              eventName="Leave Group Alert Cancel Clicked"
+              properties={{ pageName: 'LeaveGroupAlert', buttonName: '취소' }}
             >
-              <Text style={styles.cancelText}>취소</Text>
-            </Pressable>
-            <Pressable
-              onPress={onConfirm}
-              disabled={loading}
-              style={({ pressed }) => [
-                styles.confirmButton,
-                pressed && !loading && styles.confirmPressed,
-                loading && styles.disabled,
-              ]}
+              <Pressable
+                onPress={onClose}
+                disabled={loading}
+                style={({ pressed }) => [
+                  styles.cancelButton,
+                  pressed && !loading && styles.cancelPressed,
+                ]}
+              >
+                <Text style={styles.cancelText}>취소</Text>
+              </Pressable>
+            </LoggingButton>
+            <LoggingButton
+              eventName="Leave Group Alert Leave Group Confirm Clicked"
+              properties={{ pageName: 'LeaveGroupAlert', buttonName: '동의하고 나가기' }}
             >
-              <Text style={styles.confirmText}>동의하고 나가기</Text>
-            </Pressable>
+              <Pressable
+                onPress={onConfirm}
+                disabled={loading}
+                style={({ pressed }) => [
+                  styles.confirmButton,
+                  pressed && !loading && styles.confirmPressed,
+                  loading && styles.disabled,
+                ]}
+              >
+                <Text style={styles.confirmText}>동의하고 나가기</Text>
+              </Pressable>
+            </LoggingButton>
           </View>
         </Pressable>
       </Pressable>

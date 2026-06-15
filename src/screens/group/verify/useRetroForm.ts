@@ -51,6 +51,7 @@ export function useRetroForm({
         groupChallengeParticipantId: participantId,
         reflectionText: text,
         activityImageObjectKey: objectKey,
+        goalAchieved: false,
       });
       router.replace(getVerifyPath('complete', verifyRoot));
     } catch (error) {

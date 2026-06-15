@@ -1,7 +1,7 @@
 import { Modal, Pressable, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
-import { Icon } from '@/components';
+import { Icon, LoggingButton, LoggingPage } from '@/components';
 import { primitiveColors, radius, spacing, typography } from '@/lib/token';
 
 const { brown, gray } = primitiveColors;
@@ -43,49 +43,63 @@ export function AppAccessPermissionGuideModal({
       onRequestClose={onConfirm}
       statusBarTranslucent
     >
-      <View style={styles.backdrop}>
-        <SafeAreaView edges={['bottom']} style={styles.sheetWrap}>
-          <View style={styles.sheet}>
-            <View style={styles.grabberWrap}>
-              <View style={styles.grabber} />
-            </View>
-
-            <View style={styles.content}>
-              <View style={styles.topContent}>
-                <Text style={styles.title}>앱 접근 권한 안내</Text>
-
-                <View style={styles.permissionBlock}>
-                  <View style={styles.permissionCard}>
-                    <PermissionItem
-                      icon="imageSquare"
-                      title="갤러리"
-                      description="스크린 타임 사진 인증 시 필요해요."
-                    />
-                    <PermissionItem
-                      icon="bellRinging"
-                      title="알림"
-                      description="팀원 현황, 인증 마감 알림 수신 시 필요해요."
-                    />
-                  </View>
-
-                  <Text style={styles.note}>
-                    허용 상태는 휴대폰 설정 메뉴 &gt; 디톡스메이트 앱 &gt; 디톡스메이트 접근
-                    허용에서 권한 설정을 변경할 수 있습니다.
-                  </Text>
-                </View>
+      <LoggingPage
+        eventName="App Access Permission Guide Modal Viewed"
+        properties={{ pageName: 'AppAccessPermissionGuideModal' }}
+        enabled={visible}
+      >
+        <View style={styles.backdrop}>
+          <SafeAreaView edges={['bottom']} style={styles.sheetWrap}>
+            <View style={styles.sheet}>
+              <View style={styles.grabberWrap}>
+                <View style={styles.grabber} />
               </View>
 
-              <Pressable
-                onPress={onConfirm}
-                disabled={confirming}
-                style={({ pressed }) => [styles.confirmButton, pressed && styles.confirmPressed]}
-              >
-                <Text style={styles.confirmText}>확인</Text>
-              </Pressable>
+              <View style={styles.content}>
+                <View style={styles.topContent}>
+                  <Text style={styles.title}>앱 접근 권한 안내</Text>
+
+                  <View style={styles.permissionBlock}>
+                    <View style={styles.permissionCard}>
+                      <PermissionItem
+                        icon="imageSquare"
+                        title="갤러리"
+                        description="스크린 타임 사진 인증 시 필요해요."
+                      />
+                      <PermissionItem
+                        icon="bellRinging"
+                        title="알림"
+                        description="팀원 현황, 인증 마감 알림 수신 시 필요해요."
+                      />
+                    </View>
+
+                    <Text style={styles.note}>
+                      허용 상태는 휴대폰 설정 메뉴 &gt; 디톡스메이트 앱 &gt; 디톡스메이트 접근
+                      허용에서 권한 설정을 변경할 수 있습니다.
+                    </Text>
+                  </View>
+                </View>
+
+                <LoggingButton
+                  eventName="App Access Permission Guide Modal Confirm Clicked"
+                  properties={{ pageName: 'AppAccessPermissionGuideModal', buttonName: '확인' }}
+                >
+                  <Pressable
+                    onPress={onConfirm}
+                    disabled={confirming}
+                    style={({ pressed }) => [
+                      styles.confirmButton,
+                      pressed && styles.confirmPressed,
+                    ]}
+                  >
+                    <Text style={styles.confirmText}>확인</Text>
+                  </Pressable>
+                </LoggingButton>
+              </View>
             </View>
-          </View>
-        </SafeAreaView>
-      </View>
+          </SafeAreaView>
+        </View>
+      </LoggingPage>
     </Modal>
   );
 }

@@ -1,7 +1,7 @@
 import { Image, Pressable, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
-import { HeaderAction, Icon } from '@/components';
+import { HeaderAction, Icon, LoggingButton } from '@/components';
 import { primitiveColors, radius, spacing, typography } from '@/lib/token';
 
 import TURTLE_IMG from '@assets/turtle-hi.png';
@@ -72,47 +72,67 @@ export function MyPageProfileHeader({
       <SafeAreaView edges={['top']}>
         <View style={styles.header}>
           {isFriend ? (
-            <HeaderAction
-              label={displayName}
-              onPress={onBack}
-              iconColor={foregroundColor}
-              style={styles.headerLeft}
-              textStyle={[styles.headerTitle, hasProfileBackground && styles.photoText]}
-              accessibilityLabel="뒤로가기"
-            />
+            <LoggingButton
+              eventName="My Page Back Clicked"
+              properties={{ pageName: 'MyPage', buttonName: '뒤로가기' }}
+            >
+              <HeaderAction
+                label={displayName}
+                onPress={onBack}
+                iconColor={foregroundColor}
+                style={styles.headerLeft}
+                textStyle={[styles.headerTitle, hasProfileBackground && styles.photoText]}
+                accessibilityLabel="뒤로가기"
+              />
+            </LoggingButton>
           ) : (
             <>
               {canGoBack ? (
-                <HeaderAction
-                  label="마이페이지"
-                  onPress={onBack}
-                  iconColor={foregroundColor}
-                  style={styles.headerLeft}
-                  textStyle={[styles.headerTitle, hasProfileBackground && styles.photoText]}
-                  accessibilityLabel="뒤로가기"
-                />
+                <LoggingButton
+                  eventName="My Page Back Clicked"
+                  properties={{ pageName: 'MyPage', buttonName: '뒤로가기' }}
+                >
+                  <HeaderAction
+                    label="마이페이지"
+                    onPress={onBack}
+                    iconColor={foregroundColor}
+                    style={styles.headerLeft}
+                    textStyle={[styles.headerTitle, hasProfileBackground && styles.photoText]}
+                    accessibilityLabel="뒤로가기"
+                  />
+                </LoggingButton>
               ) : (
                 <Text style={[styles.headerTitle, hasProfileBackground && styles.photoText]}>
                   마이페이지
                 </Text>
               )}
               <View style={styles.headerActions}>
-                <Pressable
-                  onPress={onHome}
-                  hitSlop={8}
-                  accessibilityRole="button"
-                  accessibilityLabel="홈으로 이동"
+                <LoggingButton
+                  eventName="My Page Home Open Clicked"
+                  properties={{ pageName: 'MyPage', buttonName: '홈 아이콘' }}
                 >
-                  <Icon name="house" size={24} color={foregroundColor} />
-                </Pressable>
-                <Pressable
-                  onPress={onSettings}
-                  hitSlop={8}
-                  accessibilityRole="button"
-                  accessibilityLabel="설정"
+                  <Pressable
+                    onPress={onHome}
+                    hitSlop={8}
+                    accessibilityRole="button"
+                    accessibilityLabel="홈으로 이동"
+                  >
+                    <Icon name="house" size={24} color={foregroundColor} />
+                  </Pressable>
+                </LoggingButton>
+                <LoggingButton
+                  eventName="My Page Settings Open Clicked"
+                  properties={{ pageName: 'MyPage', buttonName: '설정 아이콘' }}
                 >
-                  <Icon name="gearSix" size={24} color={foregroundColor} />
-                </Pressable>
+                  <Pressable
+                    onPress={onSettings}
+                    hitSlop={8}
+                    accessibilityRole="button"
+                    accessibilityLabel="설정"
+                  >
+                    <Icon name="gearSix" size={24} color={foregroundColor} />
+                  </Pressable>
+                </LoggingButton>
               </View>
             </>
           )}
@@ -133,12 +153,17 @@ export function MyPageProfileHeader({
             </Text>
           </View>
         ) : (
-          <Pressable onPress={onEditName} style={styles.nameRow} hitSlop={8}>
-            <Text style={[styles.nameText, hasProfileBackground && styles.photoText]}>
-              {displayName}
-            </Text>
-            <Icon name="pencilSimple" size={16} color={foregroundColor} />
-          </Pressable>
+          <LoggingButton
+            eventName="My Page Nickname Edit Open Clicked"
+            properties={{ pageName: 'MyPage', buttonName: '닉네임 변경' }}
+          >
+            <Pressable onPress={onEditName} style={styles.nameRow} hitSlop={8}>
+              <Text style={[styles.nameText, hasProfileBackground && styles.photoText]}>
+                {displayName}
+              </Text>
+              <Icon name="pencilSimple" size={16} color={foregroundColor} />
+            </Pressable>
+          </LoggingButton>
         )}
 
         <View style={styles.chipRow}>
@@ -147,14 +172,19 @@ export function MyPageProfileHeader({
             <ProfileChip label={`달성률 ${String(achievementRate).padStart(2, '0')}%`} />
           </View>
           {!isFriend && (
-            <Pressable
-              onPress={onEditProfileImage}
-              disabled={isUpdatingProfileImage}
-              style={[styles.cameraButton, isUpdatingProfileImage && styles.cameraButtonDisabled]}
-              hitSlop={8}
+            <LoggingButton
+              eventName="My Page Profile Image Edit Open Clicked"
+              properties={{ pageName: 'MyPage', buttonName: '프로필 이미지 변경' }}
             >
-              <Icon name="camera" size={20} color={gray[900]} />
-            </Pressable>
+              <Pressable
+                onPress={onEditProfileImage}
+                disabled={isUpdatingProfileImage}
+                style={[styles.cameraButton, isUpdatingProfileImage && styles.cameraButtonDisabled]}
+                hitSlop={8}
+              >
+                <Icon name="camera" size={20} color={gray[900]} />
+              </Pressable>
+            </LoggingButton>
           )}
         </View>
       </View>

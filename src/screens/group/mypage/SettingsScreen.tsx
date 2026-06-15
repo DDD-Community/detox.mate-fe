@@ -14,8 +14,9 @@ import {
   registerDevicePushToken,
   unregisterDevicePushToken,
 } from '@/lib/fcmToken';
-import { Icon } from '@/components';
+import { Icon, LoggingButton, LoggingPage } from '@/components';
 import { env } from '@/config/env';
+import { setAnalyticsUserProperties, trackEvent } from '@/lib/analytics';
 import { primitiveColors, radius, spacing, typography } from '@/lib/token';
 import {
   APP_ACCESS_PERMISSION_GUIDE_SEEN_KEY,
@@ -123,6 +124,9 @@ export default function SettingsScreen() {
       const me = await getUser().getMe();
       if (cancelled) return;
       updateUserPushPreference(me.pushNotificationEnabled ?? true);
+      setAnalyticsUserProperties({
+        push_notification_enabled: me.pushNotificationEnabled ?? true,
+      });
     })();
     return () => {
       cancelled = true;
@@ -161,6 +165,10 @@ export default function SettingsScreen() {
     updateUserPushPreference(enabled);
     try {
       await patchPushNotificationEnabled(enabled);
+      trackEvent('Push Notification Setting Updated', {
+        push_notification_enabled: enabled,
+      });
+      setAnalyticsUserProperties({ push_notification_enabled: enabled });
     } catch (e) {
       logError(normalizeError(e), {
         scope: 'notification.push',
@@ -226,15 +234,21 @@ export default function SettingsScreen() {
   };
 
   const handleContact = () => {
-    Linking.openURL('https://docs.google.com/forms/d/e/1FAIpQLSew334-Pk-oTV-kJsT_OOn6CPOqhH14CySHF07ZzgC9RuKwaA/viewform');
+    Linking.openURL(
+      'https://docs.google.com/forms/d/e/1FAIpQLSew334-Pk-oTV-kJsT_OOn6CPOqhH14CySHF07ZzgC9RuKwaA/viewform'
+    );
   };
 
   const handleTerms = () => {
-    Linking.openURL('https://app.notion.com/p/happysisyphe/342ad7a38ce58022b466ffec4ca39482?source=copy_link');
+    Linking.openURL(
+      'https://app.notion.com/p/happysisyphe/342ad7a38ce58022b466ffec4ca39482?source=copy_link'
+    );
   };
 
   const handlePrivacy = () => {
-    Linking.openURL('https://app.notion.com/p/happysisyphe/342ad7a38ce580e1ba8ac09e06c96dca?source=copy_link');
+    Linking.openURL(
+      'https://app.notion.com/p/happysisyphe/342ad7a38ce580e1ba8ac09e06c96dca?source=copy_link'
+    );
   };
 
   const handleOpenLogoutAlert = () => {
@@ -298,69 +312,101 @@ export default function SettingsScreen() {
   };
 
   return (
-    <View style={styles.root}>
-      <SafeAreaView edges={['top']}>
-        <View style={styles.header}>
-          <Pressable
-            onPress={handleBack}
-            hitSlop={8}
-            style={styles.headerBackButton}
-            accessibilityRole="button"
-            accessibilityLabel="뒤로가기"
-          >
-            <Icon name="caretLeft" size={24} color={gray[900]} />
-          </Pressable>
-          <Text style={styles.headerTitle} numberOfLines={1}>
-            설정
-          </Text>
-        </View>
-      </SafeAreaView>
+    <LoggingPage eventName="Settings Viewed" properties={{ pageName: 'Settings' }}>
+      <View style={styles.root}>
+        <SafeAreaView edges={['top']}>
+          <View style={styles.header}>
+            <LoggingButton
+              eventName="Settings Back Clicked"
+              properties={{ pageName: 'Settings', buttonName: '뒤로가기' }}
+            >
+              <Pressable
+                onPress={handleBack}
+                hitSlop={8}
+                style={styles.headerBackButton}
+                accessibilityRole="button"
+                accessibilityLabel="뒤로가기"
+              >
+                <Icon name="caretLeft" size={24} color={gray[900]} />
+              </Pressable>
+            </LoggingButton>
+            <Text style={styles.headerTitle} numberOfLines={1}>
+              설정
+            </Text>
+          </View>
+        </SafeAreaView>
 
-      <View style={styles.body}>
-        <View style={styles.card}>
-          <ToggleRow
-            label="푸시 알림"
-            value={pushAlarm}
-            onChange={handleTogglePushAlarm}
-            disabled={pushToggleDisabled}
-          />
+        <View style={styles.body}>
+          <View style={styles.card}>
+            <ToggleRow
+              label="푸시 알림"
+              value={pushAlarm}
+              onChange={handleTogglePushAlarm}
+              disabled={pushToggleDisabled}
+            />
+          </View>
+
+          <View style={styles.card}>
+            <LoggingButton
+              eventName="Settings Contact Open Clicked"
+              properties={{ pageName: 'Settings', buttonName: '문의하기' }}
+            >
+              <LinkRow label="문의하기" onPress={handleContact} hasDivider />
+            </LoggingButton>
+            <LoggingButton
+              eventName="Settings Terms Open Clicked"
+              properties={{ pageName: 'Settings', buttonName: '서비스 이용 약관' }}
+            >
+              <LinkRow label="서비스 이용 약관" onPress={handleTerms} hasDivider />
+            </LoggingButton>
+            <LoggingButton
+              eventName="Settings Privacy Open Clicked"
+              properties={{ pageName: 'Settings', buttonName: '개인정보 처리방침' }}
+            >
+              <LinkRow label="개인정보 처리방침" onPress={handlePrivacy} hasDivider />
+            </LoggingButton>
+            <LoggingButton
+              eventName="Settings Logout Alert Open Clicked"
+              properties={{ pageName: 'Settings', buttonName: '로그아웃' }}
+            >
+              <LinkRow label="로그아웃" onPress={handleOpenLogoutAlert} />
+            </LoggingButton>
+          </View>
+
+          <View style={styles.metaRow}>
+            <LoggingButton
+              eventName="Settings Withdraw Alert Open Clicked"
+              properties={{ pageName: 'Settings', buttonName: '회원 탈퇴' }}
+            >
+              <Pressable onPress={handleOpenWithdrawAlert} hitSlop={8}>
+                <Text style={styles.withdrawText}>회원 탈퇴</Text>
+              </Pressable>
+            </LoggingButton>
+            <Text style={styles.versionText}>{appVersionLabel}</Text>
+          </View>
         </View>
 
-        <View style={styles.card}>
-          <LinkRow label="문의하기" onPress={handleContact} hasDivider />
-          <LinkRow label="서비스 이용 약관" onPress={handleTerms} hasDivider />
-          <LinkRow label="개인정보 처리방침" onPress={handlePrivacy} hasDivider />
-          <LinkRow label="로그아웃" onPress={handleOpenLogoutAlert} />
-        </View>
+        <LogoutConfirmAlert
+          visible={isLogoutAlertOpen}
+          onClose={handleCloseLogoutAlert}
+          onConfirm={handleConfirmLogout}
+          loading={isLoggingOut}
+        />
 
-        <View style={styles.metaRow}>
-          <Pressable onPress={handleOpenWithdrawAlert} hitSlop={8}>
-            <Text style={styles.withdrawText}>회원 탈퇴</Text>
-          </Pressable>
-          <Text style={styles.versionText}>{appVersionLabel}</Text>
-        </View>
+        <WithdrawConfirmAlert
+          visible={isWithdrawAlertOpen}
+          onClose={handleCloseWithdrawAlert}
+          onConfirm={handleConfirmWithdraw}
+          loading={isWithdrawing}
+        />
+
+        <NotificationPermissionAlert
+          visible={isPermissionAlertOpen}
+          onClose={handleClosePermissionAlert}
+          onConfirm={handleOpenAppSettings}
+        />
       </View>
-
-      <LogoutConfirmAlert
-        visible={isLogoutAlertOpen}
-        onClose={handleCloseLogoutAlert}
-        onConfirm={handleConfirmLogout}
-        loading={isLoggingOut}
-      />
-
-      <WithdrawConfirmAlert
-        visible={isWithdrawAlertOpen}
-        onClose={handleCloseWithdrawAlert}
-        onConfirm={handleConfirmWithdraw}
-        loading={isWithdrawing}
-      />
-
-      <NotificationPermissionAlert
-        visible={isPermissionAlertOpen}
-        onClose={handleClosePermissionAlert}
-        onConfirm={handleOpenAppSettings}
-      />
-    </View>
+    </LoggingPage>
   );
 }
 

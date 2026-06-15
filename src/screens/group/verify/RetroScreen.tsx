@@ -12,7 +12,7 @@ import {
   View,
 } from 'react-native';
 
-import { HeaderAction, Icon } from '@/components';
+import { HeaderAction, Icon, LoggingButton, LoggingPage } from '@/components';
 import { primitiveColors, typography } from '@/lib/token';
 import { useRetroForm } from './useRetroForm';
 import type { VerifyRoot } from './verifyFlowParams';
@@ -33,71 +33,92 @@ export default function RetroScreen() {
     });
 
   return (
-    <SafeAreaView style={styles.root}>
-      <View style={styles.header}>
-        <HeaderAction
-          label="오늘의 회고"
-          onPress={() => router.back()}
-          iconColor={gray[900]}
-          style={styles.headerBack}
-          textStyle={styles.headerTitle}
-          accessibilityLabel="뒤로가기"
-        />
-      </View>
+    <LoggingPage eventName="Retro Viewed" properties={{ pageName: 'Retro' }}>
+      <SafeAreaView style={styles.root}>
+        <View style={styles.header}>
+          <LoggingButton
+            eventName="Retro Back Clicked"
+            properties={{ pageName: 'Retro', buttonName: '뒤로가기' }}
+          >
+            <HeaderAction
+              label="오늘의 회고"
+              onPress={() => router.back()}
+              iconColor={gray[900]}
+              style={styles.headerBack}
+              textStyle={styles.headerTitle}
+              accessibilityLabel="뒤로가기"
+            />
+          </LoggingButton>
+        </View>
 
-      <KeyboardAvoidingView
-        style={styles.body}
-        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
-      >
-        <View style={styles.content}>
-          <Pressable style={styles.dropzone} onPress={handlePickImage}>
-            {imageAsset ? (
-              <Image source={{ uri: imageAsset.uri }} style={styles.preview} resizeMode="cover" />
-            ) : (
-              <>
-                <View style={styles.iconCircle}>
-                  <Icon name="uploadSimple" size={23} color="#2B2F38" />
-                </View>
-                <View style={styles.dropzoneText}>
-                  <Text style={styles.dropzoneTitle}>사진 업로드 (선택)</Text>
-                  <Text style={styles.dropzoneCaption}>디톡스 시간에 무얼 했나요?</Text>
-                </View>
-              </>
-            )}
-          </Pressable>
+        <KeyboardAvoidingView
+          style={styles.body}
+          behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+        >
+          <View style={styles.content}>
+            <LoggingButton
+              eventName="Retro Photo Upload Select Clicked"
+              properties={{ pageName: 'Retro', buttonName: '사진 업로드' }}
+            >
+              <Pressable style={styles.dropzone} onPress={handlePickImage}>
+                {imageAsset ? (
+                  <Image
+                    source={{ uri: imageAsset.uri }}
+                    style={styles.preview}
+                    resizeMode="cover"
+                  />
+                ) : (
+                  <>
+                    <View style={styles.iconCircle}>
+                      <Icon name="uploadSimple" size={23} color="#2B2F38" />
+                    </View>
+                    <View style={styles.dropzoneText}>
+                      <Text style={styles.dropzoneTitle}>사진 업로드 (선택)</Text>
+                      <Text style={styles.dropzoneCaption}>디톡스 시간에 무얼 했나요?</Text>
+                    </View>
+                  </>
+                )}
+              </Pressable>
+            </LoggingButton>
 
-          <View style={styles.textareaSection}>
-            <Text style={styles.textareaLabel}>
-              직접 입력<Text style={styles.requiredMark}>*</Text>
-            </Text>
-            <View style={styles.textareaBox}>
-              <TextInput
-                style={styles.textarea}
-                placeholder="오늘 하루를 짧게 되돌아보세요"
-                placeholderTextColor={gray[300]}
-                multiline
-                value={text}
-                onChangeText={setText}
-              />
+            <View style={styles.textareaSection}>
+              <Text style={styles.textareaLabel}>
+                직접 입력<Text style={styles.requiredMark}>*</Text>
+              </Text>
+              <View style={styles.textareaBox}>
+                <TextInput
+                  style={styles.textarea}
+                  placeholder="오늘 하루를 짧게 되돌아보세요"
+                  placeholderTextColor={gray[300]}
+                  multiline
+                  value={text}
+                  onChangeText={setText}
+                />
+              </View>
             </View>
           </View>
-        </View>
 
-        <View style={styles.cta}>
-          <Pressable
-            style={[styles.postButton, !canSubmit && styles.postButtonDisabled]}
-            onPress={handleSubmit}
-            disabled={!canSubmit}
-          >
-            {submitting ? (
-              <ActivityIndicator color="#FFFFFF" />
-            ) : (
-              <Text style={styles.postButtonLabel}>게시하기</Text>
-            )}
-          </Pressable>
-        </View>
-      </KeyboardAvoidingView>
-    </SafeAreaView>
+          <View style={styles.cta}>
+            <LoggingButton
+              eventName="Retro Retro Submit Clicked"
+              properties={{ pageName: 'Retro', buttonName: '게시하기' }}
+            >
+              <Pressable
+                style={[styles.postButton, !canSubmit && styles.postButtonDisabled]}
+                onPress={handleSubmit}
+                disabled={!canSubmit}
+              >
+                {submitting ? (
+                  <ActivityIndicator color="#FFFFFF" />
+                ) : (
+                  <Text style={styles.postButtonLabel}>게시하기</Text>
+                )}
+              </Pressable>
+            </LoggingButton>
+          </View>
+        </KeyboardAvoidingView>
+      </SafeAreaView>
+    </LoggingPage>
   );
 }
 

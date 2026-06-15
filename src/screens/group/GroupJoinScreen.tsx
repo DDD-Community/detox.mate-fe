@@ -21,8 +21,14 @@ import {
 } from '../../api/errors';
 import type { GroupResponse } from '../../api/generated/model';
 import { customAxios } from '../../api/mutator';
-import { ClipboardCopyToast, useClipboardCopyToast } from '../../components';
+import {
+  ClipboardCopyToast,
+  LoggingButton,
+  LoggingPage,
+  useClipboardCopyToast,
+} from '../../components';
 import { Icon } from '../../components/Icon';
+import { trackEvent } from '../../lib/analytics';
 import { primitiveColors, radius, spacing, typography } from '../../lib/token';
 
 const { green, gray, brown } = primitiveColors;
@@ -79,6 +85,9 @@ export default function GroupJoinScreen() {
       });
       setGroupName(data.name ?? '');
       setStep(2);
+      trackEvent('Group Joined', {
+        entry_point: paramInviteCode ? 'invite_link' : 'group_home',
+      });
     } catch (error) {
       const appError = normalizeError(error);
       logError(appError, { scope: 'group.join', operation: 'joinGroup' });
@@ -98,6 +107,7 @@ export default function GroupJoinScreen() {
   };
 
   const handleShare = async () => {
+    trackEvent('Invite Share Button Clicked', { page_name: 'GroupJoin' });
     await Share.share({
       message: `우리 함께 디지털 디톡스해요! 💉\n디톡스 메이트 그룹 초대 코드: ${inviteCode}\n${getInviteShareUrl(inviteCode)}`,
     });
@@ -108,110 +118,146 @@ export default function GroupJoinScreen() {
   };
 
   return (
-    <View style={styles.root}>
-      <Stack.Screen options={{ gestureEnabled: !isCompleteStep }} />
-      <SafeAreaView edges={['top']} style={styles.topArea}>
-        <View style={styles.progressRow}>
-          <View style={[styles.segment, styles.segmentActive]} />
-          <View
-            style={[styles.segment, step === 2 ? styles.segmentActive : styles.segmentInactive]}
-          />
-        </View>
-      </SafeAreaView>
-
-      {step === 1 ? (
-        <View style={styles.content}>
-          <Text style={styles.stepLabel}>{step}/2</Text>
-          <Text style={styles.title}>공유받은 초대 코드를{'\n'}입력하세요</Text>
-
-          <View style={styles.inputWrapper}>
-            <TextInput
-              style={styles.input}
-              value={inviteCode}
-              onChangeText={handleCodeChange}
-              placeholder="초대 코드를 입력해 주세요"
-              placeholderTextColor={gray[300]}
-              autoCapitalize="characters"
-              maxLength={INVITE_CODE_MAX_LENGTH}
+    <LoggingPage
+      eventName="Group Join Viewed"
+      properties={{
+        pageName: 'GroupJoin',
+        step,
+        entry_point: paramInviteCode ? 'invite_link' : 'group_home',
+      }}
+      logKey={step}
+    >
+      <View style={styles.root}>
+        <Stack.Screen options={{ gestureEnabled: !isCompleteStep }} />
+        <SafeAreaView edges={['top']} style={styles.topArea}>
+          <View style={styles.progressRow}>
+            <View style={[styles.segment, styles.segmentActive]} />
+            <View
+              style={[styles.segment, step === 2 ? styles.segmentActive : styles.segmentInactive]}
             />
-            {error ? null : (
-              <Text style={styles.counter}>
-                {inviteCode.length}/{INVITE_CODE_MAX_LENGTH}
-              </Text>
-            )}
           </View>
-          {error ? (
-            <View style={styles.errorRow}>
-              <Icon
-                name="warningCircle"
-                size={14}
-                weight="fill"
-                color={primitiveColors.system.red.opacity100}
+        </SafeAreaView>
+
+        {step === 1 ? (
+          <View style={styles.content}>
+            <Text style={styles.stepLabel}>{step}/2</Text>
+            <Text style={styles.title}>공유받은 초대 코드를{'\n'}입력하세요</Text>
+
+            <View style={styles.inputWrapper}>
+              <TextInput
+                style={styles.input}
+                value={inviteCode}
+                onChangeText={handleCodeChange}
+                placeholder="초대 코드를 입력해 주세요"
+                placeholderTextColor={gray[300]}
+                autoCapitalize="characters"
+                maxLength={INVITE_CODE_MAX_LENGTH}
               />
-              <Text style={styles.errorText}>{error}</Text>
+              {error ? null : (
+                <Text style={styles.counter}>
+                  {inviteCode.length}/{INVITE_CODE_MAX_LENGTH}
+                </Text>
+              )}
             </View>
-          ) : null}
-        </View>
-      ) : (
-        <View style={styles.content}>
-          <Text style={styles.stepLabel}>{step}/2</Text>
-          <Image
-            source={require('../../../assets/onboarding-check.png')}
-            style={styles.checkImage}
-            resizeMode="contain"
-          />
-          <Text style={styles.completeTitle}>
-            {groupName}
-            {'\n'}그룹에 참여했어요!
-          </Text>
-          <Text style={styles.completeSubtitle}>
-            초대 코드를 친구에게 공유해서 함께 시작해 보세요
-          </Text>
+            {error ? (
+              <View style={styles.errorRow}>
+                <Icon
+                  name="warningCircle"
+                  size={14}
+                  weight="fill"
+                  color={primitiveColors.system.red.opacity100}
+                />
+                <Text style={styles.errorText}>{error}</Text>
+              </View>
+            ) : null}
+          </View>
+        ) : (
+          <View style={styles.content}>
+            <Text style={styles.stepLabel}>{step}/2</Text>
+            <Image
+              source={require('../../../assets/onboarding-check.png')}
+              style={styles.checkImage}
+              resizeMode="contain"
+            />
+            <Text style={styles.completeTitle}>
+              {groupName}
+              {'\n'}그룹에 참여했어요!
+            </Text>
+            <Text style={styles.completeSubtitle}>
+              초대 코드를 친구에게 공유해서 함께 시작해 보세요
+            </Text>
 
-          <View style={styles.gap24} />
+            <View style={styles.gap24} />
 
-          <View style={styles.inviteCard}>
-            <View style={styles.codeRow}>
-              <Text style={styles.codeLabel}>초대 코드</Text>
-              <Text style={styles.codeText}>{inviteCode}</Text>
-              <TouchableOpacity onPress={handleCopy} activeOpacity={0.7}>
-                <Icon name="copy" size={20} color={gray[800]} />
+            <View style={styles.inviteCard}>
+              <View style={styles.codeRow}>
+                <Text style={styles.codeLabel}>초대 코드</Text>
+                <Text style={styles.codeText}>{inviteCode}</Text>
+                <LoggingButton
+                  eventName="Group Join Invite Code Copy Clicked"
+                  properties={{ pageName: 'GroupJoin', buttonName: '초대 코드 복사' }}
+                >
+                  <TouchableOpacity onPress={handleCopy} activeOpacity={0.7}>
+                    <Icon name="copy" size={20} color={gray[800]} />
+                  </TouchableOpacity>
+                </LoggingButton>
+              </View>
+
+              <TouchableOpacity
+                style={styles.shareInCard}
+                onPress={handleShare}
+                activeOpacity={0.8}
+              >
+                <Icon name="shareFat" size={18} color={gray[900]} />
+                <Text style={styles.shareText}>친구에게 공유하기</Text>
               </TouchableOpacity>
             </View>
-
-            <TouchableOpacity style={styles.shareInCard} onPress={handleShare} activeOpacity={0.8}>
-              <Icon name="shareFat" size={18} color={gray[900]} />
-              <Text style={styles.shareText}>친구에게 공유하기</Text>
-            </TouchableOpacity>
           </View>
-        </View>
-      )}
+        )}
 
-      <SafeAreaView edges={['bottom']} style={styles.buttonRow}>
-        {!isCompleteStep ? (
-          <TouchableOpacity
-            style={styles.prevButton}
-            onPress={() => router.back()}
-            activeOpacity={0.85}
-          >
-            <Text style={styles.prevText}>이전</Text>
-          </TouchableOpacity>
-        ) : null}
-        <TouchableOpacity
-          style={[
-            styles.nextButton,
-            step === 1 && (!canComplete || loading) && styles.nextButtonDisabled,
-          ]}
-          onPress={step === 1 ? handleComplete : handleGoToFeed}
-          disabled={step === 1 && (!canComplete || loading)}
-          activeOpacity={0.85}
-        >
-          <Text style={styles.nextText}>{step === 1 ? '완료' : '그룹 피드로 가기'}</Text>
-        </TouchableOpacity>
-      </SafeAreaView>
+        <SafeAreaView edges={['bottom']} style={styles.buttonRow}>
+          {!isCompleteStep ? (
+            <LoggingButton
+              eventName="Group Join Previous Clicked"
+              properties={{ pageName: 'GroupJoin', buttonName: '이전' }}
+            >
+              <TouchableOpacity
+                style={styles.prevButton}
+                onPress={() => router.back()}
+                activeOpacity={0.85}
+              >
+                <Text style={styles.prevText}>이전</Text>
+              </TouchableOpacity>
+            </LoggingButton>
+          ) : null}
+          {step === 1 ? (
+            <TouchableOpacity
+              style={[styles.nextButton, (!canComplete || loading) && styles.nextButtonDisabled]}
+              onPress={handleComplete}
+              disabled={!canComplete || loading}
+              activeOpacity={0.85}
+            >
+              <Text style={styles.nextText}>완료</Text>
+            </TouchableOpacity>
+          ) : (
+            <LoggingButton
+              eventName="Group Join Go Feed Clicked"
+              properties={{ pageName: 'GroupJoin', buttonName: '그룹 피드로 가기' }}
+            >
+              <TouchableOpacity
+                style={styles.nextButton}
+                onPress={handleGoToFeed}
+                activeOpacity={0.85}
+              >
+                <Text style={styles.nextText}>그룹 피드로 가기</Text>
+              </TouchableOpacity>
+            </LoggingButton>
+          )}
+        </SafeAreaView>
 
-      <ClipboardCopyToast visible={copyToastVisible} />
-    </View>
+        <ClipboardCopyToast visible={copyToastVisible} />
+      </View>
+    </LoggingPage>
   );
 }
 
