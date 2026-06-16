@@ -56,6 +56,7 @@
   },
   "devDependencies": {
     "@orval/core": "^8.9.0",
+    "@sentry/cli": "^3.5.0",
     "@storybook/addon-ondevice-actions": "^8",
     "@storybook/addon-ondevice-controls": "^8",
     "@storybook/react-native": "^8",
