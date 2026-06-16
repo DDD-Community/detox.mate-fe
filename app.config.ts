@@ -99,7 +99,7 @@ const config: ExpoConfig = {
     [
       '@react-native-seoul/kakao-login',
       {
-        kakaoAppKey: '9fee24e132d201aa33e5fdd08f435726',
+        kakaoAppKey: isProduction ? '505929376ad06505fbd4c9f27529a2b1' : '9fee24e132d201aa33e5fdd08f435726',
       },
     ],
     '@react-native-firebase/app',
