@@ -160,6 +160,7 @@ jobs:
           APP_GIT_SHA: ${{ github.sha }}
         run: |
           export APP_GIT_SHA="${APP_GIT_SHA::7}"
+          eas env:update --name APP_VERSION --value "$APP_VERSION" --environment production --non-interactive
           BUILD_JSON=$(eas build --platform ios --profile production --non-interactive --json)
           BUILD_ID=$(echo "$BUILD_JSON" | jq -r '.[0].id')
           if [ -z "$BUILD_ID" ] || [ "$BUILD_ID" = "null" ]; then
