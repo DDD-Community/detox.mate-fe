@@ -444,7 +444,7 @@ jobs:
           TESTFLIGHT_RELEASE_URL: ${{ steps.release-context.outputs.testflight-release-url }}
           BUILD_ID: ${{ needs.build.outputs.build-id }}
           ASC_APP_ID: '6771277684'
-          GH_TOKEN: ${{ github.token }}
+          GH_TOKEN: ${{ secrets.GH_PAT }}
         run: |
           if git diff --quiet origin/main..origin/dev; then
             {
