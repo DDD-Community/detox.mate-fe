@@ -32,7 +32,7 @@ export default function LoginScreen() {
     permissionGuideConfirming,
     permissionGuideVisible,
   } = useAuthLogin({
-    onLoginFailure: () => loginToast.showWithMessage(LOGIN_FAILURE_MESSAGE),
+    onLoginFailure: (error) => loginToast.showWithMessage(error.message || LOGIN_FAILURE_MESSAGE),
   });
   const [testKeyModalVisible, setTestKeyModalVisible] = useState(false);
   const [testIdModalVisible, setTestIdModalVisible] = useState(false);
