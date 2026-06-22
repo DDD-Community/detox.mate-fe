@@ -45,7 +45,7 @@ type NotificationItem = NotificationHistoryItemResponse & {
   senderProfileImageUrl?: string | null;
 };
 
-type NotificationKind = 'comment' | 'reaction' | 'verified' | 'poke' | 'newMember' | 'unknown';
+type NotificationKind = 'comment' | 'reaction' | 'verified' | 'poke' | 'newMember' | 'weeklyGoal' | 'unknown';
 
 const formatRelativeTime = (iso?: string): string => {
   if (!iso) return '';
@@ -96,6 +96,7 @@ const getNotificationKind = (item: NotificationItem): NotificationKind => {
   if (/인증\s*업로드|인증\s*완료|인증을\s*업로드|인증을\s*완료/.test(text)) {
     return 'verified';
   }
+  if (/주간\s*목표\s*달성/.test(text)) return 'weeklyGoal';
   return 'unknown';
 };
 
@@ -603,6 +604,11 @@ export default function NotificationListScreen() {
       }
 
       if (kind === 'poke') {
+        return;
+      }
+
+      if (kind === 'weeklyGoal') {
+        pushFeed(groupChallengeId);
         return;
       }
 
