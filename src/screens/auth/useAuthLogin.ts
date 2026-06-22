@@ -14,6 +14,7 @@ import { logError, normalizeError } from '@/api/errors';
 import type { AppError } from '@/api/errors/types';
 import { registerDevicePushToken } from '@/lib/fcmToken';
 import { setAnalyticsUserId, trackEvent } from '@/lib/analytics';
+import { consumePendingInviteCode } from '@/lib/pendingInvite';
 import { APP_ACCESS_PERMISSION_GUIDE_SEEN_KEY, TERMS_ACCEPTED_KEY } from './authStorageKeys';
 
 export type LoginProvider = 'kakao' | 'apple' | 'test';
@@ -45,6 +46,17 @@ export function useAuthLogin({ onLoginFailure }: UseAuthLoginOptions = {}) {
   const [permissionGuideVisible, setPermissionGuideVisible] = useState(false);
   const [permissionGuideConfirming, setPermissionGuideConfirming] = useState(false);
 
+  // 로그인 완료 후, 딥링크로 들어온 대기 초대 코드가 있으면 초대 화면으로,
+  // 없으면 기본 그룹 홈으로 이동한다.
+  const navigateAfterLogin = async () => {
+    const inviteCode = await consumePendingInviteCode();
+    if (inviteCode) {
+      router.replace({ pathname: '/(group)/join', params: { inviteCode } });
+    } else {
+      router.replace('/(group)/home');
+    }
+  };
+
   const completeLogin = async (provider: LoginProvider, login: LoginAction) => {
     if (pendingProvider) return;
 
@@ -65,7 +77,7 @@ export function useAuthLogin({ onLoginFailure }: UseAuthLoginOptions = {}) {
         APP_ACCESS_PERMISSION_GUIDE_SEEN_KEY
       );
       if (hasSeenPermissionGuide === 'true') {
-        router.replace('/(group)/home');
+        await navigateAfterLogin();
       } else {
         setPermissionGuideVisible(true);
       }
@@ -109,7 +121,7 @@ export function useAuthLogin({ onLoginFailure }: UseAuthLoginOptions = {}) {
     } finally {
       await SecureStore.setItemAsync(APP_ACCESS_PERMISSION_GUIDE_SEEN_KEY, 'true');
       setPermissionGuideConfirming(false);
-      router.replace('/(group)/home');
+      await navigateAfterLogin();
     }
   };
 

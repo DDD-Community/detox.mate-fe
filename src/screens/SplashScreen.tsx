@@ -8,6 +8,7 @@ import { getGroup } from '../api/generated/group/group';
 import { getGroupChallenge } from '../api/generated/group-challenge/group-challenge';
 import { LoggingPage } from '../components';
 import { trackEvent } from '../lib/analytics';
+import { consumePendingInviteCode } from '../lib/pendingInvite';
 import { TERMS_ACCEPTED_KEY } from './auth/authStorageKeys';
 
 type InitialFeedRouteParams = {
@@ -58,9 +59,22 @@ export default function SplashScreen() {
       if (cancelled) return;
 
       if (!accessToken) {
+        // 미로그인 상태에서는 대기 중인 초대 코드를 소비하지 않고 보존한다.
+        // 로그인 성공 후(useAuthLogin) 코드를 읽어 초대 화면으로 연결한다.
         const termsAccepted = await SecureStore.getItemAsync(TERMS_ACCEPTED_KEY);
         if (cancelled) return;
         router.replace(termsAccepted === 'true' ? '/login' : '/onboarding');
+        return;
+      }
+
+      // 로그인된 상태에서 딥링크로 들어온 초대 코드가 있으면 초대 화면으로 우선 연결한다.
+      const pendingInviteCode = await consumePendingInviteCode();
+      if (cancelled) return;
+      if (pendingInviteCode) {
+        router.replace({
+          pathname: '/(group)/join',
+          params: { inviteCode: pendingInviteCode },
+        });
         return;
       }
 
