@@ -3,7 +3,8 @@ import { Alert, Image, Pressable, StyleSheet, Text, View } from 'react-native';
 
 import ONBOARDING_CHECK_IMAGE from '@assets/onboarding-check.png';
 
-import { getFirstScreenTime } from '@/api';
+import { getFeed, getFirstScreenTime } from '@/api';
+import { getGroupChallenge } from '@/api/generated/group-challenge/group-challenge';
 import { Button, Icon, LoggingButton, LoggingPage } from '@/components';
 import { submitTotalUsageActivityRecord } from '@/features/activity-record/submitTotalUsageActivityRecord';
 import {
@@ -65,15 +66,34 @@ export default function VerifyDoneScreen() {
   const diffText =
     hasGoal && goalAchieved ? formatMinutesDiffText(goalMinutes! - valueMinutes!) : '';
 
-  const handleSetGoal = async () => {
-    const participantId = groupChallengeParticipantId ? Number(groupChallengeParticipantId) : NaN;
+  const resolveParticipantId = async (): Promise<number | null> => {
+    const fromParam = groupChallengeParticipantId ? Number(groupChallengeParticipantId) : NaN;
+    if (Number.isFinite(fromParam)) return fromParam;
 
-    if (!Number.isFinite(participantId) || valueMinutes == null) {
-      Alert.alert('저장 실패', '첫 스크린타임 저장에 필요한 정보가 없습니다.');
+    // groupChallengeParticipantId가 파라미터로 전달되지 않은 경우(예: 마이페이지 진입),
+    // 현재 활성 챌린지의 내 참여 ID를 API로 조회한다.
+    const challenges = await getGroupChallenge().getMyGroupChallenges();
+    const activeChallenge = challenges.find((c) => c.status === 'ACTIVE') ?? challenges[0];
+    if (!activeChallenge?.id) return null;
+
+    const feedResponse = await getFeed().getTodayChallengeRecords(activeChallenge.id);
+    const me = feedResponse.members?.find((m) => m.isMe === true);
+    return me?.groupChallengeParticipantId ?? null;
+  };
+
+  const handleSetGoal = async () => {
+    if (valueMinutes == null) {
+      Alert.alert('저장 실패', '스크린타임 값을 읽을 수 없습니다.');
       return;
     }
 
     try {
+      const participantId = await resolveParticipantId();
+      if (participantId == null) {
+        Alert.alert('저장 실패', '참여 중인 챌린지를 찾을 수 없습니다.');
+        return;
+      }
+
       await getFirstScreenTime().create1({
         groupChallengeParticipantId: participantId,
         screenTimeMinutes: valueMinutes,
