@@ -32,7 +32,7 @@ const SENSITIVE_CONTEXT_KEYS = new Set([
 
 let initialized = false;
 
-const hasSentryDsn = () => Boolean(env.sentryDsn);
+const shouldEnableSentry = () => env.appEnv === 'production' && Boolean(env.sentryDsn);
 
 const sanitizeValue = (value: unknown): unknown => {
   if (Array.isArray(value)) return value.map(sanitizeValue);
@@ -80,7 +80,7 @@ const toSentryContext = (error: AppError, context?: ErrorLogContext) => ({
 });
 
 export function initSentry() {
-  if (initialized || !hasSentryDsn()) return;
+  if (initialized || !shouldEnableSentry()) return;
 
   Sentry.init({
     dsn: env.sentryDsn!,
@@ -103,7 +103,7 @@ export function initSentry() {
 }
 
 const shouldCapture = (error: AppError, context?: ErrorLogContext) => {
-  if (!hasSentryDsn()) return false;
+  if (!shouldEnableSentry()) return false;
   if (context?.scope && ALWAYS_REPORTABLE_SCOPES.has(context.scope)) return true;
   if (context?.scope && BLOCKING_FLOW_SCOPES.has(context.scope)) {
     return (
