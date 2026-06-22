@@ -28,7 +28,7 @@ const WHEEL_ITEM_HEIGHT = 28;
 const WHEEL_VISIBLE_ITEMS = 5;
 const WHEEL_HEIGHT = WHEEL_ITEM_HEIGHT * WHEEL_VISIBLE_ITEMS;
 const HOUR_OPTIONS = Array.from({ length: 24 }, (_, index) => index);
-const MINUTE_OPTIONS = Array.from({ length: 60 }, (_, index) => index);
+const MINUTE_OPTIONS = Array.from({ length: 12 }, (_, index) => index * 5);
 
 type GoalSetupMode = 'initial' | 'edit';
 
@@ -47,7 +47,8 @@ export default function GoalSetupScreen({ mode = 'initial' }: GoalSetupScreenPro
   const screenTimeDisplay = !isEditMode ? formatHHMMToDisplay(value) : null;
   const isUnchanged = isEditMode && existingGoalMinutes != null && minutes === existingGoalMinutes;
   const selectedHour = Math.floor(minutes / 60);
-  const selectedMinute = minutes % 60;
+  const rawMinute = minutes % 60;
+  const selectedMinute = Math.min(55, Math.round(rawMinute / 5) * 5);
 
   const setClampedMinutes = useCallback((nextMinutes: number) => {
     setMinutes(Math.min(MAX_GOAL_MINUTES, Math.max(MIN_GOAL_MINUTES, nextMinutes)));
@@ -238,6 +239,7 @@ function GoalTimeWheelPicker({
           selectedValue={hour}
           unit="hour"
           onValueChange={onHourChange}
+          columnWidth={70}
         />
         <NumberWheel
           options={MINUTE_OPTIONS}
@@ -255,9 +257,16 @@ type NumberWheelProps = {
   selectedValue: number;
   unit: 'hour' | 'min';
   onValueChange: (value: number) => void;
+  columnWidth?: number;
 };
 
-function NumberWheel({ options, selectedValue, unit, onValueChange }: NumberWheelProps) {
+function NumberWheel({
+  options,
+  selectedValue,
+  unit,
+  onValueChange,
+  columnWidth = 44,
+}: NumberWheelProps) {
   const scrollRef = useRef<ScrollView>(null);
   const dragEndTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const momentumStartedRef = useRef(false);
@@ -344,10 +353,10 @@ function NumberWheel({ options, selectedValue, unit, onValueChange }: NumberWhee
   );
 
   return (
-    <View style={styles.wheelGroup}>
+    <View style={[styles.wheelGroup, { width: columnWidth + 54 }]}>
       <ScrollView
         ref={scrollRef}
-        style={styles.wheelColumn}
+        style={[styles.wheelColumn, { width: columnWidth }]}
         contentContainerStyle={styles.wheelContent}
         showsVerticalScrollIndicator={false}
         snapToInterval={WHEEL_ITEM_HEIGHT}
@@ -369,7 +378,7 @@ function NumberWheel({ options, selectedValue, unit, onValueChange }: NumberWhee
           );
         })}
       </ScrollView>
-      <Text pointerEvents="none" style={styles.selectedWheelUnit}>
+      <Text pointerEvents="none" style={[styles.selectedWheelUnit, { left: columnWidth + 8 }]}>
         {unit}
       </Text>
     </View>
