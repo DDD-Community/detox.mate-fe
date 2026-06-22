@@ -284,8 +284,7 @@ const styles = StyleSheet.create({
   turtleImage: {
     position: 'absolute',
     top: 316,
-    left: 86,
-    width: 174,
+    left: 100,
     height: 231,
   },
   buttonSection: {
