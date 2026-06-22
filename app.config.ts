@@ -52,6 +52,7 @@ const config: ExpoConfig = {
     image: './assets/splash_logo.png',
     resizeMode: 'contain',
     backgroundColor: '#1D9E75',
+    imageWidth: 152,
   },
   ios: {
     bundleIdentifier: isProduction ? 'com.detoxmate.app' : 'com.detoxmate.app.dev',
