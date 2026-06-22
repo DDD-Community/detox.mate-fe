@@ -1,5 +1,4 @@
 import { router, useFocusEffect, useLocalSearchParams } from 'expo-router';
-import { getInviteShareUrl } from '../../lib/airbridge';
 import * as SecureStore from 'expo-secure-store';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
@@ -26,6 +25,7 @@ import { getUserUsageGoalTime } from '../../api/generated/user-usage-goal-time/u
 import { LoggingPage } from '../../components';
 import { Button } from '../../components/Button';
 import { Icon } from '../../components/Icon';
+import { getInviteShareUrl } from '../../lib/airbridge';
 import { trackButtonClick, trackEvent } from '../../lib/analytics';
 import { memberStore } from '../../lib/memberStore';
 import { pokeStore } from '../../lib/pokeStore';
@@ -268,6 +268,7 @@ export default function FeedHome() {
   }>();
   const [group, setGroup] = useState<FeedGroup | null>(null);
   const [groupChallengeId, setGroupChallengeId] = useState<string | null>(null);
+  const [streakDays, setStreakDays] = useState(0);
   const [loading, setLoading] = useState(true);
   const currentUserIdRef = useRef<number | null>(null);
 
@@ -317,9 +318,12 @@ export default function FeedHome() {
       const numericGroupChallengeId = Number(gcId);
       if (!Number.isFinite(numericGroupChallengeId)) return;
 
-      const [overview, today] = await Promise.all([
+      const [overview, today, calendarRes] = await Promise.all([
         feedApi.getGroupChallengeOverview(numericGroupChallengeId),
         feedApi.getTodayChallengeRecords(numericGroupChallengeId),
+        apiClient
+          .get<{ streakDays: number }>(`/group-challenges/${gcId}/activity-calendar`)
+          .catch(() => null),
       ]);
       const apiMembers = (today.members ?? []).filter((m) => m.isMe || !m.isUserWithdrawn);
       const sortedMembers = [...apiMembers].sort(compareChallengeMembers);
@@ -349,6 +353,7 @@ export default function FeedHome() {
           groupId
         );
       }
+      setStreakDays(calendarRes?.data?.streakDays ?? 0);
       const pokedIds = apiMembers
         .filter((m) => m.isPoked === true && isUsableId(m.userId))
         .map((m) => String(m.userId));
@@ -377,6 +382,7 @@ export default function FeedHome() {
         setFeedItems([]);
         setMembers([]);
         setGoalSetMemberCount(0);
+        setStreakDays(0);
       }
     } catch (error) {
       logError(normalizeError(error), { scope: 'feed.home', operation: 'loadGroupChallenge' });
@@ -493,7 +499,12 @@ export default function FeedHome() {
   return (
     <LoggingPage eventName="Feed Home Viewed" properties={{ pageName: 'FeedHome' }}>
       <View style={styles.root}>
-        <FeedHeader groupName={group?.name} groupChallengeId={groupChallengeId} />
+        <FeedHeader
+          groupName={group?.name}
+          groupChallengeId={groupChallengeId}
+          streakDays={streakDays}
+        />
+
         {loading ? (
           <View style={styles.centered}>
             <ActivityIndicator color={gray[400]} />

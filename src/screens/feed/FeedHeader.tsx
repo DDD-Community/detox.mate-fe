@@ -1,17 +1,18 @@
 import { router } from 'expo-router';
-import { Pressable, StyleSheet, Text, View } from 'react-native';
+import { Image, Pressable, StyleSheet, Text, View } from 'react-native';
 import { LoggingButton } from '../../components';
 import { primitiveColors, spacing, typography } from '../../lib/token';
 import { Icon } from '../../components/Icon';
 
-const { gray } = primitiveColors;
+const { gray, brown } = primitiveColors;
 
 interface FeedHeaderProps {
   groupName?: string;
   groupChallengeId?: string | null;
+  streakDays?: number;
 }
 
-export default function FeedHeader({ groupName, groupChallengeId }: FeedHeaderProps) {
+export default function FeedHeader({ groupName, groupChallengeId, streakDays = 0 }: FeedHeaderProps) {
   const handleCalendarPress = () => {
     router.push({
       pathname: '/(feed)/calendar',
@@ -25,6 +26,15 @@ export default function FeedHeader({ groupName, groupChallengeId }: FeedHeaderPr
         <Text style={styles.title} numberOfLines={1} ellipsizeMode="tail">
           {groupName}
         </Text>
+        {streakDays > 0 && (
+          <View style={styles.streakBadge}>
+            <Image
+              source={require('../../../assets/reaction-fire.png')}
+              style={styles.streakIcon}
+            />
+            <Text style={styles.streakText}>{streakDays}</Text>
+          </View>
+        )}
       </View>
       <View style={styles.icons}>
         <LoggingButton
@@ -77,11 +87,35 @@ const styles = StyleSheet.create({
   titleWrap: {
     flex: 1,
     minWidth: 0,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing[8],
   },
   title: {
     ...typography.accent.title2,
     color: gray[800],
     letterSpacing: -0.4,
+    flexShrink: 1,
+  },
+  streakBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    backgroundColor: brown[100],
+    borderRadius: 100,
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    flexShrink: 0,
+  },
+  streakIcon: {
+    width: 16,
+    height: 16,
+  },
+  streakText: {
+    fontSize: 14,
+    lineHeight: 20,
+    fontWeight: '600',
+    color: brown[500],
   },
   icons: {
     flexDirection: 'row',
