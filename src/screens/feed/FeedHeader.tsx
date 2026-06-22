@@ -4,7 +4,7 @@ import { LoggingButton } from '../../components';
 import { primitiveColors, spacing, typography } from '../../lib/token';
 import { Icon } from '../../components/Icon';
 
-const { gray } = primitiveColors;
+const { gray, brown } = primitiveColors;
 
 interface FeedHeaderProps {
   groupName?: string;
@@ -101,7 +101,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: 4,
-    backgroundColor: '#FFF3ED',
+    backgroundColor: brown[100],
     borderRadius: 100,
     paddingHorizontal: 8,
     paddingVertical: 4,
@@ -115,7 +115,7 @@ const styles = StyleSheet.create({
     fontSize: 14,
     lineHeight: 20,
     fontWeight: '600',
-    color: '#FF6B2C',
+    color: brown[500],
   },
   icons: {
     flexDirection: 'row',

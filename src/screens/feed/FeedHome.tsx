@@ -1,5 +1,4 @@
 import { router, useFocusEffect, useLocalSearchParams } from 'expo-router';
-import { getInviteShareUrl } from '../../lib/airbridge';
 import * as SecureStore from 'expo-secure-store';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
@@ -26,6 +25,7 @@ import { getUserUsageGoalTime } from '../../api/generated/user-usage-goal-time/u
 import { LoggingPage } from '../../components';
 import { Button } from '../../components/Button';
 import { Icon } from '../../components/Icon';
+import { getInviteShareUrl } from '../../lib/airbridge';
 import { trackButtonClick, trackEvent } from '../../lib/analytics';
 import { memberStore } from '../../lib/memberStore';
 import { pokeStore } from '../../lib/pokeStore';
@@ -499,7 +499,12 @@ export default function FeedHome() {
   return (
     <LoggingPage eventName="Feed Home Viewed" properties={{ pageName: 'FeedHome' }}>
       <View style={styles.root}>
-        <FeedHeader groupName={group?.name} groupChallengeId={groupChallengeId} streakDays={streakDays} />
+        <FeedHeader
+          groupName={group?.name}
+          groupChallengeId={groupChallengeId}
+          streakDays={streakDays}
+        />
+
         {loading ? (
           <View style={styles.centered}>
             <ActivityIndicator color={gray[400]} />
