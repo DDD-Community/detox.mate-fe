@@ -7,7 +7,7 @@ const isProduction = appEnv === 'production';
 const appVersion = process.env.APP_VERSION ?? '1.0.0';
 const buildChannel = process.env.APP_BUILD_CHANNEL ?? 'local';
 const easProjectId = '0387da46-8602-45c5-b927-229815033a44';
-const sentryDsn = process.env.EXPO_PUBLIC_SENTRY_DSN || undefined;
+const sentryDsn = isProduction ? process.env.EXPO_PUBLIC_SENTRY_DSN || undefined : undefined;
 const sentryUrl = process.env.SENTRY_URL ?? 'https://sentry.io/';
 const gitSha =
   process.env.APP_GIT_SHA ??
@@ -22,6 +22,14 @@ const iosGoogleServicesFile =
   process.env.GOOGLE_SERVICES_PLIST ?? `./firebase/GoogleService-Info.${appEnv}.plist`;
 const androidGoogleServicesFile =
   process.env.GOOGLE_SERVICES_JSON ?? `./firebase/google-services.${appEnv}.json`;
+const sentryPlugin: [string, Record<string, string | undefined>] = [
+  '@sentry/react-native',
+  {
+    organization: process.env.SENTRY_ORG,
+    project: process.env.SENTRY_PROJECT,
+    url: sentryUrl,
+  },
+];
 
 const config: ExpoConfig = {
   name: isProduction ? 'DetoxMate' : 'detox-mate-fe',
@@ -75,14 +83,7 @@ const config: ExpoConfig = {
     favicon: './assets/favicon.png',
   },
   plugins: [
-    [
-      '@sentry/react-native',
-      {
-        organization: process.env.SENTRY_ORG,
-        project: process.env.SENTRY_PROJECT,
-        url: sentryUrl,
-      },
-    ],
+    ...(isProduction ? [sentryPlugin] : []),
     [
       'airbridge-expo-sdk',
       {
