@@ -195,7 +195,8 @@ export function initAnalytics() {
 }
 
 export function setAnalyticsUserId(userId: number | string) {
-  const analyticsUserId = String(userId);
+  const rawUserId = String(userId);
+  const analyticsUserId = rawUserId.startsWith('user_') ? rawUserId : `user_${rawUserId}`;
 
   setUserId(analyticsUserId);
   logAnalyticsDebug('setUserId', {

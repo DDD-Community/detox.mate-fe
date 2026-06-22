@@ -7,7 +7,7 @@ import { logError, normalizeError } from '../api/errors';
 import { getGroup } from '../api/generated/group/group';
 import { getGroupChallenge } from '../api/generated/group-challenge/group-challenge';
 import { LoggingPage } from '../components';
-import { trackEvent } from '../lib/analytics';
+import { setAnalyticsUserId, trackEvent } from '../lib/analytics';
 import { consumePendingInviteCode } from '../lib/pendingInvite';
 import { TERMS_ACCEPTED_KEY } from './auth/authStorageKeys';
 
@@ -52,11 +52,16 @@ export default function SplashScreen() {
     let cancelled = false;
 
     const redirect = async () => {
+      const accessToken = await SecureStore.getItemAsync('accessTokenKey');
+      const currentUserId = await SecureStore.getItemAsync('currentUserId');
+      if (cancelled) return;
+
+      if (accessToken && currentUserId) {
+        setAnalyticsUserId(currentUserId);
+      }
+
       trackEvent('App Opened');
       await new Promise((resolve) => setTimeout(resolve, 1000));
-
-      const accessToken = await SecureStore.getItemAsync('accessTokenKey');
-      if (cancelled) return;
 
       if (!accessToken) {
         // 미로그인 상태에서는 대기 중인 초대 코드를 소비하지 않고 보존한다.
