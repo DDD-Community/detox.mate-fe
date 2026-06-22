@@ -13,10 +13,10 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { getUserUsageGoalTime, UserUsageGoalTimeRequestUsageGoalType } from '@/api';
-import { AppLogo, Button, HeaderAction, LoggingButton, LoggingPage } from '@/components';
 import { logError, normalizeError } from '@/api/errors';
-import { formatHHMMToDisplay, formatMinutesAsHourMinute } from '@/lib/formatDuration';
+import { AppLogo, Button, HeaderAction, LoggingButton, LoggingPage } from '@/components';
 import { trackEvent } from '@/lib/analytics';
+import { formatHHMMToDisplay, formatMinutesAsHourMinute } from '@/lib/formatDuration';
 import { primitiveColors, radius, spacing, typography } from '@/lib/token';
 
 const { brown, gray } = primitiveColors;
@@ -157,7 +157,7 @@ export default function GoalSetupScreen({ mode = 'initial' }: GoalSetupScreenPro
 
         <View style={styles.body}>
           <View style={styles.textGroup}>
-            <Text style={styles.title}>개인 목표 스크린타임 설정</Text>
+            <Text style={styles.title}>개인 목표 스크린 타임 설정</Text>
             <Text style={styles.description}>2주에 한 번 변경할 수 있어요.</Text>
           </View>
 
