@@ -21,6 +21,8 @@ const StorybookUIRoot = STORYBOOK_ENABLED
 export default function RootLayout() {
   const [fontsLoaded, fontError] = useFonts(fontSources);
 
+  // 딥링크 등으로 SplashScreen을 거치지 않을 때를 위한 폴백.
+  // 정상 경로에서는 SplashScreen 컴포넌트 mount 시 먼저 호출된다.
   useEffect(() => {
     if (fontsLoaded || fontError) {
       SplashScreen.hideAsync();

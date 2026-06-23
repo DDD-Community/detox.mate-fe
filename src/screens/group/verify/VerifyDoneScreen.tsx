@@ -99,11 +99,16 @@ export default function VerifyDoneScreen() {
         return;
       }
 
-      await getFirstScreenTime().create1({
-        groupChallengeParticipantId: participantId,
-        screenTimeMinutes: valueMinutes,
-        recordDate: getYesterdayRecordDate(),
-      });
+      try {
+        await getFirstScreenTime().create1({
+          groupChallengeParticipantId: participantId,
+          screenTimeMinutes: valueMinutes,
+          recordDate: getYesterdayRecordDate(),
+        });
+      } catch (createError) {
+        // 이미 첫 스크린 타임이 저장된 경우(409)에는 목표 설정 화면으로 진행한다.
+        if (normalizeError(createError).type !== 'conflict') throw createError;
+      }
 
       router.replace({
         pathname: '/(group)/goal',
