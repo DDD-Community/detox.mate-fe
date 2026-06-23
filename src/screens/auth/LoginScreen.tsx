@@ -19,11 +19,13 @@ const LOGIN_FAILURE_MESSAGE = '로그인에 실패했어요. 잠시 후 다시 �
 const SESSION_EXPIRED_MESSAGE = '로그인 세션이 만료되었습니다.';
 const LOGIN_TOAST_BOTTOM_OFFSET = 204;
 const LOGIN_TOAST_WITH_TEST_BOTTOM_OFFSET = 340;
-// 거북이 이미지를 연속으로 이만큼 탭하면 테스트 로그인 진입점이 열린다.
+// 거북이 이미지를 연속으로 이만큼 탭하면 테스트 로그인이 실행된다.
 // 일반 유저에게는 보이지 않고, 앱스토어 심사자에게만 안내해 사용한다.
 const TEST_LOGIN_UNLOCK_TAP_COUNT = 5;
-// 탭이 이 시간 안에 이어지지 않으면 카운트를 초기화해 우연한 노출을 막는다.
+// 탭이 이 시간 안에 이어지지 않으면 카운트를 초기화해 우연한 실행을 막는다.
 const TEST_LOGIN_UNLOCK_TAP_RESET_MS = 2000;
+// prod에서 거북이 5탭 시 자동 로그인되는 테스트 계정 키.
+const TEST_AUTO_LOGIN_KEY: TestUserKey = 'front-a';
 
 export default function LoginScreen() {
   const { reason } = useLocalSearchParams<{ reason?: string }>();
@@ -67,7 +69,7 @@ export default function LoginScreen() {
   }, []);
 
   const handleTurtleTap = () => {
-    if (testLoginUnlocked) return;
+    if (testLoginUnlocked || loginPending) return;
 
     if (turtleTapTimerRef.current) {
       clearTimeout(turtleTapTimerRef.current);
@@ -77,7 +79,13 @@ export default function LoginScreen() {
 
     if (turtleTapCountRef.current >= TEST_LOGIN_UNLOCK_TAP_COUNT) {
       turtleTapCountRef.current = 0;
-      setTestLoginUnlocked(true);
+      if (env.appEnv === 'production') {
+        // prod: 버튼 없이 바로 테스트 계정으로 로그인
+        handleTestLogin(TEST_AUTO_LOGIN_KEY);
+      } else {
+        // dev: 테스트 계정 선택 버튼 노출
+        setTestLoginUnlocked(true);
+      }
       return;
     }
 
