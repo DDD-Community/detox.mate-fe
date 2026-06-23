@@ -1,5 +1,5 @@
 import { useLocalSearchParams } from 'expo-router';
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { Image, Modal, Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
 
 import LOGO_APPLE_LOGIN from '@assets/logo-apple-login.png';
@@ -19,6 +19,11 @@ const LOGIN_FAILURE_MESSAGE = '로그인에 실패했어요. 잠시 후 다시 �
 const SESSION_EXPIRED_MESSAGE = '로그인 세션이 만료되었습니다.';
 const LOGIN_TOAST_BOTTOM_OFFSET = 204;
 const LOGIN_TOAST_WITH_TEST_BOTTOM_OFFSET = 340;
+// 거북이 이미지를 연속으로 이만큼 탭하면 테스트 로그인 진입점이 열린다.
+// 일반 유저에게는 보이지 않고, 앱스토어 심사자에게만 안내해 사용한다.
+const TEST_LOGIN_UNLOCK_TAP_COUNT = 5;
+// 탭이 이 시간 안에 이어지지 않으면 카운트를 초기화해 우연한 노출을 막는다.
+const TEST_LOGIN_UNLOCK_TAP_RESET_MS = 2000;
 
 export default function LoginScreen() {
   const { reason } = useLocalSearchParams<{ reason?: string }>();
@@ -38,8 +43,12 @@ export default function LoginScreen() {
   const [testIdModalVisible, setTestIdModalVisible] = useState(false);
   const [testIdInput, setTestIdInput] = useState('');
   const [testIdError, setTestIdError] = useState<string | null>(null);
+  const [testLoginUnlocked, setTestLoginUnlocked] = useState(false);
+  const turtleTapCountRef = useRef(0);
+  const turtleTapTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const loginPending = Boolean(pendingProvider);
-  const showTestLoginButton = env.appEnv === 'development';
+  // dev 빌드에서는 항상, prod(심사) 빌드에서는 거북이 5탭으로 잠금 해제됐을 때만 노출.
+  const showTestLoginButton = env.appEnv === 'development' || testLoginUnlocked;
   const isSessionExpiredToast = loginToast.message === SESSION_EXPIRED_MESSAGE;
 
   useEffect(() => {
@@ -47,6 +56,35 @@ export default function LoginScreen() {
       loginToast.showWithMessage(SESSION_EXPIRED_MESSAGE);
     }
   }, [reason]);
+
+  // 언마운트 시 남아 있는 탭 카운트 초기화 타이머를 정리한다.
+  useEffect(() => {
+    return () => {
+      if (turtleTapTimerRef.current) {
+        clearTimeout(turtleTapTimerRef.current);
+      }
+    };
+  }, []);
+
+  const handleTurtleTap = () => {
+    if (testLoginUnlocked) return;
+
+    if (turtleTapTimerRef.current) {
+      clearTimeout(turtleTapTimerRef.current);
+    }
+
+    turtleTapCountRef.current += 1;
+
+    if (turtleTapCountRef.current >= TEST_LOGIN_UNLOCK_TAP_COUNT) {
+      turtleTapCountRef.current = 0;
+      setTestLoginUnlocked(true);
+      return;
+    }
+
+    turtleTapTimerRef.current = setTimeout(() => {
+      turtleTapCountRef.current = 0;
+    }, TEST_LOGIN_UNLOCK_TAP_RESET_MS);
+  };
 
   const handleOpenTestKeyModal = () => {
     if (loginPending) return;
@@ -108,7 +146,9 @@ export default function LoginScreen() {
       <View style={styles.root}>
         <Image source={LOGO_BLACK} style={styles.logoMark} resizeMode="contain" />
         <Text style={styles.tagline}>매일 디지털 디톡스를 하며{'\n'}친구들과 함께 성장해요</Text>
-        <Image source={TURTLE_HI_IMAGE} style={styles.turtleImage} resizeMode="contain" />
+        <Pressable style={styles.turtleTapArea} onPress={handleTurtleTap}>
+          <Image source={TURTLE_HI_IMAGE} style={styles.turtleImage} resizeMode="contain" />
+        </Pressable>
 
         <View style={styles.buttonSection}>
           {showTestLoginButton ? (
@@ -281,11 +321,16 @@ const styles = StyleSheet.create({
     letterSpacing: -0.36,
     textAlign: 'center',
   },
-  turtleImage: {
+  turtleTapArea: {
     position: 'absolute',
     top: 316,
     left: 100,
+    width: 175,
     height: 231,
+  },
+  turtleImage: {
+    width: '100%',
+    height: '100%',
   },
   buttonSection: {
     position: 'absolute',

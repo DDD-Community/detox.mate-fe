@@ -4,6 +4,7 @@ import { normalizeUsageTextToHHMM } from './normalizeUsageText';
 import { isSummaryDateLabelActualYesterday } from './summaryDate';
 import type { ScreenTimeImageAnalysisResult } from './types';
 import { getMockScreenTimeAnalysisResult } from './mockScreenTimeAnalysis';
+import { getTestAccountAnalysisBypass } from './testAccountAnalysisBypass';
 
 type AnalyzeScreenTimeImageDeps = {
   recognizeText?: (imageUri: string) => Promise<OCRResult>;
@@ -27,6 +28,12 @@ export async function analyzeScreenTimeImage(
   const mockResult = getMockScreenTimeAnalysisResult();
   if (mockResult) {
     return mockResult;
+  }
+
+  // 테스트 계정 세션이면 OCR 검증을 건너뛴다. (앱스토어 심사용)
+  const testAccountBypass = await getTestAccountAnalysisBypass();
+  if (testAccountBypass) {
+    return testAccountBypass;
   }
 
   const runRecognizeText = deps.recognizeText ?? defaultRecognizeText;
