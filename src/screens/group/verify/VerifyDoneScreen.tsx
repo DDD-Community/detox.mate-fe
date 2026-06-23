@@ -1,9 +1,11 @@
 import { router, useLocalSearchParams } from 'expo-router';
+import { useState } from 'react';
 import { Alert, Image, Pressable, StyleSheet, Text, View } from 'react-native';
 
 import ONBOARDING_CHECK_IMAGE from '@assets/onboarding-check.png';
 
 import { getFeed, getFirstScreenTime } from '@/api';
+import { logError, normalizeError } from '@/api/errors';
 import { getGroupChallenge } from '@/api/generated/group-challenge/group-challenge';
 import { Button, Icon, LoggingButton, LoggingPage } from '@/components';
 import { submitTotalUsageActivityRecord } from '@/features/activity-record/submitTotalUsageActivityRecord';
@@ -57,6 +59,7 @@ export default function VerifyDoneScreen() {
     ocrImageObjectKey?: string;
     ocrRecordDate?: string;
   }>();
+  const [isSavingGoal, setIsSavingGoal] = useState(false);
   const display = formatHHMMToDisplay(value);
   const isVerifyMode = mode === 'verify';
   const valueMinutes = parseHHMMToMinutes(value);
@@ -82,11 +85,13 @@ export default function VerifyDoneScreen() {
   };
 
   const handleSetGoal = async () => {
+    if (isSavingGoal) return;
     if (valueMinutes == null) {
       Alert.alert('저장 실패', '스크린타임 값을 읽을 수 없습니다.');
       return;
     }
 
+    setIsSavingGoal(true);
     try {
       const participantId = await resolveParticipantId();
       if (participantId == null) {
@@ -104,7 +109,12 @@ export default function VerifyDoneScreen() {
         pathname: '/(group)/goal',
         params: value ? { value } : undefined,
       });
-    } catch {}
+    } catch (error) {
+      logError(normalizeError(error), { scope: 'verify.done', operation: 'setGoal' });
+      Alert.alert('저장 실패', '오류가 발생했습니다. 잠시 후 다시 시도해주세요.');
+    } finally {
+      setIsSavingGoal(false);
+    }
   };
 
   const handleSkip = async () => {
@@ -182,9 +192,10 @@ export default function VerifyDoneScreen() {
               }}
             >
               <Button
-                label="개인 목표 설정하기"
+                label={isSavingGoal ? '저장 중...' : '개인 목표 설정하기'}
                 color="primary"
                 onPress={handleSetGoal}
+                disabled={isSavingGoal}
                 style={styles.button}
               />
             </LoggingButton>
