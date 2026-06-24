@@ -120,6 +120,15 @@ const config: ExpoConfig = {
     'expo-notifications',
     '@react-native-community/datetimepicker',
     'expo-font',
+    [
+      'expo-splash-screen',
+      {
+        image: './assets/splash_logo.png',
+        resizeMode: 'contain',
+        backgroundColor: '#1D9E75',
+        imageWidth: 152,
+      },
+    ],
     './plugins/with-sdk55-app-delegate-fixes',
   ],
   extra: {

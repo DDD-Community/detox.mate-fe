@@ -149,7 +149,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   image: {
-    width: 152,
+    width: '100%',
     aspectRatio: 153 / 68,
   },
 });
