@@ -150,6 +150,6 @@ const styles = StyleSheet.create({
   },
   image: {
     width: 152,
-    height: 152,
+    aspectRatio: 153 / 68,
   },
 });
