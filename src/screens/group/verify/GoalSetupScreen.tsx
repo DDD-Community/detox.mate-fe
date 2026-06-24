@@ -12,7 +12,7 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
-import { getUserUsageGoalTime, UserUsageGoalTimeRequestUsageGoalType } from '@/api';
+import { getFirstScreenTime, getUserUsageGoalTime, UserUsageGoalTimeRequestUsageGoalType } from '@/api';
 import { logError, normalizeError } from '@/api/errors';
 import { AppLogo, Button, HeaderAction, LoggingButton, LoggingPage } from '@/components';
 import { trackEvent } from '@/lib/analytics';
@@ -37,7 +37,13 @@ type GoalSetupScreenProps = {
 };
 
 export default function GoalSetupScreen({ mode = 'initial' }: GoalSetupScreenProps) {
-  const { value } = useLocalSearchParams<{ value?: string }>();
+  const { value, firstScreenTimeParticipantId, firstScreenTimeMinutes, firstScreenTimeRecordDate } =
+    useLocalSearchParams<{
+      value?: string;
+      firstScreenTimeParticipantId?: string;
+      firstScreenTimeMinutes?: string;
+      firstScreenTimeRecordDate?: string;
+    }>();
   const isEditMode = mode === 'edit';
   const [existingGoalMinutes, setExistingGoalMinutes] = useState<number | null>(null);
   const [isLoading, setIsLoading] = useState(isEditMode);
@@ -111,6 +117,18 @@ export default function GoalSetupScreen({ mode = 'initial' }: GoalSetupScreenPro
 
     setIsSaving(true);
     try {
+      if (!isEditMode && firstScreenTimeParticipantId && firstScreenTimeMinutes && firstScreenTimeRecordDate) {
+        try {
+          await getFirstScreenTime().create1({
+            groupChallengeParticipantId: Number(firstScreenTimeParticipantId),
+            screenTimeMinutes: Number(firstScreenTimeMinutes),
+            recordDate: firstScreenTimeRecordDate,
+          });
+        } catch (createError) {
+          if (normalizeError(createError).type !== 'conflict') throw createError;
+        }
+      }
+
       await getUserUsageGoalTime().setGoalTimes({
         goals: [
           {

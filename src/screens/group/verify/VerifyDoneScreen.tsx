@@ -4,7 +4,7 @@ import { Alert, Image, Pressable, StyleSheet, Text, View } from 'react-native';
 
 import ONBOARDING_CHECK_IMAGE from '@assets/onboarding-check.png';
 
-import { getFeed, getFirstScreenTime } from '@/api';
+import { getFeed } from '@/api';
 import { logError, normalizeError } from '@/api/errors';
 import { getGroupChallenge } from '@/api/generated/group-challenge/group-challenge';
 import { Button, Icon, LoggingButton, LoggingPage } from '@/components';
@@ -99,20 +99,14 @@ export default function VerifyDoneScreen() {
         return;
       }
 
-      try {
-        await getFirstScreenTime().create1({
-          groupChallengeParticipantId: participantId,
-          screenTimeMinutes: valueMinutes,
-          recordDate: getYesterdayRecordDate(),
-        });
-      } catch (createError) {
-        // 이미 첫 스크린 타임이 저장된 경우(409)에는 목표 설정 화면으로 진행한다.
-        if (normalizeError(createError).type !== 'conflict') throw createError;
-      }
-
       router.replace({
         pathname: '/(group)/goal',
-        params: value ? { value } : undefined,
+        params: {
+          ...(value ? { value } : {}),
+          firstScreenTimeParticipantId: String(participantId),
+          firstScreenTimeMinutes: String(valueMinutes),
+          firstScreenTimeRecordDate: getYesterdayRecordDate(),
+        },
       });
     } catch (error) {
       logError(normalizeError(error), { scope: 'verify.done', operation: 'setGoal' });
