@@ -29,7 +29,7 @@ import { WithdrawConfirmAlert } from './WithdrawConfirmAlert';
 const { brown, gray, green } = primitiveColors;
 // NOTE: OTA(JS 갈아끼우기) 동작 검증용 임시 마커. 테스트 확인 후 제거할 것.
 const appVersionLabel =
-  env.buildChannel === 'local' && env.gitSha
+  env.appEnv === 'development' && env.buildChannel === 'local' && env.gitSha
     ? `v${env.appVersion} DEV · ${env.gitSha}`
     : `v${env.appVersion} · OTA ✓`;
 
