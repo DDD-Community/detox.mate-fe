@@ -669,6 +669,7 @@ function ActiveFeed({
       const canPoke =
         !targetItem.isMe &&
         !targetItem.isVerified &&
+        targetItem.memberGoalState !== 'setWaiting' &&
         !pokedMemberIds.includes(targetItem.id);
 
       if (canPoke) {
