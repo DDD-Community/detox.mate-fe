@@ -6,31 +6,16 @@ import { AppState } from 'react-native';
 import { pickImageFromLibrary } from './useImageLibraryPicker';
 import { buildVerifyFlowParams, getVerifyPath, type VerifyFlowParams } from './verifyFlowParams';
 
-const SCREEN_TIME_SETTINGS_URLS = [
-  'prefs:root=SCREEN_TIME',
-  'App-Prefs:root=SCREEN_TIME',
-  'App-Prefs:SCREEN_TIME',
-  'prefs:root=ScreenTime',
-];
-
 const SETTINGS_ROOT_URLS = ['prefs:', 'App-Prefs:'];
 
-async function tryOpen(url: string): Promise<boolean> {
-  try {
-    await Linking.openURL(url);
-    return true;
-  } catch {
-    return false;
-  }
-}
-
-async function openScreenTimeSettings() {
-  for (const url of SCREEN_TIME_SETTINGS_URLS) {
-    if (await tryOpen(url)) return;
-  }
-
+async function openSettings() {
   for (const url of SETTINGS_ROOT_URLS) {
-    if (await tryOpen(url)) return;
+    try {
+      await Linking.openURL(url);
+      return;
+    } catch {
+      // try next
+    }
   }
 }
 
@@ -61,7 +46,7 @@ export function useVerifyMethodNavigation(params: VerifyFlowParams) {
       });
     });
 
-    await openScreenTimeSettings();
+    await openSettings();
   };
 
   return {
