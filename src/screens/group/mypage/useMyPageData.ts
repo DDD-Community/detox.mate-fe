@@ -11,6 +11,7 @@ import {
   type GroupResponse,
   type MyProfileResponse,
 } from '@/api';
+import { setAnalyticsGroupRole } from '@/lib/analytics';
 import type { MyPageParams } from './useMyPageParams';
 
 interface UseMyPageDataOptions {
@@ -73,6 +74,7 @@ export function useMyPageData({ params, onProfileImageUriChange }: UseMyPageData
           setGroups(groupDetails);
 
           const firstGroup = groupDetails[0];
+          setAnalyticsGroupRole(firstGroup?.myRole);
           if (!firstGroup?.id || !me.id) {
             setMemberProfile(null);
             return;

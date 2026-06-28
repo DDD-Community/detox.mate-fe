@@ -22,7 +22,7 @@ import {
   LoggingPage,
   useClipboardCopyToast,
 } from '@/components';
-import { setAnalyticsUserProperties, trackEvent } from '@/lib/analytics';
+import { trackEvent } from '@/lib/analytics';
 import { primitiveColors, radius, spacing, typography } from '@/lib/token';
 import { getInviteShareUrl } from '@/lib/airbridge';
 import { LeaveGroupAlert } from './LeaveGroupAlert';
@@ -73,9 +73,6 @@ export default function GroupInfoScreen() {
 
         const data = await getGroup().getGroup(targetId);
         if (cancelled) return;
-        if (data.myRole === 'OWNER' || data.myRole === 'MEMBER') {
-          setAnalyticsUserProperties({ group_role: data.myRole });
-        }
         setGroupName(data.name ?? '');
         setInviteCode(data.inviteCode ?? '');
         setMembers(data.members ?? []);

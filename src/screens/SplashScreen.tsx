@@ -8,7 +8,7 @@ import { logError, normalizeError } from '../api/errors';
 import { getGroup } from '../api/generated/group/group';
 import { getGroupChallenge } from '../api/generated/group-challenge/group-challenge';
 import { LoggingPage } from '../components';
-import { setAnalyticsUserId, trackEvent } from '../lib/analytics';
+import { setAnalyticsGroupRole, setAnalyticsUserId, trackEvent } from '../lib/analytics';
 import { consumePendingInviteCode } from '../lib/pendingInvite';
 import { TERMS_ACCEPTED_KEY } from './auth/authStorageKeys';
 
@@ -25,6 +25,8 @@ const getInitialFeedRouteParams = async (): Promise<InitialFeedRouteParams | nul
   if (!firstGroup) {
     return null;
   }
+
+  setAnalyticsGroupRole(firstGroup.myRole);
 
   const baseParams = {
     ...(firstGroup.name ? { groupName: firstGroup.name } : {}),

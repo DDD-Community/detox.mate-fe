@@ -165,8 +165,10 @@ export type AnalyticsDebugEvent = {
   properties: AnalyticsProperties;
 };
 
+export type AnalyticsGroupRole = 'OWNER' | 'MEMBER';
+
 export type AnalyticsUserProperties = {
-  group_role?: 'OWNER' | 'MEMBER' | null;
+  group_role?: AnalyticsGroupRole | null;
   push_notification_enabled?: boolean | null;
 };
 
@@ -221,7 +223,26 @@ export function setAnalyticsUserProperties(properties: AnalyticsUserProperties) 
   logAnalyticsDebug('identify', properties);
 }
 
+export function setAnalyticsGroupRole(role: string | null | undefined) {
+  if (role !== 'OWNER' && role !== 'MEMBER') return;
+
+  setAnalyticsUserProperties({ group_role: role });
+}
+
+function syncUserPropertiesFromEvent(eventName: AnalyticsEventName) {
+  if (eventName === 'Group Created') {
+    setAnalyticsGroupRole('OWNER');
+    return;
+  }
+
+  if (eventName === 'Group Joined') {
+    setAnalyticsGroupRole('MEMBER');
+  }
+}
+
 export function trackEvent(eventName: AnalyticsEventName, properties: AnalyticsProperties = {}) {
+  syncUserPropertiesFromEvent(eventName);
+
   const eventProperties = { ...properties };
 
   debugEvents.push({
