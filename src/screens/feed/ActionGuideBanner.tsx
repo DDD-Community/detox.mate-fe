@@ -244,8 +244,8 @@ function VerifiedBanner({ summary }: Pick<Props, 'summary'>) {
         )}
       </View>
       <View style={styles.progressGroup}>
-        <View style={styles.progressTrack}>
-          <View style={[styles.progressFill, { width: progressPercent }]} />
+        <View style={[styles.progressTrack, isOverGoal && styles.progressTrackFail]}>
+          <View style={[styles.progressFill, { width: progressPercent }, isOverGoal && styles.progressFillFail]} />
           {hasGoal && (
             <Image
               source={require('../../../assets/turtle-marker.png')}
@@ -466,6 +466,12 @@ const styles = StyleSheet.create({
     height: 12,
     borderRadius: radius.full,
     backgroundColor: green[300],
+  },
+  progressTrackFail: {
+    backgroundColor: system.red.opacity10,
+  },
+  progressFillFail: {
+    backgroundColor: system.red.opacity100,
   },
   progressGoalMarker: {
     position: 'absolute',
