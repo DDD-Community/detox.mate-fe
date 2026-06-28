@@ -657,7 +657,7 @@ export default function FeedPostDetail() {
           </View>
         </ScrollView>
 
-        {showReactionPicker ? (
+        {showReactionPicker && feedItem.memberGoalState !== 'setWaiting' ? (
           <>
             <Pressable style={styles.pickerOverlay} onPress={() => setShowReactionPicker(false)} />
             <View
@@ -689,7 +689,7 @@ export default function FeedPostDetail() {
               <Pressable style={styles.sendBtn} onPress={handleSendComment}>
                 <Icon name="paperPlaneRight" size={20} color={WHITE} />
               </Pressable>
-            ) : (
+            ) : feedItem.memberGoalState !== 'setWaiting' ? (
               <LoggingButton
                 eventName="Feed Post Detail Reaction Picker Open Clicked"
                 properties={{ pageName: 'FeedPostDetail', buttonName: '리액션 열기' }}
@@ -702,7 +702,7 @@ export default function FeedPostDetail() {
                   />
                 </Pressable>
               </LoggingButton>
-            )}
+            ) : null}
           </View>
         )}
       </KeyboardAvoidingView>
