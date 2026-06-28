@@ -374,8 +374,8 @@ function NumberWheel({
     <View style={[styles.wheelGroup, { width: columnWidth + 54 }]}>
       <ScrollView
         ref={scrollRef}
-        style={[styles.wheelColumn, { width: columnWidth }]}
-        contentContainerStyle={styles.wheelContent}
+        style={[styles.wheelColumn, { width: columnWidth + 54 }]}
+        contentContainerStyle={[styles.wheelContent, { alignItems: 'flex-start' }]}
         showsVerticalScrollIndicator={false}
         snapToInterval={WHEEL_ITEM_HEIGHT}
         decelerationRate="fast"
@@ -388,7 +388,7 @@ function NumberWheel({
         {options.map((option) => {
           const selected = option === selectedValue;
           return (
-            <View key={option} style={styles.wheelItem}>
+            <View key={option} style={[styles.wheelItem, { width: columnWidth }]}>
               <Text style={[styles.wheelText, selected ? styles.selectedWheelNumber : null]}>
                 {option}
               </Text>
