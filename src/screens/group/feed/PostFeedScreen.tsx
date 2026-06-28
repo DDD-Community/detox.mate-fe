@@ -53,7 +53,7 @@ export default function PostFeedScreen() {
     router.replace('/(group)/verify/complete');
   };
 
-  const canPost = hasValidParticipantId && !submitting;
+  const canPost = hasValidParticipantId && !submitting && (imageAsset != null || text.trim().length > 0);
 
   const handlePost = async () => {
     if (!canPost) return;
