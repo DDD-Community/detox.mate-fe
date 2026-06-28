@@ -12,6 +12,8 @@ const GUIDE_BANNER_HEIGHT = 233;
 const FEED_SHEET_OVERLAP = 62;
 const GUIDE_BANNER_VISIBLE_HEIGHT = GUIDE_BANNER_HEIGHT - FEED_SHEET_OVERLAP;
 const PROGRESS_BAR_WIDTH = 343;
+const TURTLE_MARKER_SIZE = 20;
+const DISPLAY_MAX_MINUTES = 24 * 60;
 
 export type GoalState = 'notSet' | 'setWaiting' | 'authReady';
 export type ActionGuideBannerState = GoalState | 'waitingForMembers' | 'deadlineSoon' | 'verified';
@@ -205,16 +207,15 @@ function VerifiedBanner({ summary }: Pick<Props, 'summary'>) {
   const usedMinutes = summary?.usedMinutes ?? 0;
   const goalMinutes = summary?.goalMinutes ?? 0;
   const hasGoal = goalMinutes > 0;
-  const displayMaxMinutes = Math.max(180, Math.ceil(Math.max(usedMinutes, goalMinutes) / 60) * 60);
-  const progressRatio = displayMaxMinutes > 0 ? usedMinutes / displayMaxMinutes : 0;
-  const markerRatio = hasGoal ? goalMinutes / displayMaxMinutes : 0;
+  const progressRatio = goalMinutes / DISPLAY_MAX_MINUTES;
+  const markerRatio = usedMinutes / DISPLAY_MAX_MINUTES;
   const progressWidth = Math.min(
     PROGRESS_BAR_WIDTH,
     Math.max(0, PROGRESS_BAR_WIDTH * progressRatio)
   );
   const markerLeft = Math.min(
-    PROGRESS_BAR_WIDTH - 0.5,
-    Math.max(0, PROGRESS_BAR_WIDTH * markerRatio - 0.5)
+    PROGRESS_BAR_WIDTH - TURTLE_MARKER_SIZE / 2,
+    Math.max(0, PROGRESS_BAR_WIDTH * markerRatio - TURTLE_MARKER_SIZE / 2)
   );
   const overGoalPercent = hasGoal ? ((usedMinutes - goalMinutes) / goalMinutes) * 100 : 0;
   const showCompare = hasGoal && Number.isFinite(overGoalPercent);
@@ -254,10 +255,16 @@ function VerifiedBanner({ summary }: Pick<Props, 'summary'>) {
       <View style={styles.progressGroup}>
         <View style={styles.progressTrack}>
           <View style={[styles.progressFill, { width: progressWidth }]} />
-          {hasGoal && <View style={[styles.progressGoalMarker, { left: markerLeft }]} />}
+          {hasGoal && (
+            <Image
+              source={require('../../../assets/turtle-marker.png')}
+              style={[styles.progressGoalMarker, { left: markerLeft }]}
+              resizeMode="contain"
+            />
+          )}
         </View>
         <View style={styles.progressLabels}>
-          {buildProgressLabels(displayMaxMinutes).map((label) => (
+          {buildProgressLabels(DISPLAY_MAX_MINUTES).map((label) => (
             <Text key={label} style={styles.progressLabel}>
               {label}
             </Text>
@@ -472,10 +479,9 @@ const styles = StyleSheet.create({
   },
   progressGoalMarker: {
     position: 'absolute',
-    top: -3,
-    width: 1,
-    height: 18,
-    backgroundColor: green[500],
+    top: (12 - TURTLE_MARKER_SIZE) / 2,
+    width: TURTLE_MARKER_SIZE,
+    height: TURTLE_MARKER_SIZE,
   },
   progressLabels: {
     width: PROGRESS_BAR_WIDTH,
