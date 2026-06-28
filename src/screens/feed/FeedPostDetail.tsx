@@ -211,6 +211,7 @@ export default function FeedPostDetail() {
 
   useEffect(() => {
     if (!feedItem.challengeRecordId) return;
+    let cancelled = false;
     const fetchComments = async () => {
       try {
         const res = await apiClient.get<CommentsResponse>(
@@ -221,6 +222,7 @@ export default function FeedPostDetail() {
             skipGlobalError: true,
           }
         );
+        if (cancelled) return;
         const mapped = res.data.items.map((c) => ({
           id: String(c.commentId),
           authorName:
@@ -235,6 +237,7 @@ export default function FeedPostDetail() {
         setComments(mapped);
         setCommentCount(res.data.totalCount);
       } catch (error) {
+        if (cancelled) return;
         logError(normalizeError(error), {
           scope: 'feed.comment',
           operation: 'listComments',
@@ -242,6 +245,9 @@ export default function FeedPostDetail() {
       }
     };
     fetchComments();
+    return () => {
+      cancelled = true;
+    };
   }, [feedItem.challengeRecordId, myUserId]);
 
   const fetchDetail = useCallback(async () => {
