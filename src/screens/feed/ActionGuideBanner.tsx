@@ -1,5 +1,5 @@
 import { router } from 'expo-router';
-import { Image, StyleSheet, Text, View } from 'react-native';
+import { Image, StyleSheet, Text, View, type DimensionValue } from 'react-native';
 import { LoggingButton } from '../../components';
 import { Button } from '../../components/Button';
 import { Icon } from '../../components/Icon';
@@ -11,7 +11,6 @@ const DAILY_AUTH_BG = '#D5441BCC';
 const GUIDE_BANNER_HEIGHT = 233;
 const FEED_SHEET_OVERLAP = 62;
 const GUIDE_BANNER_VISIBLE_HEIGHT = GUIDE_BANNER_HEIGHT - FEED_SHEET_OVERLAP;
-const PROGRESS_BAR_WIDTH = 343;
 const TURTLE_MARKER_SIZE = 20;
 const DISPLAY_MAX_MINUTES = 24 * 60;
 
@@ -207,16 +206,8 @@ function VerifiedBanner({ summary }: Pick<Props, 'summary'>) {
   const usedMinutes = summary?.usedMinutes ?? 0;
   const goalMinutes = summary?.goalMinutes ?? 0;
   const hasGoal = goalMinutes > 0;
-  const progressRatio = goalMinutes / DISPLAY_MAX_MINUTES;
-  const markerRatio = usedMinutes / DISPLAY_MAX_MINUTES;
-  const progressWidth = Math.min(
-    PROGRESS_BAR_WIDTH,
-    Math.max(0, PROGRESS_BAR_WIDTH * progressRatio)
-  );
-  const markerLeft = Math.min(
-    PROGRESS_BAR_WIDTH - TURTLE_MARKER_SIZE / 2,
-    Math.max(0, PROGRESS_BAR_WIDTH * markerRatio - TURTLE_MARKER_SIZE / 2)
-  );
+  const progressPercent = `${Math.min(100, (goalMinutes / DISPLAY_MAX_MINUTES) * 100)}%` as DimensionValue;
+  const markerPercent = `${Math.min(100, (usedMinutes / DISPLAY_MAX_MINUTES) * 100)}%` as DimensionValue;
   const overGoalPercent = hasGoal ? ((usedMinutes - goalMinutes) / goalMinutes) * 100 : 0;
   const showCompare = hasGoal && Number.isFinite(overGoalPercent);
   const isOverGoal = overGoalPercent > 0;
@@ -254,11 +245,11 @@ function VerifiedBanner({ summary }: Pick<Props, 'summary'>) {
       </View>
       <View style={styles.progressGroup}>
         <View style={styles.progressTrack}>
-          <View style={[styles.progressFill, { width: progressWidth }]} />
+          <View style={[styles.progressFill, { width: progressPercent }]} />
           {hasGoal && (
             <Image
               source={require('../../../assets/turtle-marker.png')}
-              style={[styles.progressGoalMarker, { left: markerLeft }]}
+              style={[styles.progressGoalMarker, { left: markerPercent, transform: [{ translateX: -TURTLE_MARKER_SIZE / 2 }] }]}
               resizeMode="contain"
             />
           )}
@@ -465,8 +456,7 @@ const styles = StyleSheet.create({
     gap: spacing[8],
   },
   progressTrack: {
-    width: PROGRESS_BAR_WIDTH,
-    maxWidth: '100%',
+    width: '100%',
     height: 12,
     borderRadius: radius.full,
     backgroundColor: green[300] + '4D',
@@ -484,8 +474,7 @@ const styles = StyleSheet.create({
     height: TURTLE_MARKER_SIZE,
   },
   progressLabels: {
-    width: PROGRESS_BAR_WIDTH,
-    maxWidth: '100%',
+    width: '100%',
     flexDirection: 'row',
     justifyContent: 'space-between',
   },
