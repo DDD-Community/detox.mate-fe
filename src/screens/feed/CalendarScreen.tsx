@@ -1,5 +1,5 @@
 import { router, useLocalSearchParams } from 'expo-router';
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { ActivityIndicator, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { HeaderAction, Icon, LoggingButton, LoggingPage } from '../../components';
@@ -9,7 +9,6 @@ import { primitiveColors, radius, spacing, typography } from '../../lib/token';
 const { gray, green, brown, system } = primitiveColors;
 const WHITE = '#FFFFFF';
 const CALENDAR_RED = '#EF3024';
-const STREAK_TOAST_DURATION_MS = 2500;
 const WEEKDAYS = ['SUN', 'MON', 'TUE', 'WED', 'THU', 'FRI', 'SAT'] as const;
 
 type CalendarResponse = {
@@ -134,15 +133,6 @@ export default function CalendarScreen() {
   const [firstActiveDate, setFirstActiveDate] = useState<Date | null>(null);
   const [lastActiveDate, setLastActiveDate] = useState(today);
   const [streakToastVisible, setStreakToastVisible] = useState(false);
-  const streakToastTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-
-  useEffect(() => {
-    return () => {
-      if (streakToastTimerRef.current) {
-        clearTimeout(streakToastTimerRef.current);
-      }
-    };
-  }, []);
 
   useEffect(() => {
     if (!groupChallengeId) return;
@@ -202,21 +192,10 @@ export default function CalendarScreen() {
   };
 
   const handleStreakInfoPress = () => {
-    if (streakToastTimerRef.current) {
-      clearTimeout(streakToastTimerRef.current);
-    }
     setStreakToastVisible(true);
-    streakToastTimerRef.current = setTimeout(() => {
-      setStreakToastVisible(false);
-      streakToastTimerRef.current = null;
-    }, STREAK_TOAST_DURATION_MS);
   };
 
   const handleDismissStreakToast = () => {
-    if (streakToastTimerRef.current) {
-      clearTimeout(streakToastTimerRef.current);
-      streakToastTimerRef.current = null;
-    }
     setStreakToastVisible(false);
   };
 
