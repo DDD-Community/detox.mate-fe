@@ -170,11 +170,15 @@ export default function CalendarScreen() {
   }, [groupChallengeId]);
 
   const handleDatePress = (date: Date) => {
+    if (isSameDate(date, today)) {
+      router.push('/(feed)/home');
+      return;
+    }
+
     if (
       !firstActiveDate ||
       isBeforeDate(date, firstActiveDate) ||
-      isAfterDate(date, lastActiveDate) ||
-      isSameDate(date, today)
+      isAfterDate(date, lastActiveDate)
     ) {
       return;
     }
