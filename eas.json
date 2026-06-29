@@ -21,7 +21,8 @@
       "channel": "development",
       "environment": "development",
       "env": {
-        "APP_ENV": "development"
+        "APP_ENV": "development",
+        "APP_BUILD_CHANNEL": "testflight"
       },
       "ios": {
         "credentialsSource": "remote"
