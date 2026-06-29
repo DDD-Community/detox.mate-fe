@@ -206,8 +206,8 @@ function VerifiedBanner({ summary }: Pick<Props, 'summary'>) {
   const usedMinutes = summary?.usedMinutes ?? 0;
   const goalMinutes = summary?.goalMinutes ?? 0;
   const hasGoal = goalMinutes > 0;
-  const progressPercent = `${Math.min(100, (goalMinutes / DISPLAY_MAX_MINUTES) * 100)}%` as DimensionValue;
-  const markerPercent = `${Math.min(100, (usedMinutes / DISPLAY_MAX_MINUTES) * 100)}%` as DimensionValue;
+  const progressPercent = `${Math.min(100, (usedMinutes / DISPLAY_MAX_MINUTES) * 100)}%` as DimensionValue;
+  const markerPercent = `${Math.min(100, (goalMinutes / DISPLAY_MAX_MINUTES) * 100)}%` as DimensionValue;
   const overGoalPercent = hasGoal ? ((usedMinutes - goalMinutes) / goalMinutes) * 100 : 0;
   const showCompare = hasGoal && Number.isFinite(overGoalPercent);
   const isOverGoal = overGoalPercent > 0;
