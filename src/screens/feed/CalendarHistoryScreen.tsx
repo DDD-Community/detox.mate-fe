@@ -2,7 +2,6 @@ import { router, useLocalSearchParams } from 'expo-router';
 import { useEffect, useState } from 'react';
 import {
   ActivityIndicator,
-  Image,
   ScrollView,
   StyleSheet,
   Text,
@@ -10,10 +9,11 @@ import {
   View,
 } from 'react-native';
 import apiClient from '../../api/client';
+import { getFeed } from '../../api/generated/feed/feed';
 import type { GroupChallengeRecordFeedResponse, MemberResponse } from '../../api/generated/model';
 import { Icon, LoggingButton, LoggingPage } from '../../components';
 import { memberStore } from '../../lib/memberStore';
-import { primitiveColors, radius, spacing, typography } from '../../lib/token';
+import { primitiveColors, spacing, typography } from '../../lib/token';
 import FeedCard, { type FeedItem, type PokeEntry, type ReactionEntry } from './FeedCard';
 
 const { gray, brown } = primitiveColors;
@@ -122,8 +122,8 @@ export default function CalendarHistoryScreen() {
   );
   const [lastSelectableDate, setLastSelectableDate] = useState(() => {
     const parsedEndDate = parseDateParam(paramEndDate);
-    const yesterday = yesterdayString();
-    return parsedEndDate && parsedEndDate < yesterday ? parsedEndDate : yesterday;
+    const today = todayString();
+    return parsedEndDate && parsedEndDate < today ? parsedEndDate : today;
   });
 
   const today = todayString();
@@ -140,12 +140,12 @@ export default function CalendarHistoryScreen() {
         );
         const startDate = parseDateParam(res.data.startAt ?? undefined);
         const endDate = parseDateParam(res.data.endAt ?? undefined);
-        const yesterday = yesterdayString();
+        const today = todayString();
 
         if (startDate) {
           setFirstSelectableDate(startDate);
         }
-        if (endDate && endDate < yesterday) {
+        if (endDate && endDate < today) {
           setLastSelectableDate(endDate);
         }
       } catch {
@@ -174,11 +174,17 @@ export default function CalendarHistoryScreen() {
     setLoading(true);
     const fetch = async () => {
       try {
-        const res = await apiClient.get<GroupChallengeRecordFeedResponse>(
-          `/group-challenges/${groupChallengeId}/challenge-records`,
-          { params: { date } }
-        );
-        const members = res.data.members ?? [];
+        let members: MemberResponse[];
+        if (date === today) {
+          const res = await getFeed().getTodayChallengeRecords(Number(groupChallengeId));
+          members = res.members ?? [];
+        } else {
+          const res = await apiClient.get<GroupChallengeRecordFeedResponse>(
+            `/group-challenges/${groupChallengeId}/challenge-records`,
+            { params: { date } }
+          );
+          members = res.data.members ?? [];
+        }
         const score = (m: (typeof members)[number]) => {
           if (m.activityRecord != null) return 2;
           if ((m.reactionCount ?? 0) > 0 || (m.commentCount ?? 0) > 0) return 1;
@@ -187,6 +193,7 @@ export default function CalendarHistoryScreen() {
         const deduped = members
           .filter((m) => !m.isUserWithdrawn)
           .filter((m) =>
+            date === today ||
             (m.goals ?? []).some((g) => g.effectiveDate != null && g.effectiveDate <= date)
           )
           .reduce<typeof members>((acc, m) => {
