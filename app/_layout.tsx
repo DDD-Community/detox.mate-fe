@@ -1,7 +1,9 @@
 import { useFonts } from 'expo-font';
-import { Stack } from 'expo-router';
+import * as Notifications from 'expo-notifications';
+import { router, Stack } from 'expo-router';
 import * as SplashScreen from 'expo-splash-screen';
 import { useEffect, type ComponentType } from 'react';
+import { getGroup } from '../src/api/generated/group/group';
 import { fontSources } from '../src/lib/token/primitive/fonts';
 import { NetworkErrorToast } from '../src/components/NetworkErrorToast';
 import { subscribeToDevicePushTokenRefresh } from '../src/lib/fcmToken';
@@ -32,6 +34,23 @@ export default function RootLayout() {
   // FCM registration token 갱신 감지 → 서버에 새 토큰 재등록
   useEffect(() => {
     return subscribeToDevicePushTokenRefresh();
+  }, []);
+
+  // 푸시 알림 탭 시 그룹 여부에 따라 라우팅
+  useEffect(() => {
+    const subscription = Notifications.addNotificationResponseReceivedListener(async () => {
+      try {
+        const groups = await getGroup().getMyGroups();
+        if (groups.length === 0) {
+          router.push('/(group)/home');
+        } else {
+          router.push('/(group)/notifications');
+        }
+      } catch {
+        // 미로그인 등 API 실패 시 앱 자체 인증 흐름에 위임
+      }
+    });
+    return () => subscription.remove();
   }, []);
 
   if (!fontsLoaded && !fontError) return null;

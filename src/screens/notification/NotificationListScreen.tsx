@@ -575,12 +575,6 @@ export default function NotificationListScreen() {
     const notification = item as NotificationItem;
 
     try {
-      const groups = await getGroup().getMyGroups();
-      if (groups.length === 0) {
-        router.push('/(group)/home');
-        return;
-      }
-
       const nav = await getNotificationHistory().getNotificationHistory(item.id);
       if (!nav.navigable) {
         showWithMessage(nav.reason ?? DEFAULT_NAVIGATION_ERROR_MESSAGE);
