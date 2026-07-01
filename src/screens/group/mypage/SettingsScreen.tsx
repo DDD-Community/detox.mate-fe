@@ -376,6 +376,30 @@ export default function SettingsScreen() {
             </LoggingButton>
           </View>
 
+          {__DEV__ && (
+            <View style={styles.card}>
+              <LinkRow
+                label="[DEV] 에러: 날짜 인식 불가"
+                onPress={() =>
+                  router.push({
+                    pathname: '/(feed)/verify/error',
+                    params: { reason: 'screen_not_matched', verifyRoot: 'feed' },
+                  })
+                }
+                hasDivider
+              />
+              <LinkRow
+                label="[DEV] 에러: 어제 날짜 아님"
+                onPress={() =>
+                  router.push({
+                    pathname: '/(feed)/verify/error',
+                    params: { reason: 'date_not_yesterday', verifyRoot: 'feed' },
+                  })
+                }
+              />
+            </View>
+          )}
+
           <View style={styles.metaRow}>
             <LoggingButton
               eventName="Settings Withdraw Alert Open Clicked"
