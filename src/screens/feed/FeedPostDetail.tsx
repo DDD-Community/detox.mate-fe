@@ -4,8 +4,7 @@ import { useCallback, useEffect, useState } from 'react';
 import {
   Alert,
   Image,
-  KeyboardAvoidingView,
-  Platform,
+  Keyboard,
   Pressable,
   ScrollView,
   StyleSheet,
@@ -162,6 +161,20 @@ export default function FeedPostDetail() {
 
   const isReadOnly = readOnly === '1';
   const insets = useSafeAreaInsets();
+  const [keyboardHeight, setKeyboardHeight] = useState(0);
+
+  useEffect(() => {
+    const show = Keyboard.addListener('keyboardWillShow', (e) => {
+      setKeyboardHeight(e.endCoordinates.height);
+    });
+    const hide = Keyboard.addListener('keyboardWillHide', () => {
+      setKeyboardHeight(0);
+    });
+    return () => {
+      show.remove();
+      hide.remove();
+    };
+  }, []);
   const feedItem = JSON.parse(itemJson as string) as FeedItem;
   const feedAuthorName = feedItem.isMe ? '나' : feedItem.name;
   const state: GoalState = goalState ?? 'authReady';
@@ -394,10 +407,7 @@ export default function FeedPostDetail() {
 
   return (
     <LoggingPage eventName="Feed Post Detail Viewed" properties={{ pageName: 'FeedPostDetail' }}>
-      <KeyboardAvoidingView
-        style={styles.root}
-        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-      >
+      <View style={[styles.root, { paddingBottom: keyboardHeight }]}>
         <View style={[styles.header, { paddingTop: insets.top + spacing[14] }]}>
           <LoggingButton
             eventName="Feed Post Detail Back Clicked"
@@ -710,7 +720,7 @@ export default function FeedPostDetail() {
             ) : null}
           </View>
         )}
-      </KeyboardAvoidingView>
+      </View>
     </LoggingPage>
   );
 }
@@ -1026,6 +1036,7 @@ const styles = StyleSheet.create({
     backgroundColor: WHITE,
     borderRadius: radius.full,
     paddingHorizontal: spacing[16],
+    paddingVertical: 10,
     fontFamily: typography.primary.body1R.fontFamily,
     fontSize: typography.primary.body1R.fontSize,
     fontWeight: typography.primary.body1R.fontWeight,
