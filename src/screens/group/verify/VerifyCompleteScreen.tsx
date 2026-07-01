@@ -23,7 +23,7 @@ export default function VerifyCompleteScreen() {
         <View style={styles.content}>
           <View style={styles.heading}>
             <Image source={ONBOARDING_CHECK_IMAGE} style={styles.checkIcon} resizeMode="contain" />
-            <Text style={styles.title}>{'인증 완료 !\n오늘도 잘 해냈어요 !'}</Text>
+            <Text style={styles.title}>{'인증 완료 !\n어제의 기록이 피드에 공유됐어요 !'}</Text>
           </View>
 
           <LoggingButton
