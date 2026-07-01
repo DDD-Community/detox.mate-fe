@@ -1,5 +1,4 @@
 import * as Clipboard from 'expo-clipboard';
-import { getInviteShareUrl } from '../../lib/airbridge';
 import { Stack, useRouter } from 'expo-router';
 import React, { useEffect, useState } from 'react';
 import {
@@ -28,6 +27,7 @@ import {
   useClipboardCopyToast,
 } from '../../components';
 import { Icon } from '../../components/Icon';
+import { getInviteShareUrl } from '../../lib/airbridge';
 import { trackEvent } from '../../lib/analytics';
 import { primitiveColors, radius, spacing, typography } from '../../lib/token';
 
@@ -198,7 +198,7 @@ export default function GroupCreateScreen() {
                 style={styles.hintIcon}
                 resizeMode="contain"
               />
-              <Text style={styles.hint}>멤버는 최소 2명부터 참여할 수 있어요</Text>
+              <Text style={styles.hint}>그룹은 최소 2명부터 활성화돼요</Text>
             </View>
           </View>
         )}
