@@ -1,5 +1,6 @@
 import { router, useLocalSearchParams } from 'expo-router';
-import { StyleSheet, Text, View } from 'react-native';
+import { useRef, useState } from 'react';
+import { Pressable, StyleSheet, Text, View } from 'react-native';
 
 import { Button, Icon, LoggingButton, LoggingPage } from '@/components';
 import { primitiveColors, typography } from '@/lib/token';
@@ -8,6 +9,8 @@ import { VerifyBottomSheet } from './VerifyBottomSheet';
 import type { VerifyMode, VerifyRoot } from './verifyFlowParams';
 
 const { gray } = primitiveColors;
+const TRIPLE_TAP_TARGET = 3;
+const TRIPLE_TAP_RESET_MS = 1500;
 
 export default function VerifyMethodScreen() {
   const { mode, goal, groupChallengeParticipantId, verifyRoot } = useLocalSearchParams<{
@@ -16,12 +19,31 @@ export default function VerifyMethodScreen() {
     groupChallengeParticipantId?: string;
     verifyRoot?: VerifyRoot;
   }>();
-  const { handleGallery, handleSettings } = useVerifyMethodNavigation({
+  const { handleGallery, handleSettings, handleClipboard } = useVerifyMethodNavigation({
     mode,
     goal,
     groupChallengeParticipantId,
     verifyRoot,
   });
+
+  const [showClipboardButton, setShowClipboardButton] = useState(false);
+  const tapCountRef = useRef(0);
+  const tapTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  const handleTitlePress = () => {
+    if (tapTimerRef.current) clearTimeout(tapTimerRef.current);
+
+    tapCountRef.current += 1;
+    if (tapCountRef.current >= TRIPLE_TAP_TARGET) {
+      tapCountRef.current = 0;
+      setShowClipboardButton(true);
+      return;
+    }
+
+    tapTimerRef.current = setTimeout(() => {
+      tapCountRef.current = 0;
+    }, TRIPLE_TAP_RESET_MS);
+  };
 
   return (
     <LoggingPage
@@ -31,9 +53,11 @@ export default function VerifyMethodScreen() {
       <VerifyBottomSheet onDismiss={() => router.back()}>
         <View style={styles.content}>
           <View style={styles.textGroup}>
-            <Text style={styles.title}>
-              {mode === 'verify' ? '어제의 스크린 타임\n인증하기' : '내 스크린 타임\n인증하기'}
-            </Text>
+            <Pressable onPress={handleTitlePress} hitSlop={8}>
+              <Text style={styles.title}>
+                {mode === 'verify' ? '어제의 스크린 타임\n인증하기' : '내 스크린 타임\n인증하기'}
+              </Text>
+            </Pressable>
             <Text style={styles.description}>둘 중 하나를 선택해 주세요.</Text>
           </View>
 
@@ -70,6 +94,15 @@ export default function VerifyMethodScreen() {
                 leadingIcon={<Icon name="gearSix" size={16} color="#FFFFFF" />}
               />
             </LoggingButton>
+            {showClipboardButton && (
+              <Button
+                label="클립보드에서 붙여넣기"
+                color="assistive"
+                onPress={handleClipboard}
+                style={styles.button}
+                leadingIcon={<Icon name="copy" size={16} color="#FFFFFF" />}
+              />
+            )}
           </View>
         </View>
       </VerifyBottomSheet>
