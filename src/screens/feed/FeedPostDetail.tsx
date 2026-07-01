@@ -687,8 +687,7 @@ export default function FeedPostDetail() {
               placeholderTextColor={gray[400]}
               value={commentText}
               onChangeText={setCommentText}
-              returnKeyType="send"
-              onSubmitEditing={handleSendComment}
+              multiline
             />
 
             {commentText.trim().length > 0 ? (
