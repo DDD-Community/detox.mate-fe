@@ -1036,6 +1036,7 @@ const styles = StyleSheet.create({
     backgroundColor: WHITE,
     borderRadius: radius.full,
     paddingHorizontal: spacing[16],
+    paddingVertical: 10,
     fontFamily: typography.primary.body1R.fontFamily,
     fontSize: typography.primary.body1R.fontSize,
     fontWeight: typography.primary.body1R.fontWeight,
