@@ -160,7 +160,7 @@ function DailyAuthBanner({
       <View style={styles.topRow}>
         <View style={styles.textContainer}>
           <Text style={isWarning ? styles.dailyAuthWarningTitle : styles.goalTitle}>
-            {isWarning ? '오늘의 인증을 잊지 마세요!' : '어제의 디톡스 인증해 볼까요?'}
+            {isWarning ? '인증을 잊지 마세요!' : '어제의 스크린 타임 인증해 볼까요?'}
           </Text>
           <Text style={isWarning ? styles.dailyAuthWarningSubtitle : styles.goalSubtitle}>
             {isWarning ? '인증을 못하면 그룹의 연속 기록이 깨져요' : '친구들이 기다리고 있어요 👀'}
@@ -206,8 +206,10 @@ function VerifiedBanner({ summary }: Pick<Props, 'summary'>) {
   const usedMinutes = summary?.usedMinutes ?? 0;
   const goalMinutes = summary?.goalMinutes ?? 0;
   const hasGoal = goalMinutes > 0;
-  const progressPercent = `${Math.min(100, (usedMinutes / DISPLAY_MAX_MINUTES) * 100)}%` as DimensionValue;
-  const markerPercent = `${Math.min(100, (goalMinutes / DISPLAY_MAX_MINUTES) * 100)}%` as DimensionValue;
+  const progressPercent =
+    `${Math.min(100, (usedMinutes / DISPLAY_MAX_MINUTES) * 100)}%` as DimensionValue;
+  const markerPercent =
+    `${Math.min(100, (goalMinutes / DISPLAY_MAX_MINUTES) * 100)}%` as DimensionValue;
   const overGoalPercent = hasGoal ? ((usedMinutes - goalMinutes) / goalMinutes) * 100 : 0;
   const showCompare = hasGoal && Number.isFinite(overGoalPercent);
   const isOverGoal = overGoalPercent > 0;
@@ -245,11 +247,20 @@ function VerifiedBanner({ summary }: Pick<Props, 'summary'>) {
       </View>
       <View style={styles.progressGroup}>
         <View style={[styles.progressTrack, isOverGoal && styles.progressTrackFail]}>
-          <View style={[styles.progressFill, { width: progressPercent }, isOverGoal && styles.progressFillFail]} />
+          <View
+            style={[
+              styles.progressFill,
+              { width: progressPercent },
+              isOverGoal && styles.progressFillFail,
+            ]}
+          />
           {hasGoal && (
             <Image
               source={require('../../../assets/turtle-marker.png')}
-              style={[styles.progressGoalMarker, { left: markerPercent, transform: [{ translateX: -TURTLE_MARKER_SIZE / 2 }] }]}
+              style={[
+                styles.progressGoalMarker,
+                { left: markerPercent, transform: [{ translateX: -TURTLE_MARKER_SIZE / 2 }] },
+              ]}
               resizeMode="contain"
             />
           )}

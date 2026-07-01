@@ -61,18 +61,35 @@ export default function VerifyHowToScreen() {
             </View>
 
             {isVerifyMode ? (
-              <LoggingButton
-                eventName="Verify How To Hide Forever Clicked"
-                properties={{
-                  pageName: 'VerifyHowTo',
-                  buttonName: '다시 보지 않기',
-                  verify_mode: mode ?? 'initial',
-                }}
-              >
-                <Pressable style={styles.hideButton} onPress={handleHideForever}>
-                  <Text style={styles.hideButtonLabel}>다시 보지 않기</Text>
-                </Pressable>
-              </LoggingButton>
+              <View style={styles.verifyActions}>
+                <LoggingButton
+                  eventName="Verify How To Confirm Clicked"
+                  properties={{
+                    pageName: 'VerifyHowTo',
+                    buttonName: '확인',
+                    verify_mode: mode ?? 'initial',
+                  }}
+                >
+                  <Button
+                    label="확인"
+                    color="assistive"
+                    onPress={handleConfirm}
+                    style={styles.button}
+                  />
+                </LoggingButton>
+                <LoggingButton
+                  eventName="Verify How To Hide Forever Clicked"
+                  properties={{
+                    pageName: 'VerifyHowTo',
+                    buttonName: '다시 보지 않기',
+                    verify_mode: mode ?? 'initial',
+                  }}
+                >
+                  <Pressable style={styles.hideButton} onPress={handleHideForever}>
+                    <Text style={styles.hideButtonLabel}>다시 보지 않기</Text>
+                  </Pressable>
+                </LoggingButton>
+              </View>
             ) : (
               <LoggingButton
                 eventName="Verify How To Confirm Clicked"
@@ -140,6 +157,11 @@ const styles = StyleSheet.create({
   imagePlaceholder: {
     width: 141,
     height: 305,
+  },
+  verifyActions: {
+    alignSelf: 'stretch',
+    alignItems: 'center',
+    gap: 4,
   },
   button: {
     alignSelf: 'stretch',
