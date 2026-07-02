@@ -155,7 +155,7 @@ const styles = StyleSheet.create({
     letterSpacing: -0.28,
   },
   imagePlaceholder: {
-    width: 141,
+    width: '100%',
     height: 305,
   },
   verifyActions: {
