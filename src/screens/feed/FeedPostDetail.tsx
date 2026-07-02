@@ -180,7 +180,9 @@ export default function FeedPostDetail() {
   const state: GoalState = goalState ?? 'authReady';
   const usesPostLayout = feedItem.isGoalAchieved === true;
   const postText = feedItem.postText ?? feedItem.retroText;
-  const statusLabelColor = feedItem.isGoalAchieved ? system.green.opacity100 : system.red.opacity100;
+  const statusLabelColor = feedItem.isGoalAchieved
+    ? system.green.opacity100
+    : system.red.opacity100;
   const screentimeAccentColor = feedItem.isGoalAchieved ? system.green.opacity100 : gray[500];
   const screentimeBackgroundColor = feedItem.isGoalAchieved ? system.green.opacity10 : gray[50];
 
@@ -1032,7 +1034,7 @@ const styles = StyleSheet.create({
   },
   textInput: {
     flex: 1,
-    height: 44,
+    height: 'auto',
     backgroundColor: WHITE,
     borderRadius: radius.full,
     paddingHorizontal: spacing[16],
