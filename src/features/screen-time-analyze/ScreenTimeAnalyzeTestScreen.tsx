@@ -107,10 +107,10 @@ export function ScreenTimeAnalyzeTestScreen({ onClose }: ScreenTimeAnalyzeTestSc
         <View style={styles.card}>
           <Text style={styles.cardTitle}>개발자용 API</Text>
           <Text style={styles.meta}>
-            import &#123; analyzeScreenTimeImage &#125; from './api/screenTimeAnalyze'
+            {"import { analyzeScreenTimeImage } from './api/screenTimeAnalyze'"}
           </Text>
           <Text style={styles.meta}>const result = await analyzeScreenTimeImage(imageUri)</Text>
-          <Text style={styles.meta}>if (result.ok) result.value // "04:02"</Text>
+          <Text style={styles.meta}>{'if (result.ok) result.value // "04:02"'}</Text>
         </View>
       </ScrollView>
     </SafeAreaView>
