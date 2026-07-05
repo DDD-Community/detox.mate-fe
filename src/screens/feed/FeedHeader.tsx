@@ -12,7 +12,11 @@ interface FeedHeaderProps {
   streakDays?: number;
 }
 
-export default function FeedHeader({ groupName, groupChallengeId, streakDays = 0 }: FeedHeaderProps) {
+export default function FeedHeader({
+  groupName,
+  groupChallengeId,
+  streakDays = 0,
+}: FeedHeaderProps) {
   const handleCalendarPress = () => {
     router.push({
       pathname: '/(feed)/calendar',

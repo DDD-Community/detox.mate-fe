@@ -38,14 +38,13 @@ const iosAlertText = {
 const DATE_MISMATCH_REASONS = new Set(['date_not_yesterday', 'summary_date_not_actual_yesterday']);
 
 export default function VerifyErrorScreen() {
-  const { mode, goal, groupChallengeParticipantId, verifyRoot, reason } =
-    useLocalSearchParams<{
-      mode?: VerifyMode;
-      goal?: string;
-      groupChallengeParticipantId?: string;
-      verifyRoot?: VerifyRoot;
-      reason?: string;
-    }>();
+  const { mode, goal, groupChallengeParticipantId, verifyRoot, reason } = useLocalSearchParams<{
+    mode?: VerifyMode;
+    goal?: string;
+    groupChallengeParticipantId?: string;
+    verifyRoot?: VerifyRoot;
+    reason?: string;
+  }>();
 
   const isDateMismatch = reason != null && DATE_MISMATCH_REASONS.has(reason);
   const errorTitle = isDateMismatch ? '어제 날짜가 아니에요' : '날짜를 인식할 수 없어요';

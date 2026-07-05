@@ -45,7 +45,14 @@ type NotificationItem = NotificationHistoryItemResponse & {
   senderProfileImageUrl?: string | null;
 };
 
-type NotificationKind = 'comment' | 'reaction' | 'verified' | 'poke' | 'newMember' | 'weeklyGoal' | 'unknown';
+type NotificationKind =
+  | 'comment'
+  | 'reaction'
+  | 'verified'
+  | 'poke'
+  | 'newMember'
+  | 'weeklyGoal'
+  | 'unknown';
 
 const formatRelativeTime = (iso?: string): string => {
   if (!iso) return '';
