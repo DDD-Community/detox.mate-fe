@@ -14,9 +14,11 @@ import {
   formatMinutesDiffText,
   parseHHMMToMinutes,
 } from '@/lib/formatDuration';
+import { getVerifyBackFallback, goBackOrReplace } from '@/lib/navigation';
 import { primitiveColors, typography } from '@/lib/token';
 import { VerifyBottomSheet } from './VerifyBottomSheet';
 import {
+  buildVerifyFlowParams,
   buildVerifyValueParams,
   getVerifyPath,
   type VerifyMode,
@@ -124,7 +126,10 @@ export default function VerifyDoneScreen() {
         goalAchieved,
       });
     }
-    router.replace(getVerifyPath('complete', verifyRoot));
+    router.replace({
+      pathname: getVerifyPath('complete', verifyRoot),
+      params: buildVerifyFlowParams({ mode, verifyRoot }),
+    });
   };
 
   const handlePostFeed = () => {
@@ -166,7 +171,7 @@ export default function VerifyDoneScreen() {
         eventName="Verify Done Viewed"
         properties={{ pageName: 'VerifyDone', verify_mode: mode ?? 'initial' }}
       >
-        <VerifyBottomSheet onDismiss={() => router.back()}>
+        <VerifyBottomSheet onDismiss={() => goBackOrReplace(getVerifyBackFallback(verifyRoot))}>
           <View style={styles.content}>
             <View style={styles.heading}>
               <Image
@@ -213,7 +218,7 @@ export default function VerifyDoneScreen() {
         goal_achieved: goalAchieved,
       }}
     >
-      <VerifyBottomSheet onDismiss={() => router.back()}>
+      <VerifyBottomSheet onDismiss={() => goBackOrReplace(getVerifyBackFallback(verifyRoot))}>
         <View style={styles.verifyContent}>
           <View style={styles.heading}>
             <Image source={ONBOARDING_CHECK_IMAGE} style={styles.checkIcon} resizeMode="contain" />

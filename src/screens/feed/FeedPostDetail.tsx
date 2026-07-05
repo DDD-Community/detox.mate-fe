@@ -18,6 +18,7 @@ import { logError, normalizeError } from '../../api/errors';
 import { HeaderAction, Icon, LoggingButton, LoggingPage } from '../../components';
 import { trackButtonClick } from '../../lib/analytics';
 import { memberStore } from '../../lib/memberStore';
+import { goBackOrReplace } from '../../lib/navigation';
 import { pokeStore } from '../../lib/pokeStore';
 import { primitiveColors, radius, spacing, typography } from '../../lib/token';
 import type { GoalState } from './ActionGuideBanner';
@@ -302,12 +303,7 @@ export default function FeedPostDetail() {
   const sortedComments = [...comments].sort((a, b) => a.createdAt - b.createdAt);
 
   const handleHeaderBack = () => {
-    if (router.canGoBack()) {
-      router.back();
-      return;
-    }
-
-    router.replace({
+    goBackOrReplace({
       pathname: '/(feed)/home',
       params: {
         ...(groupChallengeId ? { groupChallengeId } : {}),

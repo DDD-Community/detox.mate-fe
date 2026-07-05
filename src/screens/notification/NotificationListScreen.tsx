@@ -26,6 +26,7 @@ import { getNotificationHistory } from '../../api/generated/notification-history
 import { getUserUsageGoalTime } from '../../api/generated/user-usage-goal-time/user-usage-goal-time';
 import { Icon, LoggingButton, LoggingPage, Toast, useToastVisibility } from '../../components';
 import { memberStore } from '../../lib/memberStore';
+import { goBackOrReplace } from '../../lib/navigation';
 import { primitiveColors, radius, spacing, typography } from '../../lib/token';
 import type { GoalState } from '../feed/ActionGuideBanner';
 import type { FeedItem } from '../feed/FeedCard';
@@ -45,7 +46,14 @@ type NotificationItem = NotificationHistoryItemResponse & {
   senderProfileImageUrl?: string | null;
 };
 
-type NotificationKind = 'comment' | 'reaction' | 'verified' | 'poke' | 'newMember' | 'weeklyGoal' | 'unknown';
+type NotificationKind =
+  | 'comment'
+  | 'reaction'
+  | 'verified'
+  | 'poke'
+  | 'newMember'
+  | 'weeklyGoal'
+  | 'unknown';
 
 const formatRelativeTime = (iso?: string): string => {
   if (!iso) return '';
@@ -567,7 +575,7 @@ export default function NotificationListScreen() {
   const isEmpty = !isLoading && sections.every((s) => s.data.length === 0);
 
   const handleBack = () => {
-    router.back();
+    goBackOrReplace('/(group)/home');
   };
 
   const handlePressItem = async (item: NotificationHistoryItemResponse) => {

@@ -1,17 +1,8 @@
 import * as Clipboard from 'expo-clipboard';
 import { getInviteShareUrl } from '../../lib/airbridge';
-import { Stack, useLocalSearchParams, useRouter } from 'expo-router';
-import React, { useEffect, useState } from 'react';
-import {
-  BackHandler,
-  Image,
-  Share,
-  StyleSheet,
-  Text,
-  TextInput,
-  TouchableOpacity,
-  View,
-} from 'react-native';
+import { useLocalSearchParams, useRouter } from 'expo-router';
+import React, { useState } from 'react';
+import { Image, Share, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import {
   getUserErrorMessage,
@@ -29,6 +20,7 @@ import {
 } from '../../components';
 import { Icon } from '../../components/Icon';
 import { trackEvent } from '../../lib/analytics';
+import { goBackOrReplace } from '../../lib/navigation';
 import { primitiveColors, radius, spacing, typography } from '../../lib/token';
 
 const { green, gray, brown } = primitiveColors;
@@ -56,13 +48,6 @@ export default function GroupJoinScreen() {
 
   const canComplete = inviteCode.length === INVITE_CODE_MAX_LENGTH;
   const isCompleteStep = step === 2;
-
-  useEffect(() => {
-    if (!isCompleteStep) return;
-
-    const subscription = BackHandler.addEventListener('hardwareBackPress', () => true);
-    return () => subscription.remove();
-  }, [isCompleteStep]);
 
   const handleCodeChange = (text: string) => {
     setInviteCode(text.toUpperCase().slice(0, INVITE_CODE_MAX_LENGTH));
@@ -128,7 +113,6 @@ export default function GroupJoinScreen() {
       logKey={step}
     >
       <View style={styles.root}>
-        <Stack.Screen options={{ gestureEnabled: !isCompleteStep }} />
         <SafeAreaView edges={['top']} style={styles.topArea}>
           <View style={styles.progressRow}>
             <View style={[styles.segment, styles.segmentActive]} />
@@ -223,7 +207,7 @@ export default function GroupJoinScreen() {
             >
               <TouchableOpacity
                 style={styles.prevButton}
-                onPress={() => router.back()}
+                onPress={() => goBackOrReplace('/(group)/home')}
                 activeOpacity={0.85}
               >
                 <Text style={styles.prevText}>이전</Text>

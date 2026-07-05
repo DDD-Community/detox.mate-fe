@@ -2,6 +2,7 @@ import { router } from 'expo-router';
 import { Alert, ScrollView, StyleSheet, View } from 'react-native';
 
 import { LoggingPage } from '@/components';
+import { goBackOrReplace } from '@/lib/navigation';
 import { primitiveColors, spacing } from '@/lib/token';
 import { MyPageBody } from './mypage/MyPageBody';
 import { MyPageProfileHeader } from './mypage/MyPageProfileHeader';
@@ -49,7 +50,7 @@ export default function MyPageScreen() {
   });
 
   const handleBack = () => {
-    router.back();
+    goBackOrReplace('/(feed)/home');
   };
 
   const handleSettings = () => {

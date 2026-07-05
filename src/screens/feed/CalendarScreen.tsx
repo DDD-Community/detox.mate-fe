@@ -4,6 +4,7 @@ import { ActivityIndicator, Pressable, ScrollView, StyleSheet, Text, View } from
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { HeaderAction, Icon, LoggingButton, LoggingPage } from '../../components';
 import apiClient from '../../api/client';
+import { goBackOrReplace } from '../../lib/navigation';
 import { primitiveColors, radius, spacing, typography } from '../../lib/token';
 
 const { gray, green, brown, system } = primitiveColors;
@@ -217,7 +218,7 @@ export default function CalendarScreen() {
             >
               <HeaderAction
                 label="캘린더"
-                onPress={() => router.back()}
+                onPress={() => goBackOrReplace('/(feed)/home')}
                 accessibilityLabel="뒤로가기"
                 textStyle={styles.headerTitle}
               />

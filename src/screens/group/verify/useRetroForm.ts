@@ -7,7 +7,12 @@ import { getUserErrorMessage, logError, normalizeError } from '@/api/errors';
 import { submitTotalUsageActivityRecord } from '@/features/activity-record/submitTotalUsageActivityRecord';
 import { uploadImage } from '@/lib/uploadImage';
 import { pickImageFromLibrary } from './useImageLibraryPicker';
-import { getVerifyPath, parseParticipantId, type VerifyRoot } from './verifyFlowParams';
+import {
+  buildVerifyFlowParams,
+  getVerifyPath,
+  parseParticipantId,
+  type VerifyRoot,
+} from './verifyFlowParams';
 
 interface UseRetroFormOptions {
   value?: string;
@@ -53,7 +58,10 @@ export function useRetroForm({
         activityImageObjectKey: objectKey,
         goalAchieved: false,
       });
-      router.replace(getVerifyPath('complete', verifyRoot));
+      router.replace({
+        pathname: getVerifyPath('complete', verifyRoot),
+        params: buildVerifyFlowParams({ verifyRoot }),
+      });
     } catch (error) {
       const appError = normalizeError(error);
       logError(appError, { scope: 'verify.retro', operation: 'submitActivityRecord' });

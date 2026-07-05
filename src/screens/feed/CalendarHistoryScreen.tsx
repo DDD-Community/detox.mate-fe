@@ -13,6 +13,7 @@ import { getFeed } from '../../api/generated/feed/feed';
 import type { GroupChallengeRecordFeedResponse, MemberResponse } from '../../api/generated/model';
 import { Icon, LoggingButton, LoggingPage } from '../../components';
 import { memberStore } from '../../lib/memberStore';
+import { goBackOrReplace } from '../../lib/navigation';
 import { primitiveColors, spacing, typography } from '../../lib/token';
 import FeedCard, { type FeedItem, type PokeEntry, type ReactionEntry } from './FeedCard';
 
@@ -192,9 +193,10 @@ export default function CalendarHistoryScreen() {
         };
         const deduped = members
           .filter((m) => !m.isUserWithdrawn)
-          .filter((m) =>
-            date === today ||
-            (m.goals ?? []).some((g) => g.effectiveDate != null && g.effectiveDate <= date)
+          .filter(
+            (m) =>
+              date === today ||
+              (m.goals ?? []).some((g) => g.effectiveDate != null && g.effectiveDate <= date)
           )
           .reduce<typeof members>((acc, m) => {
             const idx = acc.findIndex((e) => e.userId === m.userId);
@@ -266,7 +268,10 @@ export default function CalendarHistoryScreen() {
             eventName="Calendar History Back Clicked"
             properties={{ pageName: 'CalendarHistory', buttonName: '뒤로가기' }}
           >
-            <TouchableOpacity onPress={() => router.back()} style={styles.backBtn}>
+            <TouchableOpacity
+              onPress={() => goBackOrReplace('/(feed)/home')}
+              style={styles.backBtn}
+            >
               <Icon name="caretLeft" size={20} color={gray[900]} />
             </TouchableOpacity>
           </LoggingButton>

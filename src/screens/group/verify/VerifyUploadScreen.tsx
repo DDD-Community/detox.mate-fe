@@ -1,4 +1,4 @@
-import { router, useLocalSearchParams } from 'expo-router';
+import { useLocalSearchParams } from 'expo-router';
 import { useState } from 'react';
 import {
   ActivityIndicator,
@@ -13,6 +13,7 @@ import {
 } from 'react-native';
 
 import { Button, Icon, LoggingButton, LoggingPage } from '@/components';
+import { getVerifyBackFallback, goBackOrReplace } from '@/lib/navigation';
 import { primitiveColors, typography } from '@/lib/token';
 import { useVerifyUploadAnalysis } from './useVerifyUploadAnalysis';
 import { VerifyBottomSheet } from './VerifyBottomSheet';
@@ -106,7 +107,10 @@ export default function VerifyUploadScreen() {
       eventName="Verify Upload Viewed"
       properties={{ pageName: 'VerifyUpload', verify_mode: mode ?? 'initial' }}
     >
-      <VerifyBottomSheet onDismiss={() => router.back()} dismissDisabled={isAnalyzing}>
+      <VerifyBottomSheet
+        onDismiss={() => goBackOrReplace(getVerifyBackFallback(verifyRoot))}
+        dismissDisabled={isAnalyzing}
+      >
         <View style={styles.content}>
           <View style={styles.section}>
             <View style={styles.textGroup}>
