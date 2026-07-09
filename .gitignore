@@ -65,5 +65,3 @@ omc/
 # Pretendard 폰트 (merge-fonts.py 실행 시 수동으로 넣는 파일)
 scripts/pretendard/*.ttf
 
-# 병합 결과물 (빌드 산출물)
-assets/fonts/nanum-pretendard/
