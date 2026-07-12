@@ -1,8 +1,8 @@
 import type { FontSource } from 'expo-font';
-import nanumSquareRoundB from '../../../../assets/fonts/nanum-square-round/NanumSquareRoundB.ttf';
-import nanumSquareRoundEB from '../../../../assets/fonts/nanum-square-round/NanumSquareRoundEB.ttf';
-import nanumSquareRoundL from '../../../../assets/fonts/nanum-square-round/NanumSquareRoundL.ttf';
-import nanumSquareRoundR from '../../../../assets/fonts/nanum-square-round/NanumSquareRoundR.ttf';
+import nanumSquareRoundB from '../../../../assets/fonts/nanum-pretendard/NanumSquareRoundB.ttf';
+import nanumSquareRoundEB from '../../../../assets/fonts/nanum-pretendard/NanumSquareRoundEB.ttf';
+import nanumSquareRoundL from '../../../../assets/fonts/nanum-pretendard/NanumSquareRoundL.ttf';
+import nanumSquareRoundR from '../../../../assets/fonts/nanum-pretendard/NanumSquareRoundR.ttf';
 import omyuPretty from '../../../../assets/fonts/omyu/omyu-pretty.ttf';
 
 export const fontFamily = {
