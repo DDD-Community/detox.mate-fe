@@ -75,6 +75,19 @@ public class AppleVisionOcrModule: Module {
       return try loadCGImage(fromFileURL: URL(fileURLWithPath: uri))
     }
 
+    if uri.hasPrefix("data:") {
+      guard let commaIndex = uri.firstIndex(of: ",") else {
+        throw ImageLoadingFailedError(uri)
+      }
+      let base64String = String(uri[uri.index(after: commaIndex)...])
+      guard let data = Data(base64Encoded: base64String, options: .ignoreUnknownCharacters),
+            let source = CGImageSourceCreateWithData(data as CFData, nil),
+            let cgImage = CGImageSourceCreateImageAtIndex(source, 0, nil) else {
+        throw ImageLoadingFailedError(uri)
+      }
+      return cgImage
+    }
+
     guard let url = URL(string: uri) else {
       throw InvalidImageURLError(uri)
     }
