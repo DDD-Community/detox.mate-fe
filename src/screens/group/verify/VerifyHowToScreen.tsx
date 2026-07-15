@@ -4,7 +4,7 @@ import { Image, Pressable, StyleSheet, Text, View } from 'react-native';
 import SCREEN_TIME_REF_IMAGE from '@assets/screen_time_ref.png';
 
 import { Button, LoggingButton, LoggingPage } from '@/components';
-import { getVerifyBackFallback, goBackOrReplace } from '@/lib/navigation';
+import { getVerifyExitRoute, goBackOrReplace } from '@/lib/navigation';
 import { primitiveColors, typography } from '@/lib/token';
 import { useVerifyHowToGate } from './useVerifyHowToGate';
 import type { VerifyMode, VerifyRoot } from './verifyFlowParams';
@@ -44,7 +44,7 @@ export default function VerifyHowToScreen() {
       >
         <Pressable
           style={styles.overlay}
-          onPress={() => goBackOrReplace(getVerifyBackFallback(verifyRoot))}
+          onPress={() => goBackOrReplace(getVerifyExitRoute(verifyRoot))}
         >
           <Pressable style={styles.card} onPress={() => {}}>
             <View style={styles.content}>

@@ -1,7 +1,7 @@
 import { router } from 'expo-router';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
-import { getVerifyBackFallback, goBackOrReplace } from './navigation';
+import { getVerifyExitRoute, goBackOrReplace } from './navigation';
 
 vi.mock('expo-router', () => ({
   router: {
@@ -37,16 +37,16 @@ describe('goBackOrReplace', () => {
   });
 });
 
-describe('getVerifyBackFallback', () => {
+describe('getVerifyExitRoute', () => {
   it('returns feed home when verifyRoot is feed', () => {
-    expect(getVerifyBackFallback('feed')).toBe('/(feed)/home');
+    expect(getVerifyExitRoute('feed')).toBe('/(feed)/home');
   });
 
   it('returns group home when verifyRoot is omitted', () => {
-    expect(getVerifyBackFallback()).toBe('/(group)/home');
+    expect(getVerifyExitRoute()).toBe('/(group)/home');
   });
 
   it('returns group home for unsupported verifyRoot values', () => {
-    expect(getVerifyBackFallback('mypage')).toBe('/(group)/home');
+    expect(getVerifyExitRoute('mypage')).toBe('/(group)/home');
   });
 });

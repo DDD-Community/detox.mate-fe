@@ -13,7 +13,7 @@ import {
 } from 'react-native';
 
 import { HeaderAction, Icon, LoggingButton, LoggingPage } from '@/components';
-import { getVerifyBackFallback, goBackOrReplace } from '@/lib/navigation';
+import { getVerifyExitRoute, goBackOrReplace } from '@/lib/navigation';
 import { primitiveColors, typography } from '@/lib/token';
 import { useRetroForm } from './useRetroForm';
 import type { VerifyRoot } from './verifyFlowParams';
@@ -43,7 +43,7 @@ export default function RetroScreen() {
           >
             <HeaderAction
               label="오늘의 회고"
-              onPress={() => goBackOrReplace(getVerifyBackFallback(verifyRoot))}
+              onPress={() => goBackOrReplace(getVerifyExitRoute(verifyRoot))}
               iconColor={gray[900]}
               style={styles.headerBack}
               textStyle={styles.headerTitle}

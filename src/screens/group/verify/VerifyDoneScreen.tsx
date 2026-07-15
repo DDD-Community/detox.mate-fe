@@ -14,7 +14,7 @@ import {
   formatMinutesDiffText,
   parseHHMMToMinutes,
 } from '@/lib/formatDuration';
-import { getVerifyBackFallback, goBackOrReplace } from '@/lib/navigation';
+import { getVerifyExitRoute, goBackOrReplace } from '@/lib/navigation';
 import { primitiveColors, typography } from '@/lib/token';
 import { VerifyBottomSheet } from './VerifyBottomSheet';
 import {
@@ -171,7 +171,7 @@ export default function VerifyDoneScreen() {
         eventName="Verify Done Viewed"
         properties={{ pageName: 'VerifyDone', verify_mode: mode ?? 'initial' }}
       >
-        <VerifyBottomSheet onDismiss={() => goBackOrReplace(getVerifyBackFallback(verifyRoot))}>
+        <VerifyBottomSheet onDismiss={() => goBackOrReplace(getVerifyExitRoute(verifyRoot))}>
           <View style={styles.content}>
             <View style={styles.heading}>
               <Image
@@ -218,7 +218,7 @@ export default function VerifyDoneScreen() {
         goal_achieved: goalAchieved,
       }}
     >
-      <VerifyBottomSheet onDismiss={() => goBackOrReplace(getVerifyBackFallback(verifyRoot))}>
+      <VerifyBottomSheet onDismiss={() => goBackOrReplace(getVerifyExitRoute(verifyRoot))}>
         <View style={styles.verifyContent}>
           <View style={styles.heading}>
             <Image source={ONBOARDING_CHECK_IMAGE} style={styles.checkIcon} resizeMode="contain" />

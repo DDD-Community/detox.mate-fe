@@ -6,7 +6,7 @@ import { getScreenTimeOcrErrorReport } from '@/api/generated/screen-time-ocr-err
 import { PresignedUrlRequestUploadPurpose } from '@/api/generated/model';
 import { LoggingButton, LoggingPage } from '@/components';
 import { parseHHMMToMinutes } from '@/lib/formatDuration';
-import { getVerifyBackFallback, goBackOrReplace } from '@/lib/navigation';
+import { getVerifyExitRoute, goBackOrReplace } from '@/lib/navigation';
 import { primitiveColors, typography } from '@/lib/token';
 import { uploadImage } from '@/lib/uploadImage';
 import { buildVerifyValueParams, getVerifyPath, type VerifyRoot } from './verifyFlowParams';
@@ -77,7 +77,7 @@ export default function VerifyWrongTimeScreen() {
   }, [groupChallengeParticipantId, ocrImageObjectKey, ocrImageUri, ocrRecordDate, value]);
 
   const handleClose = () => {
-    goBackOrReplace(getVerifyBackFallback(verifyRoot));
+    goBackOrReplace(getVerifyExitRoute(verifyRoot));
   };
 
   const handleConfirm = () => {

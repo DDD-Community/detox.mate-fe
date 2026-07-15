@@ -2,7 +2,7 @@ import { useLocalSearchParams } from 'expo-router';
 import { StyleSheet, Text, View } from 'react-native';
 
 import { Button, Icon, LoggingButton, LoggingPage } from '@/components';
-import { getVerifyBackFallback, goBackOrReplace } from '@/lib/navigation';
+import { getVerifyExitRoute, goBackOrReplace } from '@/lib/navigation';
 import { primitiveColors, typography } from '@/lib/token';
 import { useVerifyMethodNavigation } from './useVerifyMethodNavigation';
 import { VerifyBottomSheet } from './VerifyBottomSheet';
@@ -29,7 +29,7 @@ export default function VerifyMethodScreen() {
       eventName="Verify Method Viewed"
       properties={{ pageName: 'VerifyMethod', verify_mode: mode ?? 'initial' }}
     >
-      <VerifyBottomSheet onDismiss={() => goBackOrReplace(getVerifyBackFallback(verifyRoot))}>
+      <VerifyBottomSheet onDismiss={() => goBackOrReplace(getVerifyExitRoute(verifyRoot))}>
         <View style={styles.content}>
           <View style={styles.textGroup}>
             <Text style={styles.title}>

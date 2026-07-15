@@ -13,7 +13,7 @@ import {
 } from 'react-native';
 
 import { Button, Icon, LoggingButton, LoggingPage } from '@/components';
-import { getVerifyBackFallback, goBackOrReplace } from '@/lib/navigation';
+import { getVerifyExitRoute, goBackOrReplace } from '@/lib/navigation';
 import { primitiveColors, typography } from '@/lib/token';
 import { useVerifyUploadAnalysis } from './useVerifyUploadAnalysis';
 import { VerifyBottomSheet } from './VerifyBottomSheet';
@@ -108,7 +108,7 @@ export default function VerifyUploadScreen() {
       properties={{ pageName: 'VerifyUpload', verify_mode: mode ?? 'initial' }}
     >
       <VerifyBottomSheet
-        onDismiss={() => goBackOrReplace(getVerifyBackFallback(verifyRoot))}
+        onDismiss={() => goBackOrReplace(getVerifyExitRoute(verifyRoot))}
         dismissDisabled={isAnalyzing}
       >
         <View style={styles.content}>

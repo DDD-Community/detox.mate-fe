@@ -4,7 +4,7 @@ import { Image, Pressable, StyleSheet, Text, View } from 'react-native';
 import ONBOARDING_CHECK_IMAGE from '@assets/onboarding-check.png';
 
 import { LoggingButton, LoggingPage } from '@/components';
-import { getVerifyBackFallback, goBackOrReplace } from '@/lib/navigation';
+import { getVerifyExitRoute, goBackOrReplace } from '@/lib/navigation';
 import { primitiveColors, typography } from '@/lib/token';
 import { VerifyBottomSheet } from './VerifyBottomSheet';
 import type { VerifyMode, VerifyRoot } from './verifyFlowParams';
@@ -23,7 +23,7 @@ export default function VerifyCompleteScreen() {
 
   return (
     <LoggingPage eventName="Verify Complete Viewed" properties={{ pageName: 'VerifyComplete' }}>
-      <VerifyBottomSheet onDismiss={() => goBackOrReplace(getVerifyBackFallback(verifyRoot))}>
+      <VerifyBottomSheet onDismiss={() => goBackOrReplace(getVerifyExitRoute(verifyRoot))}>
         <View style={styles.content}>
           <View style={styles.heading}>
             <Image source={ONBOARDING_CHECK_IMAGE} style={styles.checkIcon} resizeMode="contain" />

@@ -11,6 +11,6 @@ export function goBackOrReplace(fallback: RouterReplaceTarget) {
   router.replace(fallback);
 }
 
-export function getVerifyBackFallback(verifyRoot?: string): RouterReplaceTarget {
+export function getVerifyExitRoute(verifyRoot?: string): RouterReplaceTarget {
   return verifyRoot === 'feed' ? '/(feed)/home' : '/(group)/home';
 }
