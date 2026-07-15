@@ -57,6 +57,16 @@ jobs:
           APP_GIT_SHA: ${{ github.sha }}
         run: |
           export APP_GIT_SHA="${APP_GIT_SHA::7}"
+
+          # app.config.ts reads APP_VERSION to compute runtimeVersion (policy: "appVersion").
+          # eas-cli evaluates the config locally (this shell) and again on the remote build
+          # worker; only eas.json's `env` is forwarded to the worker, so APP_VERSION must be
+          # baked in here or the two evaluations diverge and the build fails with
+          # "Runtime version calculated on local machine not equal to runtime version
+          # calculated during build."
+          jq --arg v "$APP_VERSION" '.build["development-store"].env.APP_VERSION = $v' eas.json > eas.json.tmp
+          mv eas.json.tmp eas.json
+
           BUILD_JSON=$(eas build --platform ios --profile development-store --non-interactive --json)
           BUILD_ID=$(echo "$BUILD_JSON" | jq -r '.[0].id')
           if [ -z "$BUILD_ID" ] || [ "$BUILD_ID" = "null" ]; then
