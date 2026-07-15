@@ -39,6 +39,7 @@ omc/
 
 # Local-only docs/notes
 .local/
+CLAUDE.local.md
 
 # Secrets
 .agents/skills/shared/config/discord-webhook-url.txt
