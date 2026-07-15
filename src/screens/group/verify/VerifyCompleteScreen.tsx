@@ -4,14 +4,18 @@ import { Image, Pressable, StyleSheet, Text, View } from 'react-native';
 import ONBOARDING_CHECK_IMAGE from '@assets/onboarding-check.png';
 
 import { LoggingButton, LoggingPage } from '@/components';
+import { getVerifyExitRoute, goBackOrReplace } from '@/lib/navigation';
 import { primitiveColors, typography } from '@/lib/token';
 import { VerifyBottomSheet } from './VerifyBottomSheet';
-import type { VerifyMode } from './verifyFlowParams';
+import type { VerifyMode, VerifyRoot } from './verifyFlowParams';
 
 const { green } = primitiveColors;
 
 export default function VerifyCompleteScreen() {
-  const { mode } = useLocalSearchParams<{ mode?: VerifyMode }>();
+  const { mode, verifyRoot } = useLocalSearchParams<{
+    mode?: VerifyMode;
+    verifyRoot?: VerifyRoot;
+  }>();
 
   const handleGoHome = () => {
     router.replace('/(feed)/home');
@@ -19,7 +23,7 @@ export default function VerifyCompleteScreen() {
 
   return (
     <LoggingPage eventName="Verify Complete Viewed" properties={{ pageName: 'VerifyComplete' }}>
-      <VerifyBottomSheet onDismiss={() => router.back()}>
+      <VerifyBottomSheet onDismiss={() => goBackOrReplace(getVerifyExitRoute(verifyRoot))}>
         <View style={styles.content}>
           <View style={styles.heading}>
             <Image source={ONBOARDING_CHECK_IMAGE} style={styles.checkIcon} resizeMode="contain" />

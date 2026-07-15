@@ -16,6 +16,7 @@ import {
 import { HeaderAction, Icon, LoggingButton, LoggingPage } from '../../../components';
 import { submitTotalUsageActivityRecord } from '../../../features/activity-record/submitTotalUsageActivityRecord';
 import { uploadImage } from '../../../lib/uploadImage';
+import { goBackOrReplace } from '../../../lib/navigation';
 import { primitiveColors } from '../../../lib/token/primitive/colors';
 import { typography } from '../../../lib/token/primitive/typography';
 
@@ -90,7 +91,7 @@ export default function PostFeedScreen() {
           >
             <HeaderAction
               label="게시물 올리기"
-              onPress={() => router.back()}
+              onPress={() => goBackOrReplace('/(group)/home')}
               iconColor={gray[900]}
               style={styles.headerBack}
               textStyle={styles.headerTitle}

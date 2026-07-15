@@ -23,6 +23,7 @@ import {
   useClipboardCopyToast,
 } from '@/components';
 import { setAnalyticsUserProperties, trackEvent } from '@/lib/analytics';
+import { goBackOrReplace } from '@/lib/navigation';
 import { primitiveColors, radius, spacing, typography } from '@/lib/token';
 import { getInviteShareUrl } from '@/lib/airbridge';
 import { LeaveGroupAlert } from './LeaveGroupAlert';
@@ -108,7 +109,7 @@ export default function GroupInfoScreen() {
   }, []);
 
   const handleBack = () => {
-    router.back();
+    goBackOrReplace('/(group)/mypage');
   };
 
   const handleCopyInviteCode = async () => {

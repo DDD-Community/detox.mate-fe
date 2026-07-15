@@ -5,6 +5,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { getUser } from '@/api';
 import { Button, Icon, LoggingButton, LoggingPage } from '@/components';
+import { goBackOrReplace } from '@/lib/navigation';
 import { primitiveColors, radius, spacing, typography } from '@/lib/token';
 
 const { brown, gray } = primitiveColors;
@@ -23,7 +24,7 @@ export default function EditNicknameScreen() {
   };
 
   const handleBack = () => {
-    router.back();
+    goBackOrReplace('/(group)/mypage');
   };
 
   const handleSubmit = async () => {
@@ -31,7 +32,7 @@ export default function EditNicknameScreen() {
     setIsSubmitting(true);
     try {
       await getUser().updateMe({ displayName: nickname });
-      router.back();
+      goBackOrReplace('/(group)/mypage');
     } finally {
       setIsSubmitting(false);
     }

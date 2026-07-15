@@ -21,6 +21,7 @@ import { logError, normalizeError } from '@/api/errors';
 import { AppLogo, Button, HeaderAction, LoggingButton, LoggingPage } from '@/components';
 import { trackEvent } from '@/lib/analytics';
 import { formatHHMMToDisplay, formatMinutesAsHourMinute } from '@/lib/formatDuration';
+import { goBackOrReplace } from '@/lib/navigation';
 import { primitiveColors, radius, spacing, typography } from '@/lib/token';
 
 const { brown, gray } = primitiveColors;
@@ -113,7 +114,7 @@ export default function GoalSetupScreen({ mode = 'initial' }: GoalSetupScreenPro
   );
 
   const handleCancel = () => {
-    router.back();
+    goBackOrReplace('/(group)/mypage');
   };
 
   const handleSave = async () => {
@@ -150,7 +151,7 @@ export default function GoalSetupScreen({ mode = 'initial' }: GoalSetupScreenPro
       trackEvent('Goal Time Set', { mode });
 
       if (isEditMode) {
-        router.back();
+        goBackOrReplace('/(group)/mypage');
       } else {
         router.replace('/(feed)/home');
       }

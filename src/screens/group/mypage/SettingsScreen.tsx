@@ -17,6 +17,7 @@ import {
 import { Icon, LoggingButton, LoggingPage } from '@/components';
 import { env } from '@/config/env';
 import { setAnalyticsUserProperties, trackEvent } from '@/lib/analytics';
+import { goBackOrReplace } from '@/lib/navigation';
 import { primitiveColors, radius, spacing, typography } from '@/lib/token';
 import {
   APP_ACCESS_PERMISSION_GUIDE_SEEN_KEY,
@@ -159,7 +160,7 @@ export default function SettingsScreen() {
   );
 
   const handleBack = () => {
-    router.back();
+    goBackOrReplace('/(group)/mypage');
   };
 
   const applyPushPreference = async (enabled: boolean) => {
