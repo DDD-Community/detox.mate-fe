@@ -225,45 +225,34 @@ export default function FeedPostDetail() {
   const [commentText, setCommentText] = useState('');
   const [fetchedPokes, setFetchedPokes] = useState<PokeEntry[]>([]);
 
-  useEffect(() => {
+  const fetchComments = useCallback(async () => {
     if (!feedItem.challengeRecordId) return;
-    let cancelled = false;
-    const fetchComments = async () => {
-      try {
-        const res = await apiClient.get<CommentsResponse>(
-          `/challenge-records/${feedItem.challengeRecordId}/comments`,
-          {
-            errorPolicy: { presentation: 'silent', log: false },
-            retryPolicy: 'none',
-            skipGlobalError: true,
-          }
-        );
-        if (cancelled) return;
-        const mapped = res.data.items.map((c) => ({
-          id: String(c.commentId),
-          authorName:
-            myUserId != null && c.author.userId === myUserId ? '나' : c.author.displayName,
-          avatarSource: c.author.profileImageUrl
-            ? { uri: c.author.profileImageUrl }
-            : AVATAR_SOURCE,
-          text: c.commentBody,
-          createdAt: new Date(c.createdAt).getTime(),
-          timeAgoLabel: formatTimeAgo(new Date(c.createdAt).getTime()),
-        }));
-        setComments(mapped);
-        setCommentCount(res.data.totalCount);
-      } catch (error) {
-        if (cancelled) return;
-        logError(normalizeError(error), {
-          scope: 'feed.comment',
-          operation: 'listComments',
-        });
-      }
-    };
-    fetchComments();
-    return () => {
-      cancelled = true;
-    };
+
+    try {
+      const res = await apiClient.get<CommentsResponse>(
+        `/challenge-records/${feedItem.challengeRecordId}/comments`,
+        {
+          errorPolicy: { presentation: 'silent', log: false },
+          retryPolicy: 'none',
+          skipGlobalError: true,
+        }
+      );
+      const mapped = res.data.items.map((c) => ({
+        id: String(c.commentId),
+        authorName: myUserId != null && c.author.userId === myUserId ? '나' : c.author.displayName,
+        avatarSource: c.author.profileImageUrl ? { uri: c.author.profileImageUrl } : AVATAR_SOURCE,
+        text: c.commentBody,
+        createdAt: new Date(c.createdAt).getTime(),
+        timeAgoLabel: formatTimeAgo(new Date(c.createdAt).getTime()),
+      }));
+      setComments(mapped);
+      setCommentCount(res.data.totalCount);
+    } catch (error) {
+      logError(normalizeError(error), {
+        scope: 'feed.comment',
+        operation: 'listComments',
+      });
+    }
   }, [feedItem.challengeRecordId, myUserId]);
 
   const fetchDetail = useCallback(async () => {
@@ -286,10 +275,7 @@ export default function FeedPostDetail() {
         name: myUserId != null && u.userId === myUserId ? '나' : u.displayName,
         avatarSource: u.profileImageUrl ? { uri: u.profileImageUrl } : (AVATAR_SOURCE as number),
       }));
-      setFetchedPokes((prev) => {
-        const myOptimistic = prev.filter((p) => p.userId === 'me');
-        return [...myOptimistic, ...mappedPokes];
-      });
+      setFetchedPokes(mappedPokes);
     } catch {
       // keep existing state on error
     }
@@ -297,7 +283,8 @@ export default function FeedPostDetail() {
 
   useEffect(() => {
     fetchDetail();
-  }, [fetchDetail]);
+    fetchComments();
+  }, [fetchDetail, fetchComments]);
 
   const displayPokes: PokeEntry[] = fetchedPokes.length > 0 ? fetchedPokes : (feedItem.pokes ?? []);
   const sortedComments = [...comments].sort((a, b) => a.createdAt - b.createdAt);
@@ -395,6 +382,7 @@ export default function FeedPostDetail() {
           skipGlobalError: true,
         }
       );
+      await fetchComments();
     } catch (error) {
       logError(normalizeError(error), {
         scope: 'feed.comment',
@@ -533,6 +521,7 @@ export default function FeedPostDetail() {
                               await apiClient.post(
                                 `/challenge-records/${feedItem.challengeRecordId}/pokes/${feedItem.id}`
                               );
+                              await fetchDetail();
                             } catch {
                               // 에러 무시
                             }
