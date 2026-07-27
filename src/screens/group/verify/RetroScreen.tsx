@@ -1,7 +1,6 @@
-import * as ImagePicker from 'expo-image-picker';
-import { router } from 'expo-router';
-import { useState } from 'react';
+import { useLocalSearchParams } from 'expo-router';
 import {
+  ActivityIndicator,
   Image,
   KeyboardAvoidingView,
   Platform,
@@ -12,109 +11,115 @@ import {
   TextInput,
   View,
 } from 'react-native';
-import { primitiveColors } from '../../../lib/token/primitive/colors';
-import { typography } from '../../../lib/token/primitive/typography';
+
+import { HeaderAction, Icon, LoggingButton, LoggingPage } from '@/components';
+import { getVerifyExitRoute, goBackOrReplace } from '@/lib/navigation';
+import { primitiveColors, typography } from '@/lib/token';
+import { useRetroForm } from './useRetroForm';
+import type { VerifyRoot } from './verifyFlowParams';
 
 const { gray, brown, green, system } = primitiveColors;
 
-async function postRetro(_payload: { imageUri?: string; text: string }): Promise<void> {
-  // TODO: API 연동
-  return new Promise((resolve) => setTimeout(resolve, 300));
-}
-
 export default function RetroScreen() {
-  const [imageUri, setImageUri] = useState<string | undefined>();
-  const [text, setText] = useState('');
-  const [submitting, setSubmitting] = useState(false);
-
-  const canSubmit = text.trim().length > 0 && !submitting;
-
-  const handlePickImage = async () => {
-    const result = await ImagePicker.launchImageLibraryAsync({
-      mediaTypes: ['images'],
-      quality: 1,
+  const { value, groupChallengeParticipantId, verifyRoot } = useLocalSearchParams<{
+    value?: string;
+    groupChallengeParticipantId?: string;
+    verifyRoot?: VerifyRoot;
+  }>();
+  const { canSubmit, handlePickImage, handleSubmit, imageAsset, setText, submitting, text } =
+    useRetroForm({
+      value,
+      groupChallengeParticipantId,
+      verifyRoot,
     });
-    if (result.canceled || !result.assets[0]) return;
-    setImageUri(result.assets[0].uri);
-  };
-
-  const handleSubmit = async () => {
-    if (!canSubmit) return;
-    setSubmitting(true);
-    try {
-      await postRetro({ imageUri, text });
-      router.replace('/(group)/verify/complete');
-    } finally {
-      setSubmitting(false);
-    }
-  };
 
   return (
-    <SafeAreaView style={styles.root}>
-      <View style={styles.header}>
-        <Pressable style={styles.headerBack} onPress={() => router.back()}>
-          <Image
-            source={require('../../../../assets/icons/regular/icon_rg_CaretLeft.png')}
-            style={styles.headerBackIcon}
-            resizeMode="contain"
-          />
-          <Text style={styles.headerTitle}>오늘의 회고</Text>
-        </Pressable>
-      </View>
+    <LoggingPage eventName="Retro Viewed" properties={{ pageName: 'Retro' }}>
+      <SafeAreaView style={styles.root}>
+        <View style={styles.header}>
+          <LoggingButton
+            eventName="Retro Back Clicked"
+            properties={{ pageName: 'Retro', buttonName: '뒤로가기' }}
+          >
+            <HeaderAction
+              label="오늘의 회고"
+              onPress={() => goBackOrReplace(getVerifyExitRoute(verifyRoot))}
+              iconColor={gray[900]}
+              style={styles.headerBack}
+              textStyle={styles.headerTitle}
+              accessibilityLabel="뒤로가기"
+            />
+          </LoggingButton>
+        </View>
 
-      <KeyboardAvoidingView
-        style={styles.body}
-        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
-      >
-        <View style={styles.content}>
-          <Pressable style={styles.dropzone} onPress={handlePickImage}>
-            {imageUri ? (
-              <Image source={{ uri: imageUri }} style={styles.preview} resizeMode="cover" />
-            ) : (
-              <>
-                <View style={styles.iconCircle}>
+        <KeyboardAvoidingView
+          style={styles.body}
+          behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+        >
+          <View style={styles.content}>
+            <LoggingButton
+              eventName="Retro Photo Upload Select Clicked"
+              properties={{ pageName: 'Retro', buttonName: '사진 업로드' }}
+            >
+              <Pressable style={styles.dropzone} onPress={handlePickImage}>
+                {imageAsset ? (
                   <Image
-                    source={require('../../../../assets/icons/regular/icon_rg_UploadSimple.png')}
-                    style={styles.uploadIcon}
-                    resizeMode="contain"
+                    source={{ uri: imageAsset.uri }}
+                    style={styles.preview}
+                    resizeMode="cover"
                   />
-                </View>
-                <View style={styles.dropzoneText}>
-                  <Text style={styles.dropzoneTitle}>사진 업로드 (선택)</Text>
-                  <Text style={styles.dropzoneCaption}>디톡스 시간에 무얼 했나요?</Text>
-                </View>
-              </>
-            )}
-          </Pressable>
+                ) : (
+                  <>
+                    <View style={styles.iconCircle}>
+                      <Icon name="uploadSimple" size={23} color="#2B2F38" />
+                    </View>
+                    <View style={styles.dropzoneText}>
+                      <Text style={styles.dropzoneTitle}>사진 업로드 (선택)</Text>
+                      <Text style={styles.dropzoneCaption}>디톡스 시간에 무얼 했나요?</Text>
+                    </View>
+                  </>
+                )}
+              </Pressable>
+            </LoggingButton>
 
-          <View style={styles.textareaSection}>
-            <Text style={styles.textareaLabel}>
-              직접 입력<Text style={styles.requiredMark}>*</Text>
-            </Text>
-            <View style={styles.textareaBox}>
-              <TextInput
-                style={styles.textarea}
-                placeholder="오늘 하루를 짧게 되돌아보세요"
-                placeholderTextColor={gray[300]}
-                multiline
-                value={text}
-                onChangeText={setText}
-              />
+            <View style={styles.textareaSection}>
+              <Text style={styles.textareaLabel}>
+                직접 입력<Text style={styles.requiredMark}>*</Text>
+              </Text>
+              <View style={styles.textareaBox}>
+                <TextInput
+                  style={styles.textarea}
+                  placeholder="오늘 하루를 짧게 되돌아보세요"
+                  placeholderTextColor={gray[300]}
+                  multiline
+                  value={text}
+                  onChangeText={setText}
+                />
+              </View>
             </View>
           </View>
-        </View>
 
-        <View style={styles.cta}>
-          <Pressable
-            style={[styles.postButton, !canSubmit && styles.postButtonDisabled]}
-            onPress={handleSubmit}
-            disabled={!canSubmit}
-          >
-            <Text style={styles.postButtonLabel}>게시하기</Text>
-          </Pressable>
-        </View>
-      </KeyboardAvoidingView>
-    </SafeAreaView>
+          <View style={styles.cta}>
+            <LoggingButton
+              eventName="Retro Retro Submit Clicked"
+              properties={{ pageName: 'Retro', buttonName: '게시하기' }}
+            >
+              <Pressable
+                style={[styles.postButton, !canSubmit && styles.postButtonDisabled]}
+                onPress={handleSubmit}
+                disabled={!canSubmit}
+              >
+                {submitting ? (
+                  <ActivityIndicator color="#FFFFFF" />
+                ) : (
+                  <Text style={styles.postButtonLabel}>게시하기</Text>
+                )}
+              </Pressable>
+            </LoggingButton>
+          </View>
+        </KeyboardAvoidingView>
+      </SafeAreaView>
+    </LoggingPage>
   );
 }
 
@@ -134,10 +139,6 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: 16,
-  },
-  headerBackIcon: {
-    width: 24,
-    height: 24,
   },
   headerTitle: {
     ...typography.accent.title2,
@@ -170,10 +171,6 @@ const styles = StyleSheet.create({
     backgroundColor: '#F3F4F6',
     alignItems: 'center',
     justifyContent: 'center',
-  },
-  uploadIcon: {
-    width: 23,
-    height: 23,
   },
   dropzoneText: {
     alignItems: 'center',
@@ -213,7 +210,9 @@ const styles = StyleSheet.create({
   },
   textarea: {
     flex: 1,
-    ...typography.primary.body1R,
+    fontFamily: typography.primary.body1R.fontFamily,
+    fontSize: typography.primary.body1R.fontSize,
+    fontWeight: typography.primary.body1R.fontWeight,
     color: gray[900],
     letterSpacing: -0.32,
     textAlignVertical: 'top',

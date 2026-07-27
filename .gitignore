@@ -39,6 +39,7 @@ omc/
 
 # Local-only docs/notes
 .local/
+CLAUDE.local.md
 
 # Secrets
 .agents/skills/shared/config/discord-webhook-url.txt
@@ -61,3 +62,7 @@ omc/
 
 # ralph loop state
 .ucw/
+
+# Pretendard 폰트 (merge-fonts.py 실행 시 수동으로 넣는 파일)
+scripts/pretendard/*.ttf
+

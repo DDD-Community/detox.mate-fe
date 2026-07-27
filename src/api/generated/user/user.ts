@@ -4,14 +4,48 @@
  * OpenAPI definition
  * OpenAPI spec version: v0
  */
-import type { GetMeParams, MyProfileResponse } from '../model';
+import type {
+  MyProfileResponse,
+  UpdateMyProfileRequest,
+  UpdatePushNotificationSettingRequest,
+} from '../model';
 
 import { customAxios } from '../../mutator';
 
 export const getUser = () => {
-  const getMe = (params: GetMeParams) => {
-    return customAxios<MyProfileResponse>({ url: `/users/me`, method: 'GET', params });
+  const getMe = () => {
+    return customAxios<MyProfileResponse>({ url: `/users/me`, method: 'GET' });
   };
-  return { getMe };
+  const withdraw = () => {
+    return customAxios<void>({ url: `/users/me`, method: 'DELETE' });
+  };
+  const updateMe = (updateMyProfileRequest: UpdateMyProfileRequest) => {
+    return customAxios<MyProfileResponse>({
+      url: `/users/me`,
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      data: updateMyProfileRequest,
+    });
+  };
+  const updatePushNotificationSetting = (
+    updatePushNotificationSettingRequest: UpdatePushNotificationSettingRequest
+  ) => {
+    return customAxios<void>({
+      url: `/users/me/notifications`,
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      data: updatePushNotificationSettingRequest,
+    });
+  };
+  return { getMe, withdraw, updateMe, updatePushNotificationSetting };
 };
 export type GetMeResult = NonNullable<Awaited<ReturnType<ReturnType<typeof getUser>['getMe']>>>;
+export type WithdrawResult = NonNullable<
+  Awaited<ReturnType<ReturnType<typeof getUser>['withdraw']>>
+>;
+export type UpdateMeResult = NonNullable<
+  Awaited<ReturnType<ReturnType<typeof getUser>['updateMe']>>
+>;
+export type UpdatePushNotificationSettingResult = NonNullable<
+  Awaited<ReturnType<ReturnType<typeof getUser>['updatePushNotificationSetting']>>
+>;

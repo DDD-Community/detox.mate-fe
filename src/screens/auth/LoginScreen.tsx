@@ -1,56 +1,99 @@
-import { useRouter } from 'expo-router';
-import { Image, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
-import { primitiveColors } from '../../lib/token/primitive/colors';
-import { typography } from '../../lib/token/primitive/typography';
+import { useLocalSearchParams } from 'expo-router';
+import { useEffect } from 'react';
+import { Image, StyleSheet, Text, View } from 'react-native';
 
-const { brown, gray } = primitiveColors;
+import LOGO_APPLE_LOGIN from '@assets/logo-apple-login.png';
+import LOGO_BLACK from '@assets/logo-black.png';
+import LOGO_KAKAO_LOGIN from '@assets/logo-kakao-login.png';
+import TURTLE_HI_IMAGE from '@assets/turtle-hi.png';
+
+import { Icon, LoggingPage, Toast, useToastVisibility } from '@/components';
+import { primitiveColors, typography } from '@/lib/token';
+import { AppAccessPermissionGuideModal } from './AppAccessPermissionGuideModal';
+import { AuthLoginButton } from './AuthLoginButton';
+import { useAuthLogin } from './useAuthLogin';
+
+const { brown, gray, system } = primitiveColors;
+const LOGIN_FAILURE_MESSAGE = '로그인에 실패했어요. 잠시 후 다시 시도해 주세요.';
+const SESSION_EXPIRED_MESSAGE = '로그인 세션이 만료되었습니다.';
+const LOGIN_TOAST_BOTTOM_OFFSET = 204;
 
 export default function LoginScreen() {
-  const router = useRouter();
+  const { reason } = useLocalSearchParams<{ reason?: string }>();
+  const loginToast = useToastVisibility();
+  const {
+    handleKakaoLogin,
+    handleAppleLogin,
+    handleConfirmPermissionGuide,
+    pendingProvider,
+    permissionGuideConfirming,
+    permissionGuideVisible,
+  } = useAuthLogin({
+    onLoginFailure: () => loginToast.showWithMessage(LOGIN_FAILURE_MESSAGE),
+  });
+  const loginPending = Boolean(pendingProvider);
+  const isSessionExpiredToast = loginToast.message === SESSION_EXPIRED_MESSAGE;
 
-  const handleKakaoLogin = () => {
-    router.replace('/terms-agreement');
-  };
+  useEffect(() => {
+    if (reason === 'sessionExpired') {
+      loginToast.showWithMessage(SESSION_EXPIRED_MESSAGE);
+    }
+  }, [reason]);
 
   return (
-    <View style={styles.root}>
-      <View style={styles.topSection}>
-        <Image source={require('../../../assets/logo-detoxmate-black.png')}></Image>
+    <LoggingPage eventName="Login Viewed" properties={{ pageName: 'Login' }}>
+      <View style={styles.root}>
+        <Image source={LOGO_BLACK} style={styles.logoMark} resizeMode="contain" />
         <Text style={styles.tagline}>매일 디지털 디톡스를 하며{'\n'}친구들과 함께 성장해요</Text>
-      </View>
+        <View style={styles.turtleArea}>
+          <Image source={TURTLE_HI_IMAGE} style={styles.turtleImage} resizeMode="contain" />
+        </View>
 
-      <View style={styles.imageSection}>
-        <Image
-          source={require('../../../assets/turtle-hi.png')}
-          style={styles.turtleImage}
-          resizeMode="contain"
+        <View style={styles.buttonSection}>
+          <AuthLoginButton
+            variant="kakao"
+            label="카카오로 시작하기"
+            pendingLabel="카카오 로그인 중..."
+            iconSource={LOGO_KAKAO_LOGIN}
+            onPress={handleKakaoLogin}
+            pending={pendingProvider === 'kakao'}
+            disabled={loginPending}
+          />
+
+          <View style={styles.buttonGap} />
+
+          <AuthLoginButton
+            variant="apple"
+            label="애플로 시작하기"
+            pendingLabel="애플 로그인 중..."
+            iconSource={LOGO_APPLE_LOGIN}
+            onPress={handleAppleLogin}
+            pending={pendingProvider === 'apple'}
+            disabled={loginPending}
+          />
+        </View>
+
+        <Toast
+          visible={loginToast.visible}
+          message={loginToast.message}
+          bottomOffset={LOGIN_TOAST_BOTTOM_OFFSET}
+          icon={
+            <Icon
+              name={isSessionExpiredToast ? 'info' : 'warningCircle'}
+              size={16}
+              weight="fill"
+              color={isSessionExpiredToast ? '#FFFFFF' : system.red.opacity100}
+            />
+          }
+        />
+
+        <AppAccessPermissionGuideModal
+          visible={permissionGuideVisible}
+          onConfirm={handleConfirmPermissionGuide}
+          confirming={permissionGuideConfirming}
         />
       </View>
-
-      <View style={styles.buttonSection}>
-        <TouchableOpacity
-          style={styles.kakaoButton}
-          onPress={handleKakaoLogin}
-          activeOpacity={0.85}
-        >
-          <View style={styles.buttonInner}>
-            <Image source={require('../../../assets/logo-kakao-login.png')}></Image>
-            <Text style={styles.kakaoText}>카카오로 시작하기</Text>
-            <View style={styles.iconPlaceholder} />
-          </View>
-        </TouchableOpacity>
-
-        <View style={styles.buttonGap} />
-
-        <TouchableOpacity style={styles.appleButton} activeOpacity={0.85}>
-          <View style={styles.buttonInner}>
-            <Image source={require('../../../assets/logo-apple-login.png')}></Image>
-            <Text style={styles.appleText}>애플로 시작하기</Text>
-            <View style={styles.iconPlaceholder} />
-          </View>
-        </TouchableOpacity>
-      </View>
-    </View>
+    </LoggingPage>
   );
 }
 
@@ -59,76 +102,41 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: brown[50],
   },
-  topSection: {
-    alignItems: 'center',
-    paddingTop: 150,
-    gap: 10,
-  },
-  asterisk: {
-    fontSize: 22,
-    color: gray[700],
-    fontFamily: 'NanumSquareRoundEB',
+  logoMark: {
+    position: 'absolute',
+    top: 151,
+    alignSelf: 'center',
+    width: 26,
+    height: 25,
   },
   tagline: {
-    ...typography.primary.body1R,
-    color: gray[600],
+    position: 'absolute',
+    top: 196,
+    left: 0,
+    right: 0,
+    ...typography.accent.body1,
+    color: gray[800],
+    letterSpacing: -0.36,
     textAlign: 'center',
   },
-  imageSection: {
-    flex: 1,
-    alignItems: 'center',
-    justifyContent: 'center',
+  turtleArea: {
+    position: 'absolute',
+    top: 316,
+    left: 100,
+    width: 175,
+    height: 231,
   },
   turtleImage: {
-    width: 260,
-    height: 280,
+    width: '100%',
+    height: '100%',
   },
   buttonSection: {
-    paddingHorizontal: 24,
-    paddingBottom: 48,
+    position: 'absolute',
+    left: 16,
+    right: 16,
+    bottom: 60,
   },
   buttonGap: {
     height: 12,
-  },
-  kakaoButton: {
-    backgroundColor: '#FEE500',
-    borderRadius: 18,
-    paddingVertical: 16,
-  },
-  appleButton: {
-    backgroundColor: '#000000',
-    borderRadius: 18,
-    paddingVertical: 16,
-  },
-  buttonInner: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingHorizontal: 20,
-  },
-  iconPlaceholder: {
-    width: 24,
-  },
-  kakaoIcon: {
-    width: 24,
-    fontSize: 16,
-    textAlign: 'center',
-  },
-  kakaoText: {
-    flex: 1,
-    ...typography.primary.body1B,
-    color: '#191600',
-    textAlign: 'center',
-  },
-  appleIcon: {
-    width: 24,
-    fontSize: 18,
-    color: '#FFFFFF',
-    textAlign: 'center',
-  },
-  appleText: {
-    flex: 1,
-    ...typography.primary.body1B,
-    color: '#FFFFFF',
-    textAlign: 'center',
   },
 });

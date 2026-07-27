@@ -34,6 +34,20 @@ pnpm android
 pnpm web
 ```
 
+## 개발용 Mock
+
+스크린 타임 이미지 분석을 항상 성공시키려면 개발 서버 실행 시 아래 env를 켜면 됩니다.
+
+```bash
+EXPO_PUBLIC_MOCK_SCREEN_TIME_ANALYSIS=true pnpm start
+```
+
+반환값은 기본 `02:00`이며, 필요하면 `HH:MM` 형식으로 바꿀 수 있습니다.
+
+```bash
+EXPO_PUBLIC_MOCK_SCREEN_TIME_ANALYSIS=true EXPO_PUBLIC_MOCK_SCREEN_TIME_ANALYSIS_VALUE=03:30 pnpm start
+```
+
 ## 주요 라이브러리
 
 - 상태 관리: `zustand`
@@ -47,3 +61,7 @@ pnpm web
 pnpm format:check
 pnpm format
 ```
+
+## 배포
+
+- JS 변경분 OTA 배포: [JS Bundle 갈아끼우기 운영 가이드](docs/js-bundle-swap.md)

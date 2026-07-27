@@ -2,6 +2,7 @@ node_modules
 dist
 coverage
 .expo
+.context
 .idea
 .vscode
 pnpm-lock.yaml

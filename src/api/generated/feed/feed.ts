@@ -6,37 +6,86 @@
  */
 import type {
   FeedDetailResponse,
-  GetHomeFeedParams,
-  GetStampDetailParams,
+  GetHistoryChallengeRecordsParams,
+  GroupChallengeOverviewResponse,
+  GroupChallengeRecordFeedResponse,
   HomeFeedResponse,
+  MemberResponse,
 } from '../model';
 
 import { customAxios } from '../../mutator';
 
 export const getFeed = () => {
-  const getStampDetail = (
-    groupChallengeId: number,
-    stampId: number,
-    params: GetStampDetailParams
-  ) => {
-    return customAxios<FeedDetailResponse>({
-      url: `/group-challenges/${groupChallengeId}/stamps/${stampId}`,
+  const getGroupChallengeOverview = (groupChallengeId: number) => {
+    return customAxios<GroupChallengeOverviewResponse>({
+      url: `/group-challenges/${groupChallengeId}/overview`,
       method: 'GET',
-      params,
     });
   };
-  const getHomeFeed = (groupChallengeId: number, params: GetHomeFeedParams) => {
+  /**
+   * @deprecated
+   */
+  const getHomeFeed = (groupChallengeId: number) => {
     return customAxios<HomeFeedResponse>({
       url: `/group-challenges/${groupChallengeId}/home`,
       method: 'GET',
+    });
+  };
+  const getHistoryChallengeRecords = (
+    groupChallengeId: number,
+    params: GetHistoryChallengeRecordsParams
+  ) => {
+    return customAxios<GroupChallengeRecordFeedResponse>({
+      url: `/group-challenges/${groupChallengeId}/challenge-records`,
+      method: 'GET',
       params,
     });
   };
-  return { getStampDetail, getHomeFeed };
+  const getGroupChallengeRecordDetail = (groupChallengeId: number, challengeRecordId: number) => {
+    return customAxios<MemberResponse>({
+      url: `/group-challenges/${groupChallengeId}/challenge-records/${challengeRecordId}`,
+      method: 'GET',
+    });
+  };
+  const getTodayChallengeRecords = (groupChallengeId: number) => {
+    return customAxios<GroupChallengeRecordFeedResponse>({
+      url: `/group-challenges/${groupChallengeId}/challenge-records/today`,
+      method: 'GET',
+    });
+  };
+  /**
+   * @deprecated
+   */
+  const getFeedDetail = (challengeRecordId: number) => {
+    return customAxios<FeedDetailResponse>({
+      url: `/challenge-records/${challengeRecordId}`,
+      method: 'GET',
+    });
+  };
+  return {
+    getGroupChallengeOverview,
+    getHomeFeed,
+    getHistoryChallengeRecords,
+    getGroupChallengeRecordDetail,
+    getTodayChallengeRecords,
+    getFeedDetail,
+  };
 };
-export type GetStampDetailResult = NonNullable<
-  Awaited<ReturnType<ReturnType<typeof getFeed>['getStampDetail']>>
+export type GetGroupChallengeOverviewResult = NonNullable<
+  Awaited<ReturnType<ReturnType<typeof getFeed>['getGroupChallengeOverview']>>
 >;
 export type GetHomeFeedResult = NonNullable<
   Awaited<ReturnType<ReturnType<typeof getFeed>['getHomeFeed']>>
+>;
+export type GetHistoryChallengeRecordsResult = NonNullable<
+  Awaited<ReturnType<ReturnType<typeof getFeed>['getHistoryChallengeRecords']>>
+>;
+export type GetGroupChallengeRecordDetailResult = NonNullable<
+  Awaited<ReturnType<ReturnType<typeof getFeed>['getGroupChallengeRecordDetail']>>
+>;
+export type GetTodayChallengeRecordsResult = NonNullable<
+  Awaited<ReturnType<ReturnType<typeof getFeed>['getTodayChallengeRecords']>>
+>;
+export type GetFeedDetailResult = NonNullable<
+  Awaited<ReturnType<ReturnType<typeof getFeed>['getFeedDetail']>>
 >;

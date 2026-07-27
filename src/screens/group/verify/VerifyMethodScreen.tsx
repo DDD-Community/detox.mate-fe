@@ -1,123 +1,84 @@
-import * as ImagePicker from 'expo-image-picker';
-import * as Linking from 'expo-linking';
-import { router, useLocalSearchParams } from 'expo-router';
-import { useRef } from 'react';
-import { AppState, Image, Pressable, StyleSheet, Text, View } from 'react-native';
-import { Button } from '../../../components/Button';
-import { primitiveColors } from '../../../lib/token/primitive/colors';
-import { typography } from '../../../lib/token/primitive/typography';
+import { useLocalSearchParams } from 'expo-router';
+import { StyleSheet, Text, View } from 'react-native';
 
-const { gray, brown } = primitiveColors;
+import { Button, Icon, LoggingButton, LoggingPage } from '@/components';
+import { getVerifyExitRoute, goBackOrReplace } from '@/lib/navigation';
+import { primitiveColors, typography } from '@/lib/token';
+import { useVerifyMethodNavigation } from './useVerifyMethodNavigation';
+import { VerifyBottomSheet } from './VerifyBottomSheet';
+import type { VerifyMode, VerifyRoot } from './verifyFlowParams';
+
+const { gray } = primitiveColors;
 
 export default function VerifyMethodScreen() {
-  const { mode, goal } = useLocalSearchParams<{
-    mode?: 'initial' | 'verify';
+  const { mode, goal, groupChallengeParticipantId, verifyRoot } = useLocalSearchParams<{
+    mode?: VerifyMode;
     goal?: string;
+    groupChallengeParticipantId?: string;
+    verifyRoot?: VerifyRoot;
   }>();
-  const awaitingReturnRef = useRef(false);
-
-  const forwardParams = {
-    ...(mode ? { mode } : {}),
-    ...(goal ? { goal } : {}),
-  };
-
-  const handleGallery = async () => {
-    const result = await ImagePicker.launchImageLibraryAsync({
-      mediaTypes: ['images'],
-      quality: 1,
-    });
-    if (result.canceled || !result.assets[0]) return;
-    router.replace({
-      pathname: '/(group)/verify/upload',
-      params: { imageUri: result.assets[0].uri, ...forwardParams },
-    });
-  };
-
-  const handleSettings = async () => {
-    awaitingReturnRef.current = true;
-    const subscription = AppState.addEventListener('change', (state) => {
-      if (state !== 'active' || !awaitingReturnRef.current) return;
-      awaitingReturnRef.current = false;
-      subscription.remove();
-      router.replace({
-        pathname: '/(group)/verify/upload',
-        params: forwardParams,
-      });
-    });
-    await Linking.openSettings();
-  };
+  const { handleGallery, handleSettings } = useVerifyMethodNavigation({
+    mode,
+    goal,
+    groupChallengeParticipantId,
+    verifyRoot,
+  });
 
   return (
-    <Pressable style={styles.overlay} onPress={() => router.back()}>
-      <Pressable style={styles.sheet} onPress={() => {}}>
-        <View style={styles.grabberWrap}>
-          <View style={styles.grabber} />
-        </View>
-
+    <LoggingPage
+      eventName="Verify Method Viewed"
+      properties={{ pageName: 'VerifyMethod', verify_mode: mode ?? 'initial' }}
+    >
+      <VerifyBottomSheet onDismiss={() => goBackOrReplace(getVerifyExitRoute(verifyRoot))}>
         <View style={styles.content}>
           <View style={styles.textGroup}>
-            <Text style={styles.title}>{'내 스크린 타임\n인증하기'}</Text>
-            <Text style={styles.description}>둘 중 하나를 선택해주세요.</Text>
+            <Text style={styles.title}>
+              {mode === 'verify' ? '어제의 스크린 타임\n인증하기' : '내 스크린 타임\n인증하기'}
+            </Text>
+            <Text style={styles.description}>둘 중 하나를 선택해 주세요.</Text>
           </View>
 
           <View style={styles.actions}>
-            <Button
-              label="갤러리로 가기"
-              color="assistive"
-              onPress={handleGallery}
-              style={styles.button}
-              leadingIcon={
-                <Image
-                  source={require('../../../../assets/icons/regular/icon_rg_ImageSquare.png')}
-                  style={styles.icon}
-                  resizeMode="contain"
-                />
-              }
-            />
-            <Button
-              label="설정으로 캡쳐하러 가기"
-              color="assistive"
-              onPress={handleSettings}
-              style={styles.button}
-              leadingIcon={
-                <Image
-                  source={require('../../../../assets/icons/regular/icon_rg_GearSix.png')}
-                  style={styles.icon}
-                  resizeMode="contain"
-                />
-              }
-            />
+            <LoggingButton
+              eventName="Verify Method Gallery Open Clicked"
+              properties={{
+                pageName: 'VerifyMethod',
+                buttonName: '갤러리로 가기',
+                verify_mode: mode ?? 'initial',
+              }}
+            >
+              <Button
+                label="갤러리로 가기"
+                color="assistive"
+                onPress={handleGallery}
+                style={styles.button}
+                leadingIcon={<Icon name="imageSquare" size={16} color="#FFFFFF" />}
+              />
+            </LoggingButton>
+            <LoggingButton
+              eventName="Verify Method Screen Time Settings Open Clicked"
+              properties={{
+                pageName: 'VerifyMethod',
+                buttonName: '설정으로 캡쳐하러 가기',
+                verify_mode: mode ?? 'initial',
+              }}
+            >
+              <Button
+                label="설정으로 캡쳐하러 가기"
+                color="assistive"
+                onPress={handleSettings}
+                style={styles.button}
+                leadingIcon={<Icon name="gearSix" size={16} color="#FFFFFF" />}
+              />
+            </LoggingButton>
           </View>
         </View>
-      </Pressable>
-    </Pressable>
+      </VerifyBottomSheet>
+    </LoggingPage>
   );
 }
 
 const styles = StyleSheet.create({
-  overlay: {
-    flex: 1,
-    backgroundColor: 'rgba(0, 0, 0, 0.5)',
-    justifyContent: 'flex-end',
-  },
-  sheet: {
-    backgroundColor: brown[50],
-    borderTopLeftRadius: 24,
-    borderTopRightRadius: 24,
-    paddingHorizontal: 20,
-    paddingBottom: 40,
-  },
-  grabberWrap: {
-    paddingTop: 5,
-    paddingBottom: 11,
-    alignItems: 'center',
-  },
-  grabber: {
-    width: 52,
-    height: 5,
-    borderRadius: 100,
-    backgroundColor: gray[100],
-  },
   content: {
     gap: 40,
   },
@@ -139,10 +100,5 @@ const styles = StyleSheet.create({
   },
   button: {
     alignSelf: 'stretch',
-  },
-  icon: {
-    width: 16,
-    height: 16,
-    tintColor: '#FFFFFF',
   },
 });

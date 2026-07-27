@@ -1,101 +1,120 @@
-import { router, useLocalSearchParams } from 'expo-router';
-import { useEffect, useState } from 'react';
+import { useLocalSearchParams } from 'expo-router';
 import { Image, Pressable, StyleSheet, Text, View } from 'react-native';
-import { Button } from '../../../components/Button';
-import {
-  isVerifyHowToHidden,
-  setVerifyHowToHidden,
-} from '../../../features/verify-how-to/howToPreference';
-import { primitiveColors } from '../../../lib/token/primitive/colors';
-import { typography } from '../../../lib/token/primitive/typography';
+
+import SCREEN_TIME_REF_IMAGE from '@assets/screen_time_ref.png';
+
+import { Button, LoggingButton, LoggingPage } from '@/components';
+import { getVerifyExitRoute, goBackOrReplace } from '@/lib/navigation';
+import { primitiveColors, typography } from '@/lib/token';
+import { useVerifyHowToGate } from './useVerifyHowToGate';
+import type { VerifyMode, VerifyRoot } from './verifyFlowParams';
 
 const { gray } = primitiveColors;
 
 export default function VerifyHowToScreen() {
-  const { mode, goal } = useLocalSearchParams<{
-    mode?: 'initial' | 'verify';
+  const { mode, goal, groupChallengeParticipantId, verifyRoot } = useLocalSearchParams<{
+    mode?: VerifyMode;
     goal?: string;
+    groupChallengeParticipantId?: string;
+    verifyRoot?: VerifyRoot;
   }>();
-  const isVerifyMode = mode === 'verify';
-  const [ready, setReady] = useState(!isVerifyMode);
-
-  useEffect(() => {
-    if (!isVerifyMode) return;
-    let active = true;
-    isVerifyHowToHidden().then((hidden) => {
-      if (!active) return;
-      if (hidden) {
-        router.replace({
-          pathname: '/(group)/verify/method',
-          params: isVerifyMode
-            ? { mode: 'verify', ...(goal ? { goal } : {}) }
-            : goal
-              ? { goal }
-              : undefined,
-        });
-      } else {
-        setReady(true);
-      }
-    });
-    return () => {
-      active = false;
-    };
-  }, [isVerifyMode]);
-
-  const handleConfirm = () => {
-    router.replace({
-      pathname: '/(group)/verify/method',
-      params: isVerifyMode
-        ? { mode: 'verify', ...(goal ? { goal } : {}) }
-        : goal
-          ? { goal }
-          : undefined,
-    });
-  };
-
-  const handleHideForever = async () => {
-    await setVerifyHowToHidden();
-    router.replace({
-      pathname: '/(group)/verify/method',
-      params: isVerifyMode
-        ? { mode: 'verify', ...(goal ? { goal } : {}) }
-        : goal
-          ? { goal }
-          : undefined,
-    });
-  };
+  const { handleConfirm, handleHideForever, isVerifyMode, ready } = useVerifyHowToGate({
+    mode,
+    goal,
+    groupChallengeParticipantId,
+    verifyRoot,
+  });
 
   if (!ready) {
     return <View style={styles.overlay} />;
   }
 
   return (
-    <Pressable style={styles.overlay} onPress={() => router.back()}>
-      <Pressable style={styles.card} onPress={() => {}}>
-        <View style={styles.content}>
-          <View style={styles.textGroup}>
-            <Text style={styles.title}>이렇게 찍어주세요</Text>
-            <Text style={styles.description}>
-              설정 - 스크린타임에서{'\n'}어제의 총 스크린타임이 보이도록 캡쳐해주세요
-            </Text>
-          </View>
+    <LoggingPage
+      eventName="Verify How To Viewed"
+      properties={{ pageName: 'VerifyHowTo', verify_mode: mode ?? 'initial' }}
+    >
+      <LoggingButton
+        eventName="Verify How To Dismiss Clicked"
+        properties={{
+          pageName: 'VerifyHowTo',
+          buttonName: '모달 바깥 닫기',
+          verify_mode: mode ?? 'initial',
+        }}
+      >
+        <Pressable
+          style={styles.overlay}
+          onPress={() => goBackOrReplace(getVerifyExitRoute(verifyRoot))}
+        >
+          <Pressable style={styles.card} onPress={() => {}}>
+            <View style={styles.content}>
+              <View style={styles.textGroup}>
+                <Text style={styles.title}>이렇게 찍어주세요</Text>
+                <Text style={styles.description}>
+                  [설정 &gt; 스크린 타임] 에서{'\n'}
+                  <Text style={{ fontFamily: 'NanumSquareRoundEB' }}>어제</Text>의 총 스크린 타임이
+                  보이도록 캡쳐해 주세요
+                </Text>
+              </View>
 
-          <Image
-            source={require('../../../../assets/screen_time_ref.png')}
-            style={styles.imagePlaceholder}
-            resizeMode="contain"
-          />
-        </View>
+              <Image
+                source={SCREEN_TIME_REF_IMAGE}
+                style={styles.imagePlaceholder}
+                resizeMode="contain"
+              />
+            </View>
 
-        {isVerifyMode ? (
-          <Pressable style={styles.hideButton} onPress={handleHideForever}>
-            <Text style={styles.hideButtonLabel}>다시 보지 않기</Text>
+            {isVerifyMode ? (
+              <View style={styles.verifyActions}>
+                <LoggingButton
+                  eventName="Verify How To Confirm Clicked"
+                  properties={{
+                    pageName: 'VerifyHowTo',
+                    buttonName: '확인',
+                    verify_mode: mode ?? 'initial',
+                  }}
+                >
+                  <Button
+                    label="확인"
+                    color="assistive"
+                    onPress={handleConfirm}
+                    style={styles.button}
+                  />
+                </LoggingButton>
+                <LoggingButton
+                  eventName="Verify How To Hide Forever Clicked"
+                  properties={{
+                    pageName: 'VerifyHowTo',
+                    buttonName: '다시 보지 않기',
+                    verify_mode: mode ?? 'initial',
+                  }}
+                >
+                  <Pressable style={styles.hideButton} onPress={handleHideForever}>
+                    <Text style={styles.hideButtonLabel}>다시 보지 않기</Text>
+                  </Pressable>
+                </LoggingButton>
+              </View>
+            ) : (
+              <LoggingButton
+                eventName="Verify How To Confirm Clicked"
+                properties={{
+                  pageName: 'VerifyHowTo',
+                  buttonName: '확인',
+                  verify_mode: mode ?? 'initial',
+                }}
+              >
+                <Button
+                  label="확인"
+                  color="assistive"
+                  onPress={handleConfirm}
+                  style={styles.button}
+                />
+              </LoggingButton>
+            )}
           </Pressable>
-        ) : (
-          <Button label="확인" color="assistive" onPress={handleConfirm} style={styles.button} />
-        )}
-      </Pressable>
-    </Pressable>
+        </Pressable>
+      </LoggingButton>
+    </LoggingPage>
   );
 }
 
@@ -140,8 +159,13 @@ const styles = StyleSheet.create({
     letterSpacing: -0.28,
   },
   imagePlaceholder: {
-    width: 141,
+    width: '100%',
     height: 305,
+  },
+  verifyActions: {
+    alignSelf: 'stretch',
+    alignItems: 'center',
+    gap: 4,
   },
   button: {
     alignSelf: 'stretch',

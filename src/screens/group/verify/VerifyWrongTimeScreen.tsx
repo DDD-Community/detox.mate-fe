@@ -1,41 +1,142 @@
 import { router, useLocalSearchParams } from 'expo-router';
+import { useEffect, useRef, useState } from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
-import { primitiveColors } from '../../../lib/token/primitive/colors';
-import { typography } from '../../../lib/token/primitive/typography';
+
+import { getScreenTimeOcrErrorReport } from '@/api/generated/screen-time-ocr-error-report/screen-time-ocr-error-report';
+import { PresignedUrlRequestUploadPurpose } from '@/api/generated/model';
+import { LoggingButton, LoggingPage } from '@/components';
+import { parseHHMMToMinutes } from '@/lib/formatDuration';
+import { getVerifyExitRoute, goBackOrReplace } from '@/lib/navigation';
+import { primitiveColors, typography } from '@/lib/token';
+import { uploadImage } from '@/lib/uploadImage';
+import { buildVerifyValueParams, getVerifyPath, type VerifyRoot } from './verifyFlowParams';
 
 const { brown, green } = primitiveColors;
 
 export default function VerifyWrongTimeScreen() {
-  const { achieved } = useLocalSearchParams<{ achieved?: string }>();
+  const {
+    achieved,
+    value,
+    groupChallengeParticipantId,
+    verifyRoot,
+    ocrImageUri,
+    ocrImageObjectKey,
+    ocrRecordDate,
+  } = useLocalSearchParams<{
+    achieved?: string;
+    value?: string;
+    groupChallengeParticipantId?: string;
+    verifyRoot?: VerifyRoot;
+    ocrImageUri?: string;
+    ocrImageObjectKey?: string;
+    ocrRecordDate?: string;
+  }>();
   const goalAchieved = achieved !== '0';
+  const [isSubmittingReport, setIsSubmittingReport] = useState(false);
+  const didSubmitReportRef = useRef(false);
+
+  useEffect(() => {
+    if (didSubmitReportRef.current) return;
+
+    const participantId = groupChallengeParticipantId ? Number(groupChallengeParticipantId) : NaN;
+    const usedMinutes = parseHHMMToMinutes(value);
+
+    if (!Number.isFinite(participantId) || !ocrRecordDate || usedMinutes == null) {
+      return;
+    }
+
+    didSubmitReportRef.current = true;
+    setIsSubmittingReport(true);
+
+    const submitReport = async () => {
+      const imageObjectKey =
+        ocrImageObjectKey ??
+        (ocrImageUri
+          ? await uploadImage(ocrImageUri, {
+              uploadPurpose: PresignedUrlRequestUploadPurpose.SCREEN_TIME_OCR_REPORT_IMAGE,
+            })
+          : undefined);
+
+      if (!imageObjectKey) return;
+
+      await getScreenTimeOcrErrorReport().create({
+        groupChallengeParticipantId: participantId,
+        recordDate: ocrRecordDate,
+        imageObjectKey,
+        ocrTotalUsedMinutes: usedMinutes,
+      });
+    };
+
+    submitReport()
+      .catch(() => {
+        didSubmitReportRef.current = false;
+      })
+      .finally(() => {
+        setIsSubmittingReport(false);
+      });
+  }, [groupChallengeParticipantId, ocrImageObjectKey, ocrImageUri, ocrRecordDate, value]);
 
   const handleClose = () => {
-    router.back();
+    goBackOrReplace(getVerifyExitRoute(verifyRoot));
   };
 
   const handleConfirm = () => {
     if (goalAchieved) {
       router.replace('/(group)/post');
     } else {
-      router.replace('/(group)/verify/retro');
+      router.replace({
+        pathname: getVerifyPath('retro', verifyRoot),
+        params: buildVerifyValueParams({ value, groupChallengeParticipantId, verifyRoot }),
+      });
     }
   };
 
   return (
-    <View style={styles.overlay}>
-      <View style={styles.alert}>
-        <Text style={styles.title}>접수 되었습니다</Text>
-        <Text style={styles.body}>{'사진을 검토한 뒤\n수일 내로 반영해 드릴게요'}</Text>
-        <View style={styles.actions}>
-          <Pressable style={styles.closeButton} onPress={handleClose}>
-            <Text style={styles.closeLabel}>닫기</Text>
-          </Pressable>
-          <Pressable style={styles.confirmButton} onPress={handleConfirm}>
-            <Text style={styles.confirmLabel}>확인</Text>
-          </Pressable>
+    <LoggingPage
+      eventName="Verify Wrong Time Viewed"
+      properties={{ pageName: 'VerifyWrongTime', goal_achieved: goalAchieved }}
+    >
+      <View style={styles.overlay}>
+        <View style={styles.alert}>
+          <Text style={styles.title}>접수 되었습니다</Text>
+          <Text style={styles.body}>{'사진을 검토한 뒤\n수일 내로 반영해 드릴게요'}</Text>
+          <View style={styles.actions}>
+            <LoggingButton
+              eventName="Verify Wrong Time Close Clicked"
+              properties={{
+                pageName: 'VerifyWrongTime',
+                buttonName: '닫기',
+                goal_achieved: goalAchieved,
+              }}
+            >
+              <Pressable
+                style={styles.closeButton}
+                onPress={handleClose}
+                disabled={isSubmittingReport}
+              >
+                <Text style={styles.closeLabel}>닫기</Text>
+              </Pressable>
+            </LoggingButton>
+            <LoggingButton
+              eventName="Verify Wrong Time Confirm Clicked"
+              properties={{
+                pageName: 'VerifyWrongTime',
+                buttonName: '확인',
+                goal_achieved: goalAchieved,
+              }}
+            >
+              <Pressable
+                style={styles.confirmButton}
+                onPress={handleConfirm}
+                disabled={isSubmittingReport}
+              >
+                <Text style={styles.confirmLabel}>확인</Text>
+              </Pressable>
+            </LoggingButton>
+          </View>
         </View>
       </View>
-    </View>
+    </LoggingPage>
   );
 }
 

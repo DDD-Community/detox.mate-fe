@@ -3,6 +3,8 @@ import { extractScreenTimeSummary, isYesterdayLabel } from './parser';
 import { normalizeUsageTextToHHMM } from './normalizeUsageText';
 import { isSummaryDateLabelActualYesterday } from './summaryDate';
 import type { ScreenTimeImageAnalysisResult } from './types';
+import { getMockScreenTimeAnalysisResult } from './mockScreenTimeAnalysis';
+import { getTestAccountAnalysisBypass } from './testAccountAnalysisBypass';
 
 type AnalyzeScreenTimeImageDeps = {
   recognizeText?: (imageUri: string) => Promise<OCRResult>;
@@ -23,6 +25,17 @@ export async function analyzeScreenTimeImage(
   imageUri: string,
   deps: AnalyzeScreenTimeImageDeps = {}
 ): Promise<ScreenTimeImageAnalysisResult> {
+  const mockResult = getMockScreenTimeAnalysisResult();
+  if (mockResult) {
+    return mockResult;
+  }
+
+  // 테스트 계정 세션이면 OCR 검증을 건너뛴다. (앱스토어 심사용)
+  const testAccountBypass = await getTestAccountAnalysisBypass();
+  if (testAccountBypass) {
+    return testAccountBypass;
+  }
+
   const runRecognizeText = deps.recognizeText ?? defaultRecognizeText;
   const now = deps.now ?? new Date();
   const timeZone = deps.timeZone;
@@ -72,7 +85,7 @@ export async function analyzeScreenTimeImage(
     };
   } catch (error) {
     const message =
-      error instanceof Error ? error.message : '스크린타임 이미지 분석에 실패했습니다.';
+      error instanceof Error ? error.message : '스크린 타임 이미지 스캔에 실패했습니다.';
 
     return {
       ok: false,

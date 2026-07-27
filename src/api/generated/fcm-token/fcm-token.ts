@@ -4,32 +4,25 @@
  * OpenAPI definition
  * OpenAPI spec version: v0
  */
-import type {
-  RegisterFcmTokenRequest,
-  RegisterParams,
-  RemoveFcmTokenRequest,
-  RemoveParams,
-} from '../model';
+import type { RegisterFcmTokenRequest, RemoveFcmTokenRequest } from '../model';
 
 import { customAxios } from '../../mutator';
 
 export const getFcmToken = () => {
-  const register = (registerFcmTokenRequest: RegisterFcmTokenRequest, params: RegisterParams) => {
+  const register = (registerFcmTokenRequest: RegisterFcmTokenRequest) => {
     return customAxios<void>({
       url: `/notifications/tokens`,
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       data: registerFcmTokenRequest,
-      params,
     });
   };
-  const remove = (removeFcmTokenRequest: RemoveFcmTokenRequest, params: RemoveParams) => {
+  const remove = (removeFcmTokenRequest: RemoveFcmTokenRequest) => {
     return customAxios<void>({
       url: `/notifications/tokens`,
       method: 'DELETE',
       headers: { 'Content-Type': 'application/json' },
       data: removeFcmTokenRequest,
-      params,
     });
   };
   return { register, remove };

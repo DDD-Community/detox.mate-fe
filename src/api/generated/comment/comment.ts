@@ -7,7 +7,6 @@
 import type {
   CommentListResponse,
   CommentResponse,
-  CreateCommentParams,
   CreateCommentRequest,
   GetCommentsParams,
 } from '../model';
@@ -15,25 +14,19 @@ import type {
 import { customAxios } from '../../mutator';
 
 export const getComment = () => {
-  const getComments = (groupChallengeId: number, stampId: number, params?: GetCommentsParams) => {
+  const getComments = (challengeRecordId: number, params?: GetCommentsParams) => {
     return customAxios<CommentListResponse>({
-      url: `/group-challenges/${groupChallengeId}/stamps/${stampId}/comments`,
+      url: `/challenge-records/${challengeRecordId}/comments`,
       method: 'GET',
       params,
     });
   };
-  const createComment = (
-    groupChallengeId: number,
-    stampId: number,
-    createCommentRequest: CreateCommentRequest,
-    params: CreateCommentParams
-  ) => {
+  const createComment = (challengeRecordId: number, createCommentRequest: CreateCommentRequest) => {
     return customAxios<CommentResponse>({
-      url: `/group-challenges/${groupChallengeId}/stamps/${stampId}/comments`,
+      url: `/challenge-records/${challengeRecordId}/comments`,
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       data: createCommentRequest,
-      params,
     });
   };
   return { getComments, createComment };

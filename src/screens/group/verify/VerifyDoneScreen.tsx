@@ -1,127 +1,228 @@
 import { router, useLocalSearchParams } from 'expo-router';
-import { Image, Pressable, StyleSheet, Text, View } from 'react-native';
-import { Button } from '../../../components/Button';
-import { primitiveColors } from '../../../lib/token/primitive/colors';
-import { typography } from '../../../lib/token/primitive/typography';
+import { useState } from 'react';
+import { Alert, Image, Pressable, StyleSheet, Text, View } from 'react-native';
+
+import ONBOARDING_CHECK_IMAGE from '@assets/onboarding-check.png';
+
+import { getFeed } from '@/api';
+import { logError, normalizeError } from '@/api/errors';
+import { getGroupChallenge } from '@/api/generated/group-challenge/group-challenge';
+import { Button, Icon, LoggingButton, LoggingPage } from '@/components';
+import { submitTotalUsageActivityRecord } from '@/features/activity-record/submitTotalUsageActivityRecord';
+import {
+  formatHHMMToDisplay,
+  formatMinutesDiffText,
+  parseHHMMToMinutes,
+} from '@/lib/formatDuration';
+import { getVerifyExitRoute, goBackOrReplace } from '@/lib/navigation';
+import { primitiveColors, typography } from '@/lib/token';
+import { VerifyBottomSheet } from './VerifyBottomSheet';
+import {
+  buildVerifyFlowParams,
+  buildVerifyValueParams,
+  getVerifyPath,
+  type VerifyMode,
+  type VerifyRoot,
+} from './verifyFlowParams';
 
 const { gray, brown, green, system } = primitiveColors;
 
-function parseHHMMToMinutes(value: string | undefined): number | null {
-  if (!value) return null;
-  const [hStr, mStr] = value.split(':');
-  const h = Number(hStr ?? 0);
-  const m = Number(mStr ?? 0);
-  if (Number.isNaN(h) || Number.isNaN(m)) return null;
-  return h * 60 + m;
-}
+const formatDateParam = (date: Date): string => {
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, '0');
+  const day = String(date.getDate()).padStart(2, '0');
+  return `${year}-${month}-${day}`;
+};
 
-function formatHHMMToDisplay(value: string | undefined): string {
-  if (!value) return '';
-  const [hStr, mStr] = value.split(':');
-  const h = Number(hStr ?? 0);
-  const m = Number(mStr ?? 0);
-  return `${h}h ${m}m`;
-}
-
-function formatMinutesDiff(minutes: number): string {
-  const abs = Math.abs(minutes);
-  const h = Math.floor(abs / 60);
-  const m = abs % 60;
-  if (h && m) return `${h}시간 ${m}분`;
-  if (h) return `${h}시간`;
-  return `${m}분`;
-}
+const getYesterdayRecordDate = (): string => {
+  const date = new Date();
+  date.setHours(0, 0, 0, 0);
+  date.setDate(date.getDate() - 1);
+  return formatDateParam(date);
+};
 
 export default function VerifyDoneScreen() {
-  const { value, mode, goal } = useLocalSearchParams<{
+  const {
+    value,
+    mode,
+    goal,
+    groupChallengeParticipantId,
+    verifyRoot,
+    ocrImageUri,
+    ocrImageObjectKey,
+    ocrRecordDate,
+  } = useLocalSearchParams<{
     value?: string;
-    mode?: 'initial' | 'verify';
+    mode?: VerifyMode;
     goal?: string;
+    groupChallengeParticipantId?: string;
+    verifyRoot?: VerifyRoot;
+    ocrImageUri?: string;
+    ocrImageObjectKey?: string;
+    ocrRecordDate?: string;
   }>();
+  const [isSavingGoal, setIsSavingGoal] = useState(false);
   const display = formatHHMMToDisplay(value);
   const isVerifyMode = mode === 'verify';
   const valueMinutes = parseHHMMToMinutes(value);
   const goalMinutes = parseHHMMToMinutes(goal);
   const hasGoal = goalMinutes !== null && valueMinutes !== null;
   const goalAchieved = hasGoal ? valueMinutes! <= goalMinutes! : true;
-  const diffText = hasGoal && goalAchieved ? formatMinutesDiff(goalMinutes! - valueMinutes!) : '';
+  const diffText =
+    hasGoal && goalAchieved ? formatMinutesDiffText(goalMinutes! - valueMinutes!) : '';
 
-  const handleSetGoal = () => {
+  const resolveParticipantId = async (): Promise<number | null> => {
+    const fromParam = groupChallengeParticipantId ? Number(groupChallengeParticipantId) : NaN;
+    if (Number.isFinite(fromParam)) return fromParam;
+
+    // groupChallengeParticipantId가 파라미터로 전달되지 않은 경우(예: 마이페이지 진입),
+    // 현재 활성 챌린지의 내 참여 ID를 API로 조회한다.
+    const challenges = await getGroupChallenge().getMyGroupChallenges();
+    const activeChallenge = challenges.find((c) => c.status === 'ACTIVE') ?? challenges[0];
+    if (!activeChallenge?.id) return null;
+
+    const feedResponse = await getFeed().getTodayChallengeRecords(activeChallenge.id);
+    const me = feedResponse.members?.find((m) => m.isMe === true);
+    return me?.groupChallengeParticipantId ?? null;
+  };
+
+  const handleSetGoal = async () => {
+    if (isSavingGoal) return;
+    if (valueMinutes == null) {
+      Alert.alert('저장 실패', '스크린타임 값을 읽을 수 없습니다.');
+      return;
+    }
+
+    setIsSavingGoal(true);
+    try {
+      const participantId = await resolveParticipantId();
+      if (participantId == null) {
+        Alert.alert('저장 실패', '참여 중인 챌린지를 찾을 수 없습니다.');
+        return;
+      }
+
+      router.replace({
+        pathname: '/(group)/goal',
+        params: {
+          ...(value ? { value } : {}),
+          firstScreenTimeParticipantId: String(participantId),
+          firstScreenTimeMinutes: String(valueMinutes),
+          firstScreenTimeRecordDate: getYesterdayRecordDate(),
+        },
+      });
+    } catch (error) {
+      logError(normalizeError(error), { scope: 'verify.done', operation: 'setGoal' });
+      Alert.alert('저장 실패', '오류가 발생했습니다. 잠시 후 다시 시도해주세요.');
+    } finally {
+      setIsSavingGoal(false);
+    }
+  };
+
+  const handleSkip = async () => {
+    if (isVerifyMode) {
+      await submitTotalUsageActivityRecord({
+        value,
+        groupChallengeParticipantId,
+        goalAchieved,
+      });
+    }
     router.replace({
-      pathname: '/(group)/goal',
-      params: value ? { value } : undefined,
+      pathname: getVerifyPath('complete', verifyRoot),
+      params: buildVerifyFlowParams({ mode, verifyRoot }),
     });
   };
 
-  const handleSkip = () => {
-    router.replace('/(group)/verify/complete');
-  };
-
   const handlePostFeed = () => {
-    router.replace('/(group)/post');
+    router.replace({
+      pathname: '/(group)/post',
+      params: buildVerifyValueParams({ value, groupChallengeParticipantId }),
+    });
   };
 
   const handleReportWrongTime = () => {
     router.push({
-      pathname: '/(group)/verify/wrong-time',
-      params: { achieved: goalAchieved ? '1' : '0' },
+      pathname: getVerifyPath('wrong-time', verifyRoot),
+      params: {
+        achieved: goalAchieved ? '1' : '0',
+        ...buildVerifyValueParams({
+          value,
+          mode,
+          goal,
+          groupChallengeParticipantId,
+          verifyRoot,
+          ocrImageUri,
+          ocrImageObjectKey,
+          ocrRecordDate,
+        }),
+      },
     });
   };
 
   const handleRecordRetro = () => {
-    router.replace('/(group)/verify/retro');
+    router.replace({
+      pathname: getVerifyPath('retro', verifyRoot),
+      params: buildVerifyValueParams({ value, groupChallengeParticipantId, verifyRoot }),
+    });
   };
 
   if (!isVerifyMode) {
     return (
-      <Pressable style={styles.overlay} onPress={() => router.back()}>
-        <Pressable style={styles.sheet} onPress={() => {}}>
-          <View style={styles.grabberWrap}>
-            <View style={styles.grabber} />
-          </View>
-
+      <LoggingPage
+        eventName="Verify Done Viewed"
+        properties={{ pageName: 'VerifyDone', verify_mode: mode ?? 'initial' }}
+      >
+        <VerifyBottomSheet onDismiss={() => goBackOrReplace(getVerifyExitRoute(verifyRoot))}>
           <View style={styles.content}>
             <View style={styles.heading}>
               <Image
-                source={require('../../../../assets/onboarding-check.png')}
+                source={ONBOARDING_CHECK_IMAGE}
                 style={styles.checkIcon}
                 resizeMode="contain"
               />
-              <Text style={styles.title}>분석 완료 !</Text>
+              <Text style={styles.title}>스캔 완료 !</Text>
             </View>
 
             <View style={styles.summary}>
-              <Text style={styles.summaryLabel}>내 스크린타임</Text>
+              <Text style={styles.summaryLabel}>내 스크린 타임</Text>
               <Text style={styles.summaryValue}>{display}</Text>
             </View>
 
-            <Button
-              label="개인 목표 설정하기"
-              color="primary"
-              onPress={handleSetGoal}
-              style={styles.button}
-            />
+            <LoggingButton
+              eventName="Verify Done Goal Setup Start After Scan Clicked"
+              properties={{
+                pageName: 'VerifyDone',
+                buttonName: '개인 목표 설정하기',
+                verify_mode: mode ?? 'initial',
+              }}
+            >
+              <Button
+                label={isSavingGoal ? '저장 중...' : '개인 목표 설정하기'}
+                color="primary"
+                onPress={handleSetGoal}
+                disabled={isSavingGoal}
+                style={styles.button}
+              />
+            </LoggingButton>
           </View>
-        </Pressable>
-      </Pressable>
+        </VerifyBottomSheet>
+      </LoggingPage>
     );
   }
 
   return (
-    <Pressable style={styles.overlay} onPress={() => router.back()}>
-      <Pressable style={styles.sheet} onPress={() => {}}>
-        <View style={styles.grabberWrap}>
-          <View style={styles.grabber} />
-        </View>
-
+    <LoggingPage
+      eventName="Verify Done Viewed"
+      properties={{
+        pageName: 'VerifyDone',
+        verify_mode: mode ?? 'verify',
+        goal_achieved: goalAchieved,
+      }}
+    >
+      <VerifyBottomSheet onDismiss={() => goBackOrReplace(getVerifyExitRoute(verifyRoot))}>
         <View style={styles.verifyContent}>
           <View style={styles.heading}>
-            <Image
-              source={require('../../../../assets/onboarding-check.png')}
-              style={styles.checkIcon}
-              resizeMode="contain"
-            />
-            <Text style={styles.verifyTitle}>{'어제의 스크린 타임\n분석 완료 !'}</Text>
+            <Image source={ONBOARDING_CHECK_IMAGE} style={styles.checkIcon} resizeMode="contain" />
+            <Text style={styles.verifyTitle}>{'어제의 스크린 타임\n스캔 완료 !'}</Text>
           </View>
 
           <View style={styles.verifySummaryGroup}>
@@ -129,7 +230,7 @@ export default function VerifyDoneScreen() {
               <Text
                 style={goalAchieved ? styles.verifySummaryLabel : styles.verifySummaryLabelMissed}
               >
-                내 스크린타임
+                내 스크린 타임
               </Text>
               <Text
                 style={goalAchieved ? styles.verifySummaryValue : styles.verifySummaryValueMissed}
@@ -138,20 +239,17 @@ export default function VerifyDoneScreen() {
               </Text>
             </View>
             <View style={styles.goalCompareRow}>
-              <Image
-                source={
-                  goalAchieved
-                    ? require('../../../../assets/icons/regular/icon_rg_CheckCircle.png')
-                    : require('../../../../assets/icons/fill/icon_fl_CheckCircle.png')
-                }
-                style={goalAchieved ? styles.goalCompareIcon : styles.goalCompareIconMissed}
-                resizeMode="contain"
+              <Icon
+                name="checkCircle"
+                size={20}
+                weight={goalAchieved ? 'regular' : 'fill'}
+                color={goalAchieved ? green[300] : system.red.opacity100}
               />
               <Text style={goalAchieved ? styles.goalCompareText : styles.goalCompareTextMissed}>
                 {goalAchieved
                   ? diffText
                     ? `좋아요, 목표보다 ${diffText} 덜 썼어요!`
-                    : '좋아요, 분석을 완료했어요!'
+                    : '좋아요, 스캔을 완료했어요!'
                   : '목표를 미달성 했어요, 조금만 더 힘내보아요!'}
               </Text>
             </View>
@@ -160,57 +258,79 @@ export default function VerifyDoneScreen() {
           {goalAchieved ? (
             <View style={styles.actionGroup}>
               <View style={styles.actionRow}>
-                <Pressable style={styles.skipButton} onPress={handleSkip}>
-                  <Text style={styles.skipButtonLabel}>건너뛰기</Text>
-                </Pressable>
-                <Pressable style={styles.postButton} onPress={handlePostFeed}>
-                  <Text style={styles.postButtonLabel}>게시물 올리기</Text>
-                </Pressable>
+                <LoggingButton
+                  eventName="Verify Done Verification Skip Post Clicked"
+                  properties={{
+                    pageName: 'VerifyDone',
+                    buttonName: '건너뛰기',
+                    verify_mode: mode ?? 'verify',
+                  }}
+                >
+                  <Pressable style={styles.skipButton} onPress={handleSkip}>
+                    <Text style={styles.skipButtonLabel}>건너뛰기</Text>
+                  </Pressable>
+                </LoggingButton>
+                <LoggingButton
+                  eventName="Verify Done Post Feed Start Clicked"
+                  properties={{
+                    pageName: 'VerifyDone',
+                    buttonName: '게시물 올리기',
+                    verify_mode: mode ?? 'verify',
+                  }}
+                >
+                  <Pressable style={styles.postButton} onPress={handlePostFeed}>
+                    <Text style={styles.postButtonLabel}>게시물 올리기</Text>
+                  </Pressable>
+                </LoggingButton>
               </View>
-              <Pressable style={styles.reportButton} onPress={handleReportWrongTime}>
-                <Text style={styles.reportButtonLabel}>시간이 틀려요</Text>
-              </Pressable>
+              <LoggingButton
+                eventName="Verify Done Wrong Time Report Start Clicked"
+                properties={{
+                  pageName: 'VerifyDone',
+                  buttonName: '시간이 틀려요',
+                  goal_achieved: goalAchieved,
+                }}
+              >
+                <Pressable style={styles.reportButton} onPress={handleReportWrongTime}>
+                  <Text style={styles.reportButtonLabel}>시간이 틀려요</Text>
+                </Pressable>
+              </LoggingButton>
             </View>
           ) : (
             <View style={styles.actionGroup}>
-              <Pressable style={styles.recordButton} onPress={handleRecordRetro}>
-                <Text style={styles.recordButtonLabel}>회고 기록하기</Text>
-              </Pressable>
-              <Pressable style={styles.reportButton} onPress={handleReportWrongTime}>
-                <Text style={styles.reportButtonLabel}>시간이 틀려요</Text>
-              </Pressable>
+              <LoggingButton
+                eventName="Verify Done Retro Start Clicked"
+                properties={{
+                  pageName: 'VerifyDone',
+                  buttonName: '회고 기록하기',
+                  verify_mode: mode ?? 'verify',
+                }}
+              >
+                <Pressable style={styles.recordButton} onPress={handleRecordRetro}>
+                  <Text style={styles.recordButtonLabel}>회고 기록하기</Text>
+                </Pressable>
+              </LoggingButton>
+              <LoggingButton
+                eventName="Verify Done Wrong Time Report Start Clicked"
+                properties={{
+                  pageName: 'VerifyDone',
+                  buttonName: '시간이 틀려요',
+                  goal_achieved: goalAchieved,
+                }}
+              >
+                <Pressable style={styles.reportButton} onPress={handleReportWrongTime}>
+                  <Text style={styles.reportButtonLabel}>시간이 틀려요</Text>
+                </Pressable>
+              </LoggingButton>
             </View>
           )}
         </View>
-      </Pressable>
-    </Pressable>
+      </VerifyBottomSheet>
+    </LoggingPage>
   );
 }
 
 const styles = StyleSheet.create({
-  overlay: {
-    flex: 1,
-    backgroundColor: 'rgba(0, 0, 0, 0.5)',
-    justifyContent: 'flex-end',
-  },
-  sheet: {
-    backgroundColor: brown[50],
-    borderTopLeftRadius: 24,
-    borderTopRightRadius: 24,
-    paddingHorizontal: 20,
-    paddingBottom: 40,
-  },
-  grabberWrap: {
-    paddingTop: 5,
-    paddingBottom: 11,
-    alignItems: 'center',
-  },
-  grabber: {
-    width: 52,
-    height: 5,
-    borderRadius: 100,
-    backgroundColor: gray[100],
-  },
   content: {
     gap: 40,
   },

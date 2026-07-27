@@ -4,28 +4,20 @@
  * OpenAPI definition
  * OpenAPI spec version: v0
  */
-import type {
-  GetGroupChallengeParams,
-  GetMyGroupChallengesParams,
-  GroupChallengeResponse,
-} from '../model';
+import type { GetMyGroupChallengesParams, GroupChallengeResponse } from '../model';
 
 import { customAxios } from '../../mutator';
 
 export const getGroupChallenge = () => {
-  const getMyGroupChallenges = (params: GetMyGroupChallengesParams) => {
+  const getMyGroupChallenges = (params?: GetMyGroupChallengesParams) => {
     return customAxios<GroupChallengeResponse[]>({
       url: `/me/group-challenges`,
       method: 'GET',
       params,
     });
   };
-  const getGroupChallenge = (id: number, params: GetGroupChallengeParams) => {
-    return customAxios<GroupChallengeResponse>({
-      url: `/group-challenges/${id}`,
-      method: 'GET',
-      params,
-    });
+  const getGroupChallenge = (id: number) => {
+    return customAxios<GroupChallengeResponse>({ url: `/group-challenges/${id}`, method: 'GET' });
   };
   return { getMyGroupChallenges, getGroupChallenge };
 };

@@ -5,6 +5,7 @@
  * OpenAPI spec version: v0
  */
 import type {
+  AppleSocialLoginRequest,
   AuthLoginResponse,
   KakaoSocialLoginRequest,
   RefreshTokenRequest,
@@ -20,6 +21,14 @@ export const getAuth = () => {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       data: kakaoSocialLoginRequest,
+    });
+  };
+  const appleAuth = (appleSocialLoginRequest: AppleSocialLoginRequest) => {
+    return customAxios<AuthLoginResponse>({
+      url: `/auth/social/apple`,
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      data: appleSocialLoginRequest,
     });
   };
   const refresh = (refreshTokenRequest: RefreshTokenRequest) => {
@@ -38,10 +47,13 @@ export const getAuth = () => {
       data: refreshTokenRequest,
     });
   };
-  return { kakaoAuth, refresh, logout };
+  return { kakaoAuth, appleAuth, refresh, logout };
 };
 export type KakaoAuthResult = NonNullable<
   Awaited<ReturnType<ReturnType<typeof getAuth>['kakaoAuth']>>
+>;
+export type AppleAuthResult = NonNullable<
+  Awaited<ReturnType<ReturnType<typeof getAuth>['appleAuth']>>
 >;
 export type RefreshResult = NonNullable<Awaited<ReturnType<ReturnType<typeof getAuth>['refresh']>>>;
 export type LogoutResult = NonNullable<Awaited<ReturnType<ReturnType<typeof getAuth>['logout']>>>;

@@ -1,25 +1,56 @@
 import * as Clipboard from 'expo-clipboard';
-import { useRouter } from 'expo-router';
+import { getInviteShareUrl } from '../../lib/airbridge';
+import { useLocalSearchParams, useRouter } from 'expo-router';
 import React, { useState } from 'react';
 import { Image, Share, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
-import apiClient from '../../api/client';
-import { primitiveColors } from '../../lib/token/primitive/colors';
-import { typography } from '../../lib/token/primitive/typography';
+import { SafeAreaView } from 'react-native-safe-area-context';
+import {
+  getUserErrorMessage,
+  logError,
+  normalizeError,
+  type RequestErrorPolicy,
+} from '../../api/errors';
+import type { GroupResponse } from '../../api/generated/model';
+import { customAxios } from '../../api/mutator';
+import {
+  ClipboardCopyToast,
+  LoggingButton,
+  LoggingPage,
+  useClipboardCopyToast,
+} from '../../components';
+import { Icon } from '../../components/Icon';
+import { trackEvent } from '../../lib/analytics';
+import { goBackOrReplace } from '../../lib/navigation';
+import { primitiveColors, radius, spacing, typography } from '../../lib/token';
 
 const { green, gray, brown } = primitiveColors;
+const INVITE_CODE_MAX_LENGTH = 5;
+const GROUP_JOIN_ERROR_POLICY: RequestErrorPolicy = {
+  presentation: 'inline',
+  messagesByStatus: {
+    404: '초대 코드를 다시 확인해주세요',
+    409: '초대 코드를 다시 확인해주세요',
+  },
+};
+const GROUP_JOIN_FALLBACK_MESSAGE = '초대 코드를 다시 확인해주세요';
 
 export default function GroupJoinScreen() {
   const router = useRouter();
+  const { inviteCode: paramInviteCode } = useLocalSearchParams<{ inviteCode?: string }>();
   const [step, setStep] = useState<1 | 2>(1);
-  const [inviteCode, setInviteCode] = useState('');
+  const [inviteCode, setInviteCode] = useState(
+    paramInviteCode ? paramInviteCode.toUpperCase().slice(0, INVITE_CODE_MAX_LENGTH) : ''
+  );
   const [groupName, setGroupName] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const { copyToastVisible, showCopyToast } = useClipboardCopyToast();
 
-  const canComplete = inviteCode.length === 5;
+  const canComplete = inviteCode.length === INVITE_CODE_MAX_LENGTH;
+  const isCompleteStep = step === 2;
 
   const handleCodeChange = (text: string) => {
-    setInviteCode(text.toUpperCase().slice(0, 5));
+    setInviteCode(text.toUpperCase().slice(0, INVITE_CODE_MAX_LENGTH));
     setError(null);
   };
 
@@ -28,20 +59,28 @@ export default function GroupJoinScreen() {
     setLoading(true);
     setError(null);
     try {
-      const res = await apiClient.post('/groups/join', { inviteCode });
-      console.log(res);
-      setGroupName(res.data.name);
+      const data = await customAxios<GroupResponse>({
+        url: '/groups/join',
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        data: { inviteCode },
+        errorPolicy: GROUP_JOIN_ERROR_POLICY,
+        retryPolicy: 'none',
+        skipGlobalError: true,
+      });
+      setGroupName(data.name ?? '');
       setStep(2);
-    } catch (e: any) {
-      const status = e?.response?.status;
-      console.log(status);
-      if (status === 409) {
-        setError('이미 참여한 그룹이에요');
-      } else if (status === 404) {
-        setError('유효하지 않은 초대 코드예요');
-      } else {
-        setError('그룹 참여에 실패했어요. 다시 시도해 주세요');
-      }
+      trackEvent('Group Joined', {
+        entry_point: paramInviteCode ? 'invite_link' : 'group_home',
+      });
+    } catch (error) {
+      const appError = normalizeError(error);
+      logError(appError, { scope: 'group.join', operation: 'joinGroup' });
+      const message =
+        appError.status === 404 || appError.status === 409
+          ? getUserErrorMessage(appError, GROUP_JOIN_ERROR_POLICY)
+          : GROUP_JOIN_FALLBACK_MESSAGE;
+      setError(message);
     } finally {
       setLoading(false);
     }
@@ -49,107 +88,160 @@ export default function GroupJoinScreen() {
 
   const handleCopy = async () => {
     await Clipboard.setStringAsync(inviteCode);
+    showCopyToast();
   };
 
   const handleShare = async () => {
+    trackEvent('Invite Share Button Clicked', { page_name: 'GroupJoin' });
     await Share.share({
-      message: `우리 함께 디지털 디톡스해요! 💉\n디톡스 메이트 그룹 초대 코드: ${inviteCode}`,
+      message: `우리 함께 디지털 디톡스해요! 💉\n디톡스 메이트 그룹 초대 코드: ${inviteCode}\n${getInviteShareUrl(inviteCode)}`,
     });
   };
 
   const handleGoToFeed = () => {
-    router.replace('/home');
+    router.replace('/(feed)/home');
   };
 
   return (
-    <View style={styles.root}>
-      <View style={styles.progressRow}>
-        <View style={[styles.segment, styles.segmentActive]} />
-        <View
-          style={[styles.segment, step === 2 ? styles.segmentActive : styles.segmentInactive]}
-        />
-      </View>
-      <Text style={styles.stepLabel}>{step}/2</Text>
-
-      {step === 1 ? (
-        <View style={styles.content}>
-          <Text style={styles.title}>공유받은 초대 코드를{'\n'}입력하세요</Text>
-
-          <View style={styles.gap24} />
-
-          <View style={styles.inputWrapper}>
-            <TextInput
-              style={styles.input}
-              value={inviteCode}
-              onChangeText={handleCodeChange}
-              placeholder="초대 코드를 입력해 주세요"
-              placeholderTextColor={gray[300]}
-              autoCapitalize="characters"
-              maxLength={5}
+    <LoggingPage
+      eventName="Group Join Viewed"
+      properties={{
+        pageName: 'GroupJoin',
+        step,
+        entry_point: paramInviteCode ? 'invite_link' : 'group_home',
+      }}
+      logKey={step}
+    >
+      <View style={styles.root}>
+        <SafeAreaView edges={['top']} style={styles.topArea}>
+          <View style={styles.progressRow}>
+            <View style={[styles.segment, styles.segmentActive]} />
+            <View
+              style={[styles.segment, step === 2 ? styles.segmentActive : styles.segmentInactive]}
             />
           </View>
-          {error && <Text style={styles.errorText}>{error}</Text>}
-        </View>
-      ) : (
-        <View style={styles.content}>
-          <Image
-            source={require('../../../assets/onboarding-check.png')}
-            style={styles.checkImage}
-            resizeMode="contain"
-          />
-          <Text style={styles.completeTitle}>
-            {groupName}
-            {'\n'}그룹에 참여했어요!
-          </Text>
-          <Text style={styles.completeSubtitle}>
-            초대 코드를 친구에게 공유해서 함께 시작해 보세요
-          </Text>
+        </SafeAreaView>
 
-          <View style={styles.gap24} />
+        {step === 1 ? (
+          <View style={styles.content}>
+            <Text style={styles.stepLabel}>{step}/2</Text>
+            <Text style={styles.title}>공유받은 초대 코드를{'\n'}입력하세요</Text>
 
-          <View style={styles.inviteCard}>
-            <View style={styles.codeRow}>
-              <Text style={styles.codeLabel}>초대 코드</Text>
-              <Text style={styles.codeText}>{inviteCode}</Text>
-              <TouchableOpacity onPress={handleCopy} activeOpacity={0.7}>
-                <Image
-                  source={require('../../../assets/onboarding-copy.png')}
-                  style={styles.copyIcon}
-                  resizeMode="contain"
+            <View style={styles.inputWrapper}>
+              <TextInput
+                style={styles.input}
+                value={inviteCode}
+                onChangeText={handleCodeChange}
+                placeholder="초대 코드를 입력해 주세요"
+                placeholderTextColor={gray[300]}
+                autoCapitalize="characters"
+                maxLength={INVITE_CODE_MAX_LENGTH}
+              />
+              {error ? null : (
+                <Text style={styles.counter}>
+                  {inviteCode.length}/{INVITE_CODE_MAX_LENGTH}
+                </Text>
+              )}
+            </View>
+            {error ? (
+              <View style={styles.errorRow}>
+                <Icon
+                  name="warningCircle"
+                  size={14}
+                  weight="fill"
+                  color={primitiveColors.system.red.opacity100}
                 />
+                <Text style={styles.errorText}>{error}</Text>
+              </View>
+            ) : null}
+          </View>
+        ) : (
+          <View style={styles.content}>
+            <Text style={styles.stepLabel}>{step}/2</Text>
+            <Image
+              source={require('../../../assets/onboarding-check.png')}
+              style={styles.checkImage}
+              resizeMode="contain"
+            />
+            <Text style={styles.completeTitle}>
+              {groupName}
+              {'\n'}그룹에 참여했어요!
+            </Text>
+            <Text style={styles.completeSubtitle}>
+              초대 코드를 친구에게 공유해서 함께 시작해 보세요
+            </Text>
+
+            <View style={styles.gap24} />
+
+            <View style={styles.inviteCard}>
+              <View style={styles.codeRow}>
+                <Text style={styles.codeLabel}>초대 코드</Text>
+                <Text style={styles.codeText}>{inviteCode}</Text>
+                <LoggingButton
+                  eventName="Group Join Invite Code Copy Clicked"
+                  properties={{ pageName: 'GroupJoin', buttonName: '초대 코드 복사' }}
+                >
+                  <TouchableOpacity onPress={handleCopy} activeOpacity={0.7}>
+                    <Icon name="copy" size={20} color={gray[800]} />
+                  </TouchableOpacity>
+                </LoggingButton>
+              </View>
+
+              <TouchableOpacity
+                style={styles.shareInCard}
+                onPress={handleShare}
+                activeOpacity={0.8}
+              >
+                <Icon name="shareFat" size={18} color={gray[900]} />
+                <Text style={styles.shareText}>친구에게 공유하기</Text>
               </TouchableOpacity>
             </View>
-
-            <TouchableOpacity style={styles.shareInCard} onPress={handleShare} activeOpacity={0.8}>
-              <Image
-                source={require('../../../assets/onboarding-share-black.png')}
-                style={styles.shareIcon}
-                resizeMode="contain"
-              />
-              <Text style={styles.shareText}>친구에게 공유하기</Text>
-            </TouchableOpacity>
           </View>
-        </View>
-      )}
+        )}
 
-      <View style={styles.buttonRow}>
-        <TouchableOpacity
-          style={styles.prevButton}
-          onPress={() => router.back()}
-          activeOpacity={0.85}
-        >
-          <Text style={styles.prevText}>이전</Text>
-        </TouchableOpacity>
-        <TouchableOpacity
-          style={[styles.nextButton, step === 1 && !canComplete && styles.nextButtonDisabled]}
-          onPress={step === 1 ? handleComplete : handleGoToFeed}
-          disabled={step === 1 && !canComplete}
-          activeOpacity={0.85}
-        >
-          <Text style={styles.nextText}>{step === 1 ? '완료' : '그룹 피드로 가기'}</Text>
-        </TouchableOpacity>
+        <SafeAreaView edges={['bottom']} style={styles.buttonRow}>
+          {!isCompleteStep ? (
+            <LoggingButton
+              eventName="Group Join Previous Clicked"
+              properties={{ pageName: 'GroupJoin', buttonName: '이전' }}
+            >
+              <TouchableOpacity
+                style={styles.prevButton}
+                onPress={() => goBackOrReplace('/(group)/home')}
+                activeOpacity={0.85}
+              >
+                <Text style={styles.prevText}>이전</Text>
+              </TouchableOpacity>
+            </LoggingButton>
+          ) : null}
+          {step === 1 ? (
+            <TouchableOpacity
+              style={[styles.nextButton, (!canComplete || loading) && styles.nextButtonDisabled]}
+              onPress={handleComplete}
+              disabled={!canComplete || loading}
+              activeOpacity={0.85}
+            >
+              <Text style={styles.nextText}>완료</Text>
+            </TouchableOpacity>
+          ) : (
+            <LoggingButton
+              eventName="Group Join Go Feed Clicked"
+              properties={{ pageName: 'GroupJoin', buttonName: '그룹 피드로 가기' }}
+            >
+              <TouchableOpacity
+                style={styles.nextButton}
+                onPress={handleGoToFeed}
+                activeOpacity={0.85}
+              >
+                <Text style={styles.nextText}>그룹 피드로 가기</Text>
+              </TouchableOpacity>
+            </LoggingButton>
+          )}
+        </SafeAreaView>
+
+        <ClipboardCopyToast visible={copyToastVisible} />
       </View>
-    </View>
+    </LoggingPage>
   );
 }
 
@@ -158,80 +250,101 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: brown[50],
   },
+  topArea: {
+    paddingTop: 35,
+  },
   progressRow: {
     flexDirection: 'row',
-    gap: 6,
-    paddingHorizontal: 24,
-    paddingTop: 64,
+    gap: spacing[2],
+    paddingHorizontal: spacing[16],
   },
   segment: {
     flex: 1,
-    height: 4,
-    borderRadius: 2,
+    height: 2,
+    borderRadius: radius.full,
   },
   segmentActive: {
-    backgroundColor: green[400],
+    backgroundColor: brown[900],
   },
   segmentInactive: {
-    backgroundColor: green[75],
+    backgroundColor: brown[900],
+    opacity: 0.1,
   },
   stepLabel: {
-    ...typography.primary.caption,
+    ...typography.primary.body2R,
     color: gray[400],
-    paddingHorizontal: 24,
-    marginTop: 8,
+    marginBottom: spacing[8],
   },
   content: {
     flex: 1,
-    paddingHorizontal: 24,
-    paddingTop: 24,
+    paddingHorizontal: spacing[16],
+    paddingTop: spacing[32],
   },
-  gap24: { height: 24 },
+  gap24: { height: spacing[24] },
   title: {
-    ...typography.primary.h2,
+    ...typography.accent.h3,
     color: gray[900],
+    marginBottom: spacing[40],
+    letterSpacing: -0.52,
   },
   inputWrapper: {
+    flexDirection: 'row',
+    alignItems: 'center',
     backgroundColor: '#FFFFFF',
-    borderRadius: 12,
-    paddingHorizontal: 16,
-    paddingVertical: 14,
+    borderRadius: radius[12],
+    height: 50,
+    paddingHorizontal: spacing[16],
+  },
+  errorRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing[4],
+    marginTop: spacing[8],
   },
   errorText: {
-    ...typography.primary.caption,
-    color: '#E53935',
-    paddingHorizontal: 4,
-    marginTop: 8,
+    ...typography.accent.caption,
+    color: primitiveColors.system.red.opacity100,
+    letterSpacing: -0.26,
   },
   input: {
-    ...typography.primary.body1R,
+    flex: 1,
+    fontFamily: typography.primary.body1R.fontFamily,
+    fontSize: typography.primary.body1R.fontSize,
+    fontWeight: typography.primary.body1R.fontWeight,
     color: gray[900],
     padding: 0,
-    letterSpacing: 3,
+  },
+  counter: {
+    ...typography.primary.body3R,
+    color: gray[300],
+    marginLeft: spacing[8],
+    letterSpacing: -0.24,
   },
   checkImage: {
-    width: 100,
-    height: 100,
+    width: 80,
+    height: 80,
     alignSelf: 'center',
-    marginBottom: 16,
-    marginTop: 8,
+    marginTop: 31,
+    marginBottom: spacing[20],
   },
   completeTitle: {
-    ...typography.primary.h2,
+    ...typography.accent.h3,
     color: gray[900],
     textAlign: 'center',
-    marginBottom: 8,
+    marginBottom: spacing[12],
+    letterSpacing: -0.52,
   },
   completeSubtitle: {
     ...typography.primary.body2R,
-    color: gray[600],
+    color: gray[400],
     textAlign: 'center',
+    letterSpacing: -0.28,
   },
   inviteCard: {
     backgroundColor: '#FFFFFF',
-    borderRadius: 16,
-    padding: 20,
-    gap: 12,
+    borderRadius: radius[12],
+    padding: spacing[20],
+    gap: spacing[20],
   },
   codeRow: {
     flexDirection: 'row',
@@ -240,17 +353,14 @@ const styles = StyleSheet.create({
     gap: 10,
   },
   codeLabel: {
-    ...typography.primary.body2R,
-    color: gray[600],
+    ...typography.accent.body2,
+    color: gray[500],
+    letterSpacing: -0.31,
   },
   codeText: {
-    ...typography.primary.title1B,
+    ...typography.accent.h3,
     color: gray[900],
-    letterSpacing: 2,
-  },
-  copyIcon: {
-    width: 20,
-    height: 20,
+    letterSpacing: -0.31,
   },
   shareInCard: {
     flexDirection: 'row',
@@ -258,29 +368,29 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     gap: 8,
     backgroundColor: gray[50],
-    borderRadius: 10,
-    paddingVertical: 12,
-  },
-  shareIcon: {
-    width: 18,
-    height: 18,
+    borderRadius: 18,
+    height: 44,
   },
   shareText: {
-    ...typography.primary.body2M,
-    color: gray[900],
+    ...typography.primary.body2B,
+    color: gray[800],
+    letterSpacing: -0.28,
   },
   buttonRow: {
     flexDirection: 'row',
-    gap: 8,
-    paddingHorizontal: 24,
-    paddingTop: 24,
-    paddingBottom: 48,
+    gap: spacing[8],
+    paddingHorizontal: spacing[16],
+    paddingTop: spacing[16],
+    paddingBottom: 26,
+    backgroundColor: brown[50],
   },
   prevButton: {
-    flex: 2,
-    backgroundColor: gray[700],
-    borderRadius: 100,
-    paddingVertical: 16,
+    width: 108,
+    minWidth: 88,
+    height: 50,
+    backgroundColor: brown[900],
+    borderRadius: 18,
+    paddingHorizontal: spacing[16],
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -289,15 +399,18 @@ const styles = StyleSheet.create({
     color: '#FFFFFF',
   },
   nextButton: {
-    flex: 3,
-    backgroundColor: green[400],
-    borderRadius: 100,
-    paddingVertical: 16,
+    flex: 1,
+    minWidth: 88,
+    height: 50,
+    backgroundColor: green[300],
+    borderRadius: 18,
+    paddingHorizontal: spacing[16],
     alignItems: 'center',
     justifyContent: 'center',
   },
   nextButtonDisabled: {
-    backgroundColor: gray[200],
+    backgroundColor: green[400],
+    opacity: 0.3,
   },
   nextText: {
     ...typography.primary.body1B,

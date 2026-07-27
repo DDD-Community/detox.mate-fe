@@ -1,153 +1,186 @@
-import * as ImagePicker from 'expo-image-picker';
-import { router, useLocalSearchParams } from 'expo-router';
+import { useLocalSearchParams } from 'expo-router';
 import { useState } from 'react';
-import { ActivityIndicator, Image, Pressable, StyleSheet, Text, View } from 'react-native';
-import { Button } from '../../../components/Button';
-import { analyzeScreenTimeImage } from '../../../features/screen-time-analyze';
-import { primitiveColors } from '../../../lib/token/primitive/colors';
-import { typography } from '../../../lib/token/primitive/typography';
+import {
+  ActivityIndicator,
+  Image,
+  Pressable,
+  StyleSheet,
+  Text,
+  View,
+  type ImageLoadEvent,
+  type ImageStyle,
+  type LayoutChangeEvent,
+} from 'react-native';
 
-const { gray, brown } = primitiveColors;
+import { Button, Icon, LoggingButton, LoggingPage } from '@/components';
+import { getVerifyExitRoute, goBackOrReplace } from '@/lib/navigation';
+import { primitiveColors, typography } from '@/lib/token';
+import { useVerifyUploadAnalysis } from './useVerifyUploadAnalysis';
+import { VerifyBottomSheet } from './VerifyBottomSheet';
+import type { VerifyMode, VerifyRoot } from './verifyFlowParams';
+
+const { gray } = primitiveColors;
+const PREVIEW_HEIGHT = 259;
+
+type Size = {
+  width: number;
+  height: number;
+};
+
+function getCenteredCoverStyle(
+  containerSize: Size,
+  imageSize: Size | null
+): ImageStyle | undefined {
+  if (!imageSize || containerSize.width <= 0 || containerSize.height <= 0) {
+    return undefined;
+  }
+
+  const imageAspectRatio = imageSize.width / imageSize.height;
+  const containerAspectRatio = containerSize.width / containerSize.height;
+
+  if (imageAspectRatio > containerAspectRatio) {
+    const width = containerSize.height * imageAspectRatio;
+
+    return {
+      width,
+      height: containerSize.height,
+      left: (containerSize.width - width) / 2,
+    };
+  }
+
+  return {
+    width: containerSize.width,
+    height: containerSize.width / imageAspectRatio,
+    left: 0,
+    top: (containerSize.height - containerSize.width / imageAspectRatio) / 2,
+  };
+}
 
 export default function VerifyUploadScreen() {
+  const [previewWidth, setPreviewWidth] = useState(0);
+  const [imageSize, setImageSize] = useState<Size | null>(null);
   const {
     imageUri: paramImageUri,
     mode,
     goal,
+    groupChallengeParticipantId,
+    verifyRoot,
   } = useLocalSearchParams<{
     imageUri?: string;
-    mode?: 'initial' | 'verify';
+    mode?: VerifyMode;
     goal?: string;
+    groupChallengeParticipantId?: string;
+    verifyRoot?: VerifyRoot;
   }>();
-  const [imageUri, setImageUri] = useState<string | undefined>(paramImageUri);
-  const forwardParams = {
-    ...(mode ? { mode } : {}),
-    ...(goal ? { goal } : {}),
-  };
-  const hasImage = Boolean(imageUri);
-  const [isAnalyzing, setIsAnalyzing] = useState(false);
+  const {
+    buttonDisabled,
+    buttonLabel,
+    handleAnalyze,
+    handlePickImage,
+    hasImage,
+    imageUri,
+    isAnalyzing,
+  } = useVerifyUploadAnalysis({
+    imageUri: paramImageUri,
+    mode,
+    goal,
+    groupChallengeParticipantId,
+    verifyRoot,
+  });
+  const previewImageStyle = getCenteredCoverStyle(
+    { width: previewWidth, height: PREVIEW_HEIGHT },
+    imageSize
+  );
 
-  const handlePickImage = async () => {
-    const result = await ImagePicker.launchImageLibraryAsync({
-      mediaTypes: ['images'],
-      quality: 1,
-    });
-    if (result.canceled || !result.assets[0]) return;
-    setImageUri(result.assets[0].uri);
-  };
-
-  const handleAnalyze = async () => {
-    if (!imageUri) return;
-    setIsAnalyzing(true);
-    let result = await analyzeScreenTimeImage(imageUri);
-    setIsAnalyzing(false);
-
-    // TODO: 임시 — 분석 결과 무관하게 항상 성공 처리. 실제 OCR 연동 시 이 블록 삭제.
-    result = {
-      ok: true,
-      value: '4:32',
-      dateLabel: '어제',
-      rawUsageText: '4시간 32분',
-      elapsedMs: 0,
-    };
-
-    if (!result.ok) {
-      router.replace({
-        pathname: '/(group)/verify/error',
-        params: forwardParams,
-      });
-      return;
-    }
-    router.replace({
-      pathname: '/(group)/verify/done',
-      params: { value: result.value, ...forwardParams },
-    });
+  const handlePreviewLayout = (event: LayoutChangeEvent) => {
+    setPreviewWidth(event.nativeEvent.layout.width);
   };
 
-  const buttonLabel = isAnalyzing ? '분석중이에요...' : '분석하기';
-  const buttonDisabled = !hasImage || isAnalyzing;
+  const handlePreviewLoad = (event: ImageLoadEvent) => {
+    const { width, height } = event.nativeEvent.source;
+
+    setImageSize({ width, height });
+  };
 
   return (
-    <Pressable style={styles.overlay} onPress={() => (isAnalyzing ? null : router.back())}>
-      <Pressable style={styles.sheet} onPress={() => {}}>
-        <View style={styles.grabberWrap}>
-          <View style={styles.grabber} />
-        </View>
-
+    <LoggingPage
+      eventName="Verify Upload Viewed"
+      properties={{ pageName: 'VerifyUpload', verify_mode: mode ?? 'initial' }}
+    >
+      <VerifyBottomSheet
+        onDismiss={() => goBackOrReplace(getVerifyExitRoute(verifyRoot))}
+        dismissDisabled={isAnalyzing}
+      >
         <View style={styles.content}>
           <View style={styles.section}>
             <View style={styles.textGroup}>
               <Text style={styles.title}>
                 {mode === 'verify'
-                  ? '어제의 스크린 타임을\n인증해주세요'
-                  : '내 스크린 타임을\n인증해주세요'}
+                  ? '어제의 스크린 타임을\n인증해 주세요'
+                  : '내 스크린 타임을\n인증해 주세요'}
               </Text>
               <Text style={styles.description}>
-                {'스크린 타임 캡쳐를 업로드해주세요.\n목표 기반 데이터로 이용돼요.'}
+                {'스크린 타임 캡쳐를 업로드해 주세요.\n목표 기반 데이터로 이용돼요.'}
               </Text>
             </View>
 
             {hasImage ? (
-              <View style={styles.previewBox}>
-                <Image source={{ uri: imageUri }} style={styles.preview} resizeMode="cover" />
+              <View style={styles.previewBox} onLayout={handlePreviewLayout}>
+                <Image
+                  source={{ uri: imageUri }}
+                  style={[styles.preview, previewImageStyle ?? styles.previewFallback]}
+                  resizeMode="cover"
+                  onLoad={handlePreviewLoad}
+                />
               </View>
             ) : (
-              <Pressable style={styles.dropzone} onPress={handlePickImage}>
-                <View style={styles.iconCircle}>
-                  <Image
-                    source={require('../../../../assets/icons/regular/icon_rg_UploadSimple.png')}
-                    style={styles.uploadIcon}
-                    resizeMode="contain"
-                  />
-                </View>
-                <View style={styles.dropzoneText}>
-                  <Text style={styles.dropzoneTitle}>캡처 업로드</Text>
-                  <Text style={styles.dropzoneCaption}>AI로 사용시간이 자동 분석돼요</Text>
-                </View>
-              </Pressable>
+              <LoggingButton
+                eventName="Verify Upload Screenshot Upload Select Clicked"
+                properties={{
+                  pageName: 'VerifyUpload',
+                  buttonName: '캡처 업로드',
+                  verify_mode: mode ?? 'initial',
+                }}
+              >
+                <Pressable style={styles.dropzone} onPress={handlePickImage}>
+                  <View style={styles.iconCircle}>
+                    <Icon name="uploadSimple" size={23} color="#2B2F38" />
+                  </View>
+                  <View style={styles.dropzoneText}>
+                    <Text style={styles.dropzoneTitle}>캡처 업로드</Text>
+                    <Text style={styles.dropzoneCaption}>AI로 사용시간이 자동 스캔돼요</Text>
+                  </View>
+                </Pressable>
+              </LoggingButton>
             )}
           </View>
 
-          <Button
-            label={buttonLabel}
-            color="assistive"
-            onPress={handleAnalyze}
-            disabled={buttonDisabled}
-            style={styles.button}
-            leadingIcon={
-              isAnalyzing ? <ActivityIndicator size="small" color="#FFFFFF" /> : undefined
-            }
-          />
+          <LoggingButton
+            eventName="Verify Upload Screenshot Scan Start Clicked"
+            properties={{
+              pageName: 'VerifyUpload',
+              buttonName: '스캔하기',
+              verify_mode: mode ?? 'initial',
+            }}
+          >
+            <Button
+              label={buttonLabel}
+              color="assistive"
+              onPress={handleAnalyze}
+              disabled={buttonDisabled}
+              style={styles.button}
+              leadingIcon={
+                isAnalyzing ? <ActivityIndicator size="small" color="#FFFFFF" /> : undefined
+              }
+            />
+          </LoggingButton>
         </View>
-      </Pressable>
-    </Pressable>
+      </VerifyBottomSheet>
+    </LoggingPage>
   );
 }
 
 const styles = StyleSheet.create({
-  overlay: {
-    flex: 1,
-    backgroundColor: 'rgba(0, 0, 0, 0.5)',
-    justifyContent: 'flex-end',
-  },
-  sheet: {
-    backgroundColor: brown[50],
-    borderTopLeftRadius: 24,
-    borderTopRightRadius: 24,
-    paddingHorizontal: 20,
-    paddingBottom: 40,
-  },
-  grabberWrap: {
-    paddingTop: 5,
-    paddingBottom: 11,
-    alignItems: 'center',
-  },
-  grabber: {
-    width: 52,
-    height: 5,
-    borderRadius: 100,
-    backgroundColor: gray[100],
-  },
   content: {
     gap: 40,
   },
@@ -179,7 +212,7 @@ const styles = StyleSheet.create({
     overflow: 'hidden',
   },
   previewBox: {
-    height: 259,
+    height: PREVIEW_HEIGHT,
     borderRadius: 13,
     borderWidth: 1,
     borderColor: gray[100],
@@ -193,10 +226,6 @@ const styles = StyleSheet.create({
     backgroundColor: '#F3F4F6',
     alignItems: 'center',
     justifyContent: 'center',
-  },
-  uploadIcon: {
-    width: 23,
-    height: 23,
   },
   dropzoneText: {
     alignItems: 'center',
@@ -213,8 +242,12 @@ const styles = StyleSheet.create({
     letterSpacing: -0.22,
   },
   preview: {
-    flex: 1,
+    position: 'absolute',
+    top: 0,
+  },
+  previewFallback: {
     width: '100%',
+    height: '100%',
   },
   button: {
     alignSelf: 'stretch',

@@ -4,13 +4,11 @@
  * OpenAPI definition
  * OpenAPI spec version: v0
  */
-import type { DeleteGroupParams } from '../model';
-
 import { customAxios } from '../../mutator';
 
 export const getGroupDev = () => {
-  const deleteGroup = (id: number, params: DeleteGroupParams) => {
-    return customAxios<void>({ url: `/groups/${id}`, method: 'DELETE', params });
+  const deleteGroup = (id: number) => {
+    return customAxios<void>({ url: `/groups/${id}`, method: 'DELETE' });
   };
   return { deleteGroup };
 };

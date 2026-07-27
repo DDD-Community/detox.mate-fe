@@ -3,24 +3,22 @@ name: Deploy to TestFlight
 on:
   workflow_dispatch:
 
+permissions:
+  contents: read
+
 jobs:
-  build-and-deploy:
-    name: Build iOS & Deploy to TestFlight
+  build:
+    name: Build iOS
     runs-on: ubuntu-latest
+    outputs:
+      build-id: ${{ steps.build.outputs.build-id }}
 
     steps:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Setup Node
-        uses: actions/setup-node@v4
-        with:
-          node-version: 24
-
-      - name: Setup pnpm
-        uses: pnpm/action-setup@v4
-        with:
-          version: latest
+      - name: Setup mise
+        uses: jdx/mise-action@v2
 
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
@@ -31,8 +29,87 @@ jobs:
           eas-version: latest
           token: ${{ secrets.EXPO_TOKEN }}
 
+      - name: Resolve latest PRD version
+        id: version
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          latest_tag="$(gh release list --limit 100 --json tagName --jq '.[] | select(.tagName | startswith("prd-v")) | .tagName' | head -n 1)"
+          app_version="1.0.0"
+          if [[ "$latest_tag" =~ ^prd-v([0-9]+\.[0-9]+\.[0-9]+)-[0-9]+$ ]]; then
+            app_version="${BASH_REMATCH[1]}"
+          fi
+
+          echo "app-version=$app_version" >> "$GITHUB_OUTPUT"
+          {
+            echo "## Dev TestFlight deployment"
+            echo ""
+            echo "- Latest PRD release: \`${latest_tag:-none}\`"
+            echo "- App version: \`$app_version\`"
+          } >> "$GITHUB_STEP_SUMMARY"
+
       - name: Build iOS
-        run: eas build --platform ios --profile production --non-interactive
+        id: build
+        env:
+          APP_ENV: development
+          APP_VERSION: ${{ steps.version.outputs.app-version }}
+          APP_BUILD_CHANNEL: testflight
+          APP_GIT_SHA: ${{ github.sha }}
+        run: |
+          export APP_GIT_SHA="${APP_GIT_SHA::7}"
+
+          # app.config.ts reads APP_VERSION to compute runtimeVersion (policy: "appVersion").
+          # eas-cli evaluates the config locally (this shell) and again on the remote build
+          # worker; only eas.json's `env` is forwarded to the worker, so APP_VERSION must be
+          # baked in here or the two evaluations diverge and the build fails with
+          # "Runtime version calculated on local machine not equal to runtime version
+          # calculated during build."
+          jq --arg v "$APP_VERSION" '.build["development-store"].env.APP_VERSION = $v' eas.json > eas.json.tmp
+          mv eas.json.tmp eas.json
+
+          BUILD_JSON=$(eas build --platform ios --profile development-store --non-interactive --json)
+          BUILD_ID=$(echo "$BUILD_JSON" | jq -r '.[0].id')
+          if [ -z "$BUILD_ID" ] || [ "$BUILD_ID" = "null" ]; then
+            echo "::error::Failed to extract build ID"
+            echo "$BUILD_JSON"
+            exit 1
+          fi
+          echo "build-id=$BUILD_ID" >> $GITHUB_OUTPUT
+          echo "Build ID: $BUILD_ID"
+
+  submit:
+    name: Submit to TestFlight
+    runs-on: ubuntu-latest
+    needs: build
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup mise
+        uses: jdx/mise-action@v2
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Setup EAS
+        uses: expo/expo-github-action@v8
+        with:
+          eas-version: latest
+          token: ${{ secrets.EXPO_TOKEN }}
 
       - name: Submit to TestFlight
-        run: eas submit --platform ios --latest --profile production --non-interactive
+        run: eas submit --platform ios --id ${{ needs.build.outputs.build-id }} --profile development-store --non-interactive
+
+  notify:
+    name: Notify Discord
+    runs-on: ubuntu-latest
+    needs: submit
+
+    steps:
+      - name: Notify Discord
+        run: |
+          curl -s -X POST \
+            -H "Content-Type: application/json" \
+            -d '{"content":"**Dev TestFlight 배포 성공**"}' \
+            "${{ secrets.DISCORD_WEBHOOK_URL_DEV_DEPOLY }}"

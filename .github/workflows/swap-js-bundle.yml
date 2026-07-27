@@ -1,0 +1,178 @@
+name: JS Bundle 갈아끼우기
+
+on:
+  workflow_dispatch:
+    inputs:
+      target:
+        description: 'Update target channel'
+        required: true
+        default: development
+        type: choice
+        options:
+          - development
+          - production
+      app_version:
+        description: 'Runtime/app version to target. Example: 1.0.3'
+        required: true
+        type: string
+      message:
+        description: 'Update message'
+        required: true
+        type: string
+      rollout_percentage:
+        description: 'Production rollout percentage. 100 publishes to all users.'
+        required: true
+        default: '10'
+        type: choice
+        options:
+          - '10'
+          - '25'
+          - '50'
+          - '100'
+
+permissions:
+  contents: read
+
+jobs:
+  publish:
+    name: Publish OTA update
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup mise
+        uses: jdx/mise-action@v2
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Setup EAS
+        uses: expo/expo-github-action@v8
+        with:
+          eas-version: latest
+          token: ${{ secrets.EXPO_TOKEN }}
+
+      - name: Validate update inputs
+        env:
+          TARGET: ${{ inputs.target }}
+          APP_VERSION: ${{ inputs.app_version }}
+          ROLLOUT_PERCENTAGE: ${{ inputs.rollout_percentage }}
+        run: |
+          if ! [[ "$APP_VERSION" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+            echo "::error::app_version must use semantic version format, for example 1.0.3"
+            exit 1
+          fi
+
+          if [ "$TARGET" = "production" ] && [ "$GITHUB_REF_NAME" != "dev" ]; then
+            echo "::error::Production OTA updates must run from dev. Current branch: $GITHUB_REF_NAME"
+            exit 1
+          fi
+
+          if ! [[ "$ROLLOUT_PERCENTAGE" =~ ^(10|25|50|100)$ ]]; then
+            echo "::error::rollout_percentage must be one of 10, 25, 50, or 100"
+            exit 1
+          fi
+
+      - name: Block native changes
+        env:
+          TARGET: ${{ inputs.target }}
+          APP_VERSION: ${{ inputs.app_version }}
+        run: |
+          set -euo pipefail
+
+          base_ref="$(git tag --list "prd-v${APP_VERSION}-*" --sort=-creatordate | head -n 1)"
+
+          if [ -z "$base_ref" ] && [ "$TARGET" = "production" ]; then
+            echo "::error::No production release tag found for app_version=$APP_VERSION. Expected tag pattern: prd-v${APP_VERSION}-*"
+            exit 1
+          fi
+
+          if [ -z "$base_ref" ]; then
+            git fetch origin dev --depth=1
+            base_ref="origin/dev"
+          fi
+
+          changed_files="$(git diff --name-only "$base_ref" HEAD)"
+          blocked_files=()
+
+          while IFS= read -r file; do
+            [ -z "$file" ] && continue
+
+            case "$file" in
+              app.config.*|eas.json|package.json|pnpm-lock.yaml|package-lock.json|yarn.lock|bun.lockb|metro.config.*|babel.config.*|ios/*|android/*|modules/*|plugins/*|firebase/*|patches/*|assets/icon.png|assets/adaptive-icon.png|assets/splash_logo.png)
+                blocked_files+=("$file")
+                ;;
+            esac
+          done <<< "$changed_files"
+
+          if [ "${#blocked_files[@]}" -gt 0 ]; then
+            echo "::error::Native-sensitive changes were found. Ship a new EAS Build instead of an OTA update."
+            printf '%s\n' "${blocked_files[@]}"
+            {
+              echo "## Native change guard failed"
+              echo ""
+              echo "Base: \`$base_ref\`"
+              echo ""
+              echo "Blocked files:"
+              printf '%s\n' "${blocked_files[@]}" | sed 's/^/- `/' | sed 's/$/`/'
+            } >> "$GITHUB_STEP_SUMMARY"
+            exit 1
+          fi
+
+          {
+            echo "## Native change guard"
+            echo ""
+            echo "Base: \`$base_ref\`"
+            echo ""
+            echo "No native-sensitive files changed."
+          } >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Verify app config
+        env:
+          APP_ENV: ${{ inputs.target }}
+          APP_VERSION: ${{ inputs.app_version }}
+          APP_BUILD_CHANNEL: ${{ inputs.target }}
+          APP_GIT_SHA: ${{ github.sha }}
+        run: |
+          export APP_GIT_SHA="${APP_GIT_SHA::7}"
+          pnpm exec expo config --type public
+
+      - name: Publish update
+        env:
+          TARGET: ${{ inputs.target }}
+          APP_ENV: ${{ inputs.target }}
+          APP_VERSION: ${{ inputs.app_version }}
+          APP_BUILD_CHANNEL: ${{ inputs.target }}
+          APP_GIT_SHA: ${{ github.sha }}
+          MESSAGE: ${{ inputs.message }}
+          ROLLOUT_PERCENTAGE: ${{ inputs.rollout_percentage }}
+        run: |
+          export APP_GIT_SHA="${APP_GIT_SHA::7}"
+
+          rollout_args=()
+          if [ "$TARGET" = "production" ] && [ "$ROLLOUT_PERCENTAGE" != "100" ]; then
+            rollout_args+=(--rollout-percentage "$ROLLOUT_PERCENTAGE")
+          fi
+
+          eas update \
+            --channel "$TARGET" \
+            --environment "$TARGET" \
+            --message "$MESSAGE" \
+            --non-interactive \
+            "${rollout_args[@]}"
+
+          {
+            echo "## JS Bundle Swap"
+            echo ""
+            echo "| Field | Value |"
+            echo "| --- | --- |"
+            echo "| Target | \`$TARGET\` |"
+            echo "| App/runtime version | \`$APP_VERSION\` |"
+            echo "| Git SHA | \`$APP_GIT_SHA\` |"
+            echo "| Rollout | \`${ROLLOUT_PERCENTAGE}%\` |"
+            echo "| Message | \`$MESSAGE\` |"
+          } >> "$GITHUB_STEP_SUMMARY"

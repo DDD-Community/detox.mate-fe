@@ -1,1 +1,1 @@
-export { default } from '../../src/screens/group/verify/GoalSetupScreen';
+export { default } from '@/screens/group/verify/GoalSetupScreen';

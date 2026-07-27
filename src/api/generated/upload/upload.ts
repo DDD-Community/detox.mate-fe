@@ -4,21 +4,17 @@
  * OpenAPI definition
  * OpenAPI spec version: v0
  */
-import type { IssuePresignedUrlParams, PresignedUrlRequest, PresignedUrlResponse } from '../model';
+import type { PresignedUrlRequest, PresignedUrlResponse } from '../model';
 
 import { customAxios } from '../../mutator';
 
 export const getUpload = () => {
-  const issuePresignedUrl = (
-    presignedUrlRequest: PresignedUrlRequest,
-    params: IssuePresignedUrlParams
-  ) => {
+  const issuePresignedUrl = (presignedUrlRequest: PresignedUrlRequest) => {
     return customAxios<PresignedUrlResponse>({
       url: `/uploads/presigned-urls`,
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       data: presignedUrlRequest,
-      params,
     });
   };
   return { issuePresignedUrl };

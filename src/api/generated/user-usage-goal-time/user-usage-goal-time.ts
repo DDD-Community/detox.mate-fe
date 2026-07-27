@@ -6,8 +6,6 @@
  */
 import type {
   CurrentUsageGoalTimesResponse,
-  GetCurrentGoalTimesParams,
-  SetGoalTimesParams,
   UserUsageGoalTimesSetRequest,
   UserUsageGoalTimesSetResponse,
 } from '../model';
@@ -15,23 +13,18 @@ import type {
 import { customAxios } from '../../mutator';
 
 export const getUserUsageGoalTime = () => {
-  const setGoalTimes = (
-    userUsageGoalTimesSetRequest: UserUsageGoalTimesSetRequest,
-    params: SetGoalTimesParams
-  ) => {
+  const setGoalTimes = (userUsageGoalTimesSetRequest: UserUsageGoalTimesSetRequest) => {
     return customAxios<UserUsageGoalTimesSetResponse>({
       url: `/me/usage-goal-times`,
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       data: userUsageGoalTimesSetRequest,
-      params,
     });
   };
-  const getCurrentGoalTimes = (params: GetCurrentGoalTimesParams) => {
+  const getCurrentGoalTimes = () => {
     return customAxios<CurrentUsageGoalTimesResponse>({
       url: `/me/usage-goal-times/current`,
       method: 'GET',
-      params,
     });
   };
   return { setGoalTimes, getCurrentGoalTimes };

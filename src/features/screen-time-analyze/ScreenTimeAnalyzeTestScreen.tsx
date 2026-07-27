@@ -10,7 +10,7 @@ type ScreenTimeAnalyzeTestScreenProps = {
 function formatRejectReason(reason: string): string {
   switch (reason) {
     case 'screen_not_matched':
-      return '스크린타임 화면을 찾지 못했습니다.';
+      return '스크린 타임 화면을 찾지 못했습니다.';
     case 'date_not_yesterday':
       return '요약 날짜가 어제가 아닙니다.';
     case 'summary_date_not_actual_yesterday':
@@ -20,7 +20,7 @@ function formatRejectReason(reason: string): string {
     case 'usage_not_found':
       return '총 사용시간을 찾지 못했습니다.';
     case 'analysis_failed':
-      return '이미지 분석 자체에 실패했습니다.';
+      return '이미지 스캔 자체에 실패했습니다.';
     default:
       return reason;
   }
@@ -53,7 +53,7 @@ export function ScreenTimeAnalyzeTestScreen({ onClose }: ScreenTimeAnalyzeTestSc
         <View style={styles.card}>
           <Text style={styles.cardTitle}>실사용 테스트 화면</Text>
           <Text style={styles.helper}>
-            유저가 업로드한 스크린타임 이미지를 분석하고, `어제` 단어만이 아니라 실제 어제 날짜까지
+            유저가 업로드한 스크린 타임 이미지를 스캔하고, `어제` 단어만이 아니라 실제 어제 날짜까지
             맞을 때만 성공으로 처리합니다.
           </Text>
           <View style={styles.controls}>
@@ -65,7 +65,7 @@ export function ScreenTimeAnalyzeTestScreen({ onClose }: ScreenTimeAnalyzeTestSc
               style={[styles.button, (!selectedImageUri || isAnalyzing) && styles.buttonDisabled]}
               onPress={() => void analyzeImage()}
             >
-              <Text style={styles.buttonText}>분석하기</Text>
+              <Text style={styles.buttonText}>스캔하기</Text>
             </Pressable>
           </View>
 
@@ -77,12 +77,12 @@ export function ScreenTimeAnalyzeTestScreen({ onClose }: ScreenTimeAnalyzeTestSc
             </View>
           )}
 
-          {isAnalyzing ? <Text style={styles.helper}>이미지 분석 중...</Text> : null}
+          {isAnalyzing ? <Text style={styles.helper}>이미지 스캔 중...</Text> : null}
           {analyzeErrorMessage ? <Text style={styles.errorText}>{analyzeErrorMessage}</Text> : null}
 
           {analysisResult ? (
             <View style={styles.resultPanel}>
-              <Text style={styles.cardTitle}>분석 결과</Text>
+              <Text style={styles.cardTitle}>스캔 결과</Text>
               {analysisResult.ok ? (
                 <>
                   <Text style={styles.resultValue}>{analysisResult.value}</Text>
@@ -107,10 +107,10 @@ export function ScreenTimeAnalyzeTestScreen({ onClose }: ScreenTimeAnalyzeTestSc
         <View style={styles.card}>
           <Text style={styles.cardTitle}>개발자용 API</Text>
           <Text style={styles.meta}>
-            import &#123; analyzeScreenTimeImage &#125; from './api/screenTimeAnalyze'
+            {"import { analyzeScreenTimeImage } from './api/screenTimeAnalyze'"}
           </Text>
           <Text style={styles.meta}>const result = await analyzeScreenTimeImage(imageUri)</Text>
-          <Text style={styles.meta}>if (result.ok) result.value // "04:02"</Text>
+          <Text style={styles.meta}>{'if (result.ok) result.value // "04:02"'}</Text>
         </View>
       </ScrollView>
     </SafeAreaView>

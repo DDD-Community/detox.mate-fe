@@ -1,1 +1,1 @@
-export { default } from '../../src/screens/auth/TermsAgreementScreen';
+export { default } from '@/screens/auth/TermsAgreementScreen';

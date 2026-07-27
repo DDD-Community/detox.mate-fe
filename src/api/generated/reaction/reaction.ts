@@ -4,39 +4,26 @@
  * OpenAPI definition
  * OpenAPI spec version: v0
  */
-import type {
-  CreateReactionParams,
-  CreateReactionRequest,
-  DeleteReactionParams,
-  ReactionResponse,
-} from '../model';
+import type { CreateReactionRequest, ReactionResponse } from '../model';
 
 import { customAxios } from '../../mutator';
 
 export const getReaction = () => {
   const createReaction = (
-    groupChallengeId: number,
-    stampId: number,
-    createReactionRequest: CreateReactionRequest,
-    params: CreateReactionParams
+    challengeRecordId: number,
+    createReactionRequest: CreateReactionRequest
   ) => {
     return customAxios<ReactionResponse>({
-      url: `/group-challenges/${groupChallengeId}/stamps/${stampId}/reactions`,
+      url: `/challenge-records/${challengeRecordId}/reactions`,
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       data: createReactionRequest,
-      params,
     });
   };
-  const deleteReaction = (
-    groupChallengeId: number,
-    reactionId: number,
-    params: DeleteReactionParams
-  ) => {
+  const deleteReaction = (challengeRecordId: number, reactionId: number) => {
     return customAxios<void>({
-      url: `/group-challenges/${groupChallengeId}/reactions/${reactionId}`,
+      url: `/challenge-records/${challengeRecordId}/reactions/${reactionId}`,
       method: 'DELETE',
-      params,
     });
   };
   return { createReaction, deleteReaction };
