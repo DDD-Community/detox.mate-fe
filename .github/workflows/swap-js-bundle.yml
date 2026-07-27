@@ -67,8 +67,8 @@ jobs:
             exit 1
           fi
 
-          if [ "$TARGET" = "production" ] && [ "$GITHUB_REF_NAME" != "dev" ]; then
-            echo "::error::Production OTA updates must run from dev. Current branch: $GITHUB_REF_NAME"
+          if [ "$TARGET" = "production" ] && [ "$GITHUB_REF_NAME" != "main" ]; then
+            echo "::error::Production OTA updates must run from main. Current branch: $GITHUB_REF_NAME"
             exit 1
           fi
 
@@ -92,8 +92,8 @@ jobs:
           fi
 
           if [ -z "$base_ref" ]; then
-            git fetch origin dev --depth=1
-            base_ref="origin/dev"
+            git fetch origin main --depth=1
+            base_ref="origin/main"
           fi
 
           changed_files="$(git diff --name-only "$base_ref" HEAD)"
