@@ -55,6 +55,11 @@ jobs:
           APP_VERSION: ${{ steps.version.outputs.app-version }}
           APP_BUILD_CHANNEL: testflight
           APP_GIT_SHA: ${{ github.sha }}
+          # EAS에 등록된 ASC API Key에 Apple Team ID가 붙어 있지 않아, 프로파일 재설정 시
+          # eas-cli가 Team ID를 대화형으로 묻다가 CI에서 stdin이 없어 실패한다.
+          # 여기서 주입해 프롬프트 없이 인증되게 한다. Team ID는 AASA/IPA에서 공개되는 값이다.
+          EXPO_APPLE_TEAM_ID: 6G3B344SZD
+          EXPO_APPLE_TEAM_TYPE: INDIVIDUAL
         run: |
           export APP_GIT_SHA="${APP_GIT_SHA::7}"
 
