@@ -109,6 +109,9 @@ importers:
       react-native:
         specifier: 0.83.6
         version: 0.83.6(@babel/core@7.29.0)(@react-native/metro-config@0.85.2(@babel/core@7.29.0))(@types/react@19.2.15)(react@19.2.0)
+      react-native-device-activity:
+        specifier: ^0.6.1
+        version: 0.6.1(expo@55.0.26)(react-native@0.83.6(@babel/core@7.29.0)(@react-native/metro-config@0.85.2(@babel/core@7.29.0))(@types/react@19.2.15)(react@19.2.0))(react@19.2.0)
       react-native-gesture-handler:
         specifier: ~2.30.1
         version: 2.30.1(react-native@0.83.6(@babel/core@7.29.0)(@react-native/metro-config@0.85.2(@babel/core@7.29.0))(@types/react@19.2.15)(react@19.2.0))(react@19.2.0)
@@ -142,7 +145,7 @@ importers:
         version: 8.6.4(prettier@3.8.1)(react-native@0.83.6(@babel/core@7.29.0)(@react-native/metro-config@0.85.2(@babel/core@7.29.0))(@types/react@19.2.15)(react@19.2.0))(react@19.2.0)(storybook@8.6.18(prettier@3.8.1))
       '@storybook/addon-ondevice-controls':
         specifier: ^8
-        version: 8.6.4(f204ea668abda4e508640a9bf21cd751)
+        version: 8.6.4(5acd7ad043dcf49d163ae1b3e229f4f1)
       '@storybook/react-native':
         specifier: ^8
         version: 8.6.4(588ceb265d38aaa9f4bc142e6f52d691)
@@ -730,6 +733,12 @@ packages:
     resolution: {integrity: sha512-LwdZHpScM4Qz8Xw2iKSzS+cfglZzJGvofQICy7W7v4caru4EaAmyUuO6BGrbyQ2mYV11W0U8j5mBhd14dd3B0A==}
     engines: {node: '>=6.9.0'}
 
+  '@bacons/xcode@1.0.0-alpha.24':
+    resolution: {integrity: sha512-RaYUNsGBJVp0t2vgXaT4L668WIvbhtdl1JFJHedPkebIPR6h/+E2Kq32O49t+8f4LUPW9UF4CfXBrDc+XdXUUQ==}
+
+  '@bacons/xcode@1.0.0-alpha.33':
+    resolution: {integrity: sha512-+vwXK3mLnW8NOYSHNpCa7sAYR7qWmIHM3xBbBkLailN81F1CdSVsJBH1TAnTMHb+rDEh5ehsZ8AQRNVxvhWR/Q==}
+
   '@commander-js/extra-typings@14.0.0':
     resolution: {integrity: sha512-hIn0ncNaJRLkZrxBIp5AsW/eXEHNKYQBh0aPdoUqNgD+Io3NIykQqpKFyKcuasZhicGaEZJX/JBSIkZ4e5x8Dg==}
     peerDependencies:
@@ -1217,6 +1226,12 @@ packages:
   '@expo/package-manager@1.12.0':
     resolution: {integrity: sha512-SWr6093nwBjn94cvElsYZNUnhvs+XtUatUz3h0vAn0IbaWG0B6l/V5ZfOBptX/xq6rMpFG5ibIf/eckLSXw8Gg==}
 
+  '@expo/plist@0.0.18':
+    resolution: {integrity: sha512-+48gRqUiz65R21CZ/IXa7RNBXgAI/uPSdvJqoN9x1hfL44DNbUoWHgHiEXTx7XelcATpDwNTz6sHLfy0iNqf+w==}
+
+  '@expo/plist@0.1.3':
+    resolution: {integrity: sha512-GW/7hVlAylYg1tUrEASclw1MMk9FP4ZwyFAY/SUTJIhPDQHtfOlXREyWV3hhrHdX/K+pS73GNgdfT6E/e+kBbg==}
+
   '@expo/plist@0.3.5':
     resolution: {integrity: sha512-9RYVU1iGyCJ7vWfg3e7c/NVyMFs8wbl+dMWZphtFtsqyN9zppGREU3ctlD3i8KUE0sCUTVnLjCWr+VeUIDep2g==}
 
@@ -1610,6 +1625,9 @@ packages:
 
   '@jridgewell/trace-mapping@0.3.31':
     resolution: {integrity: sha512-zzNR+SdQSDJzc8joaeP8QQoCQr8NuYx2dIIytl1QeBEZHJ9uW6hebsrYgbz8hJwUQao3TWCMtmfV8Nu1twOLAw==}
+
+  '@kingstinct/expo-apple-targets@0.1.19':
+    resolution: {integrity: sha512-Hnz4DhDhywFFJJ4ZoGwzOPGW5MT7A01IwWFcUw/VKcdMFC5yVNJ2Ec2nD1J0GTPgh+ZBs9Atji//gDHXA143eQ==}
 
   '@napi-rs/wasm-runtime@1.1.4':
     resolution: {integrity: sha512-3NQNNgA1YSlJb/kMH1ildASP9HW7/7kYnRI2szWJaofaS1hWmbGI4H+d3+22aGzXXN9IJ+n+GiFVcGipJP18ow==}
@@ -2060,8 +2078,14 @@ packages:
     resolution: {integrity: sha512-YkTIMfTPeyMUrtpQo/7zd3oybVYJCfTp8626PqoakOvEiWi9PxsUpZ8j44a5GFtOIq8Nc6WWVBiFRn/6qdi1uQ==}
     engines: {node: ^20.19.4 || ^22.13.0 || ^24.3.0 || >= 25.0.0}
 
+  '@react-native/normalize-color@2.1.0':
+    resolution: {integrity: sha512-Z1jQI2NpdFJCVgpY+8Dq/Bt3d+YUi1928Q+/CZm/oh66fzM0RUl54vvuXlPJKybH4pdCZey1eDTPaLHkMPNgWA==}
+
   '@react-native/normalize-colors@0.74.89':
     resolution: {integrity: sha512-qoMMXddVKVhZ8PA1AbUCk83trpd6N+1nF2A6k1i6LsQObyS92fELuk8kU/lQs6M7BsMHwqyLCpQJ1uFgNvIQXg==}
+
+  '@react-native/normalize-colors@0.76.9':
+    resolution: {integrity: sha512-TUdMG2JGk72M9d8DYbubdOlrzTYjw+YMe/xOnLU4viDgWRHsCbtRS9x0IAxRjs3amj/7zmK3Atm8jUPvdAc8qw==}
 
   '@react-native/normalize-colors@0.83.6':
     resolution: {integrity: sha512-bTM24b5v4qN3h52oflnv+OujFORn/kVi06WaWhnQQw14/ycilPqIsqsa+DpIBqdBrXxvLa9fXtCRrQtGATZCEw==}
@@ -2156,36 +2180,42 @@ packages:
     engines: {node: ^20.19.0 || >=22.12.0}
     cpu: [arm64]
     os: [linux]
+    libc: [glibc]
 
   '@rolldown/binding-linux-arm64-musl@1.0.3':
     resolution: {integrity: sha512-VWkUHwWriDciit80wleYwKILoR/KMvxh/IdwS/paX+ZgpuRpCrKLUdadJbc0NpBEiyhpYawsJ73j9aCvOH+f7Q==}
     engines: {node: ^20.19.0 || >=22.12.0}
     cpu: [arm64]
     os: [linux]
+    libc: [musl]
 
   '@rolldown/binding-linux-ppc64-gnu@1.0.3':
     resolution: {integrity: sha512-5f1laC0SlIR0yDbFCd8acUhvJIag6N3zC5P7oUPN6wX0aOma+uKJ0wBDH5aq7I1PVI2ttTlhJwzwRIBnLiSGEg==}
     engines: {node: ^20.19.0 || >=22.12.0}
     cpu: [ppc64]
     os: [linux]
+    libc: [glibc]
 
   '@rolldown/binding-linux-s390x-gnu@1.0.3':
     resolution: {integrity: sha512-Iq4ko0r4XsgbrF/LunNgHtAGLRRVE2kXonAXQ/MV0mC6jQpMOhW1SvtZja2EhC/kd05++bP78dsqBeIQyYJ6Yg==}
     engines: {node: ^20.19.0 || >=22.12.0}
     cpu: [s390x]
     os: [linux]
+    libc: [glibc]
 
   '@rolldown/binding-linux-x64-gnu@1.0.3':
     resolution: {integrity: sha512-B8m6tD5+/N5FeNQFbKlLA/2yVq9ycQP1SeedyEYYKWBNR3ZQbkvIUcNnDNM03lO1l5F2roiiFJGgvoLLyZXtSg==}
     engines: {node: ^20.19.0 || >=22.12.0}
     cpu: [x64]
     os: [linux]
+    libc: [glibc]
 
   '@rolldown/binding-linux-x64-musl@1.0.3':
     resolution: {integrity: sha512-pSdpdUJHkuCxun9LE7jvgUB9qsRgaiyNNCX7m/AvHTcq67AiT/Yhoxvw5zPfhrM8k/BfP8ce/hMOpthKDpEUow==}
     engines: {node: ^20.19.0 || >=22.12.0}
     cpu: [x64]
     os: [linux]
+    libc: [musl]
 
   '@rolldown/binding-openharmony-arm64@1.0.3':
     resolution: {integrity: sha512-OXXS3RKJgX2uLwM+gYyuH5omcH8fL1LJs96pZGgtetVCahON57+d4SJHzTgZiOjxgGkSnpXpOsWuPDGAKAigEg==}
@@ -2728,51 +2758,61 @@ packages:
     resolution: {integrity: sha512-zJc0H99FEPoFfSrNpa91HYfxzfAJCr502oxNK1cfdC9hlaFI43RT+JFCann9JUgZmLzzntChHyn13Sgn9ljHNg==}
     cpu: [arm64]
     os: [linux]
+    libc: [glibc]
 
   '@unrs/resolver-binding-linux-arm64-musl@1.12.2':
     resolution: {integrity: sha512-KQ3Lki6l+Pz1k/eBipN41ES+YUK30beLGb9YqcB1O542cyLCNE6GaxrfcY3T6EezmGGk84wb5XyO9loTM9tkcA==}
     cpu: [arm64]
     os: [linux]
+    libc: [musl]
 
   '@unrs/resolver-binding-linux-loong64-gnu@1.12.2':
     resolution: {integrity: sha512-3SJGEh1DborhG6pyxvhPzCT4bbSIVihsvgJc13P1bHG7KLdNDaF9T3gsTwFc7Jw/5Y5/iWOjkEx7Zy0NvCGX3Q==}
     cpu: [loong64]
     os: [linux]
+    libc: [glibc]
 
   '@unrs/resolver-binding-linux-loong64-musl@1.12.2':
     resolution: {integrity: sha512-jiuG/Obbel7uw1PwHNFfrkiKhLAF6mnyZ6aWlOAVN9WqKm8v0OFGnciJIHu8+CMvXLQ8AD51LPzAoUfT21D5Ew==}
     cpu: [loong64]
     os: [linux]
+    libc: [musl]
 
   '@unrs/resolver-binding-linux-ppc64-gnu@1.12.2':
     resolution: {integrity: sha512-q7xRvVpmcfeL+LlZg8Pbbo6QaTZwDU5BaGZbwfhkEsXJn3Was8xYfE0RBH266xZt0rM6B7i8xAYIvjthuUIWHg==}
     cpu: [ppc64]
     os: [linux]
+    libc: [glibc]
 
   '@unrs/resolver-binding-linux-riscv64-gnu@1.12.2':
     resolution: {integrity: sha512-0CVdx6lcnT3Q9inOH8tsMIOJ6ImndllMjqJHg8RLVdB7Vq4SfkEXl9mCSsVNuNA4MCYycRicCUxPCabVHJRr6A==}
     cpu: [riscv64]
     os: [linux]
+    libc: [glibc]
 
   '@unrs/resolver-binding-linux-riscv64-musl@1.12.2':
     resolution: {integrity: sha512-iOwlRo9vnp6R6ohHQS11n0NnfdXx/omhkocmIfaPRpQhKZ+3BDMkkdRVh53qjkFkpPddf+FETA28NwGN7l5l+w==}
     cpu: [riscv64]
     os: [linux]
+    libc: [musl]
 
   '@unrs/resolver-binding-linux-s390x-gnu@1.12.2':
     resolution: {integrity: sha512-HYJtLfXq94q8iZNFT1lknx258wlkkWhZeUXJRqzKBBUJ00CvZ+N33zgbCqimLjsyw5Va6uUxhVa12mI+kaveEw==}
     cpu: [s390x]
     os: [linux]
+    libc: [glibc]
 
   '@unrs/resolver-binding-linux-x64-gnu@1.12.2':
     resolution: {integrity: sha512-mPsUhunKKDih5O96Y6enDQyHc1SqBPlY1E/SfMWDM3EdJ95Z9CArPeCVwCCqbP45ljvivdEk8Fxn+SIb1rDAJQ==}
     cpu: [x64]
     os: [linux]
+    libc: [glibc]
 
   '@unrs/resolver-binding-linux-x64-musl@1.12.2':
     resolution: {integrity: sha512-azrt6+5ydLd8Vt210AAFis/lZevSfPw93EJRIJG+xPu4WCJ8K0kppCTpMyLPcKT7H15M4Jnt2tMp5bOvCkRC6A==}
     cpu: [x64]
     os: [linux]
+    libc: [musl]
 
   '@unrs/resolver-binding-openharmony-arm64@1.12.2':
     resolution: {integrity: sha512-YZ9hP4O0X9PQb8eO980qmLNGH4zT3I9+SZTdt0Pr0YyuGQhYKoOZkV02VzrzyOZJ5xIJ3UFIenKkUkGg8GjgWQ==}
@@ -2827,6 +2867,11 @@ packages:
 
   '@vitest/utils@4.1.8':
     resolution: {integrity: sha512-uOJamYALNhfJ6iolExyQM40yIQwDqYnkKtQ5VCiSe17E33H0aQ/u+1GlRuz4LZBk6Mm3sg90G9hEbmEt37C1Zg==}
+
+  '@xmldom/xmldom@0.7.13':
+    resolution: {integrity: sha512-lm2GW5PkosIzccsaZIz7tp8cPADSIlIHWDFTR1N0SzfinhhYgeIQjFMz4rYzanCScr3DqQLeomUDArp6MWKm+g==}
+    engines: {node: '>=10.0.0'}
+    deprecated: this version has critical issues, please update to the latest version
 
   '@xmldom/xmldom@0.8.12':
     resolution: {integrity: sha512-9k/gHF6n/pAi/9tqr3m3aqkuiNosYTurLLUtc7xQ9sxB/wm7WPygCv8GYa6mS0fLJEHhqMC1ATYhz++U/lRHqg==}
@@ -4679,24 +4724,28 @@ packages:
     engines: {node: '>= 12.0.0'}
     cpu: [arm64]
     os: [linux]
+    libc: [glibc]
 
   lightningcss-linux-arm64-musl@1.32.0:
     resolution: {integrity: sha512-UpQkoenr4UJEzgVIYpI80lDFvRmPVg6oqboNHfoH4CQIfNA+HOrZ7Mo7KZP02dC6LjghPQJeBsvXhJod/wnIBg==}
     engines: {node: '>= 12.0.0'}
     cpu: [arm64]
     os: [linux]
+    libc: [musl]
 
   lightningcss-linux-x64-gnu@1.32.0:
     resolution: {integrity: sha512-V7Qr52IhZmdKPVr+Vtw8o+WLsQJYCTd8loIfpDaMRWGUZfBOYEJeyJIkqGIDMZPwPx24pUMfwSxxI8phr/MbOA==}
     engines: {node: '>= 12.0.0'}
     cpu: [x64]
     os: [linux]
+    libc: [glibc]
 
   lightningcss-linux-x64-musl@1.32.0:
     resolution: {integrity: sha512-bYcLp+Vb0awsiXg/80uCRezCYHNg1/l3mt0gzHnWV9XP1W5sKa5/TCdGWaR/zBM2PeF/HbsQv/j2URNOiVuxWg==}
     engines: {node: '>= 12.0.0'}
     cpu: [x64]
     os: [linux]
+    libc: [musl]
 
   lightningcss-win32-arm64-msvc@1.32.0:
     resolution: {integrity: sha512-8SbC8BR40pS6baCM8sbtYDSwEVQd4JlFTOlaD3gWGHfThTcABnNDBda6eTZeqbofalIJhFx0qKzgHJmcPTnGdw==}
@@ -5400,6 +5449,13 @@ packages:
 
   react-is@19.2.5:
     resolution: {integrity: sha512-Dn0t8IQhCmeIT3wu+Apm1/YVsJXsGWi6k4sPdnBIdqMVtHtv0IGi6dcpNpNkNac0zB2uUAqNX3MHzN8c+z2rwQ==}
+
+  react-native-device-activity@0.6.1:
+    resolution: {integrity: sha512-NZaM+gua8MKTDweUpbQQ+lwnHlNhhjC2DNOLTevJ026lzZ9q9012R9Dv88ORIGSDh/Zle9/1yNWV2bqV8Uwk3w==}
+    peerDependencies:
+      expo: '>=52'
+      react: '>=18.3'
+      react-native: '>=0.76'
 
   react-native-gesture-handler@2.30.1:
     resolution: {integrity: sha512-xIUBDo5ktmJs++0fZlavQNvDEE4PsihWhSeJsJtoz4Q6p0MiTM9TgrTgfEgzRR36qGPytFoeq+ShLrVwGdpUdA==}
@@ -6179,6 +6235,11 @@ packages:
     deprecated: uuid@10 and below is no longer supported.  For ESM codebases, update to uuid@latest.  For CommonJS codebases, use uuid@11 (but be aware this version will likely be deprecated in 2028).
     hasBin: true
 
+  uuid@8.3.2:
+    resolution: {integrity: sha512-+NYs2QeMWy+GWFOEm9xnn6HCDp0l7QBD7ml8zLUmJ+93Q5NF0NocErnwkTkXVFNiX3/fpC6afS8Dhb/gz7R7eg==}
+    deprecated: uuid@10 and below is no longer supported.  For ESM codebases, update to uuid@latest.  For CommonJS codebases, use uuid@11 (but be aware this version will likely be deprecated in 2028).
+    hasBin: true
+
   uuid@9.0.1:
     resolution: {integrity: sha512-b+1eJOlsR9K8HJpow9Ok3fiWOWSIcIzXodvv0rQjVoOVNpWMpxf1wZNpt4y9h10odCNrqnYp1OBzRktckBe3sA==}
     deprecated: uuid@10 and below is no longer supported.  For ESM codebases, update to uuid@latest.  For CommonJS codebases, use uuid@11 (but be aware this version will likely be deprecated in 2028).
@@ -6409,6 +6470,10 @@ packages:
   xmlbuilder@11.0.1:
     resolution: {integrity: sha512-fDlsI/kFEx7gLvbecc0/ohLG50fugQp8ryHzMTuW9vSa1GJ0XYWKnhsUx7oie3G98+r56aTQIUB4kht42R3JvA==}
     engines: {node: '>=4.0'}
+
+  xmlbuilder@14.0.0:
+    resolution: {integrity: sha512-ts+B2rSe4fIckR6iquDjsKbQFK2NlUk6iG5nf14mDEyldgoc2nEKZ3jZWMPTxGQwVgToSjt6VGIho1H8/fNFTg==}
+    engines: {node: '>=8.0'}
 
   xmlbuilder@15.1.1:
     resolution: {integrity: sha512-yMqGBqtXyeN1e3TGYvgNgDVZ3j84W4cwkOXQswghol6APgZWaff9lnbvN7MHYJOiXsvGPXtjTYJEiC9J2wv9Eg==}
@@ -7147,6 +7212,22 @@ snapshots:
       '@babel/helper-string-parser': 7.27.1
       '@babel/helper-validator-identifier': 7.28.5
 
+  '@bacons/xcode@1.0.0-alpha.24':
+    dependencies:
+      '@expo/plist': 0.0.18
+      debug: 4.4.3
+      uuid: 8.3.2
+    transitivePeerDependencies:
+      - supports-color
+
+  '@bacons/xcode@1.0.0-alpha.33':
+    dependencies:
+      '@expo/plist': 0.0.18
+      debug: 4.4.3
+      uuid: 8.3.2
+    transitivePeerDependencies:
+      - supports-color
+
   '@commander-js/extra-typings@14.0.0(commander@14.0.3)':
     dependencies:
       commander: 14.0.3
@@ -7686,6 +7767,18 @@ snapshots:
       npm-package-arg: 11.0.3
       ora: 3.4.0
       resolve-workspace-root: 2.0.1
+
+  '@expo/plist@0.0.18':
+    dependencies:
+      '@xmldom/xmldom': 0.7.13
+      base64-js: 1.5.1
+      xmlbuilder: 14.0.0
+
+  '@expo/plist@0.1.3':
+    dependencies:
+      '@xmldom/xmldom': 0.7.13
+      base64-js: 1.5.1
+      xmlbuilder: 14.0.0
 
   '@expo/plist@0.3.5':
     dependencies:
@@ -8239,6 +8332,16 @@ snapshots:
     dependencies:
       '@jridgewell/resolve-uri': 3.1.2
       '@jridgewell/sourcemap-codec': 1.5.5
+
+  '@kingstinct/expo-apple-targets@0.1.19':
+    dependencies:
+      '@bacons/xcode': 1.0.0-alpha.24
+      '@react-native/normalize-colors': 0.76.9
+      debug: 4.4.3
+      fs-extra: 11.3.4
+      glob: 10.5.0
+    transitivePeerDependencies:
+      - supports-color
 
   '@napi-rs/wasm-runtime@1.1.4(@emnapi/core@1.10.0)(@emnapi/runtime@1.10.0)':
     dependencies:
@@ -8823,7 +8926,11 @@ snapshots:
       - utf-8-validate
     optional: true
 
+  '@react-native/normalize-color@2.1.0': {}
+
   '@react-native/normalize-colors@0.74.89': {}
+
+  '@react-native/normalize-colors@0.76.9': {}
 
   '@react-native/normalize-colors@0.83.6': {}
 
@@ -9169,14 +9276,14 @@ snapshots:
       '@types/uuid': 9.0.8
       dequal: 2.0.3
       polished: 4.3.1
-      storybook: 8.6.18(prettier@2.8.8)
+      storybook: 8.6.18(prettier@3.8.1)
       uuid: 9.0.1
 
-  '@storybook/addon-controls@8.6.18(storybook@8.6.18(prettier@2.8.8))':
+  '@storybook/addon-controls@8.6.18(storybook@8.6.18(prettier@3.8.1))':
     dependencies:
       '@storybook/global': 5.0.0
       dequal: 2.0.3
-      storybook: 8.6.18(prettier@2.8.8)
+      storybook: 8.6.18(prettier@3.8.1)
       ts-dedent: 2.2.0
 
   '@storybook/addon-ondevice-actions@8.6.4(prettier@3.8.1)(react-native@0.83.6(@babel/core@7.29.0)(@react-native/metro-config@0.85.2(@babel/core@7.29.0))(@types/react@19.2.15)(react@19.2.0))(react@19.2.0)(storybook@8.6.18(prettier@3.8.1))':
@@ -9194,15 +9301,15 @@ snapshots:
       - supports-color
       - utf-8-validate
 
-  '@storybook/addon-ondevice-controls@8.6.4(f204ea668abda4e508640a9bf21cd751)':
+  '@storybook/addon-ondevice-controls@8.6.4(5acd7ad043dcf49d163ae1b3e229f4f1)':
     dependencies:
       '@gorhom/bottom-sheet': 5.2.13(@types/react@19.2.15)(react-native-gesture-handler@2.30.1(react-native@0.83.6(@babel/core@7.29.0)(@react-native/metro-config@0.85.2(@babel/core@7.29.0))(@types/react@19.2.15)(react@19.2.0))(react@19.2.0))(react-native-reanimated@4.2.1(react-native-worklets@0.7.4(patch_hash=21cf47837e5a062b4412ae8b69ded6f213406fe7b1614cf027a213de4f2d9836)(@babel/core@7.29.0)(react-native@0.83.6(@babel/core@7.29.0)(@react-native/metro-config@0.85.2(@babel/core@7.29.0))(@types/react@19.2.15)(react@19.2.0))(react@19.2.0))(react-native@0.83.6(@babel/core@7.29.0)(@react-native/metro-config@0.85.2(@babel/core@7.29.0))(@types/react@19.2.15)(react@19.2.0))(react@19.2.0))(react-native@0.83.6(@babel/core@7.29.0)(@react-native/metro-config@0.85.2(@babel/core@7.29.0))(@types/react@19.2.15)(react@19.2.0))(react@19.2.0)
       '@react-native-community/datetimepicker': 8.6.0(expo@55.0.26)(react-native@0.83.6(@babel/core@7.29.0)(@react-native/metro-config@0.85.2(@babel/core@7.29.0))(@types/react@19.2.15)(react@19.2.0))(react@19.2.0)
       '@react-native-community/slider': 5.1.2
-      '@storybook/addon-controls': 8.6.18(storybook@8.6.18(prettier@2.8.8))
+      '@storybook/addon-controls': 8.6.18(storybook@8.6.18(prettier@3.8.1))
       '@storybook/core': 8.6.14(prettier@3.8.1)(storybook@8.6.18(prettier@3.8.1))
       '@storybook/react-native-theming': 8.6.4(react-native@0.83.6(@babel/core@7.29.0)(@react-native/metro-config@0.85.2(@babel/core@7.29.0))(@types/react@19.2.15)(react@19.2.0))(react@19.2.0)
-      '@storybook/react-native-ui': 8.6.4(4d5aa4ac3f01cdbd106de597b7f1a865)
+      '@storybook/react-native-ui': 8.6.4(ce20f1501a817ae79c1d867fc7f292f4)
       deep-equal: 1.1.2
       prop-types: 15.8.1
       react: 19.2.0
@@ -9223,11 +9330,11 @@ snapshots:
       - typescript
       - utf-8-validate
 
-  '@storybook/components@8.6.18(storybook@8.6.18(prettier@2.8.8))':
+  '@storybook/components@8.6.18(storybook@8.6.18(prettier@3.8.1))':
     dependencies:
-      storybook: 8.6.18(prettier@2.8.8)
+      storybook: 8.6.18(prettier@3.8.1)
 
-  '@storybook/core@8.6.14(prettier@2.8.8)(storybook@8.6.18(prettier@2.8.8))':
+  '@storybook/core@8.6.14(prettier@2.8.8)(storybook@8.6.18(prettier@3.8.1))':
     dependencies:
       '@storybook/theming': 8.6.14(storybook@8.6.18(prettier@3.8.1))
       better-opn: 3.0.2
@@ -9290,25 +9397,46 @@ snapshots:
       - supports-color
       - utf-8-validate
 
+  '@storybook/core@8.6.18(prettier@3.8.1)(storybook@8.6.18(prettier@3.8.1))':
+    dependencies:
+      '@storybook/theming': 8.6.18(storybook@8.6.18(prettier@3.8.1))
+      better-opn: 3.0.2
+      browser-assert: 1.2.1
+      esbuild: 0.25.12
+      esbuild-register: 3.6.0(esbuild@0.25.12)
+      jsdoc-type-pratt-parser: 4.8.0
+      process: 0.11.10
+      recast: 0.23.11
+      semver: 7.7.4
+      util: 0.12.5
+      ws: 8.20.0
+    optionalDependencies:
+      prettier: 3.8.1
+    transitivePeerDependencies:
+      - bufferutil
+      - storybook
+      - supports-color
+      - utf-8-validate
+
   '@storybook/csf@0.1.13':
     dependencies:
       type-fest: 2.19.0
 
   '@storybook/global@5.0.0': {}
 
-  '@storybook/manager-api@8.6.18(storybook@8.6.18(prettier@2.8.8))':
+  '@storybook/manager-api@8.6.18(storybook@8.6.18(prettier@3.8.1))':
     dependencies:
-      storybook: 8.6.18(prettier@2.8.8)
+      storybook: 8.6.18(prettier@3.8.1)
 
-  '@storybook/preview-api@8.6.18(storybook@8.6.18(prettier@2.8.8))':
+  '@storybook/preview-api@8.6.18(storybook@8.6.18(prettier@3.8.1))':
     dependencies:
-      storybook: 8.6.18(prettier@2.8.8)
+      storybook: 8.6.18(prettier@3.8.1)
 
-  '@storybook/react-dom-shim@8.6.18(react-dom@19.2.0(react@19.2.0))(react@19.2.0)(storybook@8.6.18(prettier@2.8.8))':
+  '@storybook/react-dom-shim@8.6.18(react-dom@19.2.0(react@19.2.0))(react@19.2.0)(storybook@8.6.18(prettier@3.8.1))':
     dependencies:
       react: 19.2.0
       react-dom: 19.2.0(react@19.2.0)
-      storybook: 8.6.18(prettier@2.8.8)
+      storybook: 8.6.18(prettier@3.8.1)
 
   '@storybook/react-native-theming@8.6.4(react-native@0.83.6(@babel/core@7.29.0)(@react-native/metro-config@0.85.2(@babel/core@7.29.0))(@types/react@19.2.15)(react@19.2.0))(react@19.2.0)':
     dependencies:
@@ -9316,11 +9444,11 @@ snapshots:
       react: 19.2.0
       react-native: 0.83.6(@babel/core@7.29.0)(@react-native/metro-config@0.85.2(@babel/core@7.29.0))(@types/react@19.2.15)(react@19.2.0)
 
-  '@storybook/react-native-ui@8.6.4(4d5aa4ac3f01cdbd106de597b7f1a865)':
+  '@storybook/react-native-ui@8.6.4(ce20f1501a817ae79c1d867fc7f292f4)':
     dependencies:
       '@gorhom/bottom-sheet': 5.2.13(@types/react@19.2.15)(react-native-gesture-handler@2.30.1(react-native@0.83.6(@babel/core@7.29.0)(@react-native/metro-config@0.85.2(@babel/core@7.29.0))(@types/react@19.2.15)(react@19.2.0))(react@19.2.0))(react-native-reanimated@4.2.1(react-native-worklets@0.7.4(patch_hash=21cf47837e5a062b4412ae8b69ded6f213406fe7b1614cf027a213de4f2d9836)(@babel/core@7.29.0)(react-native@0.83.6(@babel/core@7.29.0)(@react-native/metro-config@0.85.2(@babel/core@7.29.0))(@types/react@19.2.15)(react@19.2.0))(react@19.2.0))(react-native@0.83.6(@babel/core@7.29.0)(@react-native/metro-config@0.85.2(@babel/core@7.29.0))(@types/react@19.2.15)(react@19.2.0))(react@19.2.0))(react-native@0.83.6(@babel/core@7.29.0)(@react-native/metro-config@0.85.2(@babel/core@7.29.0))(@types/react@19.2.15)(react@19.2.0))(react@19.2.0)
       '@storybook/core': 8.6.14(prettier@3.8.1)(storybook@8.6.18(prettier@3.8.1))
-      '@storybook/react': 8.6.18(react-dom@19.2.0(react@19.2.0))(react@19.2.0)(storybook@8.6.18(prettier@2.8.8))(typescript@5.9.3)
+      '@storybook/react': 8.6.18(react-dom@19.2.0(react@19.2.0))(react@19.2.0)(storybook@8.6.18(prettier@3.8.1))(typescript@5.9.3)
       '@storybook/react-native-theming': 8.6.4(react-native@0.83.6(@babel/core@7.29.0)(@react-native/metro-config@0.85.2(@babel/core@7.29.0))(@types/react@19.2.15)(react@19.2.0))(react@19.2.0)
       fuse.js: 7.3.0
       lodash: 4.18.1
@@ -9343,11 +9471,11 @@ snapshots:
       - typescript
       - utf-8-validate
 
-  '@storybook/react-native-ui@8.6.4(5f561d17ae9380c8faf261450c8e0a49)':
+  '@storybook/react-native-ui@8.6.4(fbd1c1ea500cdf88323e324d2ec3fd18)':
     dependencies:
       '@gorhom/bottom-sheet': 5.2.13(@types/react@19.2.15)(react-native-gesture-handler@2.30.1(react-native@0.83.6(@babel/core@7.29.0)(@react-native/metro-config@0.85.2(@babel/core@7.29.0))(@types/react@19.2.15)(react@19.2.0))(react@19.2.0))(react-native-reanimated@4.2.1(react-native-worklets@0.7.4(patch_hash=21cf47837e5a062b4412ae8b69ded6f213406fe7b1614cf027a213de4f2d9836)(@babel/core@7.29.0)(react-native@0.83.6(@babel/core@7.29.0)(@react-native/metro-config@0.85.2(@babel/core@7.29.0))(@types/react@19.2.15)(react@19.2.0))(react@19.2.0))(react-native@0.83.6(@babel/core@7.29.0)(@react-native/metro-config@0.85.2(@babel/core@7.29.0))(@types/react@19.2.15)(react@19.2.0))(react@19.2.0))(react-native@0.83.6(@babel/core@7.29.0)(@react-native/metro-config@0.85.2(@babel/core@7.29.0))(@types/react@19.2.15)(react@19.2.0))(react@19.2.0)
-      '@storybook/core': 8.6.14(prettier@2.8.8)(storybook@8.6.18(prettier@2.8.8))
-      '@storybook/react': 8.6.18(react-dom@19.2.0(react@19.2.0))(react@19.2.0)(storybook@8.6.18(prettier@2.8.8))(typescript@5.9.3)
+      '@storybook/core': 8.6.14(prettier@2.8.8)(storybook@8.6.18(prettier@3.8.1))
+      '@storybook/react': 8.6.18(react-dom@19.2.0(react@19.2.0))(react@19.2.0)(storybook@8.6.18(prettier@3.8.1))(typescript@5.9.3)
       '@storybook/react-native-theming': 8.6.4(react-native@0.83.6(@babel/core@7.29.0)(@react-native/metro-config@0.85.2(@babel/core@7.29.0))(@types/react@19.2.15)(react@19.2.0))(react@19.2.0)
       fuse.js: 7.3.0
       lodash: 4.18.1
@@ -9373,12 +9501,12 @@ snapshots:
   '@storybook/react-native@8.6.4(588ceb265d38aaa9f4bc142e6f52d691)':
     dependencies:
       '@gorhom/bottom-sheet': 5.2.13(@types/react@19.2.15)(react-native-gesture-handler@2.30.1(react-native@0.83.6(@babel/core@7.29.0)(@react-native/metro-config@0.85.2(@babel/core@7.29.0))(@types/react@19.2.15)(react@19.2.0))(react@19.2.0))(react-native-reanimated@4.2.1(react-native-worklets@0.7.4(patch_hash=21cf47837e5a062b4412ae8b69ded6f213406fe7b1614cf027a213de4f2d9836)(@babel/core@7.29.0)(react-native@0.83.6(@babel/core@7.29.0)(@react-native/metro-config@0.85.2(@babel/core@7.29.0))(@types/react@19.2.15)(react@19.2.0))(react@19.2.0))(react-native@0.83.6(@babel/core@7.29.0)(@react-native/metro-config@0.85.2(@babel/core@7.29.0))(@types/react@19.2.15)(react@19.2.0))(react@19.2.0))(react-native@0.83.6(@babel/core@7.29.0)(@react-native/metro-config@0.85.2(@babel/core@7.29.0))(@types/react@19.2.15)(react@19.2.0))(react@19.2.0)
-      '@storybook/core': 8.6.14(prettier@2.8.8)(storybook@8.6.18(prettier@2.8.8))
+      '@storybook/core': 8.6.14(prettier@2.8.8)(storybook@8.6.18(prettier@3.8.1))
       '@storybook/csf': 0.1.13
       '@storybook/global': 5.0.0
-      '@storybook/react': 8.6.18(react-dom@19.2.0(react@19.2.0))(react@19.2.0)(storybook@8.6.18(prettier@2.8.8))(typescript@5.9.3)
+      '@storybook/react': 8.6.18(react-dom@19.2.0(react@19.2.0))(react@19.2.0)(storybook@8.6.18(prettier@3.8.1))(typescript@5.9.3)
       '@storybook/react-native-theming': 8.6.4(react-native@0.83.6(@babel/core@7.29.0)(@react-native/metro-config@0.85.2(@babel/core@7.29.0))(@types/react@19.2.15)(react@19.2.0))(react@19.2.0)
-      '@storybook/react-native-ui': 8.6.4(5f561d17ae9380c8faf261450c8e0a49)
+      '@storybook/react-native-ui': 8.6.4(fbd1c1ea500cdf88323e324d2ec3fd18)
       commander: 8.3.0
       dedent: 1.7.2
       deepmerge: 4.3.1
@@ -9404,27 +9532,27 @@ snapshots:
       - typescript
       - utf-8-validate
 
-  '@storybook/react@8.6.18(react-dom@19.2.0(react@19.2.0))(react@19.2.0)(storybook@8.6.18(prettier@2.8.8))(typescript@5.9.3)':
+  '@storybook/react@8.6.18(react-dom@19.2.0(react@19.2.0))(react@19.2.0)(storybook@8.6.18(prettier@3.8.1))(typescript@5.9.3)':
     dependencies:
-      '@storybook/components': 8.6.18(storybook@8.6.18(prettier@2.8.8))
+      '@storybook/components': 8.6.18(storybook@8.6.18(prettier@3.8.1))
       '@storybook/global': 5.0.0
-      '@storybook/manager-api': 8.6.18(storybook@8.6.18(prettier@2.8.8))
-      '@storybook/preview-api': 8.6.18(storybook@8.6.18(prettier@2.8.8))
-      '@storybook/react-dom-shim': 8.6.18(react-dom@19.2.0(react@19.2.0))(react@19.2.0)(storybook@8.6.18(prettier@2.8.8))
+      '@storybook/manager-api': 8.6.18(storybook@8.6.18(prettier@3.8.1))
+      '@storybook/preview-api': 8.6.18(storybook@8.6.18(prettier@3.8.1))
+      '@storybook/react-dom-shim': 8.6.18(react-dom@19.2.0(react@19.2.0))(react@19.2.0)(storybook@8.6.18(prettier@3.8.1))
       '@storybook/theming': 8.6.18(storybook@8.6.18(prettier@3.8.1))
       react: 19.2.0
       react-dom: 19.2.0(react@19.2.0)
-      storybook: 8.6.18(prettier@2.8.8)
+      storybook: 8.6.18(prettier@3.8.1)
     optionalDependencies:
       typescript: 5.9.3
 
   '@storybook/theming@8.6.14(storybook@8.6.18(prettier@3.8.1))':
     dependencies:
-      storybook: 8.6.18(prettier@2.8.8)
+      storybook: 8.6.18(prettier@3.8.1)
 
   '@storybook/theming@8.6.18(storybook@8.6.18(prettier@3.8.1))':
     dependencies:
-      storybook: 8.6.18(prettier@2.8.8)
+      storybook: 8.6.18(prettier@3.8.1)
 
   '@tybys/wasm-util@0.10.2':
     dependencies:
@@ -9710,6 +9838,8 @@ snapshots:
       '@vitest/pretty-format': 4.1.8
       convert-source-map: 2.0.0
       tinyrainbow: 3.1.0
+
+  '@xmldom/xmldom@0.7.13': {}
 
   '@xmldom/xmldom@0.8.12': {}
 
@@ -12893,6 +13023,18 @@ snapshots:
 
   react-is@19.2.5: {}
 
+  react-native-device-activity@0.6.1(expo@55.0.26)(react-native@0.83.6(@babel/core@7.29.0)(@react-native/metro-config@0.85.2(@babel/core@7.29.0))(@types/react@19.2.15)(react@19.2.0))(react@19.2.0):
+    dependencies:
+      '@bacons/xcode': 1.0.0-alpha.33
+      '@expo/plist': 0.1.3
+      '@kingstinct/expo-apple-targets': 0.1.19
+      '@react-native/normalize-color': 2.1.0
+      expo: 55.0.26(@babel/core@7.29.0)(@expo/dom-webview@55.0.6)(@expo/metro-runtime@55.0.11)(expo-router@55.0.16)(react-dom@19.2.0(react@19.2.0))(react-native-worklets@0.7.4(patch_hash=21cf47837e5a062b4412ae8b69ded6f213406fe7b1614cf027a213de4f2d9836)(@babel/core@7.29.0)(react-native@0.83.6(@babel/core@7.29.0)(@react-native/metro-config@0.85.2(@babel/core@7.29.0))(@types/react@19.2.15)(react@19.2.0))(react@19.2.0))(react-native@0.83.6(@babel/core@7.29.0)(@react-native/metro-config@0.85.2(@babel/core@7.29.0))(@types/react@19.2.15)(react@19.2.0))(react@19.2.0)(typescript@5.9.3)
+      react: 19.2.0
+      react-native: 0.83.6(@babel/core@7.29.0)(@react-native/metro-config@0.85.2(@babel/core@7.29.0))(@types/react@19.2.15)(react@19.2.0)
+    transitivePeerDependencies:
+      - supports-color
+
   react-native-gesture-handler@2.30.1(react-native@0.83.6(@babel/core@7.29.0)(@react-native/metro-config@0.85.2(@babel/core@7.29.0))(@types/react@19.2.15)(react@19.2.0))(react@19.2.0):
     dependencies:
       '@egjs/hammerjs': 2.0.17
@@ -13406,6 +13548,16 @@ snapshots:
       - supports-color
       - utf-8-validate
 
+  storybook@8.6.18(prettier@3.8.1):
+    dependencies:
+      '@storybook/core': 8.6.18(prettier@3.8.1)(storybook@8.6.18(prettier@3.8.1))
+    optionalDependencies:
+      prettier: 3.8.1
+    transitivePeerDependencies:
+      - bufferutil
+      - supports-color
+      - utf-8-validate
+
   stream-buffers@2.2.0: {}
 
   strict-uri-encode@2.0.0: {}
@@ -13762,6 +13914,8 @@ snapshots:
 
   uuid@7.0.3: {}
 
+  uuid@8.3.2: {}
+
   uuid@9.0.1: {}
 
   validate-npm-package-name@5.0.1: {}
@@ -13952,6 +14106,8 @@ snapshots:
       xmlbuilder: 11.0.1
 
   xmlbuilder@11.0.1: {}
+
+  xmlbuilder@14.0.0: {}
 
   xmlbuilder@15.1.1: {}
 

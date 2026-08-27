@@ -22,12 +22,29 @@ const iosGoogleServicesFile =
   process.env.GOOGLE_SERVICES_PLIST ?? `./firebase/GoogleService-Info.${appEnv}.plist`;
 const androidGoogleServicesFile =
   process.env.GOOGLE_SERVICES_JSON ?? `./firebase/google-services.${appEnv}.json`;
+const iosBundleIdentifier = isProduction ? 'com.detoxmate.app' : 'com.detoxmate.app.dev';
+// AASA/IPA에 공개되는 값이라 시크릿으로 숨기지 않는다(commit e5754b4의 Directive).
+// @bacons/apple-targets가 익스텐션 타겟의 DEVELOPMENT_TEAM을 채우는 데 ios.appleTeamId를 요구한다.
+const appleTeamId = '6G3B344SZD';
+// 앱 잠금(Screen Time)용 App Group. 메인 앱과 iOS 익스텐션 3개
+// (ActivityMonitorExtension / ShieldAction / ShieldConfiguration)가
+// UserDefaults를 공유하는 컨테이너 이름이며, 양쪽이 동일해야 통신이 된다.
+// dev/prod 데이터가 섞이지 않도록 번들ID를 따라 분기한다.
+const deviceActivityAppGroup = `group.${iosBundleIdentifier}`;
 const sentryPlugin: [string, Record<string, string | undefined>] = [
   '@sentry/react-native',
   {
     organization: process.env.SENTRY_ORG,
     project: process.env.SENTRY_PROJECT,
     url: sentryUrl,
+  },
+];
+
+const deviceActivityPlugin: [string, Record<string, string>] = [
+  'react-native-device-activity',
+  {
+    appleTeamId,
+    appGroup: deviceActivityAppGroup,
   },
 ];
 
@@ -55,7 +72,8 @@ const config: ExpoConfig = {
     imageWidth: 152,
   },
   ios: {
-    bundleIdentifier: isProduction ? 'com.detoxmate.app' : 'com.detoxmate.app.dev',
+    bundleIdentifier: iosBundleIdentifier,
+    appleTeamId,
     googleServicesFile: iosGoogleServicesFile,
     supportsTablet: false,
     associatedDomains: ['applinks:detoxmate.airbridge.io'],
@@ -119,6 +137,9 @@ const config: ExpoConfig = {
         ios: {
           useFrameworks: 'static',
           forceStaticLinking: ['RNFBApp', 'RNFBMessaging'],
+          // Screen Time API(FamilyControls/DeviceActivity)는 iOS 15+ 필요.
+          // RN 0.83의 기본 최소 버전과 동일해 현재는 명시적 하한선 문서화 역할.
+          deploymentTarget: '15.1',
         },
       },
     ],
@@ -137,6 +158,10 @@ const config: ExpoConfig = {
       },
     ],
     './plugins/with-sdk55-app-delegate-fixes',
+    // 이 플러그인은 메인 앱 entitlements에 family-controls를 조건 없이 켠다.
+    // 운영 App ID(com.detoxmate.app)는 아직 엔타이틀먼트 미승인이라,
+    // ios.entitlements의 dev 한정 분기와 어긋나지 않도록 플러그인 자체를 dev에서만 등록한다.
+    ...(isProduction ? [] : [deviceActivityPlugin]),
   ],
   extra: {
     appEnv,

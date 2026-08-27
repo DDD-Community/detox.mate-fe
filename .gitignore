@@ -66,3 +66,7 @@ CLAUDE.local.md
 # Pretendard 폰트 (merge-fonts.py 실행 시 수동으로 넣는 파일)
 scripts/pretendard/*.ttf
 
+
+# react-native-device-activity: prebuild 때 node_modules에서 매번 덮어써지는 생성물
+# (Swift를 커스터마이징하려면 플러그인 옵션에 copyToTargetFolder: false 를 주고 이 줄을 지울 것)
+/targets
