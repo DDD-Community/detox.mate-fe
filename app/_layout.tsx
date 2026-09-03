@@ -56,6 +56,9 @@ export default function RootLayout() {
   if (!fontsLoaded && !fontError) return null;
 
   if (StorybookUIRoot) {
+    // Storybook 모드에선 app/index.tsx(SplashScreen 컴포넌트)가 마운트되지 않아
+    // 그쪽에 있는 hideAsync() 호출이 실행되지 않는다. 여기서 직접 꺼준다.
+    SplashScreen.hideAsync();
     return <StorybookUIRoot />;
   }
 
