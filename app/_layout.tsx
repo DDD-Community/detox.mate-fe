@@ -3,11 +3,13 @@ import * as Notifications from 'expo-notifications';
 import { router, Stack } from 'expo-router';
 import * as SplashScreen from 'expo-splash-screen';
 import { useEffect, type ComponentType } from 'react';
+import { View } from 'react-native';
 import { getGroup } from '../src/api/generated/group/group';
 import { fontSources } from '../src/lib/token/primitive/fonts';
 import { NetworkErrorToast } from '../src/components/NetworkErrorToast';
 import { subscribeToDevicePushTokenRefresh } from '../src/lib/fcmToken';
 import { AppErrorBoundary } from '../src/components/AppErrorBoundary';
+import { RootTabBar } from '../src/navigation/RootTabBar';
 import { initSentry } from '../src/observability/sentry';
 import { initAirbridge } from '../src/lib/airbridge';
 import { initAnalytics } from '../src/lib/analytics';
@@ -65,7 +67,10 @@ export default function RootLayout() {
   return (
     <>
       <AppErrorBoundary>
-        <Stack screenOptions={{ headerShown: false }} />
+        <View style={{ flex: 1 }}>
+          <Stack screenOptions={{ headerShown: false }} />
+          <RootTabBar />
+        </View>
       </AppErrorBoundary>
       <NetworkErrorToast />
     </>

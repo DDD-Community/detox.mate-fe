@@ -27,6 +27,7 @@ import { QuestionIcon } from 'phosphor-react-native/src/icons/Question';
 import { ShareFatIcon } from 'phosphor-react-native/src/icons/ShareFat';
 import { SignOutIcon } from 'phosphor-react-native/src/icons/SignOut';
 import { SmileyStickerIcon } from 'phosphor-react-native/src/icons/SmileySticker';
+import { SquaresFourIcon } from 'phosphor-react-native/src/icons/SquaresFour';
 import { TargetIcon } from 'phosphor-react-native/src/icons/Target';
 import { UploadSimpleIcon } from 'phosphor-react-native/src/icons/UploadSimple';
 import { UserIcon } from 'phosphor-react-native/src/icons/User';
@@ -62,6 +63,7 @@ export const iconComponents = {
   shareFat: ShareFatIcon,
   signOut: SignOutIcon,
   smileySticker: SmileyStickerIcon,
+  squaresFour: SquaresFourIcon,
   target: TargetIcon,
   uploadSimple: UploadSimpleIcon,
   user: UserIcon,
