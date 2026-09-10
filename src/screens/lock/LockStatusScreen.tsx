@@ -116,17 +116,23 @@ export default function LockStatusScreen() {
           </View>
         ) : (
           lockedApps.map((app) => (
-            <View key={app.id} style={styles.appRow}>
+            <Pressable
+              key={app.id}
+              style={styles.appRow}
+              onPress={() =>
+                router.push({ pathname: '/(lock)/app-detail', params: { appId: app.id } })
+              }
+            >
               <View style={styles.appIconPlaceholder}>
                 <Text style={styles.appIconLetter}>{app.name.charAt(0)}</Text>
               </View>
               <View style={styles.appInfo}>
                 <Text style={styles.appName}>{app.name}</Text>
-                <Text style={styles.appUnlockCount}>{app.unlockCount}회 해제</Text>
+                <Text style={styles.appUnlockCount}>n회 해제</Text>
               </View>
               <Text style={styles.appUsedMinutes}>{app.usedMinutes}분 사용</Text>
               <Icon name="caretRight" size={16} color={gray[300]} />
-            </View>
+            </Pressable>
           ))
         )}
       </View>
