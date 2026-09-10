@@ -1,5 +1,5 @@
 import { useFocusEffect, useRouter } from 'expo-router';
-import { useCallback, useState } from 'react';
+import { useCallback, useRef, useState } from 'react';
 import {
   ActivityIndicator,
   Image,
@@ -23,9 +23,22 @@ const LOGO = require('../../../assets/logo-icon-kr.png');
 
 const { brown, gray } = primitiveColors;
 
+const DOUBLE_TAP_DELAY_MS = 300;
+
 export default function GroupHomeScreen() {
   const router = useRouter();
   const [isCheckingGroups, setIsCheckingGroups] = useState(true);
+  const lastTurtleTapAt = useRef(0);
+
+  const handleTurtlePress = () => {
+    const now = Date.now();
+    if (now - lastTurtleTapAt.current < DOUBLE_TAP_DELAY_MS) {
+      lastTurtleTapAt.current = 0;
+      router.push('/(lock)/restricted-apps');
+      return;
+    }
+    lastTurtleTapAt.current = now;
+  };
 
   useFocusEffect(
     useCallback(() => {
@@ -101,11 +114,13 @@ export default function GroupHomeScreen() {
           </View>
         ) : (
           <View style={styles.content}>
-            <Image
-              source={require('../../../assets/turtle-fall.png')}
-              style={styles.turtle}
-              resizeMode="contain"
-            />
+            <Pressable onPress={handleTurtlePress}>
+              <Image
+                source={require('../../../assets/turtle-fall.png')}
+                style={styles.turtle}
+                resizeMode="contain"
+              />
+            </Pressable>
             <View style={styles.copyFrame}>
               <Text style={styles.title}>아직 그룹이 없어요</Text>
               <Text style={styles.subtitle}>새 그룹을 만들거나 친구가 만든 그룹에 입장해요</Text>
