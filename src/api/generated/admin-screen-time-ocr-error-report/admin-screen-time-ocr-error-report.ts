@@ -14,7 +14,7 @@ import type {
 import { customAxios } from '../../mutator';
 
 export const getAdminScreenTimeOcrErrorReport = () => {
-  const update = (
+  const update1 = (
     reportId: number,
     screenTimeOcrErrorReportUpdateRequest: ScreenTimeOcrErrorReportUpdateRequest
   ) => {
@@ -32,10 +32,10 @@ export const getAdminScreenTimeOcrErrorReport = () => {
       params,
     });
   };
-  return { update, list };
+  return { update1, list };
 };
-export type UpdateResult = NonNullable<
-  Awaited<ReturnType<ReturnType<typeof getAdminScreenTimeOcrErrorReport>['update']>>
+export type Update1Result = NonNullable<
+  Awaited<ReturnType<ReturnType<typeof getAdminScreenTimeOcrErrorReport>['update1']>>
 >;
 export type ListResult = NonNullable<
   Awaited<ReturnType<ReturnType<typeof getAdminScreenTimeOcrErrorReport>['list']>>

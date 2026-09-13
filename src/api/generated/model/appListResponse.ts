@@ -4,8 +4,8 @@
  * OpenAPI definition
  * OpenAPI spec version: v0
  */
+import type { AppResponse } from './appResponse';
 
-export interface UpdateMyProfileRequest {
-  displayName?: string;
-  profileImageObjectKey?: string | null;
+export interface AppListResponse {
+  apps?: AppResponse[];
 }

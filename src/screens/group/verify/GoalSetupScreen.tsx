@@ -129,7 +129,7 @@ export default function GoalSetupScreen({ mode = 'initial' }: GoalSetupScreenPro
         firstScreenTimeRecordDate
       ) {
         try {
-          await getFirstScreenTime().create1({
+          await getFirstScreenTime().create2({
             groupChallengeParticipantId: Number(firstScreenTimeParticipantId),
             screenTimeMinutes: Number(firstScreenTimeMinutes),
             recordDate: firstScreenTimeRecordDate,

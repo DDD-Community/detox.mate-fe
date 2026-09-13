@@ -9,7 +9,7 @@ import type { FirstScreenTimeCreateRequest, FirstScreenTimeResponse } from '../m
 import { customAxios } from '../../mutator';
 
 export const getFirstScreenTime = () => {
-  const create1 = (firstScreenTimeCreateRequest: FirstScreenTimeCreateRequest) => {
+  const create2 = (firstScreenTimeCreateRequest: FirstScreenTimeCreateRequest) => {
     return customAxios<FirstScreenTimeResponse>({
       url: `/first-screen-times`,
       method: 'POST',
@@ -17,17 +17,17 @@ export const getFirstScreenTime = () => {
       data: firstScreenTimeCreateRequest,
     });
   };
-  const get = (groupChallengeParticipantId: number) => {
+  const get1 = (groupChallengeParticipantId: number) => {
     return customAxios<FirstScreenTimeResponse>({
       url: `/group-challenge-participants/${groupChallengeParticipantId}/first-screen-time`,
       method: 'GET',
     });
   };
-  return { create1, get };
+  return { create2, get1 };
 };
-export type Create1Result = NonNullable<
-  Awaited<ReturnType<ReturnType<typeof getFirstScreenTime>['create1']>>
+export type Create2Result = NonNullable<
+  Awaited<ReturnType<ReturnType<typeof getFirstScreenTime>['create2']>>
 >;
-export type GetResult = NonNullable<
-  Awaited<ReturnType<ReturnType<typeof getFirstScreenTime>['get']>>
+export type Get1Result = NonNullable<
+  Awaited<ReturnType<ReturnType<typeof getFirstScreenTime>['get1']>>
 >;
