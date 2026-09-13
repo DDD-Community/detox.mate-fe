@@ -91,10 +91,7 @@ export default function LockStatusScreen() {
       </SafeAreaView>
 
       <View style={styles.sheet}>
-        <Pressable
-          style={styles.summaryRow}
-          onPress={() => router.push('/(lock)/goal-time')}
-        >
+        <Pressable style={styles.summaryRow} onPress={() => router.push('/(lock)/goal-time')}>
           <Text style={styles.summaryText}>
             제한 시간 {targetMinutes}분 중{'\n'}
             {totalUsedMinutes}분 사용
@@ -116,23 +113,31 @@ export default function LockStatusScreen() {
           </View>
         ) : (
           lockedApps.map((app) => (
-            <Pressable
-              key={app.id}
-              style={styles.appRow}
-              onPress={() =>
-                router.push({ pathname: '/(lock)/app-detail', params: { appId: app.id } })
-              }
-            >
-              <View style={styles.appIconPlaceholder}>
-                <Text style={styles.appIconLetter}>{app.name.charAt(0)}</Text>
-              </View>
-              <View style={styles.appInfo}>
-                <Text style={styles.appName}>{app.name}</Text>
-                <Text style={styles.appUnlockCount}>n회 해제</Text>
-              </View>
-              <Text style={styles.appUsedMinutes}>{app.usedMinutes}분 사용</Text>
-              <Icon name="caretRight" size={16} color={gray[300]} />
-            </Pressable>
+            <View key={app.id} style={styles.appRow}>
+              <Pressable
+                style={styles.appRowMain}
+                onPress={() =>
+                  router.push({ pathname: '/(lock)/app-shield', params: { appId: app.id } })
+                }
+              >
+                <View style={styles.appIconPlaceholder}>
+                  <Text style={styles.appIconLetter}>{app.name.charAt(0)}</Text>
+                </View>
+                <View style={styles.appInfo}>
+                  <Text style={styles.appName}>{app.name}</Text>
+                  <Text style={styles.appUnlockCount}>n회 해제</Text>
+                </View>
+                <Text style={styles.appUsedMinutes}>{app.usedMinutes}분 사용</Text>
+              </Pressable>
+              <Pressable
+                hitSlop={8}
+                onPress={() =>
+                  router.push({ pathname: '/(lock)/app-detail', params: { appId: app.id } })
+                }
+              >
+                <Icon name="caretRight" size={16} color={gray[300]} />
+              </Pressable>
+            </View>
           ))
         )}
       </View>
@@ -241,6 +246,12 @@ const styles = StyleSheet.create({
     paddingVertical: spacing[12],
     borderTopWidth: 1,
     borderTopColor: gray[50],
+  },
+  appRowMain: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing[12],
   },
   appIconPlaceholder: {
     width: 40,

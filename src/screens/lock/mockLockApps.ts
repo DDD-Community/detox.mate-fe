@@ -16,6 +16,8 @@ export const MOCK_APP_CATALOG: LockCandidateApp[] = [
   { id: 'x', name: 'X' },
   { id: 'facebook', name: 'Facebook' },
   { id: 'netflix', name: 'Netflix' },
+  { id: 'messages', name: '메시지' },
+  { id: 'safari', name: 'Safari' },
 ];
 
 export const GOAL_TIME_OPTIONS_MINUTES = [60, 120, 180, 240] as const;
