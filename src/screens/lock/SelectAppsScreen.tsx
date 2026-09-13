@@ -104,7 +104,7 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     alignItems: 'center',
     paddingHorizontal: spacing[16],
-    height: 44,
+    height: 12 + spacing[24],
   },
   doneLabel: {
     ...typography.primary.body1M,
