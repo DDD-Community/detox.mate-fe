@@ -15,6 +15,7 @@ interface LockState {
   setSelectedAppIds: (ids: string[]) => void;
   confirmTargetMinutes: (minutes: number) => void;
   unregisterApp: (id: string) => void;
+  extendUsage: (id: string, minutes: number) => void;
 }
 
 const DEFAULT_TARGET_MINUTES = 120;
@@ -56,5 +57,11 @@ export const useLockStore = create<LockState>((set) => ({
     set((state) => ({
       selectedAppIds: state.selectedAppIds.filter((existingId) => existingId !== id),
       lockedApps: state.lockedApps.filter((app) => app.id !== id),
+    })),
+  extendUsage: (id, minutes) =>
+    set((state) => ({
+      lockedApps: state.lockedApps.map((app) =>
+        app.id === id ? { ...app, usedMinutes: app.usedMinutes + minutes } : app
+      ),
     })),
 }));

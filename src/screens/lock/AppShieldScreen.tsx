@@ -1,7 +1,7 @@
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useState } from 'react';
 import { Image, StyleSheet, Text, View } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { SafeAreaProvider, SafeAreaView } from 'react-native-safe-area-context';
 
 import LOGO_BLACK from '@assets/logo-black.png';
 import { Button } from '../../components/Button';
@@ -23,7 +23,11 @@ export default function AppShieldScreen() {
   const app = lockedApps.find((candidate) => candidate.id === appId);
 
   const handleCloseApp = () => {
-    router.back();
+    if (router.canGoBack()) {
+      router.back();
+      return;
+    }
+    router.replace('/(lock)/restricted-apps');
   };
 
   const handleRequestUnlock = async () => {
@@ -40,37 +44,39 @@ export default function AppShieldScreen() {
   };
 
   return (
-    <View style={styles.root}>
-      <SafeAreaView style={styles.safeArea}>
-        <View style={styles.center}>
-          <Image source={LOGO_BLACK} style={styles.mascot} resizeMode="contain" />
-          <Text style={styles.appName}>{app?.name ?? '이 앱'}</Text>
-          <Text style={styles.message}>
-            해제하면 친구에게 알림이 가요!{'\n'}지금 꼭 해제 해야하나요?
-          </Text>
-        </View>
+    <SafeAreaProvider>
+      <View style={styles.root}>
+        <SafeAreaView style={styles.safeArea}>
+          <View style={styles.center}>
+            <Image source={LOGO_BLACK} style={styles.mascot} resizeMode="contain" />
+            <Text style={styles.appName}>{app?.name ?? '이 앱'}</Text>
+            <Text style={styles.message}>
+              해제하면 친구에게 알림이 가요!{'\n'}지금 꼭 해제 해야하나요?
+            </Text>
+          </View>
 
-        <View style={styles.actions}>
-          <Button
-            label="지금 꼭 필요해요"
-            variant="solid"
-            color="primary"
-            size="lg"
-            disabled={isRequesting}
-            onPress={handleRequestUnlock}
-            style={styles.actionButton}
-          />
-          <Button
-            label="아니요, 안해도 괜찮아요"
-            variant="outlined"
-            color="assistive"
-            size="lg"
-            onPress={handleCloseApp}
-            style={styles.actionButton}
-          />
-        </View>
-      </SafeAreaView>
-    </View>
+          <View style={styles.actions}>
+            <Button
+              label="지금 꼭 필요해요"
+              variant="solid"
+              color="primary"
+              size="lg"
+              disabled={isRequesting}
+              onPress={handleRequestUnlock}
+              style={styles.actionButton}
+            />
+            <Button
+              label="아니요, 안해도 괜찮아요"
+              variant="outlined"
+              color="assistive"
+              size="lg"
+              onPress={handleCloseApp}
+              style={styles.actionButton}
+            />
+          </View>
+        </SafeAreaView>
+      </View>
+    </SafeAreaProvider>
   );
 }
 

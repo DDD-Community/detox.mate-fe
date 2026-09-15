@@ -1,10 +1,12 @@
 import { useRouter } from 'expo-router';
+import { useState } from 'react';
 import { StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import Svg, { Circle } from 'react-native-svg';
 
 import { Button } from '../../components/Button';
 import { primitiveColors, spacing, typography } from '../../lib/token';
+import { pickRandomFriendNames } from './mockLockApps';
 import { useCountdown } from './useCountdown';
 
 const { gray, green } = primitiveColors;
@@ -18,24 +20,29 @@ const RING_CIRCUMFERENCE = 2 * Math.PI * RING_RADIUS;
 const formatSeconds = (seconds: number) => `00:${String(seconds).padStart(2, '0')}`;
 
 /**
- * 알림 탭 후 뜨는 10초 대기 화면. 시간이 다 되면 목표 시간 재설정 화면으로 이동한다.
+ * 알림 탭 후 뜨는 10초 대기 화면. 시간이 다 되면 몇 분 더 사용할지 설정하는 화면으로 이동한다.
  */
 export default function UnlockTimerScreen() {
   const router = useRouter();
+  const [notifiedFriends] = useState(() => pickRandomFriendNames(3));
   const secondsLeft = useCountdown(COUNTDOWN_START_SECONDS, () => {
-    router.replace('/(lock)/goal-time');
+    router.replace('/(lock)/unlock-duration');
   });
 
   const progress = secondsLeft / COUNTDOWN_START_SECONDS;
 
   const handleCancel = () => {
-    router.dismissTo('/(lock)/restricted-apps');
+    router.dismissAll();
+    router.replace('/(lock)/restricted-apps');
   };
 
   return (
     <View style={styles.root}>
       <SafeAreaView style={styles.safeArea}>
         <View style={styles.center}>
+          <Text style={styles.notifyText}>
+            {notifiedFriends.map((name) => `${name}님`).join(', ')}에게 알림이 가요.
+          </Text>
           <Text style={styles.title}>10초 동안 다시 생각해볼까요?</Text>
 
           <View style={{ width: RING_SIZE, height: RING_SIZE }}>
@@ -110,6 +117,11 @@ const styles = StyleSheet.create({
   ringValue: {
     ...typography.accent.h2,
     color: '#FFFFFF',
+  },
+  notifyText: {
+    ...typography.primary.body2R,
+    color: gray[400],
+    textAlign: 'center',
   },
   cancelButton: {
     width: '100%',

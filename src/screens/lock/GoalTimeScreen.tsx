@@ -30,7 +30,8 @@ export default function GoalTimeScreen() {
 
     const timer = setTimeout(() => {
       confirmTargetMinutes(pendingMinutes);
-      router.dismissTo('/(lock)/restricted-apps');
+      router.dismissAll();
+      router.replace('/(lock)/restricted-apps');
     }, CONFIRM_DELAY_MS);
 
     return () => clearTimeout(timer);
@@ -38,11 +39,19 @@ export default function GoalTimeScreen() {
 
   const selectedMinutes = pendingMinutes ?? targetMinutes;
 
+  const handleBack = () => {
+    if (router.canGoBack()) {
+      router.back();
+      return;
+    }
+    router.replace('/(lock)/restricted-apps');
+  };
+
   return (
     <View style={styles.root}>
       <SafeAreaView edges={['top']} style={styles.topArea}>
         <View style={styles.topBar}>
-          <Pressable hitSlop={8} onPress={() => router.back()}>
+          <Pressable hitSlop={8} onPress={handleBack}>
             <Icon name="caretLeft" size={22} color={gray[900]} />
           </Pressable>
           <Text style={styles.topBarTitle} numberOfLines={1}>

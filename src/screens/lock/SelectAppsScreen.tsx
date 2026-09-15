@@ -1,7 +1,7 @@
 import { useRouter } from 'expo-router';
 import { useState } from 'react';
 import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { SafeAreaProvider, SafeAreaView } from 'react-native-safe-area-context';
 import { Icon } from '../../components/Icon';
 import { primitiveColors, radius, spacing, typography } from '../../lib/token';
 import { useLockStore } from '../../stores/lockStore';
@@ -39,47 +39,57 @@ export default function SelectAppsScreen() {
 
   const isAllSelected = localSelectedIds.length === MOCK_APP_CATALOG.length;
 
+  const handleBack = () => {
+    if (router.canGoBack()) {
+      router.back();
+      return;
+    }
+    router.replace('/(lock)/restricted-apps');
+  };
+
   return (
-    <View style={styles.root}>
-      <SafeAreaView edges={['top']} style={styles.safeArea}>
-        <View style={styles.topBar}>
-          <Pressable hitSlop={8} onPress={() => router.back()}>
-            <Icon name="caretLeft" size={22} color="#FFFFFF" />
-          </Pressable>
-          <Pressable hitSlop={8} onPress={handleDone}>
-            <Text style={styles.doneLabel}>Done</Text>
-          </Pressable>
-        </View>
+    <SafeAreaProvider>
+      <View style={styles.root}>
+        <SafeAreaView edges={['top']} style={styles.safeArea}>
+          <View style={styles.topBar}>
+            <Pressable hitSlop={8} onPress={handleBack}>
+              <Icon name="caretLeft" size={22} color="#FFFFFF" />
+            </Pressable>
+            <Pressable hitSlop={8} onPress={handleDone}>
+              <Text style={styles.doneLabel}>Done</Text>
+            </Pressable>
+          </View>
 
-        <View style={styles.titleBlock}>
-          <Text style={styles.title}>잠글 앱을 선택해 주세요.</Text>
-          <Text style={styles.subtitle}>언제든 변경 가능해요.</Text>
-        </View>
+          <View style={styles.titleBlock}>
+            <Text style={styles.title}>잠글 앱을 선택해 주세요.</Text>
+            <Text style={styles.subtitle}>언제든 변경 가능해요.</Text>
+          </View>
 
-        <ScrollView style={styles.list} contentContainerStyle={styles.listContent}>
-          <Pressable style={styles.row} onPress={toggleAll}>
-            <View style={styles.rowIconStack}>
-              <View style={[styles.appIcon, styles.categoryIcon]} />
-            </View>
-            <Text style={styles.rowLabel}>All Apps & Categories</Text>
-            <CheckMark checked={isAllSelected} />
-          </Pressable>
+          <ScrollView style={styles.list} contentContainerStyle={styles.listContent}>
+            <Pressable style={styles.row} onPress={toggleAll}>
+              <View style={styles.rowIconStack}>
+                <View style={[styles.appIcon, styles.categoryIcon]} />
+              </View>
+              <Text style={styles.rowLabel}>All Apps & Categories</Text>
+              <CheckMark checked={isAllSelected} />
+            </Pressable>
 
-          {MOCK_APP_CATALOG.map((app) => {
-            const checked = localSelectedIds.includes(app.id);
-            return (
-              <Pressable key={app.id} style={styles.row} onPress={() => toggleApp(app.id)}>
-                <View style={styles.appIcon}>
-                  <Text style={styles.appIconLetter}>{app.name.charAt(0)}</Text>
-                </View>
-                <Text style={styles.rowLabel}>{app.name}</Text>
-                <CheckMark checked={checked} />
-              </Pressable>
-            );
-          })}
-        </ScrollView>
-      </SafeAreaView>
-    </View>
+            {MOCK_APP_CATALOG.map((app) => {
+              const checked = localSelectedIds.includes(app.id);
+              return (
+                <Pressable key={app.id} style={styles.row} onPress={() => toggleApp(app.id)}>
+                  <View style={styles.appIcon}>
+                    <Text style={styles.appIconLetter}>{app.name.charAt(0)}</Text>
+                  </View>
+                  <Text style={styles.rowLabel}>{app.name}</Text>
+                  <CheckMark checked={checked} />
+                </Pressable>
+              );
+            })}
+          </ScrollView>
+        </SafeAreaView>
+      </View>
+    </SafeAreaProvider>
   );
 }
 
@@ -104,7 +114,7 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     alignItems: 'center',
     paddingHorizontal: spacing[16],
-    height: 12 + spacing[24],
+    height: 44,
   },
   doneLabel: {
     ...typography.primary.body1M,

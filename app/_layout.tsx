@@ -3,6 +3,7 @@ import * as Notifications from 'expo-notifications';
 import { router, Stack } from 'expo-router';
 import * as SplashScreen from 'expo-splash-screen';
 import { useEffect, type ComponentType } from 'react';
+import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { getGroup } from '../src/api/generated/group/group';
 import { APP_UNLOCK_REQUEST_NOTIFICATION_TYPE } from '../src/lib/notificationTypes';
 import { fontSources } from '../src/lib/token/primitive/fonts';
@@ -73,11 +74,11 @@ export default function RootLayout() {
   }
 
   return (
-    <>
+    <SafeAreaProvider>
       <AppErrorBoundary>
         <Stack screenOptions={{ headerShown: false }} />
       </AppErrorBoundary>
       <NetworkErrorToast />
-    </>
+    </SafeAreaProvider>
   );
 }
