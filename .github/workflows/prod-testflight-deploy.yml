@@ -46,8 +46,8 @@ jobs:
           CUSTOM_APP_VERSION: ${{ inputs.custom_app_version }}
           GH_TOKEN: ${{ github.token }}
         run: |
-          if [ "$GITHUB_REF_NAME" != "dev" ]; then
-            echo "::error::Prod TestFlight deploy must run from dev. Current branch: $GITHUB_REF_NAME"
+          if [ "$GITHUB_REF_NAME" != "main" ]; then
+            echo "::error::Prod TestFlight deploy must run from main. Current branch: $GITHUB_REF_NAME"
             exit 1
           fi
 
@@ -296,7 +296,6 @@ jobs:
       url: ${{ needs.testflight-release.outputs.testflight-release-url }}
     outputs:
       release-tag: ${{ steps.release-context.outputs.release-tag }}
-      release-pr-url: ${{ steps.release-pr.outputs.pr-url }}
 
     steps:
       - name: Checkout
@@ -314,16 +313,16 @@ jobs:
           ASC_APP_ID: '6771277684'
           GH_TOKEN: ${{ github.token }}
         run: |
-          if [ "$GITHUB_REF_NAME" != "dev" ]; then
-            echo "::error::Production release approval must run from dev. Current branch: $GITHUB_REF_NAME"
+          if [ "$GITHUB_REF_NAME" != "main" ]; then
+            echo "::error::Production release approval must run from main. Current branch: $GITHUB_REF_NAME"
             exit 1
           fi
 
-          git fetch origin main dev
+          git fetch origin main
 
-          dev_sha="$(git rev-parse origin/dev)"
-          if [ "$dev_sha" != "$GITHUB_SHA" ]; then
-            echo "::error::Current dev HEAD ($dev_sha) does not match the approved TestFlight build commit ($GITHUB_SHA). Run a new Prod TestFlight deploy."
+          main_sha="$(git rev-parse origin/main)"
+          if [ "$main_sha" != "$GITHUB_SHA" ]; then
+            echo "::error::Current main HEAD ($main_sha) does not match the approved TestFlight build commit ($GITHUB_SHA). Run a new Prod TestFlight deploy."
             exit 1
           fi
 
@@ -441,70 +440,6 @@ jobs:
 
           cat release-notes.md >> "$GITHUB_STEP_SUMMARY"
 
-      - name: Create or update main release PR
-        id: release-pr
-        env:
-          APP_VERSION: ${{ needs.release-context.outputs.app-version }}
-          RELEASE_TAG: ${{ steps.release-context.outputs.release-tag }}
-          TESTFLIGHT_RELEASE_TAG: ${{ needs.release-context.outputs.release-tag }}
-          TESTFLIGHT_RELEASE_URL: ${{ steps.release-context.outputs.testflight-release-url }}
-          BUILD_ID: ${{ needs.build.outputs.build-id }}
-          ASC_APP_ID: '6771277684'
-          GH_TOKEN: ${{ secrets.GH_PAT }}
-        run: |
-          if git diff --quiet origin/main..origin/dev; then
-            {
-              echo "## Main release PR"
-              echo ""
-              echo "main already contains dev. No release PR was created."
-            } >> "$GITHUB_STEP_SUMMARY"
-            echo "pr-url=" >> "$GITHUB_OUTPUT"
-            exit 0
-          fi
-
-          {
-            echo "## PRD 릴리즈 반영"
-            echo ""
-            echo "이 PR은 검증된 Prod TestFlight build를 운영 릴리즈 기록으로 승격한 뒤 자동 생성했습니다."
-            echo ""
-            echo "## 배포 정보"
-            echo ""
-            echo "- 앱 버전: \`$APP_VERSION\`"
-            echo "- 릴리즈 태그: \`$RELEASE_TAG\`"
-            echo "- TestFlight 릴리즈: [$TESTFLIGHT_RELEASE_TAG]($TESTFLIGHT_RELEASE_URL)"
-            echo "- EAS build ID: \`$BUILD_ID\`"
-            echo "- App Store Connect app ID: \`$ASC_APP_ID\`"
-            echo "- Workflow run: $GITHUB_SERVER_URL/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID"
-            echo ""
-            echo "## App Store Connect 수동 체크리스트"
-            echo ""
-            echo "- [ ] App Store Connect에서 앱 버전 \`$APP_VERSION\` 선택"
-            echo "- [ ] TestFlight에서 검증한 동일 build를 App Store 버전에 선택"
-            echo "- [ ] App Review 제출"
-            echo ""
-            echo "## main에 반영될 커밋"
-            echo ""
-            git log --pretty=format:'- %s (%h)' origin/main..origin/dev
-          } > release-pr-body.md
-
-          title="release: PRD v${APP_VERSION}"
-          existing_pr="$(gh pr list --base main --head dev --state open --json number --jq '.[0].number // ""')"
-
-          if [ -n "$existing_pr" ]; then
-            gh pr edit "$existing_pr" --title "$title" --body-file release-pr-body.md
-            pr_url="$(gh pr view "$existing_pr" --json url --jq '.url')"
-          else
-            pr_url="$(gh pr create --base main --head dev --title "$title" --body-file release-pr-body.md)"
-          fi
-
-          echo "pr-url=$pr_url" >> "$GITHUB_OUTPUT"
-
-          {
-            echo "## Main release PR"
-            echo ""
-            echo "$pr_url"
-          } >> "$GITHUB_STEP_SUMMARY"
-
   notify-production:
     name: Notify production release
     runs-on: ubuntu-latest
@@ -517,14 +452,10 @@ jobs:
       - name: Notify Discord
         env:
           RELEASE_TAG: ${{ needs.promote-production.outputs.release-tag }}
-          RELEASE_PR_URL: ${{ needs.promote-production.outputs.release-pr-url }}
           APP_VERSION: ${{ needs.release-context.outputs.app-version }}
           BUILD_ID: ${{ needs.build.outputs.build-id }}
         run: |
           content="**PRD 릴리즈 승격 완료**\\nRelease: ${RELEASE_TAG}\\nApp version: ${APP_VERSION}\\nEAS build ID: ${BUILD_ID}\\nApp Store Connect에서 같은 TestFlight build를 선택해 App Review에 제출하세요."
-          if [ -n "$RELEASE_PR_URL" ]; then
-            content="${content}\\nMain release PR: ${RELEASE_PR_URL}"
-          fi
           payload="$(jq -n --arg content "$content" '{content: $content}')"
 
           curl -s -X POST \
