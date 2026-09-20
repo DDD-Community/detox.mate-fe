@@ -119,6 +119,7 @@ const config: ExpoConfig = {
         ios: {
           useFrameworks: 'static',
           forceStaticLinking: ['RNFBApp', 'RNFBMessaging'],
+          deploymentTarget: '15.1',
         },
       },
     ],
@@ -137,6 +138,13 @@ const config: ExpoConfig = {
       },
     ],
     './plugins/with-sdk55-app-delegate-fixes',
+    [
+      'react-native-device-activity',
+      {
+        appleTeamId: 'V4328A485M',
+        appGroup: 'group.com.detoxmate.app.dev2',
+      },
+    ],
   ],
   extra: {
     appEnv,
