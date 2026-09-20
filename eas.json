@@ -44,8 +44,8 @@
   "submit": {
     "development-store": {
       "ios": {
-        "ascAppId": "6762039576",
-        "bundleIdentifier": "com.detoxmate.app.dev"
+        "ascAppId": "6813834134",
+        "bundleIdentifier": "com.detoxmate.app.dev2"
       }
     },
     "production": {

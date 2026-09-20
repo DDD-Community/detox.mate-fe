@@ -55,7 +55,7 @@ const config: ExpoConfig = {
     imageWidth: 152,
   },
   ios: {
-    bundleIdentifier: isProduction ? 'com.detoxmate.app' : 'com.detoxmate.app.dev',
+    bundleIdentifier: isProduction ? 'com.detoxmate.app' : 'com.detoxmate.app.dev2',
     googleServicesFile: iosGoogleServicesFile,
     supportsTablet: false,
     associatedDomains: ['applinks:detoxmate.airbridge.io'],
