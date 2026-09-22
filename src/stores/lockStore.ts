@@ -12,9 +12,15 @@ interface LockState {
   selectedAppIds: string[];
   targetMinutes: number;
   lockedApps: LockedAppUsage[];
+  // react-native-device-activity의 FamilyActivityPicker가 넘겨주는 실제 선택 상태.
+  // familyActivitySelection은 애플이 내려주는 암호화된 토큰이라 어떤 앱인지는 알 수 없고,
+  // selectedAppCount로 개수만 표시에 사용한다.
+  familyActivitySelection: string | null;
+  selectedAppCount: number;
   setSelectedAppIds: (ids: string[]) => void;
   confirmTargetMinutes: (minutes: number) => void;
   unregisterApp: (id: string) => void;
+  setFamilyActivitySelection: (token: string | null, count: number) => void;
 }
 
 const DEFAULT_TARGET_MINUTES = 120;
@@ -46,6 +52,8 @@ export const useLockStore = create<LockState>((set) => ({
   selectedAppIds: [],
   targetMinutes: DEFAULT_TARGET_MINUTES,
   lockedApps: [],
+  familyActivitySelection: null,
+  selectedAppCount: 0,
   setSelectedAppIds: (ids) => set({ selectedAppIds: ids }),
   confirmTargetMinutes: (minutes) =>
     set((state) => ({
@@ -57,4 +65,6 @@ export const useLockStore = create<LockState>((set) => ({
       selectedAppIds: state.selectedAppIds.filter((existingId) => existingId !== id),
       lockedApps: state.lockedApps.filter((app) => app.id !== id),
     })),
+  setFamilyActivitySelection: (token, count) =>
+    set({ familyActivitySelection: token, selectedAppCount: count }),
 }));

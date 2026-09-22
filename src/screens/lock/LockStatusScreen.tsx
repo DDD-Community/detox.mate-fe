@@ -31,15 +31,19 @@ const formatTodayLabel = () => {
 
 export default function LockStatusScreen() {
   const router = useRouter();
-  const { targetMinutes, lockedApps } = useLockStore();
+  const {
+    targetMinutes,
+    lockedApps,
+    familyActivitySelection,
+    selectedAppCount,
+    setFamilyActivitySelection,
+  } = useLockStore();
 
   const totalUsedMinutes = lockedApps.reduce((sum, app) => sum + app.usedMinutes, 0);
   const remainingMinutes = Math.max(targetMinutes - totalUsedMinutes, 0);
   const progress = targetMinutes > 0 ? Math.min(remainingMinutes / targetMinutes, 1) : 0;
 
   const [pickerVisible, setPickerVisible] = useState(false);
-  const [familyActivitySelection, setFamilyActivitySelection] = useState<string | null>(null);
-  const [selectedAppCount, setSelectedAppCount] = useState(0);
 
   const handlePlusPress = async () => {
     if (
@@ -79,10 +83,17 @@ export default function LockStatusScreen() {
           <ReactNativeDeviceActivity.DeviceActivitySelectionSheetView
             style={{ width: 1, height: 1, position: 'absolute' }}
             familyActivitySelection={familyActivitySelection}
-            onDismissRequest={() => setPickerVisible(false)}
+            onDismissRequest={() => {
+              setPickerVisible(false);
+              if (selectedAppCount > 0) {
+                router.push('/(lock)/goal-time');
+              }
+            }}
             onSelectionChange={(event) => {
-              setFamilyActivitySelection(event.nativeEvent.familyActivitySelection);
-              setSelectedAppCount(event.nativeEvent.applicationCount);
+              setFamilyActivitySelection(
+                event.nativeEvent.familyActivitySelection,
+                event.nativeEvent.applicationCount
+              );
             }}
           />
         )}

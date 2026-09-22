@@ -5,7 +5,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { Icon } from '../../components/Icon';
 import { primitiveColors, radius, spacing, typography } from '../../lib/token';
 import { useLockStore } from '../../stores/lockStore';
-import { GOAL_TIME_OPTIONS_MINUTES, MOCK_APP_CATALOG } from './mockLockApps';
+import { GOAL_TIME_OPTIONS_MINUTES } from './mockLockApps';
 
 const { gray, green } = primitiveColors;
 
@@ -13,16 +13,16 @@ const CONFIRM_DELAY_MS = 250;
 
 const formatOptionLabel = (minutes: number) => `${minutes / 60}시간`;
 
-const buildSelectedAppsTitle = (selectedAppIds: string[]) => {
-  const selectedApps = MOCK_APP_CATALOG.filter((app) => selectedAppIds.includes(app.id));
-  if (selectedApps.length === 0) return '선택된 앱 없음';
-  if (selectedApps.length === 1) return selectedApps[0].name;
-  return `${selectedApps[0].name} 외 ${selectedApps.length - 1}개`;
+// FamilyActivitySelection 토큰은 어떤 앱인지 알 수 없는 암호화된 값이라
+// 이름 대신 선택된 개수만 제목에 쓴다.
+const buildSelectedAppsTitle = (selectedAppCount: number) => {
+  if (selectedAppCount === 0) return '선택된 앱 없음';
+  return `선택한 앱 ${selectedAppCount}개`;
 };
 
 export default function GoalTimeScreen() {
   const router = useRouter();
-  const { selectedAppIds, targetMinutes, confirmTargetMinutes } = useLockStore();
+  const { selectedAppCount, targetMinutes, confirmTargetMinutes } = useLockStore();
   const [pendingMinutes, setPendingMinutes] = useState<number | null>(null);
 
   useEffect(() => {
@@ -46,7 +46,7 @@ export default function GoalTimeScreen() {
             <Icon name="caretLeft" size={22} color={gray[900]} />
           </Pressable>
           <Text style={styles.topBarTitle} numberOfLines={1}>
-            {buildSelectedAppsTitle(selectedAppIds)}
+            {buildSelectedAppsTitle(selectedAppCount)}
           </Text>
           <View style={{ width: 22 }} />
         </View>
