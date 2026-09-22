@@ -1,5 +1,7 @@
 import { useRouter } from 'expo-router';
+import { useState } from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
+import * as ReactNativeDeviceActivity from 'react-native-device-activity';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import Svg, { Circle } from 'react-native-svg';
 import { Icon } from '../../components/Icon';
@@ -35,6 +37,25 @@ export default function LockStatusScreen() {
   const remainingMinutes = Math.max(targetMinutes - totalUsedMinutes, 0);
   const progress = targetMinutes > 0 ? Math.min(remainingMinutes / targetMinutes, 1) : 0;
 
+  const [pickerVisible, setPickerVisible] = useState(false);
+  const [familyActivitySelection, setFamilyActivitySelection] = useState<string | null>(null);
+  const [selectedAppCount, setSelectedAppCount] = useState(0);
+
+  const handlePlusPress = async () => {
+    if (
+      ReactNativeDeviceActivity.getAuthorizationStatus() !==
+      ReactNativeDeviceActivity.AuthorizationStatus.approved
+    ) {
+      try {
+        await ReactNativeDeviceActivity.requestAuthorization('individual');
+      } catch {
+        // TODO: 거부 시 안내 UX 추가 논의 필요
+        return;
+      }
+    }
+    setPickerVisible(true);
+  };
+
   return (
     <View style={styles.root}>
       <SafeAreaView edges={['top']} style={styles.safeArea}>
@@ -48,15 +69,23 @@ export default function LockStatusScreen() {
             >
               <Icon name="bell" size={24} color={gray[800]} />
             </Pressable>
-            <Pressable
-              style={styles.iconButton}
-              hitSlop={8}
-              onPress={() => router.push('/(lock)/select-apps')}
-            >
+            <Pressable style={styles.iconButton} hitSlop={8} onPress={handlePlusPress}>
               <Icon name="plus" size={24} color={gray[800]} />
             </Pressable>
           </View>
         </View>
+
+        {pickerVisible && (
+          <ReactNativeDeviceActivity.DeviceActivitySelectionSheetView
+            style={{ width: 1, height: 1, position: 'absolute' }}
+            familyActivitySelection={familyActivitySelection}
+            onDismissRequest={() => setPickerVisible(false)}
+            onSelectionChange={(event) => {
+              setFamilyActivitySelection(event.nativeEvent.familyActivitySelection);
+              setSelectedAppCount(event.nativeEvent.applicationCount);
+            }}
+          />
+        )}
 
         <View style={styles.ringSection}>
           <View style={{ width: RING_SIZE, height: RING_SIZE }}>
@@ -91,10 +120,7 @@ export default function LockStatusScreen() {
       </SafeAreaView>
 
       <View style={styles.sheet}>
-        <Pressable
-          style={styles.summaryRow}
-          onPress={() => router.push('/(lock)/goal-time')}
-        >
+        <Pressable style={styles.summaryRow} onPress={() => router.push('/(lock)/goal-time')}>
           <Text style={styles.summaryText}>
             제한 시간 {targetMinutes}분 중{'\n'}
             {totalUsedMinutes}분 사용
