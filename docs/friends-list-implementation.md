@@ -55,3 +55,40 @@ NODE_OPTIONS=--dns-result-order=ipv4first EXPO_PUBLIC_DEV_ENTRY='/dev/friends-pr
 - 실제 로그인한 두 계정 간 수락/거절/삭제와 상대 목록 갱신, 실제 기기 검증.
 - 40명 데이터 렌더링은 확인했으나 끝까지 스크롤하는 동작은 미검증. 자동화의 drag/scroll이 Simulator 및 개발 메뉴에서 모두 화면을 이동시키지 못했다. 수동 스와이프 확인이 필요하다.
 - 공유/초대 URL, 이메일 검색, 딥링크 및 로그인 후 복귀는 다음 화면에서 구현·검증한다.
+
+## Swagger 기반 실제 API 연동 보완 (2026-10-02)
+
+사용자가 지정한 [Swagger UI](https://api-dev.detoxmate.co.kr/swagger-ui/index.html)의 `/v3/api-docs/swagger-config`는 [REST Docs OpenAPI](https://api-dev.detoxmate.co.kr/openapi3.yaml)를 가리킨다. 이를 코드 생성용 `/v3/api-docs`와 대조하여 다음 계약이 동일함을 확인했다.
+
+| 화면 동작      | 실제 API                                    | 성공 응답                          |
+| -------------- | ------------------------------------------- | ---------------------------------- |
+| 친구 조회      | GET `/friends`                              | FriendResponse 배열                |
+| 받은 요청 조회 | GET `/friends/requests/received`            | FriendReceivedRequestResponse 배열 |
+| 요청 수락      | POST `/friends/requests/{requestId}/accept` | FriendResponse                     |
+| 요청 거절      | DELETE `/friends/requests/{requestId}`      | 204                                |
+| 친구 삭제      | DELETE `/friends/{friendshipId}`            | 204                                |
+
+실제 화면은 위 API와 공통 Bearer 인증·401 갱신 흐름을 사용한다. 친구 전용 Orval mutator가 오류를 화면으로 반환하도록 지정했다. 이전에는 GET 네트워크 실패가 공통 토스트 재시도 큐에 대기하여 목록 로딩/변경 후 재조회가 끝나지 않을 수 있었다. 이제 화면 오류 안내와 재시도 버튼으로 처리한다. 생성 파일은 Orval로 재생성한다.
+
+실제 API 화면으로 시작하려면 앞의 예시 실행 명령에서 `EXPO_PUBLIC_DEV_ENTRY='/(group)/friends'`로 바꾼다. MSW 실행도 이 실제 화면 진입점을 사용한다. 로그인 세션이 없거나 만료됐으면 일반 로그인 흐름이 필요하다.
+
+실제 서버 호출 시 iOS 로그에서 `/friends` 및 `/friends/requests/received`의 TLS 신뢰 실패(`NSURLErrorDomain -1200`, `ATS failed system trust`)를 확인했다. 현재 연결에서 제시되는 인증서 발급자는 `Woowa Brothers ROOT CERT`다. macOS의 명세 조회는 성공하지만 Simulator HTTPS는 실패하므로 인증된 실제 데이터 조회 성공으로 기록하지 않는다. 다른 네트워크 또는 적절한 Simulator 인증서 신뢰 설정 후 다시 확인해야 한다. 앱의 TLS 보안 설정은 변경하지 않았다.
+
+## MSW로 서버 동작 재현
+
+사용자 요청에 따라 실제 화면·생성 API client·Axios 인증/오류 처리 경로를 그대로 두고 MSW에서 HTTP 응답을 가로챈다. 이전 `friends-preview`의 뷰 직접 주입 방식과 별개다.
+
+```sh
+NODE_OPTIONS=--dns-result-order=ipv4first mise exec -- pnpm start:friends
+```
+
+- 가상 친구 8명과 받은 요청 3건: 서로 다른 한국 이름, `example.com` 이메일, 기본/오프라인 프로필 이미지.
+- 개발 서버 origin의 목록·요청 조회·수락·거절·친구 삭제 5개 API를 처리한다. 280ms 지연과 Swagger 응답 형태를 사용한다.
+- 수락하면 받은 요청에서 제거하고 새로운 friendshipId로 친구에 추가한다. 거절/삭제도 다음 조회에 반영한다. 동일 런타임 내 재진입 시 유지되며 앱 전체 재시작 시 초기화된다.
+- 없는 관계 404, 이미 수락한 요청 409를 재현한다. 가상 단일 계정이므로 실제 권한에 따른 401/403 검증은 포함하지 않는다. 공통 인증·401 갱신은 별도 HTTP 경계 테스트로 확인한다.
+- `__DEV__`와 `EXPO_PUBLIC_MSW_ENABLED=true`일 때만 시작한다. 일반 실행 시 해당 환경 변수를 제거한다. 생산 환경에서 모킹하지 않는다.
+- MSW 2.15.0의 `msw/native`를 사용한다. 최신 안내의 `@msw/react-native`는 확인 시점 npm에서 설치할 수 없었다. Expo 55/RN에 없는 이벤트 전역과 body stream만 개발 모킹 초기화에서 보완한다.
+
+최종 MSW 검증: 전체 43개 테스트(기존 26 + HTTP 경계 7 + MSW 상태 전이 10), 타입 검사, 변경 파일 포맷 통과. 전체 lint 오류 0/기존 경고 45 유지. 독립 코드 검토 완료. Simulator에서 최초 8친구/3요청 → 오유진 수락 후 9친구/2요청 → 임수아 거절 후 9친구/1요청 → 오유진 삭제 후 8친구/1요청을 확인했다. 이름 검색과 초기화도 확인했다. 증거는 `.local/friends-verification/msw-accepted-native.png`, `msw-after-actions-native.png`에 보관한다.
+
+MSW 개발 모드에서 패키지 export fallback 및 React Native 내부 이벤트 구현 참조 관련 경고가 출력될 수 있다. 현재 버전 조합에서 실제 요청/응답 및 위 조작을 확인했으며, RN/MSW 업데이트 시 폴리필 호환성을 재검증해야 한다.

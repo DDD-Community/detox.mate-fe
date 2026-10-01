@@ -15,7 +15,8 @@
     "format": "prettier . --write",
     "format:check": "prettier . --check",
     "api:gen": "orval",
-    "quality": "pnpm typecheck && pnpm lint && pnpm test && pnpm format:check"
+    "quality": "pnpm typecheck && pnpm lint && pnpm test && pnpm format:check",
+    "start:friends": "EXPO_PUBLIC_MSW_ENABLED=true EXPO_PUBLIC_DEV_ENTRY='/(group)/friends' expo start --dev-client --localhost"
   },
   "dependencies": {
     "@amplitude/analytics-react-native": "^1.5.57",
@@ -69,6 +70,7 @@
     "eslint": "^9.39.4",
     "eslint-config-expo": "^55.0.1",
     "lint-staged": "^16.4.0",
+    "msw": "2.15.0",
     "openapi3-ts": "^4.5.0",
     "orval": "^8.9.0",
     "prettier": "^3.8.1",
