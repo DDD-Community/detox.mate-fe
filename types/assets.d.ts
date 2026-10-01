@@ -1,3 +1,8 @@
+declare module '*.otf' {
+  const font: import('expo-font').FontSource;
+  export default font;
+}
+
 declare module '*.ttf' {
   const asset: number;
   export default asset;

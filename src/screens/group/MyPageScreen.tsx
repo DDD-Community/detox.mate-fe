@@ -1,9 +1,9 @@
 import { router } from 'expo-router';
-import { Alert, ScrollView, StyleSheet, View } from 'react-native';
+import { Alert, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 
 import { LoggingPage } from '@/components';
 import { goBackOrReplace } from '@/lib/navigation';
-import { primitiveColors, spacing } from '@/lib/token';
+import { primitiveColors, spacing, typography } from '@/lib/token';
 import { MyPageBody } from './mypage/MyPageBody';
 import { MyPageProfileHeader } from './mypage/MyPageProfileHeader';
 import { ProfileImageBottomSheet } from './mypage/ProfileImageBottomSheet';
@@ -154,6 +154,16 @@ export default function MyPageScreen() {
             onEditProfileImage={handleEditProfileImage}
           />
 
+          {!isFriend ? (
+            <Pressable
+              accessibilityRole="button"
+              onPress={() => router.push('/(group)/friends')}
+              style={styles.friendsEntry}
+            >
+              <Text style={styles.friendsEntryText}>친구 목록</Text>
+            </Pressable>
+          ) : null}
+
           <MyPageBody
             isFriend={isFriend}
             isLoading={isLoading}
@@ -191,6 +201,15 @@ export default function MyPageScreen() {
 }
 
 const styles = StyleSheet.create({
+  friendsEntry: {
+    marginHorizontal: 16,
+    marginBottom: 16,
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    borderRadius: 16,
+    backgroundColor: primitiveColors.green[100],
+  },
+  friendsEntryText: { ...typography.primary.body1M, color: primitiveColors.gray[800] },
   root: {
     flex: 1,
     backgroundColor: brown[50],
