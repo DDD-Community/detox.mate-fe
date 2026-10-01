@@ -1,9 +1,9 @@
 import './polyfills';
 import { setupServer } from 'msw/native';
 
-import { friendsHandlers } from './friendsHandlers';
+import { handlers } from './handlers';
 
-const server = setupServer(...friendsHandlers);
+const server = setupServer(...handlers);
 let started = false;
 
 export function startNativeMocking() {

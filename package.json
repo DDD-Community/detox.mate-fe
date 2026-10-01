@@ -15,8 +15,7 @@
     "format": "prettier . --write",
     "format:check": "prettier . --check",
     "api:gen": "orval",
-    "quality": "pnpm typecheck && pnpm lint && pnpm test && pnpm format:check",
-    "start:friends": "EXPO_PUBLIC_MSW_ENABLED=true EXPO_PUBLIC_DEV_ENTRY='/(group)/friends' expo start --dev-client --localhost"
+    "quality": "pnpm typecheck && pnpm lint && pnpm test && pnpm format:check"
   },
   "dependencies": {
     "@amplitude/analytics-react-native": "^1.5.57",
