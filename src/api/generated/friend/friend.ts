@@ -15,11 +15,11 @@ import type {
   SearchByEmailParams,
 } from '../model';
 
-import { customAxios } from '../../mutator';
+import { friendAxios } from '../../friendMutator';
 
 export const getFriend = () => {
   const sendRequest = (createFriendRequest: CreateFriendRequest) => {
-    return customAxios<FriendRequestResponse>({
+    return friendAxios<FriendRequestResponse>({
       url: `/friends/requests`,
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -27,37 +27,37 @@ export const getFriend = () => {
     });
   };
   const acceptRequest = (requestId: number) => {
-    return customAxios<FriendResponse>({
+    return friendAxios<FriendResponse>({
       url: `/friends/requests/${requestId}/accept`,
       method: 'POST',
     });
   };
   const getFriends = () => {
-    return customAxios<FriendResponse[]>({ url: `/friends`, method: 'GET' });
+    return friendAxios<FriendResponse[]>({ url: `/friends`, method: 'GET' });
   };
   const searchByEmail = (params: SearchByEmailParams) => {
-    return customAxios<FriendSearchResponse>({ url: `/friends/search`, method: 'GET', params });
+    return friendAxios<FriendSearchResponse>({ url: `/friends/search`, method: 'GET', params });
   };
   const getSentRequests = () => {
-    return customAxios<FriendRequestResponse[]>({ url: `/friends/requests/sent`, method: 'GET' });
+    return friendAxios<FriendRequestResponse[]>({ url: `/friends/requests/sent`, method: 'GET' });
   };
   const getReceivedRequests = () => {
-    return customAxios<FriendReceivedRequestResponse[]>({
+    return friendAxios<FriendReceivedRequestResponse[]>({
       url: `/friends/requests/received`,
       method: 'GET',
     });
   };
   const getMyInvite = () => {
-    return customAxios<FriendInviteResponse>({ url: `/friends/invite`, method: 'GET' });
+    return friendAxios<FriendInviteResponse>({ url: `/friends/invite`, method: 'GET' });
   };
   const getInvitee = (code: string) => {
-    return customAxios<FriendInviteeResponse>({ url: `/friends/invite/${code}`, method: 'GET' });
+    return friendAxios<FriendInviteeResponse>({ url: `/friends/invite/${code}`, method: 'GET' });
   };
   const unfriend = (friendshipId: number) => {
-    return customAxios<void>({ url: `/friends/${friendshipId}`, method: 'DELETE' });
+    return friendAxios<void>({ url: `/friends/${friendshipId}`, method: 'DELETE' });
   };
   const deletePendingRequest = (requestId: number) => {
-    return customAxios<void>({ url: `/friends/requests/${requestId}`, method: 'DELETE' });
+    return friendAxios<void>({ url: `/friends/requests/${requestId}`, method: 'DELETE' });
   };
   return {
     sendRequest,

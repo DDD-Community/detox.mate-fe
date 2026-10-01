@@ -20,6 +20,14 @@ export default defineConfig({
           path: 'src/api/mutator.ts',
           name: 'customAxios',
         },
+        tags: {
+          friend: {
+            mutator: {
+              path: 'src/api/friendMutator.ts',
+              name: 'friendAxios',
+            },
+          },
+        },
       },
       clean: true,
     },
