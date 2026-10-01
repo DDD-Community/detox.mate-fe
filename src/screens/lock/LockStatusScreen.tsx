@@ -91,10 +91,7 @@ export default function LockStatusScreen() {
       </SafeAreaView>
 
       <View style={styles.sheet}>
-        <Pressable
-          style={styles.summaryRow}
-          onPress={() => router.push('/(lock)/goal-time')}
-        >
+        <Pressable style={styles.summaryRow} onPress={() => router.push('/(lock)/goal-time')}>
           <Text style={styles.summaryText}>
             제한 시간 {targetMinutes}분 중{'\n'}
             {totalUsedMinutes}분 사용

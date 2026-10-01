@@ -12,6 +12,12 @@ import { initSentry } from '../src/observability/sentry';
 import { initAirbridge } from '../src/lib/airbridge';
 import { initAnalytics } from '../src/lib/analytics';
 
+if (__DEV__ && process.env.EXPO_PUBLIC_MSW_ENABLED === 'true') {
+  // Load native polyfills and install interception before mounting any routes.
+  // eslint-disable-next-line @typescript-eslint/no-require-imports
+  require('../src/mocks/native').startNativeMocking();
+}
+
 initSentry();
 SplashScreen.preventAutoHideAsync();
 
