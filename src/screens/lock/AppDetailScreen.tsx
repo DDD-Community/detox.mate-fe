@@ -109,11 +109,7 @@ export default function AppDetailScreen() {
               </View>
             </View>
 
-            <Pressable
-              hitSlop={8}
-              style={styles.unregisterButton}
-              onPress={handleUnregisterPress}
-            >
+            <Pressable hitSlop={8} style={styles.unregisterButton} onPress={handleUnregisterPress}>
               <Text style={styles.unregisterLabel}>등록 해제</Text>
             </Pressable>
           </>
