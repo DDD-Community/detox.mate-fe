@@ -1,23 +1,16 @@
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useEffect, useState } from 'react';
 import { Modal, Pressable, StyleSheet, Text, View } from 'react-native';
+import * as ReactNativeDeviceActivity from 'react-native-device-activity';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Icon } from '../../components/Icon';
 import { primitiveColors, radius, spacing, typography } from '../../lib/token';
 import { useLockStore } from '../../stores/lockStore';
+import { ScreenTimeReportView } from '../../../modules/screen-time-report';
 
 const { gray, brown, system, green } = primitiveColors;
 
-const UNREGISTER_REASONS = [
-  '목표(시험 등) 달성으로 제한할 필요가 없어요',
-  '시간을 지키기 힘들어요.',
-  '습관이 자리 잡았어요.',
-  '기타',
-];
-
-const REASON_CONFIRM_DELAY_MS = 250;
-
-type UnregisterStep = 'reason' | 'confirm' | null;
+type UnregisterStep = 'confirm' | null;
 
 const formatDuration = (minutes: number) => {
   const hours = Math.floor(minutes / 60);
@@ -29,32 +22,44 @@ const formatDuration = (minutes: number) => {
 
 export default function AppDetailScreen() {
   const router = useRouter();
-  const { appId } = useLocalSearchParams<{ appId: string }>();
-  const { lockedApps, targetMinutes, unregisterApp } = useLockStore();
+  const { appId, showUnregisterConfirm } = useLocalSearchParams<{
+    appId: string;
+    showUnregisterConfirm?: string;
+  }>();
+  const { lockedApps, targetMinutes, unregisterApp, familyActivitySelectionsByAppId } =
+    useLockStore();
   const [unregisterStep, setUnregisterStep] = useState<UnregisterStep>(null);
-  const [selectedReason, setSelectedReason] = useState<string | null>(null);
 
   const app = lockedApps.find((candidate) => candidate.id === appId);
+  const realSelectionToken = app ? familyActivitySelectionsByAppId[app.id] : undefined;
 
+  // 10초 재고 타이머 → 사유 선택 화면(각각 별도 라우트)을 거쳐 돌아오면
+  // 마지막 확인 모달을 이어서 띄운다.
   useEffect(() => {
-    if (selectedReason === null) return;
-
-    const timer = setTimeout(() => setUnregisterStep('confirm'), REASON_CONFIRM_DELAY_MS);
-    return () => clearTimeout(timer);
-  }, [selectedReason]);
+    if (showUnregisterConfirm === '1') setUnregisterStep('confirm');
+  }, [showUnregisterConfirm]);
 
   const handleUnregisterPress = () => {
-    setSelectedReason(null);
-    setUnregisterStep('reason');
+    router.push({ pathname: '/(lock)/unregister-timer', params: { appId } });
   };
 
   const handleCancelUnregister = () => {
     setUnregisterStep(null);
-    setSelectedReason(null);
   };
 
   const handleConfirmUnregister = () => {
     if (!app) return;
+
+    // 이 앱만 골라서 받아둔 토큰이 있으면 그 앱만 진짜로 해제한다. mock 시드 앱(토큰 없음)은
+    // 애초에 실제로 잠긴 적이 없어서 건너뛴다.
+    const token = familyActivitySelectionsByAppId[app.id];
+    if (token) {
+      ReactNativeDeviceActivity.unblockSelection(
+        { activitySelectionToken: token },
+        'app-unregistered'
+      );
+    }
+
     unregisterApp(app.id);
     setUnregisterStep(null);
     router.back();
@@ -100,7 +105,7 @@ export default function AppDetailScreen() {
               <View style={styles.divider} />
               <View style={styles.cardRow}>
                 <Text style={styles.cardLabel}>잠금 해제</Text>
-                <Text style={styles.cardValue}>n회</Text>
+                <Text style={styles.cardValue}>{app.unlockCount}회</Text>
               </View>
               <View style={styles.divider} />
               <View style={styles.cardRow}>
@@ -109,51 +114,22 @@ export default function AppDetailScreen() {
               </View>
             </View>
 
-            <Pressable
-              hitSlop={8}
-              style={styles.unregisterButton}
-              onPress={handleUnregisterPress}
-            >
+            {realSelectionToken ? (
+              <View style={styles.realReportSection}>
+                <Text style={styles.realReportLabel}>실제 스크린타임</Text>
+                <ScreenTimeReportView
+                  selectionTokens={[realSelectionToken]}
+                  style={styles.realReportView}
+                />
+              </View>
+            ) : null}
+
+            <Pressable hitSlop={8} style={styles.unregisterButton} onPress={handleUnregisterPress}>
               <Text style={styles.unregisterLabel}>등록 해제</Text>
             </Pressable>
           </>
         ) : null}
       </SafeAreaView>
-
-      <Modal
-        visible={unregisterStep === 'reason'}
-        transparent
-        animationType="slide"
-        onRequestClose={handleCancelUnregister}
-      >
-        <Pressable style={styles.sheetOverlay} onPress={handleCancelUnregister}>
-          <Pressable style={styles.sheet} onPress={(event) => event.stopPropagation()}>
-            <View style={styles.sheetHandle} />
-            <Text style={styles.sheetTitle}>등록 해제 사유를 선택해주세요.</Text>
-            <View style={styles.reasonList}>
-              {UNREGISTER_REASONS.map((reason) => (
-                <Pressable
-                  key={reason}
-                  style={[
-                    styles.reasonOption,
-                    selectedReason === reason && styles.reasonOptionSelected,
-                  ]}
-                  onPress={() => setSelectedReason(reason)}
-                >
-                  <Text
-                    style={[
-                      styles.reasonLabel,
-                      selectedReason === reason && styles.reasonLabelSelected,
-                    ]}
-                  >
-                    {reason}
-                  </Text>
-                </Pressable>
-              ))}
-            </View>
-          </Pressable>
-        </Pressable>
-      </Modal>
 
       <Modal
         visible={unregisterStep === 'confirm'}
@@ -163,7 +139,7 @@ export default function AppDetailScreen() {
       >
         <View style={styles.confirmOverlay}>
           <View style={styles.confirmCard}>
-            <Text style={styles.confirmTitle}>등록 해제하시겠어요?</Text>
+            <Text style={styles.confirmTitle}>정말 등록 해제하시겠어요?</Text>
             <Text style={styles.confirmSubtitle}>
               해제 시 저장된 기록이 모두 삭제되며,{'\n'}복구는 불가합니다.
             </Text>
@@ -239,10 +215,8 @@ const styles = StyleSheet.create({
     marginTop: spacing[8],
   },
   card: {
-    backgroundColor: '#FFFFFF',
+    backgroundColor: green[50],
     borderRadius: radius[16],
-    borderWidth: 1,
-    borderColor: gray[100],
     paddingHorizontal: spacing[16],
   },
   cardRow: {
@@ -263,61 +237,25 @@ const styles = StyleSheet.create({
     height: 1,
     backgroundColor: gray[50],
   },
+  realReportSection: {
+    marginTop: spacing[16],
+  },
+  realReportLabel: {
+    ...typography.primary.body3R,
+    color: gray[400],
+    marginBottom: spacing[8],
+  },
+  realReportView: {
+    height: 240,
+  },
   unregisterButton: {
     alignSelf: 'flex-start',
     marginTop: spacing[16],
   },
   unregisterLabel: {
-    ...typography.primary.body2R,
-    color: system.blue.opacity100,
-  },
-  sheetOverlay: {
-    flex: 1,
-    backgroundColor: 'rgba(0, 0, 0, 0.5)',
-    justifyContent: 'flex-end',
-  },
-  sheet: {
-    backgroundColor: '#FFFFFF',
-    borderTopLeftRadius: radius[16],
-    borderTopRightRadius: radius[16],
-    paddingHorizontal: spacing[16],
-    paddingBottom: spacing[32],
-  },
-  sheetHandle: {
-    alignSelf: 'center',
-    width: 36,
-    height: 4,
-    borderRadius: radius.full,
-    backgroundColor: gray[100],
-    marginTop: spacing[12],
-    marginBottom: spacing[20],
-  },
-  sheetTitle: {
-    ...typography.primary.title2B,
-    color: gray[900],
-    marginBottom: spacing[16],
-  },
-  reasonList: {
-    gap: spacing[12],
-  },
-  reasonOption: {
-    height: 56,
-    borderRadius: radius[16],
-    backgroundColor: green[75],
-    alignItems: 'center',
-    justifyContent: 'center',
-    paddingHorizontal: spacing[16],
-  },
-  reasonOptionSelected: {
-    backgroundColor: green[300],
-  },
-  reasonLabel: {
-    ...typography.primary.body1M,
-    color: green[400],
-    textAlign: 'center',
-  },
-  reasonLabelSelected: {
-    color: '#FFFFFF',
+    ...typography.primary.caption,
+    color: gray[400],
+    textDecorationLine: 'underline',
   },
   confirmOverlay: {
     flex: 1,
