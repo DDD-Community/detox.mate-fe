@@ -1,4 +1,5 @@
 export * from './generated/activity-record/activity-record';
+export * from './generated/app-unlock-notification/app-unlock-notification';
 export * from './generated/feed/feed';
 export { getFirstScreenTime } from './generated/first-screen-time/first-screen-time';
 export * from './generated/group/group';
