@@ -1,10 +1,10 @@
 import { useRouter } from 'expo-router';
-import { useState } from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
-import * as ReactNativeDeviceActivity from 'react-native-device-activity';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import Svg, { Circle } from 'react-native-svg';
+import { AppLogo } from '../../components/AppLogo';
 import { Icon } from '../../components/Icon';
+import { LoggingButton } from '../../components/LoggingButton';
 import { primitiveColors, radius, spacing, typography } from '../../lib/token';
 import { useLockStore } from '../../stores/lockStore';
 
@@ -31,40 +31,17 @@ const formatTodayLabel = () => {
 
 export default function LockStatusScreen() {
   const router = useRouter();
-  const {
-    targetMinutes,
-    lockedApps,
-    familyActivitySelection,
-    selectedAppCount,
-    setFamilyActivitySelection,
-  } = useLockStore();
+  const { targetMinutes, lockedApps } = useLockStore();
 
   const totalUsedMinutes = lockedApps.reduce((sum, app) => sum + app.usedMinutes, 0);
   const remainingMinutes = Math.max(targetMinutes - totalUsedMinutes, 0);
   const progress = targetMinutes > 0 ? Math.min(remainingMinutes / targetMinutes, 1) : 0;
 
-  const [pickerVisible, setPickerVisible] = useState(false);
-
-  const handlePlusPress = async () => {
-    if (
-      ReactNativeDeviceActivity.getAuthorizationStatus() !==
-      ReactNativeDeviceActivity.AuthorizationStatus.approved
-    ) {
-      try {
-        await ReactNativeDeviceActivity.requestAuthorization('individual');
-      } catch {
-        // TODO: 거부 시 안내 UX 추가 논의 필요
-        return;
-      }
-    }
-    setPickerVisible(true);
-  };
-
   return (
     <View style={styles.root}>
       <SafeAreaView edges={['top']} style={styles.safeArea}>
         <View style={styles.header}>
-          <Text style={styles.headerTitle}>잠긴 앱</Text>
+          <AppLogo />
           <View style={styles.headerActions}>
             <Pressable
               style={styles.iconButton}
@@ -73,30 +50,15 @@ export default function LockStatusScreen() {
             >
               <Icon name="bell" size={24} color={gray[800]} />
             </Pressable>
-            <Pressable style={styles.iconButton} hitSlop={8} onPress={handlePlusPress}>
+            <Pressable
+              style={styles.iconButton}
+              hitSlop={8}
+              onPress={() => router.push('/(lock)/select-apps')}
+            >
               <Icon name="plus" size={24} color={gray[800]} />
             </Pressable>
           </View>
         </View>
-
-        {pickerVisible && (
-          <ReactNativeDeviceActivity.DeviceActivitySelectionSheetView
-            style={{ width: 1, height: 1, position: 'absolute' }}
-            familyActivitySelection={familyActivitySelection}
-            onDismissRequest={() => {
-              setPickerVisible(false);
-              if (selectedAppCount > 0) {
-                router.push('/(lock)/goal-time');
-              }
-            }}
-            onSelectionChange={(event) => {
-              setFamilyActivitySelection(
-                event.nativeEvent.familyActivitySelection,
-                event.nativeEvent.applicationCount
-              );
-            }}
-          />
-        )}
 
         <View style={styles.ringSection}>
           <View style={{ width: RING_SIZE, height: RING_SIZE }}>
@@ -165,13 +127,23 @@ export default function LockStatusScreen() {
               </View>
               <View style={styles.appInfo}>
                 <Text style={styles.appName}>{app.name}</Text>
-                <Text style={styles.appUnlockCount}>n회 해제</Text>
+                <Text style={styles.appUnlockCount}>{app.unlockCount}회 해제</Text>
               </View>
               <Text style={styles.appUsedMinutes}>{app.usedMinutes}분 사용</Text>
               <Icon name="caretRight" size={16} color={gray[300]} />
             </Pressable>
           ))
         )}
+
+        <LoggingButton
+          eventName="Lock Status Add App Clicked"
+          properties={{ pageName: 'LockStatus', buttonName: '앱 추가하기' }}
+        >
+          <Pressable style={styles.addAppChip} onPress={() => router.push('/(lock)/select-apps')}>
+            <Icon name="plus" size={14} color="#FFFFFF" />
+            <Text style={styles.addAppChipText}>앱 추가하기</Text>
+          </Pressable>
+        </LoggingButton>
       </View>
     </View>
   );
@@ -191,10 +163,6 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-  },
-  headerTitle: {
-    ...typography.primary.title1B,
-    color: gray[900],
   },
   headerActions: {
     flexDirection: 'row',
@@ -304,7 +272,23 @@ const styles = StyleSheet.create({
     color: gray[400],
   },
   appUsedMinutes: {
-    ...typography.primary.body2R,
-    color: gray[400],
+    ...typography.primary.body1B,
+    color: gray[800],
+  },
+  addAppChip: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    alignSelf: 'center',
+    gap: spacing[4],
+    height: 40,
+    paddingHorizontal: spacing[16],
+    borderRadius: radius.full,
+    backgroundColor: green[300],
+    marginTop: spacing[20],
+    marginBottom: spacing[16],
+  },
+  addAppChipText: {
+    ...typography.primary.body2B,
+    color: '#FFFFFF',
   },
 });

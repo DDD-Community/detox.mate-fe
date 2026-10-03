@@ -1,78 +1,78 @@
 import { useRouter } from 'expo-router';
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { Button } from '../../components/Button';
 import { Icon } from '../../components/Icon';
-import { primitiveColors, radius, spacing, typography } from '../../lib/token';
+import { fontFamily, primitiveColors, radius, spacing, typography } from '../../lib/token';
 import { useLockStore } from '../../stores/lockStore';
-import { GOAL_TIME_OPTIONS_MINUTES } from './mockLockApps';
 
 const { gray, green } = primitiveColors;
 
-const CONFIRM_DELAY_MS = 250;
+const MIN_HOURS = 1;
+const MAX_HOURS = 12;
 
-const formatOptionLabel = (minutes: number) => `${minutes / 60}시간`;
-
-// FamilyActivitySelection 토큰은 어떤 앱인지 알 수 없는 암호화된 값이라
-// 이름 대신 선택된 개수만 제목에 쓴다.
-const buildSelectedAppsTitle = (selectedAppCount: number) => {
-  if (selectedAppCount === 0) return '선택된 앱 없음';
-  return `선택한 앱 ${selectedAppCount}개`;
-};
-
+// 실제 차단은 앱을 등록하는 시점(SelectAppsScreen)에 이미 걸린다.
+// 여기서는 앱 전체에 공통으로 적용되는 목표 시간(표시/추적용)만 저장한다.
 export default function GoalTimeScreen() {
   const router = useRouter();
-  const { selectedAppCount, targetMinutes, confirmTargetMinutes } = useLockStore();
-  const [pendingMinutes, setPendingMinutes] = useState<number | null>(null);
+  const { targetMinutes } = useLockStore();
+  const [hours, setHours] = useState(() =>
+    Math.min(Math.max(Math.round(targetMinutes / 60), MIN_HOURS), MAX_HOURS)
+  );
 
-  useEffect(() => {
-    if (pendingMinutes === null) return;
-
-    const timer = setTimeout(() => {
-      confirmTargetMinutes(pendingMinutes);
-      router.dismissTo('/(lock)/restricted-apps');
-    }, CONFIRM_DELAY_MS);
-
-    return () => clearTimeout(timer);
-  }, [pendingMinutes, confirmTargetMinutes, router]);
-
-  const selectedMinutes = pendingMinutes ?? targetMinutes;
+  const handleNext = () => {
+    router.push({ pathname: '/(lock)/goal-time-confirm', params: { hours: String(hours) } });
+  };
 
   return (
     <View style={styles.root}>
-      <SafeAreaView edges={['top']} style={styles.topArea}>
-        <View style={styles.topBar}>
-          <Pressable hitSlop={8} onPress={() => router.back()}>
-            <Icon name="caretLeft" size={22} color={gray[900]} />
-          </Pressable>
-          <Text style={styles.topBarTitle} numberOfLines={1}>
-            {buildSelectedAppsTitle(selectedAppCount)}
+      <SafeAreaView edges={['top']} style={styles.safeArea}>
+        <View style={styles.card}>
+          <Text style={styles.title}>목표 제한 시간을 설정해주세요.</Text>
+          <Text style={styles.subtitle}>
+            하루에 몇 시간으로 제한하고 싶나요?{'\n'}제한 시간 보다 더 사용하면 친구에게 알림이
+            가요.
           </Text>
-          <View style={{ width: 22 }} />
+
+          <View style={styles.stepperRow}>
+            <Pressable
+              hitSlop={8}
+              disabled={hours <= MIN_HOURS}
+              onPress={() => setHours((prev) => Math.max(prev - 1, MIN_HOURS))}
+            >
+              <Icon
+                name="minusCircle"
+                size={52}
+                weight="fill"
+                color={hours <= MIN_HOURS ? gray[100] : green[300]}
+              />
+            </Pressable>
+            <Text style={styles.stepperValue}>{hours} 시간</Text>
+            <Pressable
+              hitSlop={8}
+              disabled={hours >= MAX_HOURS}
+              onPress={() => setHours((prev) => Math.min(prev + 1, MAX_HOURS))}
+            >
+              <Icon
+                name="plusCircle"
+                size={52}
+                weight="fill"
+                color={hours >= MAX_HOURS ? gray[100] : green[300]}
+              />
+            </Pressable>
+          </View>
         </View>
+
+        <Button
+          label="다음"
+          variant="solid"
+          color="primary"
+          size="lg"
+          onPress={handleNext}
+          style={styles.confirmButton}
+        />
       </SafeAreaView>
-
-      <View style={styles.sheet}>
-        <View style={styles.sheetHandle} />
-        <Text style={styles.sheetTitle}>목표 제한 시간을 설정해주세요.</Text>
-
-        <View style={styles.optionList}>
-          {GOAL_TIME_OPTIONS_MINUTES.map((minutes) => {
-            const isSelected = selectedMinutes === minutes;
-            return (
-              <Pressable
-                key={minutes}
-                style={[styles.option, isSelected && styles.optionSelected]}
-                onPress={() => setPendingMinutes(minutes)}
-              >
-                <Text style={[styles.optionLabel, isSelected && styles.optionLabelSelected]}>
-                  {formatOptionLabel(minutes)}
-                </Text>
-              </Pressable>
-            );
-          })}
-        </View>
-      </View>
     </View>
   );
 }
@@ -80,63 +80,49 @@ export default function GoalTimeScreen() {
 const styles = StyleSheet.create({
   root: {
     flex: 1,
-    backgroundColor: gray[50],
+    backgroundColor: '#FFFFFF',
   },
-  topArea: {
-    backgroundColor: gray[50],
-  },
-  topBar: {
-    flexDirection: 'row',
-    alignItems: 'center',
+  safeArea: {
+    flex: 1,
     justifyContent: 'space-between',
     paddingHorizontal: spacing[16],
-    height: 44,
+    paddingBottom: spacing[16],
   },
-  topBarTitle: {
-    ...typography.primary.body1M,
-    color: gray[900],
-    flex: 1,
+  card: {
+    backgroundColor: green[50],
+    borderRadius: radius[16],
+    paddingVertical: spacing[32],
+    paddingHorizontal: spacing[16],
+    alignItems: 'center',
+    gap: spacing[32],
+    marginTop: spacing[32],
+  },
+  title: {
+    ...typography.primary.h3,
+    color: gray[800],
     textAlign: 'center',
   },
-  sheet: {
-    flex: 1,
-    backgroundColor: '#FFFFFF',
-    borderTopLeftRadius: radius[16],
-    borderTopRightRadius: radius[16],
-    paddingHorizontal: spacing[16],
-    paddingTop: spacing[12],
+  subtitle: {
+    ...typography.primary.body2R,
+    color: '#000000',
+    textAlign: 'center',
+    marginTop: spacing[16],
   },
-  sheetHandle: {
-    alignSelf: 'center',
-    width: 36,
-    height: 4,
-    borderRadius: radius.full,
-    backgroundColor: gray[100],
-    marginBottom: spacing[20],
-  },
-  sheetTitle: {
-    ...typography.primary.title2B,
-    color: gray[900],
-    marginBottom: spacing[16],
-  },
-  optionList: {
-    gap: spacing[12],
-  },
-  option: {
-    height: 56,
-    borderRadius: radius[16],
-    backgroundColor: green[75],
+  stepperRow: {
+    flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'center',
+    gap: spacing[24],
   },
-  optionSelected: {
-    backgroundColor: green[300],
+  stepperValue: {
+    fontFamily: fontFamily.primary.regular,
+    fontSize: 48,
+    fontWeight: '400',
+    lineHeight: 66,
+    color: '#000000',
+    minWidth: 140,
+    textAlign: 'center',
   },
-  optionLabel: {
-    ...typography.primary.body1M,
-    color: green[400],
-  },
-  optionLabelSelected: {
-    color: '#FFFFFF',
+  confirmButton: {
+    width: '100%',
   },
 });
