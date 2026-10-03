@@ -12,22 +12,13 @@ const { gray, brown, system, green } = primitiveColors;
 
 type UnregisterStep = 'confirm' | null;
 
-const formatDuration = (minutes: number) => {
-  const hours = Math.floor(minutes / 60);
-  const rest = minutes % 60;
-  if (hours === 0) return `${rest}분`;
-  if (rest === 0) return `${hours}시간`;
-  return `${hours}시간 ${rest}분`;
-};
-
 export default function AppDetailScreen() {
   const router = useRouter();
   const { appId, showUnregisterConfirm } = useLocalSearchParams<{
     appId: string;
     showUnregisterConfirm?: string;
   }>();
-  const { lockedApps, targetMinutes, unregisterApp, familyActivitySelectionsByAppId } =
-    useLockStore();
+  const { lockedApps, unregisterApp, familyActivitySelectionsByAppId } = useLockStore();
   const [unregisterStep, setUnregisterStep] = useState<UnregisterStep>(null);
 
   const app = lockedApps.find((candidate) => candidate.id === appId);
@@ -65,11 +56,6 @@ export default function AppDetailScreen() {
     router.back();
   };
 
-  const percentage =
-    app && targetMinutes > 0
-      ? Math.min(Math.round((app.usedMinutes / targetMinutes) * 100), 100)
-      : 0;
-
   return (
     <View style={styles.root}>
       <SafeAreaView edges={['top']} style={styles.safeArea}>
@@ -94,15 +80,9 @@ export default function AppDetailScreen() {
                 <Text style={styles.heroIconLetter}>{app.name.charAt(0)}</Text>
               </View>
               <Text style={styles.heroName}>{app.name}</Text>
-              <Text style={styles.heroUsed}>{formatDuration(app.usedMinutes)}</Text>
             </View>
 
             <View style={styles.card}>
-              <View style={styles.cardRow}>
-                <Text style={styles.cardLabel}>제한 시간 중</Text>
-                <Text style={styles.cardValue}>{percentage}%</Text>
-              </View>
-              <View style={styles.divider} />
               <View style={styles.cardRow}>
                 <Text style={styles.cardLabel}>잠금 해제</Text>
                 <Text style={styles.cardValue}>{app.unlockCount}회</Text>
@@ -208,11 +188,6 @@ const styles = StyleSheet.create({
     ...typography.primary.body1M,
     color: gray[500],
     marginTop: spacing[16],
-  },
-  heroUsed: {
-    ...typography.accent.h3,
-    color: gray[900],
-    marginTop: spacing[8],
   },
   card: {
     backgroundColor: green[50],

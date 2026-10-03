@@ -76,8 +76,9 @@ export default function UnlockDurationScreen() {
   const [stepperMinutes, setStepperMinutes] = useState(0);
   const [showStartedToast, setShowStartedToast] = useState(false);
 
-  const baseUsedMinutes = app?.usedMinutes ?? 0;
-  const previewUsedMinutes = baseUsedMinutes + stepperMinutes;
+  // 현재까지 실제 사용 분은 Apple이 메인 앱으로 넘겨주지 않아 알 수 없다 — 그래서
+  // "제한 시간 대비"가 아니라, 지금 추가로 풀어주는 시간만 기준으로 보여준다.
+  const previewUsedMinutes = stepperMinutes;
   const isOverLimit = previewUsedMinutes > targetMinutes;
   const progressRatio = targetMinutes > 0 ? Math.min(previewUsedMinutes / targetMinutes, 1) : 0;
   const relockTimeLabel = formatTimeLabel(new Date(Date.now() + stepperMinutes * 60000));
@@ -92,7 +93,7 @@ export default function UnlockDurationScreen() {
 
   const handleConfirm = () => {
     if (app) {
-      extendUsage(app.id, stepperMinutes);
+      extendUsage(app.id);
 
       const token = familyActivitySelectionsByAppId[app.id];
       if (token && stepperMinutes > 0) {

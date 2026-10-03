@@ -1,28 +1,14 @@
 import { useRouter } from 'expo-router';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import Svg, { Circle } from 'react-native-svg';
 import { AppLogo } from '../../components/AppLogo';
 import { Icon } from '../../components/Icon';
 import { LoggingButton } from '../../components/LoggingButton';
 import { primitiveColors, radius, spacing, typography } from '../../lib/token';
 import { useLockStore } from '../../stores/lockStore';
+import { ScreenTimeReportView } from '../../../modules/screen-time-report';
 
 const { gray, green, brown } = primitiveColors;
-
-const RING_SIZE = 220;
-const RING_STROKE = 16;
-const RING_RADIUS = (RING_SIZE - RING_STROKE) / 2;
-const RING_CIRCUMFERENCE = 2 * Math.PI * RING_RADIUS;
-
-const formatDuration = (minutes: number) => {
-  const clamped = Math.max(minutes, 0);
-  const hours = Math.floor(clamped / 60);
-  const rest = clamped % 60;
-  if (hours === 0) return `${rest}m`;
-  if (rest === 0) return `${hours}h`;
-  return `${hours}h ${rest}m`;
-};
 
 const formatTodayLabel = () => {
   const now = new Date();
@@ -31,11 +17,9 @@ const formatTodayLabel = () => {
 
 export default function LockStatusScreen() {
   const router = useRouter();
-  const { targetMinutes, lockedApps } = useLockStore();
+  const { targetMinutes, lockedApps, familyActivitySelectionsByAppId } = useLockStore();
 
-  const totalUsedMinutes = lockedApps.reduce((sum, app) => sum + app.usedMinutes, 0);
-  const remainingMinutes = Math.max(targetMinutes - totalUsedMinutes, 0);
-  const progress = targetMinutes > 0 ? Math.min(remainingMinutes / targetMinutes, 1) : 0;
+  const allSelectionTokens = Object.values(familyActivitySelectionsByAppId);
 
   return (
     <View style={styles.root}>
@@ -60,44 +44,19 @@ export default function LockStatusScreen() {
           </View>
         </View>
 
-        <View style={styles.ringSection}>
-          <View style={{ width: RING_SIZE, height: RING_SIZE }}>
-            <Svg width={RING_SIZE} height={RING_SIZE}>
-              <Circle
-                cx={RING_SIZE / 2}
-                cy={RING_SIZE / 2}
-                r={RING_RADIUS}
-                stroke={gray[100]}
-                strokeWidth={RING_STROKE}
-                fill="none"
-              />
-              <Circle
-                cx={RING_SIZE / 2}
-                cy={RING_SIZE / 2}
-                r={RING_RADIUS}
-                stroke={green[300]}
-                strokeWidth={RING_STROKE}
-                strokeLinecap="round"
-                fill="none"
-                strokeDasharray={`${RING_CIRCUMFERENCE} ${RING_CIRCUMFERENCE}`}
-                strokeDashoffset={RING_CIRCUMFERENCE * (1 - progress)}
-                transform={`rotate(-90 ${RING_SIZE / 2} ${RING_SIZE / 2})`}
-              />
-            </Svg>
-            <View style={styles.ringCenter}>
-              <Text style={styles.ringValue}>{formatDuration(remainingMinutes)}</Text>
-            </View>
+        {allSelectionTokens.length > 0 ? (
+          <View style={styles.reportSection}>
+            <ScreenTimeReportView
+              selectionTokens={allSelectionTokens}
+              style={styles.reportView}
+            />
           </View>
-          <Text style={styles.ringLabel}>오늘 성과</Text>
-        </View>
+        ) : null}
       </SafeAreaView>
 
       <View style={styles.sheet}>
         <Pressable style={styles.summaryRow} onPress={() => router.push('/(lock)/goal-time')}>
-          <Text style={styles.summaryText}>
-            제한 시간 {targetMinutes}분 중{'\n'}
-            {totalUsedMinutes}분 사용
-          </Text>
+          <Text style={styles.summaryText}>제한 시간 {targetMinutes}분</Text>
           <View style={styles.changeButton}>
             <Text style={styles.changeButtonText}>변경</Text>
             <Icon name="caretRight" size={16} color={gray[400]} />
@@ -129,7 +88,6 @@ export default function LockStatusScreen() {
                 <Text style={styles.appName}>{app.name}</Text>
                 <Text style={styles.appUnlockCount}>{app.unlockCount}회 해제</Text>
               </View>
-              <Text style={styles.appUsedMinutes}>{app.usedMinutes}분 사용</Text>
               <Icon name="caretRight" size={16} color={gray[300]} />
             </Pressable>
           ))
@@ -174,24 +132,13 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
-  ringSection: {
-    alignItems: 'center',
+  reportSection: {
     paddingTop: spacing[24],
     paddingBottom: spacing[32],
+    paddingHorizontal: spacing[16],
   },
-  ringCenter: {
-    ...StyleSheet.absoluteFill,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  ringValue: {
-    ...typography.accent.h2,
-    color: green[400],
-  },
-  ringLabel: {
-    ...typography.primary.body2R,
-    color: gray[500],
-    marginTop: spacing[12],
+  reportView: {
+    height: 220,
   },
   sheet: {
     flex: 1,
@@ -270,10 +217,6 @@ const styles = StyleSheet.create({
   appUnlockCount: {
     ...typography.primary.body3R,
     color: gray[400],
-  },
-  appUsedMinutes: {
-    ...typography.primary.body1B,
-    color: gray[800],
   },
   addAppChip: {
     flexDirection: 'row',

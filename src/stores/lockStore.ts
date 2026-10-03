@@ -3,7 +3,6 @@ import { create } from 'zustand';
 export interface LockedAppUsage {
   id: string;
   name: string;
-  usedMinutes: number;
   unlockCount: number;
   registeredAt: string;
 }
@@ -20,7 +19,7 @@ interface LockState {
   confirmTargetMinutes: (minutes: number) => void;
   unregisterApp: (id: string) => void;
   registerAppSelection: (appId: string, token: string, name: string) => void;
-  extendUsage: (id: string, minutes: number) => void;
+  extendUsage: (id: string) => void;
 }
 
 const DEFAULT_TARGET_MINUTES = 120;
@@ -32,25 +31,10 @@ const formatRegisteredDate = (date: Date) => {
   return `${year}.${month}.${day}`;
 };
 
-const createMockUsage = (id: string, name: string, index: number): LockedAppUsage => ({
-  id,
-  name,
-  usedMinutes: 20 + index * 6,
-  unlockCount: 3 + index * 2,
-  registeredAt: formatRegisteredDate(new Date()),
-});
-
-// 앱별 상세 지표(분/회/%) UI를 바로 확인할 수 있게, 목업 앱 2개를 이미 선택된 것으로 시드해둔다.
-// 실제 피커를 거치지 않은 mock 데이터라 familyActivitySelectionsByAppId엔 토큰이 없다 — 즉 실제로 잠겨있진 않다.
-const DEFAULT_LOCKED_APPS: LockedAppUsage[] = [
-  createMockUsage('instagram', 'Instagram', 0),
-  createMockUsage('youtube', 'YouTube', 1),
-];
-
 export const useLockStore = create<LockState>((set) => ({
-  selectedAppIds: DEFAULT_LOCKED_APPS.map((app) => app.id),
+  selectedAppIds: [],
   targetMinutes: DEFAULT_TARGET_MINUTES,
-  lockedApps: DEFAULT_LOCKED_APPS,
+  lockedApps: [],
   familyActivitySelectionsByAppId: {},
   setSelectedAppIds: (ids) => set({ selectedAppIds: ids }),
   confirmTargetMinutes: (minutes) => set({ targetMinutes: minutes }),
@@ -73,7 +57,10 @@ export const useLockStore = create<LockState>((set) => ({
 
       return {
         selectedAppIds: nextSelectedAppIds,
-        lockedApps: [...state.lockedApps, createMockUsage(appId, name, state.lockedApps.length)],
+        lockedApps: [
+          ...state.lockedApps,
+          { id: appId, name, unlockCount: 0, registeredAt: formatRegisteredDate(new Date()) },
+        ],
         familyActivitySelectionsByAppId: {
           ...state.familyActivitySelectionsByAppId,
           [appId]: token,
@@ -81,13 +68,12 @@ export const useLockStore = create<LockState>((set) => ({
       };
     }),
   // 10초 재고 타이머를 거쳐 실제로 해제 요청이 완료된 시점에 호출된다.
-  // 사용 시간을 늘리는 김에, 이제 실제로 추적하는 잠금 해제 횟수도 여기서 함께 올린다.
-  extendUsage: (id, minutes) =>
+  // 실제 사용 분은 Apple이 메인 앱으로 넘겨주지 않아 추적할 수 없고, 잠금 해제
+  // 횟수만 우리 앱이 직접 세는 값이라 여기서 올린다.
+  extendUsage: (id) =>
     set((state) => ({
       lockedApps: state.lockedApps.map((app) =>
-        app.id === id
-          ? { ...app, usedMinutes: app.usedMinutes + minutes, unlockCount: app.unlockCount + 1 }
-          : app
+        app.id === id ? { ...app, unlockCount: app.unlockCount + 1 } : app
       ),
     })),
 }));
