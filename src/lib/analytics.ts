@@ -145,6 +145,7 @@ export const ANALYTICS_EVENT_NAMES = [
   'Retro Photo Upload Select Clicked',
   'Retro Retro Submit Clicked',
   'Verify Complete Go Home Clicked',
+  'Lock Status Add App Clicked',
   'App Opened',
   'Login Completed',
   'Group Created',
