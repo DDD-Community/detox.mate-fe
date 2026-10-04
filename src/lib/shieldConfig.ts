@@ -2,11 +2,14 @@ import type { Action, ShieldActions, ShieldConfiguration } from 'react-native-de
 import { APP_UNLOCK_REQUEST_NOTIFICATION_TYPE } from './notificationTypes';
 
 export const SHIELD_CONFIGURATION: ShieldConfiguration = {
-  backgroundColor: { red: 11, green: 11, blue: 12 },
-  title: '지금 꼭 해제해야 하나요?',
+  backgroundColor: { red: 0, green: 0, blue: 0 },
+  title: '해제하면 친구에게 알림이 가요!\n지금 꼭 해제 해야하나요?',
   titleColor: { red: 255, green: 255, blue: 255 },
-  primaryButtonLabel: '지금 꼭 필요해요',
-  secondaryButtonLabel: '아니요, 안해도 괜찮아요!',
+  // 피그마 기준 버튼 배치: 위(강조, 초록) = "아니요", 아래(중립, 회색 텍스트) = "지금 꼭 필요해요".
+  primaryButtonLabel: '아니요, 안해도 괜찮아요',
+  primaryButtonBackgroundColor: { red: 90, green: 137, blue: 116 }, // green[300]
+  secondaryButtonLabel: '지금 꼭 필요해요',
+  secondaryButtonLabelColor: { red: 56, green: 62, blue: 73 }, // gray[800]
 };
 
 // openUrl로 앱을 강제로 여는 건 이 라이브러리가 지원하지 않는다(ShieldActionType에 없음).
@@ -22,6 +25,8 @@ const SEND_UNLOCK_NOTIFICATION_ACTION: Action = {
 };
 
 export const SHIELD_ACTIONS: ShieldActions = {
-  primary: { behavior: 'close', actions: [SEND_UNLOCK_NOTIFICATION_ACTION] },
-  secondary: { behavior: 'close' },
+  // "아니요, 안해도 괜찮아요" → 그냥 닫기만 한다.
+  primary: { behavior: 'close' },
+  // "지금 꼭 필요해요" → 친구에게 알림을 보내고 닫는다.
+  secondary: { behavior: 'close', actions: [SEND_UNLOCK_NOTIFICATION_ACTION] },
 };
