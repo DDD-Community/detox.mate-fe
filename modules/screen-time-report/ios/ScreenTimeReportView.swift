@@ -16,12 +16,42 @@ import FamilyControls
 import ManagedSettings
 import SwiftUI
 
-// 익스텐션(DeviceActivityReportExtension.swift)에 정의된 것과 반드시 같은 raw value여야 한다.
-// DeviceActivityReport 타입 자체가 iOS 16+ 전용이라(DeviceActivity 프레임워크의 다른
+// 익스텐션(DeviceActivityReportExtension.swift 등)에 정의된 것과 반드시 같은 raw value여야
+// 한다. DeviceActivityReport 타입 자체가 iOS 16+ 전용이라(DeviceActivity 프레임워크의 다른
 // API는 대부분 15+), 여기만 16.0으로 가드한다.
 @available(iOS 16.0, *)
 extension DeviceActivityReport.Context {
   static let totalActivity = Self("DetoxTotalActivity")
+  static let usageSummary = Self("DetoxUsageSummary")
+  static let appRow = Self("DetoxAppRow")
+  static let appBreakdown = Self("DetoxAppBreakdown")
+  static let appHeaderLabel = Self("DetoxAppHeaderLabel")
+  static let appHero = Self("DetoxAppHero")
+  static let appPercent = Self("DetoxAppPercent")
+}
+
+/// JS의 `reportStyle` prop과 1:1로 매핑된다.
+enum ReportStyle: String {
+  case total
+  case summary
+  case appRow
+  case breakdown
+  case headerLabel
+  case hero
+  case percent
+
+  @available(iOS 16.0, *)
+  var context: DeviceActivityReport.Context {
+    switch self {
+    case .total: return .totalActivity
+    case .summary: return .usageSummary
+    case .appRow: return .appRow
+    case .breakdown: return .appBreakdown
+    case .headerLabel: return .appHeaderLabel
+    case .hero: return .appHero
+    case .percent: return .appPercent
+    }
+  }
 }
 
 @available(iOS 15.0, *)
@@ -49,8 +79,16 @@ class ScreenTimeReportNativeView: ExpoView {
     didSet { updateReport() }
   }
 
+  var reportStyle: ReportStyle = .total {
+    didSet { updateReport() }
+  }
+
   required init(appContext: AppContext? = nil) {
     super.init(appContext: appContext)
+    // DeviceActivityReport 내부 콘텐츠가 우리가 RN에서 잡아준 높이보다 커지면(시스템이
+    // 자체적으로 여백/리스트 스타일을 덧붙이는 경우가 있다), 잘라내지 않으면 바로 위/아래
+    // RN 요소 위로 글자가 번져 보인다. 무조건 이 뷰 경계 안으로만 그리게 강제한다.
+    clipsToBounds = true
   }
 
   private func updateReport() {
@@ -67,11 +105,12 @@ class ScreenTimeReportNativeView: ExpoView {
       categories: selection.categoryTokens,
       webDomains: selection.webDomainTokens
     )
-    let report = DeviceActivityReport(.totalActivity, filter: filter)
+    let report = DeviceActivityReport(reportStyle.context, filter: filter)
     let controller = UIHostingController(rootView: report)
 
     controller.view.translatesAutoresizingMaskIntoConstraints = false
     controller.view.backgroundColor = .clear
+    controller.view.clipsToBounds = true
     addSubview(controller.view)
     NSLayoutConstraint.activate([
       controller.view.topAnchor.constraint(equalTo: topAnchor),

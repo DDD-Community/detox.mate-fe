@@ -19,5 +19,11 @@ extension DeviceActivityReport.Context {
 struct DetoxDeviceActivityReportExtension: DeviceActivityReportExtension {
   var body: some DeviceActivityReportScene {
     TotalActivityReportScene()
+    SummaryReportScene()
+    AppRowReportScene()
+    BreakdownReportScene()
+    HeaderLabelReportScene()
+    AppHeroReportScene()
+    AppPercentReportScene()
   }
 }

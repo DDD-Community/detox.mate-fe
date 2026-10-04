@@ -9,6 +9,9 @@ public class ScreenTimeReportModule: Module {
       Prop("selectionTokens") { (view: ScreenTimeReportNativeView, tokens: [String]) in
         view.selectionTokens = tokens
       }
+      Prop("reportStyle") { (view: ScreenTimeReportNativeView, style: String) in
+        view.reportStyle = ReportStyle(rawValue: style) ?? .total
+      }
     }
 
     // iOS는 앱이 스스로 프로세스를 종료(exit)하는 걸 허용하지 않는다(애플 심사 가이드라인 위반).
