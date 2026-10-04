@@ -1,4 +1,4 @@
-import { useRouter } from 'expo-router';
+import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useState } from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -16,18 +16,28 @@ const MAX_HOURS = 12;
 // 여기서는 앱 전체에 공통으로 적용되는 목표 시간(표시/추적용)만 저장한다.
 export default function GoalTimeScreen() {
   const router = useRouter();
+  const { mode } = useLocalSearchParams<{ mode?: string }>();
   const { targetMinutes } = useLockStore();
   const [hours, setHours] = useState(() =>
     Math.min(Math.max(Math.round(targetMinutes / 60), MIN_HOURS), MAX_HOURS)
   );
 
   const handleNext = () => {
-    router.push({ pathname: '/(lock)/goal-time-confirm', params: { hours: String(hours) } });
+    router.push({
+      pathname: '/(lock)/goal-time-confirm',
+      params: { hours: String(hours), ...(mode ? { mode } : {}) },
+    });
   };
 
   return (
     <View style={styles.root}>
       <SafeAreaView edges={['top']} style={styles.safeArea}>
+        <View style={styles.header}>
+          <Pressable hitSlop={8} onPress={() => router.back()}>
+            <Icon name="caretLeft" size={22} color={gray[900]} />
+          </Pressable>
+        </View>
+
         <View style={styles.card}>
           <Text style={styles.title}>목표 제한 시간을 설정해주세요.</Text>
           <Text style={styles.subtitle}>
@@ -87,6 +97,10 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     paddingHorizontal: spacing[16],
     paddingBottom: spacing[16],
+  },
+  header: {
+    height: 44,
+    justifyContent: 'center',
   },
   card: {
     backgroundColor: green[50],
