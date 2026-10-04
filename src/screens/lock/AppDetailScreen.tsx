@@ -6,11 +6,21 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { Icon } from '../../components/Icon';
 import { primitiveColors, radius, spacing, typography } from '../../lib/token';
 import { useLockStore } from '../../stores/lockStore';
+import { getSevenDayAverageMinutes } from '../../lib/screenTimeHistory';
+import { syncTargetMinutes } from '../../lib/sharedDisplayConfig';
 import { ScreenTimeReportView } from '../../../modules/screen-time-report';
 
 const { gray, brown, system, green } = primitiveColors;
 
 type UnregisterStep = 'confirm' | null;
+
+const formatDuration = (minutes: number) => {
+  const hours = Math.floor(minutes / 60);
+  const rest = minutes % 60;
+  if (hours === 0) return `${rest}분`;
+  if (rest === 0) return `${hours}시간`;
+  return `${hours}시간 ${rest}분`;
+};
 
 export default function AppDetailScreen() {
   const router = useRouter();
@@ -18,11 +28,24 @@ export default function AppDetailScreen() {
     appId: string;
     showUnregisterConfirm?: string;
   }>();
-  const { lockedApps, unregisterApp, familyActivitySelectionsByAppId } = useLockStore();
+  const { lockedApps, targetMinutes, unregisterApp, familyActivitySelectionsByAppId } =
+    useLockStore();
   const [unregisterStep, setUnregisterStep] = useState<UnregisterStep>(null);
+  const [sevenDayAverageMinutes, setSevenDayAverageMinutes] = useState<number | null>(null);
 
   const app = lockedApps.find((candidate) => candidate.id === appId);
   const realSelectionToken = app ? familyActivitySelectionsByAppId[app.id] : undefined;
+
+  // 최근 7일 평균(10분 단위 근사치). 아직 데이터가 안 쌓였으면 null — 가짜 숫자를 보여주지 않는다.
+  useEffect(() => {
+    if (!appId) return;
+    getSevenDayAverageMinutes(appId).then(setSevenDayAverageMinutes);
+  }, [appId]);
+
+  // 오늘 사용 비율(%)은 사용 시간을 아는 리포트 익스텐션이 계산해 그린다 — 제한 시간만 넘겨준다.
+  useEffect(() => {
+    syncTargetMinutes(targetMinutes);
+  }, [targetMinutes]);
 
   // 10초 재고 타이머 → 사유 선택 화면(각각 별도 라우트)을 거쳐 돌아오면
   // 마지막 확인 모달을 이어서 띄운다.
@@ -63,28 +86,41 @@ export default function AppDetailScreen() {
           <Pressable hitSlop={8} onPress={() => router.back()}>
             <Icon name="caretLeft" size={22} color={gray[900]} />
           </Pressable>
-          {app ? (
-            <>
-              <View style={styles.headerIcon}>
-                <Text style={styles.headerIconLetter}>{app.name.charAt(0)}</Text>
-              </View>
-              <Text style={styles.headerTitle}>{app.name}</Text>
-            </>
+          {app && realSelectionToken ? (
+            <ScreenTimeReportView
+              selectionTokens={[realSelectionToken]}
+              reportStyle="headerLabel"
+              style={styles.headerLabelView}
+            />
           ) : null}
         </View>
 
         {app ? (
           <>
-            <View style={styles.hero}>
-              <View style={styles.heroIcon}>
-                <Text style={styles.heroIconLetter}>{app.name.charAt(0)}</Text>
-              </View>
-              <Text style={styles.heroName}>{app.name}</Text>
-            </View>
+            {realSelectionToken ? (
+              <ScreenTimeReportView
+                selectionTokens={[realSelectionToken]}
+                reportStyle="hero"
+                style={styles.heroReportView}
+              />
+            ) : null}
 
             <View style={styles.card}>
+              {realSelectionToken ? (
+                <>
+                  <View style={styles.cardRow}>
+                    <Text style={styles.cardLabel}>오늘 제한 시간 중</Text>
+                    <ScreenTimeReportView
+                      selectionTokens={[realSelectionToken]}
+                      reportStyle="percent"
+                      style={styles.percentReportView}
+                    />
+                  </View>
+                  <View style={styles.divider} />
+                </>
+              ) : null}
               <View style={styles.cardRow}>
-                <Text style={styles.cardLabel}>잠금 해제</Text>
+                <Text style={styles.cardLabel}>오늘 잠금 해제</Text>
                 <Text style={styles.cardValue}>{app.unlockCount}회</Text>
               </View>
               <View style={styles.divider} />
@@ -92,17 +128,16 @@ export default function AppDetailScreen() {
                 <Text style={styles.cardLabel}>등록일</Text>
                 <Text style={styles.cardValue}>{app.registeredAt}</Text>
               </View>
+              {sevenDayAverageMinutes !== null ? (
+                <>
+                  <View style={styles.divider} />
+                  <View style={styles.cardRow}>
+                    <Text style={styles.cardLabel}>최근 7일 평균</Text>
+                    <Text style={styles.cardValue}>{formatDuration(sevenDayAverageMinutes)}</Text>
+                  </View>
+                </>
+              ) : null}
             </View>
-
-            {realSelectionToken ? (
-              <View style={styles.realReportSection}>
-                <Text style={styles.realReportLabel}>실제 스크린타임</Text>
-                <ScreenTimeReportView
-                  selectionTokens={[realSelectionToken]}
-                  style={styles.realReportView}
-                />
-              </View>
-            ) : null}
 
             <Pressable hitSlop={8} style={styles.unregisterButton} onPress={handleUnregisterPress}>
               <Text style={styles.unregisterLabel}>등록 해제</Text>
@@ -151,54 +186,30 @@ const styles = StyleSheet.create({
     gap: spacing[8],
     height: 54,
   },
-  headerIcon: {
-    width: 24,
-    height: 24,
-    borderRadius: radius[8],
-    backgroundColor: gray[100],
-    alignItems: 'center',
-    justifyContent: 'center',
+  headerLabelView: {
+    flex: 1,
+    height: 32,
   },
-  headerIconLetter: {
-    ...typography.primary.body3B,
-    color: gray[500],
-  },
-  headerTitle: {
-    ...typography.primary.body1M,
-    color: gray[900],
-  },
-  hero: {
-    alignItems: 'center',
-    paddingTop: spacing[48],
-    paddingBottom: spacing[32],
-  },
-  heroIcon: {
-    width: 96,
-    height: 96,
-    borderRadius: radius[16],
-    backgroundColor: gray[900],
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  heroIconLetter: {
-    ...typography.accent.h2,
-    color: '#FFFFFF',
-  },
-  heroName: {
-    ...typography.primary.body1M,
-    color: gray[500],
-    marginTop: spacing[16],
+  // 피그마: 아이콘 83 + 12 + 이름 26 + 4 + 사용 시간 32 = 157.
+  heroReportView: {
+    height: 157,
+    marginTop: spacing[48],
+    marginBottom: spacing[32],
   },
   card: {
     backgroundColor: green[50],
-    borderRadius: radius[16],
+    borderRadius: 26,
     paddingHorizontal: spacing[16],
   },
   cardRow: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    height: 56,
+    height: 52,
+  },
+  percentReportView: {
+    width: 96,
+    height: 52,
   },
   cardLabel: {
     ...typography.primary.body1R,
@@ -209,19 +220,8 @@ const styles = StyleSheet.create({
     color: gray[900],
   },
   divider: {
-    height: 1,
-    backgroundColor: gray[50],
-  },
-  realReportSection: {
-    marginTop: spacing[16],
-  },
-  realReportLabel: {
-    ...typography.primary.body3R,
-    color: gray[400],
-    marginBottom: spacing[8],
-  },
-  realReportView: {
-    height: 240,
+    height: StyleSheet.hairlineWidth,
+    backgroundColor: '#E6E6E6',
   },
   unregisterButton: {
     alignSelf: 'flex-start',
