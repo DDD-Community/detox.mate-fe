@@ -6,8 +6,23 @@ import * as ReactNativeDeviceActivity from 'react-native-device-activity';
  * 대신 해주는 함수를 제공한다 — 그 결과로 나오는 새 토큰 + 개수 메타데이터만 받는다.
  */
 
-const hasAnyItem = (metadata: { applicationCount: number; categoryCount: number; webDomainCount: number }) =>
-  metadata.applicationCount + metadata.categoryCount + metadata.webDomainCount > 0;
+// 네이티브 Record의 필드 이름이 `webdomainCount`(소문자 d)인데 라이브러리의 TS 타입은
+// `webDomainCount`라고 적혀 있다. 타입대로 읽으면 undefined → 합계가 NaN이 되어 "항목 있음"
+// 판정이 항상 거짓이 된다(= 차집합/교집합이 늘 "비어있음"으로 나와 앱이 등록되지 않거나,
+// 기존 앱이 전부 겹치지 않는 것으로 보여 해제되던 버그의 원인). 두 이름을 모두 받는다.
+type SelectionCounts = {
+  applicationCount?: number;
+  categoryCount?: number;
+  webdomainCount?: number;
+  webDomainCount?: number;
+};
+
+const totalItemCount = (metadata: SelectionCounts) =>
+  (metadata.applicationCount ?? 0) +
+  (metadata.categoryCount ?? 0) +
+  (metadata.webdomainCount ?? metadata.webDomainCount ?? 0);
+
+const hasAnyItem = (metadata: SelectionCounts) => totalItemCount(metadata) > 0;
 
 /**
  * 여러 개의 FamilyActivitySelection 토큰을 하나로 합친다. 앱 선택 피커를 다시 열 때
@@ -60,5 +75,5 @@ export const getSelectionItemCount = (token: string): number => {
     activitySelectionToken: token,
   });
   if (!result) return 0;
-  return result.applicationCount + result.categoryCount + result.webDomainCount;
+  return totalItemCount(result);
 };

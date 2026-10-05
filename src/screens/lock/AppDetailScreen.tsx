@@ -7,6 +7,7 @@ import { Icon } from '../../components/Icon';
 import { primitiveColors, radius, spacing, typography } from '../../lib/token';
 import { useLockStore } from '../../stores/lockStore';
 import { getSevenDayAverageMinutes } from '../../lib/screenTimeHistory';
+import { unregisterAppShield } from '../../lib/shieldConfig';
 import { syncTargetMinutes } from '../../lib/sharedDisplayConfig';
 import { ScreenTimeReportView } from '../../../modules/screen-time-report';
 
@@ -72,8 +73,14 @@ export default function AppDetailScreen() {
         { activitySelectionToken: token },
         'app-unregistered'
       );
+      // 잠깐 해제 중이던 앱이면 화이트리스트에도 남아있으니 같이 정리한다.
+      ReactNativeDeviceActivity.removeSelectionFromWhitelistAndUpdateBlock(
+        { activitySelectionToken: token },
+        'app-unregistered'
+      );
     }
 
+    unregisterAppShield(app.id);
     unregisterApp(app.id);
     setUnregisterStep(null);
     router.back();
