@@ -1,20 +1,24 @@
-import { useRouter } from 'expo-router';
+import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useState } from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 import * as ReactNativeDeviceActivity from 'react-native-device-activity';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
+import { ScreenTimeReportView } from '../../../modules/screen-time-report';
 import { Button } from '../../components/Button';
 import { Icon } from '../../components/Icon';
-import { primitiveColors, radius, spacing, typography } from '../../lib/token';
+import { fontFamily, primitiveColors, radius, spacing, typography } from '../../lib/token';
 import { useLockStore } from '../../stores/lockStore';
 
-const { gray, green, system } = primitiveColors;
+const { gray, green } = primitiveColors;
 
 const STEP_MINUTES = 5;
 const MIN_MINUTES = 0;
 const MAX_MINUTES = 30;
 const STARTED_TOAST_DELAY_MS = 1800;
+// Apple의 DeviceActivitySchedule 최소 길이.
+const MIN_SCHEDULE_MINUTES = 15;
+const RELOCK_EVENT_NAME = 'relock';
 
 const formatTimeLabel = (date: Date) => {
   const hours = String(date.getHours()).padStart(2, '0');
@@ -40,28 +44,80 @@ const unlockAppForMinutes = (token: string, minutes: number) => {
   );
 
   const activityName = `temp-unlock-${Date.now()}`;
-  const start = new Date();
-  const end = new Date(start.getTime() + minutes * 60000);
+  const now = new Date();
+  const relockAt = new Date(now.getTime() + minutes * 60000);
+
+  const removeFromWhitelist = {
+    type: 'removeSelectionFromWhitelist' as const,
+    familyActivitySelection: { activitySelectionToken: token },
+  };
 
   ReactNativeDeviceActivity.configureActions({
     activityName,
     callbackName: 'intervalDidEnd',
-    actions: [
-      {
-        type: 'removeSelectionFromWhitelist',
-        familyActivitySelection: { activitySelectionToken: token },
-      },
-    ],
+    actions: [removeFromWhitelist],
   });
 
-  ReactNativeDeviceActivity.startMonitoring(
-    activityName,
-    {
-      intervalStart: toDateComponents(start),
-      intervalEnd: toDateComponents(end),
-      repeats: false,
-    },
-    []
+  const relockImmediately = (reason: unknown) => {
+    // 예약이 끝까지 실패하면 앱이 영영 안 잠기므로, 조용히 삼키지 말고 즉시 다시 잠근다.
+    console.warn('[unlock] 재잠금 예약 실패 — 즉시 다시 잠급니다', reason);
+    ReactNativeDeviceActivity.removeSelectionFromWhitelistAndUpdateBlock(
+      { activitySelectionToken: token },
+      'temp-unlock-schedule-failed'
+    );
+  };
+
+  // DeviceActivity 스케줄은 "길이"가 최소 15분이어야 한다(Apple 제약). 15분 미만 해제는
+  // 스케줄 끝(intervalEnd)을 재잠금 시각에 맞추고, 시작(intervalStart)을 15분 앞으로 당겨
+  // 길이만 15분으로 맞춘다 — 이미 시작된 구간이라 지금 바로 모니터링되고 끝에서 intervalDidEnd가
+  // 불린다. 자정을 넘기는 경우는 DateComponents(시:분:초)로 표현이 안 돼서 아래 폴백으로 간다.
+  const windowStart = new Date(relockAt.getTime() - MIN_SCHEDULE_MINUTES * 60000);
+  const crossesMidnight =
+    windowStart.getDate() !== relockAt.getDate() || relockAt.getDate() !== now.getDate();
+
+  const startShifted = () =>
+    ReactNativeDeviceActivity.startMonitoring(
+      activityName,
+      {
+        intervalStart: toDateComponents(minutes < MIN_SCHEDULE_MINUTES ? windowStart : now),
+        intervalEnd: toDateComponents(relockAt),
+        repeats: false,
+      },
+      []
+    );
+
+  // 폴백: 스케줄은 15분 이상(당일 끝까지)으로 잡고, 15분 미만이면 "N분 사용" 임계값 이벤트로
+  // 먼저 재잠금한다(= 이 경우는 시계 시간이 아니라 실제 사용 시간 기준).
+  const startFallback = () => {
+    const end = new Date(
+      Math.min(
+        now.getTime() + Math.max(minutes, MIN_SCHEDULE_MINUTES) * 60000,
+        new Date(now.getFullYear(), now.getMonth(), now.getDate(), 23, 59, 59).getTime()
+      )
+    );
+    const events: ReactNativeDeviceActivity.DeviceActivityEvent[] = [];
+    if (minutes < MIN_SCHEDULE_MINUTES) {
+      ReactNativeDeviceActivity.configureActions({
+        activityName,
+        callbackName: 'eventDidReachThreshold',
+        eventName: RELOCK_EVENT_NAME,
+        actions: [removeFromWhitelist],
+      });
+      events.push({
+        eventName: RELOCK_EVENT_NAME,
+        familyActivitySelection: token,
+        threshold: { minute: minutes },
+      });
+    }
+    return ReactNativeDeviceActivity.startMonitoring(
+      activityName,
+      { intervalStart: toDateComponents(now), intervalEnd: toDateComponents(end), repeats: false },
+      events
+    );
+  };
+
+  (crossesMidnight ? startFallback() : startShifted().catch(startFallback)).catch(
+    relockImmediately
   );
 };
 
@@ -70,17 +126,20 @@ const unlockAppForMinutes = (token: string, minutes: number) => {
  */
 export default function UnlockDurationScreen() {
   const router = useRouter();
-  const { lockedApps, targetMinutes, extendUsage, familyActivitySelectionsByAppId } =
-    useLockStore();
-  const app = lockedApps[0];
+  // 쉴드 알림에서 넘어온, 지금 해제하려는 등록 앱의 id.
+  const { appId } = useLocalSearchParams<{ appId?: string }>();
+  const { lockedApps, extendUsage, familyActivitySelectionsByAppId } = useLockStore();
+  // appId를 모르는 경로(프로토타입 쉴드 등)는 등록 앱이 하나뿐일 때만 그 앱으로 본다 —
+  // 여러 개인데 첫 번째로 가정하면 엉뚱한 앱이 풀린다.
+  const app = appId
+    ? lockedApps.find((candidate) => candidate.id === appId)
+    : lockedApps.length === 1
+      ? lockedApps[0]
+      : undefined;
+  const selectionToken = app ? familyActivitySelectionsByAppId[app.id] : undefined;
   const [stepperMinutes, setStepperMinutes] = useState(0);
   const [showStartedToast, setShowStartedToast] = useState(false);
 
-  // 현재까지 실제 사용 분은 Apple이 메인 앱으로 넘겨주지 않아 알 수 없다 — 그래서
-  // "제한 시간 대비"가 아니라, 지금 추가로 풀어주는 시간만 기준으로 보여준다.
-  const previewUsedMinutes = stepperMinutes;
-  const isOverLimit = previewUsedMinutes > targetMinutes;
-  const progressRatio = targetMinutes > 0 ? Math.min(previewUsedMinutes / targetMinutes, 1) : 0;
   const relockTimeLabel = formatTimeLabel(new Date(Date.now() + stepperMinutes * 60000));
 
   const handleDecrement = () => {
@@ -122,37 +181,27 @@ export default function UnlockDurationScreen() {
         )}
 
         <View style={styles.content}>
+          {selectionToken ? (
+            // 앱 이름은 토큰으로만 그릴 수 있어서 네이티브 라벨로 보여준다("Instagram,").
+            <ScreenTimeReportView
+              selectionTokens={[selectionToken]}
+              reportStyle="nameCenter"
+              style={styles.nameView}
+            />
+          ) : null}
           <Text style={styles.title}>
-            {app?.name ?? '이 앱'}, {relockTimeLabel}에 다시 잠겨요.
+            {selectionToken ? '' : '이 앱, '}
+            {relockTimeLabel} 에 다시 잠겨요.
           </Text>
 
-          <View
-            style={[styles.progressTrack, isOverLimit && styles.progressTrackOverLimit]}
-          >
-            <View
-              style={[
-                styles.progressFill,
-                {
-                  width: `${progressRatio * 100}%`,
-                  backgroundColor: isOverLimit ? system.red.opacity100 : green[300],
-                },
-              ]}
+          {selectionToken ? (
+            // 이 앱의 오늘 사용 시간은 리포트 익스텐션만 알고 있어서, 막대와 라벨을 거기서 그린다.
+            <ScreenTimeReportView
+              selectionTokens={[selectionToken]}
+              reportStyle="usageBar"
+              style={styles.usageBarView}
             />
-          </View>
-          <View style={styles.progressLabels}>
-            <Text style={styles.usedLabel}>
-              사용 시간{' '}
-              <Text style={[styles.usedValue, isOverLimit && styles.usedValueOverLimit]}>
-                {previewUsedMinutes}분
-              </Text>
-            </Text>
-            <Text style={styles.limitLabel}>
-              제한 시간{' '}
-              <Text style={isOverLimit ? styles.limitValueOverLimit : styles.limitValue}>
-                {targetMinutes}분
-              </Text>
-            </Text>
-          </View>
+          ) : null}
         </View>
 
         <View style={styles.stepperRow}>
@@ -195,7 +244,7 @@ export default function UnlockDurationScreen() {
 const styles = StyleSheet.create({
   root: {
     flex: 1,
-    backgroundColor: gray[50],
+    backgroundColor: '#FFFFFF',
   },
   safeArea: {
     flex: 1,
@@ -226,53 +275,21 @@ const styles = StyleSheet.create({
   },
   content: {
     paddingTop: spacing[32],
-    gap: spacing[12],
+  },
+  nameView: {
+    height: 32,
   },
   title: {
-    ...typography.primary.title1B,
-    color: gray[900],
-    textAlign: 'center',
+    fontFamily: fontFamily.primary.regular,
+    fontSize: 24,
+    lineHeight: 32,
+    letterSpacing: -0.48,
+    color: gray[800],
+    textAlign: 'left',
   },
-  progressTrack: {
-    height: 8,
-    borderRadius: radius.full,
-    backgroundColor: 'rgba(90, 137, 116, 0.3)',
-    overflow: 'hidden',
-    marginTop: spacing[8],
-  },
-  progressTrackOverLimit: {
-    backgroundColor: system.red.opacity10,
-  },
-  progressFill: {
-    height: '100%',
-    borderRadius: radius.full,
-  },
-  progressLabels: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-  },
-  usedLabel: {
-    ...typography.primary.body3B,
-    color: gray[900],
-  },
-  usedValue: {
-    ...typography.primary.body3B,
-    color: green[300],
-  },
-  usedValueOverLimit: {
-    color: system.red.opacity100,
-  },
-  limitLabel: {
-    ...typography.primary.body3R,
-    color: gray[600],
-  },
-  limitValue: {
-    ...typography.primary.body3R,
-    color: green[300],
-  },
-  limitValueOverLimit: {
-    ...typography.primary.body3R,
-    color: system.red.opacity100,
+  usageBarView: {
+    height: 36,
+    marginTop: spacing[24],
   },
   stepperRow: {
     flex: 1,
