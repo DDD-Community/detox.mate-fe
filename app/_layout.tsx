@@ -5,7 +5,7 @@ import * as SplashScreen from 'expo-splash-screen';
 import { useEffect, type ComponentType } from 'react';
 import * as ReactNativeDeviceActivity from 'react-native-device-activity';
 import { getGroup } from '../src/api/generated/group/group';
-import { SHIELD_ACTIONS, SHIELD_CONFIGURATION } from '../src/lib/shieldConfig';
+import { registerAppShield, SHIELD_ACTIONS, SHIELD_CONFIGURATION } from '../src/lib/shieldConfig';
 import { APP_UNLOCK_REQUEST_NOTIFICATION_TYPE } from '../src/lib/notificationTypes';
 import { ensureDailyUsageMonitoring } from '../src/lib/screenTimeMonitoring';
 import { syncScreenTimeHistory } from '../src/lib/screenTimeHistory';
@@ -43,6 +43,11 @@ export default function RootLayout() {
     // 최근 7일 평균 계산용 일일 사용량 모니터링을 보장하고, 어제까지의 기록을 로컬에 반영한다.
     const { lockedApps, familyActivitySelectionsByAppId, targetMinutes } = useLockStore.getState();
     syncTargetMinutes(targetMinutes);
+    // 앱별 쉴드 설정(어떤 앱의 해제 요청인지 알림에 담기)도 이미 등록된 앱 전부에 다시 보장한다.
+    for (const app of lockedApps) {
+      const token = familyActivitySelectionsByAppId[app.id];
+      if (token) registerAppShield(app.id, token);
+    }
     ensureDailyUsageMonitoring(lockedApps, familyActivitySelectionsByAppId);
     syncScreenTimeHistory(lockedApps.map((app) => app.id));
   }, []);
@@ -60,7 +65,12 @@ export default function RootLayout() {
         | Record<string, unknown>
         | undefined;
       if (data?.type === APP_UNLOCK_REQUEST_NOTIFICATION_TYPE) {
-        router.push('/(lock)/unlock-timer');
+        // 어떤 앱의 해제 요청인지는 앱별 쉴드 설정이 userInfo에 심어둔 appId로 안다(shieldConfig.ts).
+        const appId = typeof data.appId === 'string' ? data.appId : undefined;
+        router.push({
+          pathname: '/(lock)/unlock-timer',
+          params: appId ? { appId } : {},
+        });
         return;
       }
 

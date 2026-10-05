@@ -1,4 +1,4 @@
-import { useRouter } from 'expo-router';
+import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useState } from 'react';
 import { StyleSheet, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -15,6 +15,7 @@ import { TenSecondCountdownScreen } from './TenSecondCountdownScreen';
  */
 export default function UnlockTimerScreen() {
   const router = useRouter();
+  const { appId } = useLocalSearchParams<{ appId?: string }>();
   const [notifiedFriends] = useState(() => pickRandomFriendNames(3));
 
   return (
@@ -25,7 +26,12 @@ export default function UnlockTimerScreen() {
           notifiedFriends={notifiedFriends}
           cancelLabel="안해도 될 것 같아요"
           onCancel={minimizeApp}
-          onComplete={() => router.replace('/(lock)/unlock-duration')}
+          onComplete={() =>
+            router.replace({
+              pathname: '/(lock)/unlock-duration',
+              params: appId ? { appId } : {},
+            })
+          }
         />
       </SafeAreaView>
     </View>
