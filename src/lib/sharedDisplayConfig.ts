@@ -12,3 +12,12 @@ export const syncTargetMinutes = (minutes: number) => {
     // 네이티브 모듈이 없는 환경(시뮬레이터 등)에선 조용히 넘어간다 — 퍼센트만 "-"로 보인다.
   }
 };
+
+/** [임시] 샘플 갤러리(ShowcaseReportScene)가 그릴 섹션 번호. */
+export const setShowcaseSection = (section: number) => {
+  try {
+    ReactNativeDeviceActivity.userDefaultsSet('detox.showcaseSection', section);
+  } catch {
+    // 네이티브 모듈이 없는 환경에선 무시.
+  }
+};

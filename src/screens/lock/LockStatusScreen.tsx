@@ -113,6 +113,14 @@ export default function LockStatusScreen() {
             <Text style={styles.addAppChipText}>앱 추가하기</Text>
           </Pressable>
         </LoggingButton>
+
+        {/* [임시] 리포트 UI 커스텀 범위 확인용 — 확인 후 삭제 */}
+        <Pressable
+          style={styles.tempShowcaseButton}
+          onPress={() => router.push('/(lock)/ui-showcase')}
+        >
+          <Text style={styles.tempShowcaseButtonText}>[임시] UI 커스텀 샘플 보기</Text>
+        </Pressable>
       </ScrollView>
     </View>
   );
@@ -223,6 +231,17 @@ const styles = StyleSheet.create({
     position: 'absolute',
     left: ROW_TEXT_LEFT,
     top: 35,
+  },
+  tempShowcaseButton: {
+    alignSelf: 'center',
+    paddingVertical: spacing[8],
+    paddingHorizontal: spacing[12],
+    marginBottom: spacing[24],
+  },
+  tempShowcaseButtonText: {
+    ...typography.primary.body3R,
+    color: gray[400],
+    textDecorationLine: 'underline',
   },
   addAppChip: {
     flexDirection: 'row',
