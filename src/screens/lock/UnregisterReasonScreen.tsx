@@ -8,6 +8,7 @@ import { Icon } from '../../components/Icon';
 import { primitiveColors, radius, spacing, typography } from '../../lib/token';
 import { useLockStore } from '../../stores/lockStore';
 import { UNREGISTER_REASONS } from './mockLockApps';
+import { ScreenTimeReportView } from '../../../modules/screen-time-report';
 
 const { gray, green } = primitiveColors;
 
@@ -18,10 +19,11 @@ const { gray, green } = primitiveColors;
 export default function UnregisterReasonScreen() {
   const router = useRouter();
   const { appId } = useLocalSearchParams<{ appId: string }>();
-  const { lockedApps } = useLockStore();
+  const { lockedApps, familyActivitySelectionsByAppId } = useLockStore();
   const [selectedReason, setSelectedReason] = useState<string | null>(null);
 
   const app = lockedApps.find((candidate) => candidate.id === appId);
+  const selectionToken = app ? familyActivitySelectionsByAppId[app.id] : undefined;
 
   const handleConfirm = () => {
     router.dismissTo({
@@ -37,7 +39,14 @@ export default function UnregisterReasonScreen() {
           <Pressable hitSlop={8} onPress={() => router.back()}>
             <Icon name="caretLeft" size={22} color={gray[900]} />
           </Pressable>
-          {app ? <Text style={styles.headerTitle}>{app.name}</Text> : null}
+          {selectionToken ? (
+            // 앱 이름은 토큰으로만 그릴 수 있어서 상세 화면 헤더와 같은 네이티브 라벨을 쓴다.
+            <ScreenTimeReportView
+              selectionTokens={[selectionToken]}
+              reportStyle="headerLabel"
+              style={styles.headerLabelView}
+            />
+          ) : null}
         </View>
 
         <Text style={styles.title}>왜 등록 해제하시나요?</Text>
@@ -89,9 +98,9 @@ const styles = StyleSheet.create({
     gap: spacing[8],
     height: 54,
   },
-  headerTitle: {
-    ...typography.primary.body1M,
-    color: gray[900],
+  headerLabelView: {
+    flex: 1,
+    height: 32,
   },
   title: {
     ...typography.primary.title2B,
