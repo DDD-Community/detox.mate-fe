@@ -20,13 +20,15 @@ private let nativeIconPoint: CGFloat = 28
 struct AppIconView: View {
   let token: ApplicationToken
   let size: CGFloat
+  /// 모서리 반경 = size * cornerRatio (0.5면 원).
+  var cornerRatio: CGFloat = 0.25
 
   var body: some View {
     Label(token)
       .labelStyle(.iconOnly)
       .scaleEffect(size / nativeIconPoint)
       .frame(width: size, height: size)
-      .clipShape(RoundedRectangle(cornerRadius: size * 0.25, style: .continuous))
+      .clipShape(RoundedRectangle(cornerRadius: size * cornerRatio, style: .continuous))
   }
 }
 

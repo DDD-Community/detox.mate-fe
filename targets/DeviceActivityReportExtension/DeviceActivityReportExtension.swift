@@ -25,5 +25,7 @@ struct DetoxDeviceActivityReportExtension: DeviceActivityReportExtension {
     HeaderLabelReportScene()
     AppHeroReportScene()
     AppPercentReportScene()
+    ShowcaseReportScene()
+    UsageBarReportScene()
   }
 }

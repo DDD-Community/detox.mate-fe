@@ -18,8 +18,12 @@ struct UsageSummaryView: View {
   let data: TotalActivityData
 
   var body: some View {
-    Text(formatSummaryDuration(data.totalDuration))
-      .font(.system(size: 24, weight: .medium))
-      .foregroundColor(.black)
+    // 왼쪽 정렬(피그마). Text만 두면 리포트 뷰 안에서 가운데로 놓인다.
+    HStack {
+      Text(formatSummaryDuration(data.totalDuration))
+        .font(.system(size: 24, weight: .medium))
+        .foregroundColor(.black)
+      Spacer(minLength: 0)
+    }
   }
 }

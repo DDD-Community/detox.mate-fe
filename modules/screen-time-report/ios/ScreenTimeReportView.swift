@@ -28,6 +28,8 @@ extension DeviceActivityReport.Context {
   static let appHeaderLabel = Self("DetoxAppHeaderLabel")
   static let appHero = Self("DetoxAppHero")
   static let appPercent = Self("DetoxAppPercent")
+  static let showcase = Self("DetoxShowcase")
+  static let usageBar = Self("DetoxUsageBar")
 }
 
 /// JS의 `reportStyle` prop과 1:1로 매핑된다.
@@ -39,9 +41,13 @@ enum ReportStyle: String {
   case headerLabel
   case hero
   case percent
+  case showcase
+  case nameCenter
+  case usageBar
 
+  /// nameCenter는 익스텐션을 거치지 않고 메인 앱에서 직접 그린다(nil).
   @available(iOS 16.0, *)
-  var context: DeviceActivityReport.Context {
+  var context: DeviceActivityReport.Context? {
     switch self {
     case .total: return .totalActivity
     case .summary: return .usageSummary
@@ -50,6 +56,9 @@ enum ReportStyle: String {
     case .headerLabel: return .appHeaderLabel
     case .hero: return .appHero
     case .percent: return .appPercent
+    case .showcase: return .showcase
+    case .nameCenter: return nil
+    case .usageBar: return .usageBar
     }
   }
 }
@@ -70,6 +79,26 @@ private func decodeSelection(from tokens: [String]) -> FamilyActivitySelection {
   }
 
   return combined
+}
+
+/// 해제 시간 설정 화면 제목 첫 줄 앱 이름(피그마 title3 24/Regular). 앱 이름은
+/// Label(token)으로만 그릴 수 있는데, 메인 앱에서도 그릴 수 있어서 리포트 익스텐션(사용 기록
+/// 집계가 끝나야 뜨고, 오늘 기록이 없는 앱은 안 뜬다)을 거치지 않고 바로 그린다.
+@available(iOS 16.0, *)
+struct HostAppNameView: View {
+  let token: ApplicationToken
+
+  var body: some View {
+    // 가운데 정렬: Label(token)의 제목 뷰는 글자 폭을 레이아웃에 알려주지 않아서(fixedSize()를 걸면
+    // 폭이 실제보다 작게 잡혀 글자가 잘렸다) 폭을 줄이는 방식은 못 쓴다. 대신 뷰 전체 폭을 유지한 채
+    // 텍스트 정렬만 가운데로 지정한다 — 이 속성이 이 뷰에 먹히지 않으면 왼쪽 정렬로 보일 뿐 잘리진 않는다.
+    Label(token)
+      .labelStyle(.titleOnly)
+      .font(.system(size: 24))
+      .foregroundColor(Color(red: 0x38 / 255, green: 0x3E / 255, blue: 0x49 / 255))
+      .multilineTextAlignment(.center)
+      .frame(maxWidth: .infinity, alignment: .center)
+  }
 }
 
 class ScreenTimeReportNativeView: ExpoView {
@@ -105,8 +134,15 @@ class ScreenTimeReportNativeView: ExpoView {
       categories: selection.categoryTokens,
       webDomains: selection.webDomainTokens
     )
-    let report = DeviceActivityReport(reportStyle.context, filter: filter)
-    let controller = UIHostingController(rootView: report)
+    let controller: UIHostingController<AnyView>
+    if let context = reportStyle.context {
+      controller = UIHostingController(
+        rootView: AnyView(DeviceActivityReport(context, filter: filter)))
+    } else if let token = selection.applicationTokens.first {
+      controller = UIHostingController(rootView: AnyView(HostAppNameView(token: token)))
+    } else {
+      return
+    }
 
     controller.view.translatesAutoresizingMaskIntoConstraints = false
     controller.view.backgroundColor = .clear
