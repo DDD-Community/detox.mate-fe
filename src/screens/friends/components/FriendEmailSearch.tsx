@@ -21,7 +21,7 @@ import { useAuthQueryScope } from '../../../lib/query/authQueryScope';
 import { fontFamily } from '../../../lib/token/primitive/fonts';
 import { useSendFriendRequest } from '../hooks/useSendFriendRequest';
 import { searchQueryOptions } from '../utils/friendsQueryOptions';
-import { FriendsQueryFeedback } from './FriendsQuerySection';
+import { FriendsErrorFeedback } from './FriendsErrorFeedback';
 import searchAvatar from '@assets/avatars/friend-search.svg';
 
 const { regular, bold } = fontFamily.primary;
@@ -129,7 +129,7 @@ function SearchQuery({
     }
   }, [failure]);
   const feedback = failure ? (
-    <FriendsQueryFeedback error={failure} onRetry={() => void result.refetch()} />
+    <FriendsErrorFeedback error={failure} onRetry={() => void result.refetch()} />
   ) : null;
   if (failure && !requested) {
     return missingEmail(failure) ? empty : feedback;
@@ -149,11 +149,13 @@ function SearchQuery({
 
 export function FriendEmailSearch({
   email,
+  onRefresh,
   onReceived,
   renderFriend,
   empty,
 }: {
   email: string;
+  onRefresh: () => Promise<void>;
   onReceived: () => void;
   renderFriend: (userId: number) => React.ReactNode;
   empty: React.ReactNode;
@@ -193,7 +195,17 @@ export function FriendEmailSearch({
           }}
           shouldLogError={(error) => !missingEmail(error)}
           fallback={(error, retry) =>
-            missingEmail(error) ? empty : <FriendsQueryFeedback error={error} onRetry={retry} />
+            missingEmail(error) ? (
+              empty
+            ) : (
+              <FriendsErrorFeedback
+                error={error}
+                onRetry={async () => {
+                  await onRefresh();
+                  retry();
+                }}
+              />
+            )
           }
         >
           <Suspense

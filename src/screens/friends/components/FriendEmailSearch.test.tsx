@@ -70,6 +70,7 @@ async function mount(client: QueryClient, strict = false) {
           { client },
           createElement(FriendEmailSearch, {
             email: 'search@example.com',
+            onRefresh: async () => {},
             onReceived: vi.fn(),
             renderFriend: () => null,
             empty: createElement('span', {}, '일치하는 메일이 없어요.'),

@@ -1,8 +1,8 @@
-import { useSuspenseQuery } from '@tanstack/react-query';
+import { QueryErrorResetBoundary, useSuspenseQuery } from '@tanstack/react-query';
 import { Image } from 'expo-image';
 import * as SecureStore from 'expo-secure-store';
 import { router } from 'expo-router';
-import { useEffect, useState } from 'react';
+import { Suspense, useEffect, useState } from 'react';
 import {
   ActivityIndicator,
   Alert,
@@ -28,7 +28,8 @@ import {
 import { friendsQueryOptions, receivedQueryOptions } from '../utils/friendsQueryOptions';
 import { useDebouncedEmail } from '../hooks/useDebouncedEmail';
 import { FriendEmailSearch } from '../components/FriendEmailSearch';
-import { FriendsQueryFeedback, FriendsQuerySection } from '../components/FriendsQuerySection';
+import { FriendsErrorFeedback } from '../components/FriendsErrorFeedback';
+import { ErrorBoundary } from '../../../components/AppErrorBoundary/AppErrorBoundary';
 import { useFriendsListController } from '../hooks/useFriendsListController';
 import {
   filterFriendsByName,
@@ -142,7 +143,7 @@ function ReceivedRequestsSection({
   return (
     <>
       {result.error ? (
-        <FriendsQueryFeedback
+        <FriendsErrorFeedback
           error={result.error}
           onRetry={() => {
             void result.refetch();
@@ -226,7 +227,7 @@ function FriendsSection({
   return (
     <>
       {result.error ? (
-        <FriendsQueryFeedback
+        <FriendsErrorFeedback
           error={result.error}
           onRetry={() => {
             void result.refetch();
@@ -309,7 +310,7 @@ export default function FriendsScreen() {
     scope.userId === null ? (
       <View style={styles.root}>
         {restorationError ? (
-          <FriendsQueryFeedback
+          <FriendsErrorFeedback
             error={restorationError}
             onRetry={() => setAttempt((value) => value + 1)}
           />
@@ -340,7 +341,6 @@ export default function FriendsScreen() {
 }
 
 function FriendsContent() {
-  const scope = useAuthQueryScope();
   const {
     refreshing,
     error,
@@ -466,69 +466,90 @@ function FriendsContent() {
           </Pressable>
         ) : null}
 
-        {!searching ? (
-          <FriendsQuerySection label="받은 요청" queryKey={receivedQueryOptions(scope).queryKey}>
-            <ReceivedRequestsSection
-              pendingActionId={pendingActionId}
-              onAccept={acceptRequest}
-              onReject={rejectRequest}
-            />
-          </FriendsQuerySection>
-        ) : null}
+        <QueryErrorResetBoundary>
+          {({ reset }) => (
+            <ErrorBoundary
+              onReset={reset}
+              fallback={(failure, retry) => (
+                <FriendsErrorFeedback
+                  error={failure}
+                  onRetry={async () => {
+                    await refresh();
+                    retry();
+                  }}
+                />
+              )}
+            >
+              <Suspense
+                fallback={
+                  <ActivityIndicator
+                    color={green}
+                    style={{ padding: 24 }}
+                    accessibilityLabel="친구 목록 불러오는 중"
+                  />
+                }
+              >
+                {!searching ? (
+                  <ReceivedRequestsSection
+                    pendingActionId={pendingActionId}
+                    onAccept={acceptRequest}
+                    onReject={rejectRequest}
+                  />
+                ) : null}
 
-        {emailSearch ? (
-          email ? (
-            <FriendEmailSearch
-              key={email}
-              email={email}
-              onReceived={() => {
-                trackButtonClick(
-                  'Friends Received Requests Open Clicked',
-                  'Friends',
-                  '받은 요청 확인'
-                );
-                setQuery('');
-                Keyboard.dismiss();
-              }}
-              renderFriend={(userId) => (
-                <FriendsQuerySection
-                  label="친구 목록"
-                  queryKey={friendsQueryOptions(scope).queryKey}
-                >
+                {emailSearch ? (
+                  email ? (
+                    <FriendEmailSearch
+                      key={email}
+                      email={email}
+                      onRefresh={refresh}
+                      onReceived={() => {
+                        trackButtonClick(
+                          'Friends Received Requests Open Clicked',
+                          'Friends',
+                          '받은 요청 확인'
+                        );
+                        setQuery('');
+                        Keyboard.dismiss();
+                      }}
+                      renderFriend={(userId) => (
+                        <FriendsSection
+                          userId={userId}
+                          query={query}
+                          pendingActionId={pendingActionId}
+                          onSelectDelete={setDeleteTarget}
+                        />
+                      )}
+                      empty={
+                        <View style={styles.searchEmpty}>
+                          <Text style={styles.emptyTitle}>일치하는 메일이 없어요.</Text>
+                          <Text style={styles.emptyDescription}>
+                            프로필을 공유해서 초대해보세요.
+                          </Text>
+                          <ShareButton />
+                        </View>
+                      }
+                    />
+                  ) : valid ? (
+                    <ActivityIndicator
+                      style={{ padding: 24 }}
+                      color={green}
+                      accessibilityLabel="이메일 검색 중"
+                    />
+                  ) : (
+                    <Text style={styles.emailHint}>친구의 전체 이메일 주소를 입력해주세요.</Text>
+                  )
+                ) : (
                   <FriendsSection
-                    userId={userId}
                     query={query}
                     pendingActionId={pendingActionId}
                     onSelectDelete={setDeleteTarget}
                   />
-                </FriendsQuerySection>
-              )}
-              empty={
-                <View style={styles.searchEmpty}>
-                  <Text style={styles.emptyTitle}>일치하는 메일이 없어요.</Text>
-                  <Text style={styles.emptyDescription}>프로필을 공유해서 초대해보세요.</Text>
-                  <ShareButton />
-                </View>
-              }
-            />
-          ) : valid ? (
-            <ActivityIndicator
-              style={{ padding: 24 }}
-              color={green}
-              accessibilityLabel="이메일 검색 중"
-            />
-          ) : (
-            <Text style={styles.emailHint}>친구의 전체 이메일 주소를 입력해주세요.</Text>
-          )
-        ) : (
-          <FriendsQuerySection label="친구 목록" queryKey={friendsQueryOptions(scope).queryKey}>
-            <FriendsSection
-              query={query}
-              pendingActionId={pendingActionId}
-              onSelectDelete={setDeleteTarget}
-            />
-          </FriendsQuerySection>
-        )}
+                )}
+              </Suspense>
+            </ErrorBoundary>
+          )}
+        </QueryErrorResetBoundary>
 
         {!searching ? (
           <View style={styles.shareFooter}>
