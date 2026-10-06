@@ -27,16 +27,16 @@ import { goBackOrReplace } from '@/lib/navigation';
 import { fontFamily } from '@/lib/token/primitive/fonts';
 
 const assets = {
-  avatar: require('../../../assets/friends/avatar.svg'),
-  avatarSmall: require('../../../assets/friends/avatar-small.svg'),
-  back: require('../../../assets/friends/back.svg'),
-  search: require('../../../assets/friends/search.svg'),
-  share: require('../../../assets/friends/share.svg'),
-  export: require('../../../assets/friends/export.svg'),
-  close: require('../../../assets/friends/close.svg'),
-  feed: require('../../../assets/friends/feed.svg'),
-  apps: require('../../../assets/friends/apps.svg'),
-  me: require('../../../assets/friends/me.svg'),
+  avatar: require('../../../assets/avatars/default.svg'),
+  avatarSmall: require('../../../assets/avatars/default-small.svg'),
+  back: require('../../../assets/icons/back.svg'),
+  search: require('../../../assets/icons/search.svg'),
+  share: require('../../../assets/icons/share.svg'),
+  export: require('../../../assets/icons/export.svg'),
+  close: require('../../../assets/icons/close.svg'),
+  feed: require('../../../assets/icons/feed.svg'),
+  apps: require('../../../assets/icons/apps.svg'),
+  me: require('../../../assets/icons/me.svg'),
 };
 const { regular, medium, bold } = fontFamily.primary;
 const green = '#5a8974';
