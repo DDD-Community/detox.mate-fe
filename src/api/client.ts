@@ -1,6 +1,4 @@
-import { withAuthStorage } from '../lib/authStorage';
-import { getAuthSessionRevision, useAuthSessionStore } from '../stores/authSessionStore';
-import axios, { AxiosError, CanceledError, isCancel, type AxiosRequestConfig } from 'axios';
+import axios, { AxiosError, isCancel, type AxiosRequestConfig } from 'axios';
 import { router } from 'expo-router';
 import * as SecureStore from 'expo-secure-store';
 import { env } from '../config/env';
@@ -24,21 +22,13 @@ const isPublicAuthRequest = (url?: string) =>
   Boolean(url && PUBLIC_AUTH_PATHS.some((path) => url.includes(path)));
 
 let refreshPromise: Promise<unknown> | null = null;
-let refreshRevision: number | undefined;
 
 apiClient.interceptors.request.use(async (config) => {
   if (config.skipAuth || isPublicAuthRequest(config.url)) {
     return config;
   }
 
-  config._authSessionRevision ??= getAuthSessionRevision();
-  if (config._authSessionRevision > 0 && !useAuthSessionStore.getState().ready) {
-    throw new CanceledError('로그인 세션을 변경하고 있습니다.');
-  }
-  const accessToken = await withAuthStorage(() => SecureStore.getItemAsync('accessTokenKey'));
-  if (config._authSessionRevision !== getAuthSessionRevision()) {
-    throw new CanceledError('로그인 세션이 변경되었습니다.');
-  }
+  const accessToken = await SecureStore.getItemAsync('accessTokenKey');
   if (accessToken) {
     config.headers['Authorization'] = `Bearer ${accessToken}`;
   }
@@ -74,12 +64,6 @@ apiClient.interceptors.response.use(
   async (error: AxiosError) => {
     if (isCancel(error)) return Promise.reject(error);
     const originalRequest = error.config;
-    if (
-      originalRequest?._authSessionRevision != null &&
-      originalRequest._authSessionRevision !== getAuthSessionRevision()
-    ) {
-      return Promise.reject(normalizeError(error));
-    }
     const canRefresh =
       error.response?.status === 401 &&
       originalRequest &&
@@ -90,31 +74,16 @@ apiClient.interceptors.response.use(
     if (canRefresh) {
       originalRequest._retry = true;
       try {
-        const revision = getAuthSessionRevision();
-        if (!refreshPromise || refreshRevision !== revision) {
-          const nextRefresh = refreshAccessToken().finally(() => {
-            if (refreshPromise === nextRefresh) refreshPromise = null;
-          });
-          refreshRevision = revision;
-          refreshPromise = nextRefresh;
-        }
+        refreshPromise ??= refreshAccessToken().finally(() => {
+          refreshPromise = null;
+        });
         await refreshPromise;
-        if (originalRequest._authSessionRevision !== getAuthSessionRevision()) {
-          return Promise.reject(normalizeError(error));
-        }
         return apiClient(originalRequest);
       } catch (refreshError) {
-        if (originalRequest._authSessionRevision !== getAuthSessionRevision()) {
-          return Promise.reject(normalizeError(refreshError));
-        }
         const appError = normalizeError(refreshError);
         logError(appError, { scope: 'auth.refresh', operation: 'refreshAccessToken' });
-        const clearing = clearAuthSession();
-        const clearedRevision = getAuthSessionRevision();
-        await clearing;
-        if (clearedRevision === getAuthSessionRevision()) {
-          router.replace({ pathname: '/login', params: { reason: 'sessionExpired' } });
-        }
+        await clearAuthSession();
+        router.replace({ pathname: '/login', params: { reason: 'sessionExpired' } });
         return Promise.reject(appError);
       }
     }

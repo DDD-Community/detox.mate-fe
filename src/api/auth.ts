@@ -1,9 +1,4 @@
-import { withAuthStorage } from '../lib/authStorage';
-import {
-  beginAuthTransition,
-  completeAuthTransition,
-  getAuthSessionRevision,
-} from '../stores/authSessionStore';
+import { beginAuthTransition, completeAuthTransition } from '../stores/authSessionStore';
 import { KakaoOAuthToken, login } from '@react-native-seoul/kakao-login';
 import * as AppleAuthentication from 'expo-apple-authentication';
 import { sha256 } from '@noble/hashes/sha256';
@@ -44,33 +39,19 @@ const persistLoginResponse = async (
     throw new Error('로그인 응답이 올바르지 않습니다.');
   }
 
-  const { id, accessToken, refreshToken } = data;
   const transition = beginAuthTransition();
-  const ensureCurrentTransition = () => {
-    if (transition !== getAuthSessionRevision()) {
-      throw AppError({ type: 'auth', message: '로그인 세션이 변경되었습니다.' });
-    }
-  };
   try {
-    await withAuthStorage(async () => {
-      ensureCurrentTransition();
-      await SecureStore.setItemAsync('accessTokenKey', accessToken);
-      ensureCurrentTransition();
-      await SecureStore.setItemAsync('refreshTokenKey', refreshToken);
-      ensureCurrentTransition();
-      await SecureStore.setItemAsync('currentUserId', String(id));
-      ensureCurrentTransition();
+    await SecureStore.setItemAsync('accessTokenKey', data.accessToken);
+    await SecureStore.setItemAsync('refreshTokenKey', data.refreshToken);
+    await SecureStore.setItemAsync('currentUserId', String(data.id));
 
-      // 테스트 계정 여부를 기록한다. 일반 로그인(카카오/애플)에서는 반드시 제거해
-      // 실제 유저가 이전 테스트 세션의 플래그를 물려받지 않도록 한다.
-      if (options.isTestAccount) {
-        await SecureStore.setItemAsync(IS_TEST_ACCOUNT_KEY, 'true');
-      } else {
-        await SecureStore.deleteItemAsync(IS_TEST_ACCOUNT_KEY);
-      }
-
-      ensureCurrentTransition();
-    });
+    // 테스트 계정 여부를 기록한다. 일반 로그인(카카오/애플)에서는 반드시 제거해
+    // 실제 유저가 이전 테스트 세션의 플래그를 물려받지 않도록 한다.
+    if (options.isTestAccount) {
+      await SecureStore.setItemAsync(IS_TEST_ACCOUNT_KEY, 'true');
+    } else {
+      await SecureStore.deleteItemAsync(IS_TEST_ACCOUNT_KEY);
+    }
     completeAuthTransition(transition, data.id);
   } catch (error) {
     completeAuthTransition(transition, null);
@@ -154,12 +135,9 @@ export async function loginWithTestUser(testUserKey: string): Promise<OAuthLogin
 }
 
 export async function refreshAccessToken(): Promise<ServerResponseTokens> {
-  const revision = getAuthSessionRevision();
-  const refreshToken = await withAuthStorage(() => SecureStore.getItemAsync('refreshTokenKey'));
-  if (revision !== getAuthSessionRevision()) {
-    throw AppError({ type: 'auth', message: '로그인 세션이 변경되었습니다.' });
-  }
+  const refreshToken = await SecureStore.getItemAsync('refreshTokenKey');
   if (!refreshToken) {
+    await clearAuthSession();
     throw AppError({ type: 'auth', message: '다시 로그인해 주세요.' });
   }
 
@@ -180,19 +158,12 @@ export async function refreshAccessToken(): Promise<ServerResponseTokens> {
       throw AppError({ type: 'auth', message: '토큰 재발급 응답이 올바르지 않습니다.' });
     }
 
-    await withAuthStorage(async () => {
-      if (revision !== getAuthSessionRevision()) {
-        throw AppError({ type: 'auth', message: '로그인 세션이 변경되었습니다.' });
-      }
-      await SecureStore.setItemAsync('accessTokenKey', accessToken);
-      if (revision !== getAuthSessionRevision()) {
-        throw AppError({ type: 'auth', message: '로그인 세션이 변경되었습니다.' });
-      }
-      await SecureStore.setItemAsync('refreshTokenKey', updatedRefreshToken);
-    });
+    await SecureStore.setItemAsync('accessTokenKey', accessToken);
+    await SecureStore.setItemAsync('refreshTokenKey', updatedRefreshToken);
 
     return data;
   } catch (error) {
+    await clearAuthSession();
     const appError = normalizeError(error);
     throw AppError({
       type: 'auth',
@@ -205,27 +176,24 @@ export async function refreshAccessToken(): Promise<ServerResponseTokens> {
 export async function clearAuthSession(): Promise<void> {
   const transition = beginAuthTransition();
   completeAuthTransition(transition, null);
-  await withAuthStorage(async () => {
-    for (const key of ['refreshTokenKey', 'accessTokenKey', 'currentUserId', IS_TEST_ACCOUNT_KEY]) {
-      if (transition !== getAuthSessionRevision()) return;
-      await SecureStore.deleteItemAsync(key);
-    }
-  });
+  await SecureStore.deleteItemAsync('refreshTokenKey');
+  await SecureStore.deleteItemAsync('accessTokenKey');
+  await SecureStore.deleteItemAsync('currentUserId');
+  await SecureStore.deleteItemAsync(IS_TEST_ACCOUNT_KEY);
 }
 
 // 현재 로그인 세션이 테스트 계정인지 여부. 스크린타임 OCR 검증 우회 등
 // 심사용 분기에서 사용한다.
 export async function isTestAccountSession(): Promise<boolean> {
-  const value = await withAuthStorage(() => SecureStore.getItemAsync(IS_TEST_ACCOUNT_KEY));
+  const value = await SecureStore.getItemAsync(IS_TEST_ACCOUNT_KEY);
   return value === 'true';
 }
 
 export async function logout(): Promise<void> {
-  const revision = getAuthSessionRevision();
-  const refreshToken = await withAuthStorage(() => SecureStore.getItemAsync('refreshTokenKey'));
+  const refreshToken = await SecureStore.getItemAsync('refreshTokenKey');
 
   try {
-    if (revision === getAuthSessionRevision() && refreshToken) {
+    if (refreshToken) {
       await apiClient.post(
         '/auth/logout',
         {
@@ -240,6 +208,6 @@ export async function logout(): Promise<void> {
   } catch {
     // 서버 로그아웃 실패와 무관하게 기기 내 세션은 정리한다.
   } finally {
-    if (revision === getAuthSessionRevision()) await clearAuthSession();
+    await clearAuthSession();
   }
 }

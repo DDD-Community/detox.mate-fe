@@ -1,4 +1,3 @@
-import { withAuthStorage } from '../lib/authStorage';
 import * as SecureStore from 'expo-secure-store';
 import { create } from 'zustand';
 
@@ -32,8 +31,6 @@ export function completeAuthTransition(transition: number, userId: number | null
   });
 }
 
-export const getAuthSessionRevision = () => sessionId;
-
 export function isCurrentAuthScope(scope: AuthScope): boolean {
   return useAuthSessionStore.getState().scope === scope;
 }
@@ -44,12 +41,10 @@ export function restoreAuthSession(): Promise<void> {
   restoration ??= (async () => {
     const transition = sessionId;
     try {
-      const [storedId, accessToken] = await withAuthStorage(() =>
-        Promise.all([
-          SecureStore.getItemAsync('currentUserId'),
-          SecureStore.getItemAsync('accessTokenKey'),
-        ])
-      );
+      const [storedId, accessToken] = await Promise.all([
+        SecureStore.getItemAsync('currentUserId'),
+        SecureStore.getItemAsync('accessTokenKey'),
+      ]);
       if (useAuthSessionStore.getState().ready) return;
       const id = storedId == null ? NaN : Number(storedId);
       completeAuthTransition(

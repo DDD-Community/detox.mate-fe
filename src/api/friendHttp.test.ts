@@ -2,7 +2,6 @@ import { AxiosError, type AxiosAdapter, type InternalAxiosRequestConfig } from '
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import apiClient from './client';
-import { beginAuthTransition, completeAuthTransition } from '../stores/authSessionStore';
 import * as api from './query-generated/friend';
 
 const mocks = vi.hoisted(() => ({
@@ -51,7 +50,6 @@ const useAdapter = (adapter: AxiosAdapter) => {
 
 beforeEach(() => {
   vi.resetAllMocks();
-  completeAuthTransition(beginAuthTransition(), 1);
   requests.length = 0;
   mocks.getItemAsync.mockResolvedValue('fixture-access-token');
 });
@@ -172,63 +170,6 @@ describe('공통 HTTP 인터셉터를 통한 생성 친구 클라이언트 호�
     refreshing.resolve();
     await expect(reading).resolves.toEqual([[], []]);
     expect(mocks.refreshAccessToken).toHaveBeenCalledOnce();
-    expect(mocks.clearAuthSession).not.toHaveBeenCalled();
-    expect(mocks.replace).not.toHaveBeenCalled();
-  });
-
-  it('이전 세션의 401 응답이 늦게 도착해도 새 로그인 토큰을 갱신하거나 세션을 삭제하지 않는다', async () => {
-    let rejectOld!: () => void;
-    const started = Promise.withResolvers<void>();
-    useAdapter(
-      (config) =>
-        new Promise((_, reject) => {
-          rejectOld = () =>
-            reject(
-              new AxiosError(
-                'Unauthorized',
-                'ERR_BAD_REQUEST',
-                config,
-                undefined,
-                response(config, {}, 401)
-              )
-            );
-          started.resolve();
-        })
-    );
-    const reading = api.getFriends();
-    const rejection = expect(reading).rejects.toMatchObject({ type: 'auth' });
-    await started.promise;
-    completeAuthTransition(beginAuthTransition(), 2);
-    rejectOld();
-    await rejection;
-    expect(mocks.refreshAccessToken).not.toHaveBeenCalled();
-    expect(mocks.clearAuthSession).not.toHaveBeenCalled();
-    expect(mocks.replace).not.toHaveBeenCalled();
-  });
-
-  it('새 로그인 정보를 저장하는 중 이전 토큰 갱신이 실패해도 새 세션을 삭제하지 않는다', async () => {
-    const started = Promise.withResolvers<void>();
-    const refreshing = Promise.withResolvers<void>();
-    mocks.refreshAccessToken.mockImplementation(() => {
-      started.resolve();
-      return refreshing.promise;
-    });
-    useAdapter(async (config) => {
-      throw new AxiosError(
-        'Unauthorized',
-        'ERR_BAD_REQUEST',
-        config,
-        undefined,
-        response(config, {}, 401)
-      );
-    });
-    const rejection = expect(api.getFriends()).rejects.toMatchObject({ isAppError: true });
-    await started.promise;
-    // 새 로그인 토큰을 저장하는 동안 세션 범위는 일시적으로 null이다.
-    const next = beginAuthTransition();
-    refreshing.reject(new Error('old refresh failed'));
-    await rejection;
-    completeAuthTransition(next, 2);
     expect(mocks.clearAuthSession).not.toHaveBeenCalled();
     expect(mocks.replace).not.toHaveBeenCalled();
   });
