@@ -189,24 +189,13 @@ export function FriendEmailSearch({
     <QueryErrorResetBoundary>
       {({ reset }) => (
         <ErrorBoundary
-          onReset={() => {
+          onReset={async () => {
+            await onRefresh();
             reset();
-            void client.resetQueries({ queryKey: options.queryKey, exact: true });
+            await client.resetQueries({ queryKey: options.queryKey, exact: true });
           }}
           shouldLogError={(error) => !missingEmail(error)}
-          fallback={(error, retry) =>
-            missingEmail(error) ? (
-              empty
-            ) : (
-              <FriendsErrorFeedback
-                error={error}
-                onRetry={async () => {
-                  await onRefresh();
-                  retry();
-                }}
-              />
-            )
-          }
+          fallback={(error) => (missingEmail(error) ? empty : undefined)}
         >
           <Suspense
             fallback={

@@ -173,7 +173,11 @@ describe('이메일 검색 실패의 정상 화면 복구', () => {
 
     const retry = deferred<unknown>();
     mocks.search.mockReturnValue(retry.promise);
-    await act(() => screen.element.querySelector('button')!.click());
+    await act(() =>
+      Array.from(screen.element.querySelectorAll('button'))
+        .find((button) => button.textContent === '다시 시도')!
+        .click()
+    );
     await vi.waitFor(async () => {
       await act(async () => {});
       expect(screen.element.querySelector('[role="status"]')).not.toBeNull();

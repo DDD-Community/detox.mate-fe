@@ -469,16 +469,10 @@ function FriendsContent() {
         <QueryErrorResetBoundary>
           {({ reset }) => (
             <ErrorBoundary
-              onReset={reset}
-              fallback={(failure, retry) => (
-                <FriendsErrorFeedback
-                  error={failure}
-                  onRetry={async () => {
-                    await refresh();
-                    retry();
-                  }}
-                />
-              )}
+              onReset={async () => {
+                await refresh();
+                reset();
+              }}
             >
               <Suspense
                 fallback={
