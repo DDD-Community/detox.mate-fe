@@ -1,7 +1,7 @@
 import { Modal, Pressable, StyleSheet, Text, View } from 'react-native';
 
 import { LoggingButton } from '@/components';
-import { primitiveColors, spacing, typography } from '@/lib/token';
+import { fontFamily, primitiveColors, spacing, typography } from '@/lib/token';
 
 const { gray, green } = primitiveColors;
 
@@ -86,7 +86,7 @@ const styles = StyleSheet.create({
     gap: spacing[20],
   },
   title: {
-    fontFamily: typography.primary.title1B.fontFamily,
+    fontFamily: fontFamily.primary.extraBold,
     fontSize: 20,
     fontWeight: '800',
     lineHeight: 30,

@@ -1,3 +1,4 @@
+import { QueryProvider } from '../src/lib/query/QueryProvider';
 import { useFonts } from 'expo-font';
 import * as Notifications from 'expo-notifications';
 import { router, Stack } from 'expo-router';
@@ -11,6 +12,12 @@ import { AppErrorBoundary } from '../src/components/AppErrorBoundary';
 import { initSentry } from '../src/observability/sentry';
 import { initAirbridge } from '../src/lib/airbridge';
 import { initAnalytics } from '../src/lib/analytics';
+
+if (__DEV__ && process.env.EXPO_PUBLIC_MSW_ENABLED === 'true') {
+  // Load native polyfills and install interception before mounting any routes.
+  // eslint-disable-next-line @typescript-eslint/no-require-imports
+  require('../src/mocks/native').startNativeMocking();
+}
 
 initSentry();
 SplashScreen.preventAutoHideAsync();
@@ -56,15 +63,19 @@ export default function RootLayout() {
   if (!fontsLoaded && !fontError) return null;
 
   if (StorybookUIRoot) {
-    return <StorybookUIRoot />;
+    return (
+      <QueryProvider>
+        <StorybookUIRoot />
+      </QueryProvider>
+    );
   }
 
   return (
-    <>
+    <QueryProvider>
       <AppErrorBoundary>
         <Stack screenOptions={{ headerShown: false }} />
       </AppErrorBoundary>
       <NetworkErrorToast />
-    </>
+    </QueryProvider>
   );
 }

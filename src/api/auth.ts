@@ -3,6 +3,7 @@ import * as AppleAuthentication from 'expo-apple-authentication';
 import { sha256 } from '@noble/hashes/sha256';
 import { bytesToHex } from '@noble/hashes/utils';
 import * as SecureStore from 'expo-secure-store';
+import { queryClient } from '../lib/query/queryClient';
 import apiClient from './client';
 import { AppError, normalizeError } from './errors';
 import { getDevAuth } from './generated/dev-auth/dev-auth';
@@ -166,10 +167,16 @@ export async function refreshAccessToken(): Promise<ServerResponseTokens> {
 }
 
 export async function clearAuthSession(): Promise<void> {
-  await SecureStore.deleteItemAsync('refreshTokenKey');
-  await SecureStore.deleteItemAsync('accessTokenKey');
-  await SecureStore.deleteItemAsync('currentUserId');
-  await SecureStore.deleteItemAsync(IS_TEST_ACCOUNT_KEY);
+  queryClient.clear();
+  try {
+    await SecureStore.deleteItemAsync('refreshTokenKey');
+    await SecureStore.deleteItemAsync('accessTokenKey');
+    await SecureStore.deleteItemAsync('currentUserId');
+    await SecureStore.deleteItemAsync(IS_TEST_ACCOUNT_KEY);
+  } finally {
+    // 비동기 토큰 삭제 중 다시 시작된 조회도 이전 세션 캐시에 남기지 않는다.
+    queryClient.clear();
+  }
 }
 
 // 현재 로그인 세션이 테스트 계정인지 여부. 스크린타임 OCR 검증 우회 등
@@ -180,9 +187,8 @@ export async function isTestAccountSession(): Promise<boolean> {
 }
 
 export async function logout(): Promise<void> {
-  const refreshToken = await SecureStore.getItemAsync('refreshTokenKey');
-
   try {
+    const refreshToken = await SecureStore.getItemAsync('refreshTokenKey');
     if (refreshToken) {
       await apiClient.post(
         '/auth/logout',
@@ -196,7 +202,7 @@ export async function logout(): Promise<void> {
       );
     }
   } catch {
-    // 서버 로그아웃 실패와 무관하게 기기 내 세션은 정리한다.
+    // 토큰 조회·서버 로그아웃 실패와 무관하게 기기 내 세션은 정리한다.
   } finally {
     await clearAuthSession();
   }

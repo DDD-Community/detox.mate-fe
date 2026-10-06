@@ -1,4 +1,4 @@
-import axios, { AxiosError, type AxiosRequestConfig } from 'axios';
+import axios, { AxiosError, isCancel, type AxiosRequestConfig } from 'axios';
 import { router } from 'expo-router';
 import * as SecureStore from 'expo-secure-store';
 import { env } from '../config/env';
@@ -62,6 +62,7 @@ const extractErrorMessage = (data: unknown): string | undefined => {
 apiClient.interceptors.response.use(
   (response) => response,
   async (error: AxiosError) => {
+    if (isCancel(error)) return Promise.reject(error);
     const originalRequest = error.config;
     const canRefresh =
       error.response?.status === 401 &&

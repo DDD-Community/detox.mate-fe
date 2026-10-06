@@ -127,6 +127,7 @@ const config: ExpoConfig = {
     'expo-notifications',
     '@react-native-community/datetimepicker',
     'expo-font',
+    'expo-image',
     [
       'expo-splash-screen',
       {

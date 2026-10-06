@@ -1,13 +1,6 @@
 import type { TextStyle } from 'react-native';
 import { fontFamily } from './fonts';
 
-/**
- * NanumSquareRound는 Medium 웨이트가 없어 디자이너 스펙과 다르게 매핑:
- *   400(Regular) → NanumSquareRoundR
- *   500(Medium)  → NanumSquareRoundB   (Bold를 Medium 슬롯에 사용)
- *   700(Bold)    → NanumSquareRoundEB  (ExtraBold를 Bold 슬롯에 사용)
- */
-
 const PRIMARY_FAMILY = {
   regular: fontFamily.primary.regular,
   medium: fontFamily.primary.medium,

@@ -1,3 +1,8 @@
+declare module '*.otf' {
+  const font: import('expo-font').FontSource;
+  export default font;
+}
+
 declare module '*.ttf' {
   const asset: number;
   export default asset;
@@ -14,6 +19,11 @@ declare module '*.jpg' {
 }
 
 declare module '*.jpeg' {
+  const asset: number;
+  export default asset;
+}
+
+declare module '*.svg' {
   const asset: number;
   export default asset;
 }

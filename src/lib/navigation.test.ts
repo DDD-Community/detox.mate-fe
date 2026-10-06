@@ -13,12 +13,12 @@ vi.mock('expo-router', () => ({
 
 const mockedRouter = vi.mocked(router);
 
-describe('goBackOrReplace', () => {
+describe('goBackOrReplace 이전 화면 이동', () => {
   beforeEach(() => {
     vi.clearAllMocks();
   });
 
-  it('goes back when there is navigation history', () => {
+  it('이동 이력이 있으면 이전 화면으로 돌아간다', () => {
     mockedRouter.canGoBack.mockReturnValue(true);
 
     goBackOrReplace('/(feed)/home');
@@ -27,7 +27,7 @@ describe('goBackOrReplace', () => {
     expect(mockedRouter.replace).not.toHaveBeenCalled();
   });
 
-  it('replaces to fallback when there is no navigation history', () => {
+  it('이동 이력이 없으면 지정한 대체 경로로 이동한다', () => {
     mockedRouter.canGoBack.mockReturnValue(false);
 
     goBackOrReplace('/(group)/home');
@@ -37,16 +37,16 @@ describe('goBackOrReplace', () => {
   });
 });
 
-describe('getVerifyExitRoute', () => {
-  it('returns feed home when verifyRoot is feed', () => {
+describe('getVerifyExitRoute 종료 경로 선택', () => {
+  it('verifyRoot가 feed이면 피드 홈 경로를 반환한다', () => {
     expect(getVerifyExitRoute('feed')).toBe('/(feed)/home');
   });
 
-  it('returns group home when verifyRoot is omitted', () => {
+  it('verifyRoot를 생략하면 그룹 홈 경로를 반환한다', () => {
     expect(getVerifyExitRoute()).toBe('/(group)/home');
   });
 
-  it('returns group home for unsupported verifyRoot values', () => {
+  it('지원하지 않는 verifyRoot 값이면 그룹 홈 경로를 반환한다', () => {
     expect(getVerifyExitRoute('mypage')).toBe('/(group)/home');
   });
 });
