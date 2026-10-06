@@ -1,4 +1,3 @@
-import { beginAuthTransition, completeAuthTransition } from '../stores/authSessionStore';
 import { KakaoOAuthToken, login } from '@react-native-seoul/kakao-login';
 import * as AppleAuthentication from 'expo-apple-authentication';
 import { sha256 } from '@noble/hashes/sha256';
@@ -39,23 +38,16 @@ const persistLoginResponse = async (
     throw new Error('로그인 응답이 올바르지 않습니다.');
   }
 
-  const transition = beginAuthTransition();
-  try {
-    await SecureStore.setItemAsync('accessTokenKey', data.accessToken);
-    await SecureStore.setItemAsync('refreshTokenKey', data.refreshToken);
-    await SecureStore.setItemAsync('currentUserId', String(data.id));
+  await SecureStore.setItemAsync('accessTokenKey', data.accessToken);
+  await SecureStore.setItemAsync('refreshTokenKey', data.refreshToken);
+  await SecureStore.setItemAsync('currentUserId', String(data.id));
 
-    // 테스트 계정 여부를 기록한다. 일반 로그인(카카오/애플)에서는 반드시 제거해
-    // 실제 유저가 이전 테스트 세션의 플래그를 물려받지 않도록 한다.
-    if (options.isTestAccount) {
-      await SecureStore.setItemAsync(IS_TEST_ACCOUNT_KEY, 'true');
-    } else {
-      await SecureStore.deleteItemAsync(IS_TEST_ACCOUNT_KEY);
-    }
-    completeAuthTransition(transition, data.id);
-  } catch (error) {
-    completeAuthTransition(transition, null);
-    throw error;
+  // 테스트 계정 여부를 기록한다. 일반 로그인(카카오/애플)에서는 반드시 제거해
+  // 실제 유저가 이전 테스트 세션의 플래그를 물려받지 않도록 한다.
+  if (options.isTestAccount) {
+    await SecureStore.setItemAsync(IS_TEST_ACCOUNT_KEY, 'true');
+  } else {
+    await SecureStore.deleteItemAsync(IS_TEST_ACCOUNT_KEY);
   }
 
   return {
@@ -174,8 +166,6 @@ export async function refreshAccessToken(): Promise<ServerResponseTokens> {
 }
 
 export async function clearAuthSession(): Promise<void> {
-  const transition = beginAuthTransition();
-  completeAuthTransition(transition, null);
   await SecureStore.deleteItemAsync('refreshTokenKey');
   await SecureStore.deleteItemAsync('accessTokenKey');
   await SecureStore.deleteItemAsync('currentUserId');

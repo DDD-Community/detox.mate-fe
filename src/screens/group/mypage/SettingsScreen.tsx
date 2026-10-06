@@ -6,7 +6,7 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import { AppState, Pressable, StyleSheet, Switch, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
-import { clearAuthSession, logout } from '@/api/auth';
+import { logout } from '@/api/auth';
 import { getUser } from '@/api';
 import { logError, normalizeError } from '@/api/errors';
 import {
@@ -302,7 +302,9 @@ export default function SettingsScreen() {
         // ignore
       }
       await getUser().withdraw();
-      await clearAuthSession();
+      await SecureStore.deleteItemAsync('refreshTokenKey');
+      await SecureStore.deleteItemAsync('accessTokenKey');
+      await SecureStore.deleteItemAsync('currentUserId');
       await SecureStore.deleteItemAsync('isNewUser');
       await SecureStore.deleteItemAsync(TERMS_ACCEPTED_KEY);
       await SecureStore.deleteItemAsync(APP_ACCESS_PERMISSION_GUIDE_SEEN_KEY);

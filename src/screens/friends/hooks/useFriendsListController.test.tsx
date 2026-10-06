@@ -6,12 +6,9 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import type { FriendResponse } from '../../../api/query-generated/model';
 import {
-  beginAuthTransition,
-  completeAuthTransition,
-  useAuthenticatedScope,
-  useAuthSessionStore,
-} from '../../../stores/authSessionStore';
-import { friendsQueryOptions, receivedRequestsQueryOptions } from './friendsQueries';
+  getGetFriendsSuspenseQueryOptions,
+  getGetReceivedRequestsSuspenseQueryOptions,
+} from '../../../api/query-generated/friend';
 import { useFriendsListController } from './useFriendsListController';
 
 const api = vi.hoisted(() => ({
@@ -21,7 +18,6 @@ const api = vi.hoisted(() => ({
   reject: vi.fn(),
   remove: vi.fn(),
 }));
-vi.mock('expo-secure-store', () => ({ getItemAsync: vi.fn() }));
 vi.mock('../../../api/friendMutator', () => ({
   friendAxios: ({ url, method }: { url: string; method: string }) => {
     if (url === '/friends') return api.friends();
@@ -47,10 +43,6 @@ function deferred<T>() {
   return { promise, resolve, reject };
 }
 
-function login(userId: number) {
-  completeAuthTransition(beginAuthTransition(), userId);
-}
-
 beforeEach(() => {
   vi.resetAllMocks();
   api.friends.mockResolvedValue([friend]);
@@ -72,13 +64,11 @@ async function setup() {
   let current!: ReturnType<typeof useFriendsListController>;
   let rows: FriendResponse[] = [];
   function FriendsData() {
-    const scope = useAuthenticatedScope();
-    rows = useSuspenseQuery(friendsQueryOptions(scope)).data;
+    rows = useSuspenseQuery(getGetFriendsSuspenseQueryOptions()).data;
     return null;
   }
   function RequestsData() {
-    const scope = useAuthenticatedScope();
-    useSuspenseQuery(receivedRequestsQueryOptions(scope));
+    useSuspenseQuery(getGetReceivedRequestsSuspenseQueryOptions());
     return null;
   }
   function Harness() {
@@ -90,30 +80,16 @@ async function setup() {
       createElement(RequestsData)
     );
   }
-  function AuthenticatedHarness() {
-    const { ready, scope } = useAuthSessionStore();
-    return ready && scope ? createElement(Harness, { key: scope.sessionId }) : null;
-  }
   const root = createRoot(document.createElement('div'));
-  const render = async (userId: number) => {
-    await act(() => {
-      login(userId);
-    });
-  };
   cleanups.push(() => {
     root.unmount();
     client.clear();
-    beginAuthTransition();
   });
   await act(() => {
-    login(1);
-    root.render(
-      createElement(QueryClientProvider, { client }, createElement(AuthenticatedHarness))
-    );
+    root.render(createElement(QueryClientProvider, { client }, createElement(Harness)));
   });
   return {
     client,
-    render,
     get state() {
       return current;
     },
@@ -170,64 +146,4 @@ describe('친구 목록 조회와 변경 액션', () => {
     expect(screen.rows).toEqual([]);
     expect(screen.state.pendingActionId).toBeNull();
   });
-
-  it('A에서 B, C 계정으로 전환한 뒤 이전 계정의 조회가 완료되어도 현재 계정의 목록을 유지한다', async () => {
-    const screen = await setup();
-    const oldA = deferred<FriendResponse[]>();
-    const oldB = deferred<FriendResponse[]>();
-    api.friends.mockReturnValueOnce(oldA.promise);
-    let readingA!: Promise<void>;
-    await act(() => {
-      readingA = screen.state.refresh();
-    });
-    api.friends.mockResolvedValue([
-      { friendshipId: 88, user: { userId: 11, displayName: 'B 친구' } },
-    ]);
-    await screen.render(2);
-    api.friends.mockReturnValueOnce(oldB.promise);
-    let readingB!: Promise<void>;
-    await act(() => {
-      readingB = screen.state.refresh();
-    });
-    const currentFriend = { friendshipId: 99, user: { userId: 12, displayName: 'C 친구' } };
-    api.friends.mockResolvedValue([currentFriend]);
-    await screen.render(3);
-    await act(async () => {
-      oldB.resolve([friend]);
-      oldA.resolve([friend]);
-      await Promise.all([readingA, readingB]);
-    });
-    expect(screen.rows).toEqual([currentFriend]);
-    expect(screen.state.error).toBeNull();
-  });
-
-  it.each([2, 1])(
-    '사용자 %s로 새로 로그인한 뒤 이전 세션의 조회와 변경이 완료되어도 새 세션의 목록을 유지한다',
-    async (nextUserId) => {
-      const screen = await setup();
-      const oldRead = deferred<FriendResponse[]>();
-      const oldWrite = deferred<void>();
-      api.friends.mockReturnValueOnce(oldRead.promise);
-      let reading!: Promise<void>;
-      await act(() => {
-        reading = screen.state.refresh();
-      });
-      api.remove.mockReturnValueOnce(oldWrite.promise);
-      let writing!: Promise<boolean>;
-      await act(() => {
-        writing = screen.state.deleteFriend(41);
-      });
-      const newFriend = { friendshipId: 99, user: { userId: 10, displayName: '새 세션 친구' } };
-      api.friends.mockResolvedValue([newFriend]);
-      await screen.render(nextUserId);
-      await act(async () => {
-        oldWrite.resolve();
-        oldRead.resolve([friend]);
-        await reading;
-        expect(await writing).toBe(false);
-      });
-      expect(screen.rows).toEqual([newFriend]);
-      expect(screen.state.pendingActionId).toBeNull();
-    }
-  );
 });

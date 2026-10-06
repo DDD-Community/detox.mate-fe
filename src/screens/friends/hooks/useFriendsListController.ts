@@ -9,6 +9,8 @@ import { useRef, useState } from 'react';
 import { getUserErrorMessage } from '../../../api/errors/messages';
 import { normalizeError } from '../../../api/errors/normalizeError';
 import {
+  getGetFriendsSuspenseQueryOptions,
+  getGetReceivedRequestsSuspenseQueryOptions,
   useAcceptRequest,
   useDeletePendingRequest,
   useUnfriend,
@@ -17,9 +19,7 @@ import type {
   FriendReceivedRequestResponse,
   FriendResponse,
 } from '../../../api/query-generated/model';
-import { isCurrentAuthScope, useAuthenticatedScope } from '../../../stores/authSessionStore';
 import { requireId } from '../utils/friendsListData';
-import { friendsQueryOptions, receivedRequestsQueryOptions } from './friendsQueries';
 
 type Action =
   | { kind: 'accept'; requestId: number }
@@ -27,10 +27,9 @@ type Action =
   | { kind: 'delete'; friendshipId: number };
 
 export function useFriendsListController() {
-  const scope = useAuthenticatedScope();
   const client = useQueryClient();
-  const friendsOptions = friendsQueryOptions(scope);
-  const requestsOptions = receivedRequestsQueryOptions(scope);
+  const friendsOptions = getGetFriendsSuspenseQueryOptions();
+  const requestsOptions = getGetReceivedRequestsSuspenseQueryOptions();
   // Both requests start before either child can suspend; generated keys share in-flight work.
   usePrefetchQuery(friendsOptions);
   usePrefetchQuery(requestsOptions);
@@ -59,7 +58,7 @@ export function useFriendsListController() {
   };
 
   const refreshKeys = async (keys: QueryKey[]) => {
-    if (lock.current || !isCurrentAuthScope(scope)) return;
+    if (lock.current) return;
     setError(null);
     try {
       await Promise.all(
@@ -67,7 +66,7 @@ export function useFriendsListController() {
       );
     } catch (failure) {
       // Query errors are displayed by their own region; reserve the action banner for other failures.
-      if (isCurrentAuthScope(scope) && !keys.some((key) => client.getQueryState(key)?.error)) {
+      if (!keys.some((key) => client.getQueryState(key)?.error)) {
         setError(getUserErrorMessage(normalizeError(failure)));
       }
     }
@@ -75,24 +74,21 @@ export function useFriendsListController() {
   const refresh = () => refreshKeys([friendsOptions.queryKey, requestsOptions.queryKey]);
 
   const changeFriendship = async (action: Action): Promise<boolean> => {
-    if (lock.current || !isCurrentAuthScope(scope)) return false;
+    if (lock.current) return false;
     lock.current = true;
     setError(null);
     try {
       const id = requireId(action.kind === 'delete' ? action.friendshipId : action.requestId);
       setPendingActionId(`${action.kind === 'delete' ? 'friend' : 'request'}:${id}`);
       await cancelReads();
-      if (!isCurrentAuthScope(scope)) return false;
       const accepted =
         action.kind === 'accept'
           ? await accept({ requestId: id })
           : await (action.kind === 'reject'
               ? reject({ requestId: id })
               : remove({ friendshipId: id }));
-      if (!isCurrentAuthScope(scope)) return false;
       // A refetch may have started while writing. Cancel its cache completion before the patch.
       await cancelReads();
-      if (!isCurrentAuthScope(scope)) return false;
       if (action.kind === 'accept' && accepted) {
         client.setQueryData<FriendResponse[]>(friendsOptions.queryKey, (previous) =>
           previous
@@ -114,13 +110,13 @@ export function useFriendsListController() {
         client.invalidateQueries({ queryKey: friendsOptions.queryKey }),
         client.invalidateQueries({ queryKey: requestsOptions.queryKey }),
       ]);
-      return isCurrentAuthScope(scope);
+      return true;
     } catch (failure) {
-      if (isCurrentAuthScope(scope)) setError(getUserErrorMessage(normalizeError(failure)));
+      setError(getUserErrorMessage(normalizeError(failure)));
       return false;
     } finally {
       lock.current = false;
-      if (isCurrentAuthScope(scope)) setPendingActionId(null);
+      setPendingActionId(null);
     }
   };
 

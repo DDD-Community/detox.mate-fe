@@ -1,6 +1,6 @@
 import { useSuspenseQuery } from '@tanstack/react-query';
 import { Image } from 'expo-image';
-import { Redirect, router } from 'expo-router';
+import { router } from 'expo-router';
 import { useEffect, useState } from 'react';
 import {
   ActivityIndicator,
@@ -19,9 +19,11 @@ import {
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
-import { useAuthenticatedScope, useAuthSessionStore } from '../../../stores/authSessionStore';
+import {
+  getGetFriendsSuspenseQueryOptions,
+  getGetReceivedRequestsSuspenseQueryOptions,
+} from '../../../api/query-generated/friend';
 import { FriendsQueryFeedback, FriendsQuerySection } from '../components/FriendsQuerySection';
-import { friendsQueryOptions, receivedRequestsQueryOptions } from '../hooks/friendsQueries';
 import { useFriendsListController } from '../hooks/useFriendsListController';
 import {
   filterFriendsByName,
@@ -127,8 +129,7 @@ function ReceivedRequestsSection({
   onConfirmAccept: (request: FriendReceivedRequest) => void;
   onReject: (id: number) => Promise<boolean>;
 }) {
-  const scope = useAuthenticatedScope();
-  const result = useSuspenseQuery(receivedRequestsQueryOptions(scope));
+  const result = useSuspenseQuery(getGetReceivedRequestsSuspenseQueryOptions());
   const receivedRequests = result.data.map(toReceivedRequest);
   const busy = pendingActionId !== null;
   return (
@@ -190,8 +191,7 @@ function FriendsSection({
   pendingActionId: string | null;
   onSelectDelete: (friend: FriendsListItem) => void;
 }) {
-  const scope = useAuthenticatedScope();
-  const result = useSuspenseQuery(friendsQueryOptions(scope));
+  const result = useSuspenseQuery(getGetFriendsSuspenseQueryOptions());
   const friends = result.data.map(toFriendListItem);
   const busy = pendingActionId !== null;
   const searching = query.trim().length > 0;
@@ -244,7 +244,7 @@ function FriendsSection({
   );
 }
 
-function AuthenticatedFriendsScreen() {
+export default function FriendsScreen() {
   const {
     refreshing,
     error,
@@ -509,13 +509,6 @@ function AuthenticatedFriendsScreen() {
       </Modal>
     </KeyboardAvoidingView>
   );
-}
-
-export default function FriendsScreen() {
-  const { ready, scope } = useAuthSessionStore();
-  if (!ready) return <ActivityIndicator accessibilityLabel="로그인 확인 중" />;
-  if (!scope) return <Redirect href="/login" />;
-  return <AuthenticatedFriendsScreen key={scope.sessionId} />;
 }
 
 const styles = StyleSheet.create({
