@@ -1,4 +1,4 @@
-import { QueryErrorResetBoundary } from '@tanstack/react-query';
+import { QueryErrorResetBoundary, useQueryClient, type QueryKey } from '@tanstack/react-query';
 import { Suspense, type ReactNode } from 'react';
 import { ActivityIndicator, Pressable, Text, View } from 'react-native';
 
@@ -22,12 +22,24 @@ export function FriendsQueryFeedback({ error, onRetry }: { error: unknown; onRet
   );
 }
 
-export function FriendsQuerySection({ children, label }: { children: ReactNode; label: string }) {
+export function FriendsQuerySection({
+  children,
+  label,
+  queryKey,
+}: {
+  children: ReactNode;
+  label: string;
+  queryKey: QueryKey;
+}) {
+  const client = useQueryClient();
   return (
     <QueryErrorResetBoundary>
       {({ reset }) => (
         <ErrorBoundary
-          onReset={reset}
+          onReset={() => {
+            reset();
+            void client.resetQueries({ queryKey, exact: true });
+          }}
           fallback={(error, onRetry) => (
             <View style={{ marginTop: 23 }}>
               <Text style={{ fontFamily: fontFamily.primary.medium, marginHorizontal: 16 }}>

@@ -20,7 +20,9 @@ import {
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import {
+  getGetFriendsQueryKey,
   getGetFriendsSuspenseQueryOptions,
+  getGetReceivedRequestsQueryKey,
   getGetReceivedRequestsSuspenseQueryOptions,
 } from '../../../api/query-generated/friend';
 import { FriendsQueryFeedback, FriendsQuerySection } from '../components/FriendsQuerySection';
@@ -387,7 +389,7 @@ export default function FriendsScreen() {
         ) : null}
 
         {!searching ? (
-          <FriendsQuerySection label="받은 요청">
+          <FriendsQuerySection label="받은 요청" queryKey={getGetReceivedRequestsQueryKey()}>
             <ReceivedRequestsSection
               pendingActionId={pendingActionId}
               onConfirmAccept={confirmAccept}
@@ -397,7 +399,7 @@ export default function FriendsScreen() {
           </FriendsQuerySection>
         ) : null}
 
-        <FriendsQuerySection label="친구 목록">
+        <FriendsQuerySection label="친구 목록" queryKey={getGetFriendsQueryKey()}>
           <FriendsSection
             query={query}
             pendingActionId={pendingActionId}
