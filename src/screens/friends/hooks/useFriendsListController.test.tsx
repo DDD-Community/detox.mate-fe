@@ -12,10 +12,12 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import type {
   FriendReceivedRequestResponse,
   FriendResponse,
+  FriendSearchResponse,
 } from '../../../api/query-generated/model';
 import {
   getGetFriendsSuspenseQueryOptions,
   getGetReceivedRequestsSuspenseQueryOptions,
+  getSearchByEmailQueryOptions,
 } from '../../../api/query-generated/friend';
 import { useFriendsListController } from './useFriendsListController';
 
@@ -135,6 +137,47 @@ async function remove(screen: Awaited<ReturnType<typeof setup>>) {
 }
 
 describe('친구 목록 조회와 변경 액션', () => {
+  it('검색 갱신 중에는 목록을 갱신하거나 친구 삭제를 시작해도 검색 응답을 취소하지 않고 목록 갱신 표시도 켜지 않는다', async () => {
+    const screen = await setup();
+    const options = getSearchByEmailQueryOptions({ email: 'search@example.com' });
+    const user = { userId: 8, displayName: '검색한 친구' };
+    const searchRead = deferred<typeof user>();
+    const writeStarted = deferred<void>();
+    const write = deferred<void>();
+    screen.client.setQueryData(options.queryKey, user);
+    let reading!: Promise<{ data: FriendSearchResponse } | { error: unknown }>;
+    await act(() => {
+      reading = screen.client.fetchQuery({ ...options, queryFn: () => searchRead.promise }).then(
+        (data) => ({ data }),
+        (error: unknown) => ({ error })
+      );
+    });
+    expect(screen.state.refreshing).toBe(false);
+
+    await act(() => screen.state.refresh());
+    api.remove.mockImplementationOnce(() => {
+      writeStarted.resolve();
+      return write.promise;
+    });
+    let deleting!: Promise<boolean>;
+    await act(async () => {
+      deleting = screen.state.deleteFriend(41);
+      await writeStarted.promise;
+    });
+
+    const refreshedUser = { ...user, displayName: '갱신된 검색 친구' };
+    await act(async () => {
+      searchRead.resolve(refreshedUser);
+      expect(await reading).toEqual({ data: refreshedUser });
+    });
+    expect(screen.client.getQueryData(options.queryKey)).toEqual(refreshedUser);
+    await act(async () => {
+      api.friends.mockResolvedValue([]);
+      write.resolve();
+      expect(await deleting).toBe(true);
+    });
+  });
+
   it('캐시 없는 첫 진입에서는 어느 응답도 완료되기 전에 친구와 받은 요청 조회를 모두 시작한다', async () => {
     const friendsRead = deferred<FriendResponse[]>();
     const requestsRead = deferred<FriendReceivedRequestResponse[]>();

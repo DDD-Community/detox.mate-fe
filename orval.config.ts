@@ -20,6 +20,7 @@ export default defineConfig({
         mutator: { path: 'src/api/friendMutator.ts', name: 'friendAxios' },
         query: {
           version: 5,
+          shouldSplitQueryKey: true,
           useQuery: true,
           useSuspenseQuery: true,
           useMutation: true,
