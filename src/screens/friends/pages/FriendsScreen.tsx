@@ -1,5 +1,4 @@
 import { useSuspenseQuery } from '@tanstack/react-query';
-import { isCancel } from 'axios';
 import { Image } from 'expo-image';
 import * as SecureStore from 'expo-secure-store';
 import { router } from 'expo-router';
@@ -25,7 +24,6 @@ import {
   getAuthQueryScope,
   restoreAuthQueryScope,
   useAuthQueryScope,
-  type AuthQueryScope,
 } from '../../../lib/query/authQueryScope';
 import { friendsQueryOptions, receivedQueryOptions } from '../utils/friendsQueryOptions';
 import { useDebouncedEmail } from '../hooks/useDebouncedEmail';
@@ -129,22 +127,28 @@ function CloseButton({
 }
 
 function ReceivedRequestsSection({
-  scope,
   pendingActionId,
   onAccept,
   onReject,
 }: {
   pendingActionId: string | null;
-  scope: AuthQueryScope;
   onAccept: (id: number) => Promise<boolean>;
   onReject: (id: number) => Promise<boolean>;
 }) {
+  const scope = useAuthQueryScope();
   const result = useSuspenseQuery(receivedQueryOptions(scope));
-  if (result.error && !result.isFetching && !isCancel(result.error)) throw result.error;
   const receivedRequests = result.data.map(toReceivedRequest);
   const busy = pendingActionId !== null;
   return (
     <>
+      {result.error ? (
+        <FriendsQueryFeedback
+          error={result.error}
+          onRetry={() => {
+            void result.refetch();
+          }}
+        />
+      ) : null}
       {receivedRequests.length > 0 ? (
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>받은 요청 ({receivedRequests.length})</Text>
@@ -191,20 +195,18 @@ function ReceivedRequestsSection({
 }
 
 function FriendsSection({
-  scope,
   userId,
   query,
   pendingActionId,
   onSelectDelete,
 }: {
-  scope: AuthQueryScope;
   userId?: number;
   query: string;
   pendingActionId: string | null;
   onSelectDelete: (friend: FriendsListItem) => void;
 }) {
+  const scope = useAuthQueryScope();
   const result = useSuspenseQuery(friendsQueryOptions(scope));
-  if (result.error && !result.isFetching && !isCancel(result.error)) throw result.error;
   const friends = result.data.map(toFriendListItem);
   const busy = pendingActionId !== null;
   const searching = query.trim().length > 0;
@@ -223,6 +225,14 @@ function FriendsSection({
   }
   return (
     <>
+      {result.error ? (
+        <FriendsQueryFeedback
+          error={result.error}
+          onRetry={() => {
+            void result.refetch();
+          }}
+        />
+      ) : null}
       {filteredFriends.length > 0 ? (
         <View style={[styles.section, searching && styles.searchSection]}>
           <Text style={styles.sectionTitle}>내 친구</Text>
@@ -316,7 +326,7 @@ export default function FriendsScreen() {
         )}
       </View>
     ) : (
-      <FriendsContent key={`${scope.userId}:${scope.version}`} scope={scope} />
+      <FriendsContent key={`${scope.userId}:${scope.version}`} />
     );
   return (
     <LoggingPage
@@ -329,7 +339,8 @@ export default function FriendsScreen() {
   );
 }
 
-function FriendsContent({ scope }: { scope: AuthQueryScope }) {
+function FriendsContent() {
+  const scope = useAuthQueryScope();
   const {
     refreshing,
     error,
@@ -338,7 +349,7 @@ function FriendsContent({ scope }: { scope: AuthQueryScope }) {
     acceptRequest,
     rejectRequest,
     deleteFriend,
-  } = useFriendsListController(scope);
+  } = useFriendsListController();
   const insets = useSafeAreaInsets();
   const [query, setQuery] = useState('');
   const [keyboardVisible, setKeyboardVisible] = useState(false);
@@ -458,7 +469,6 @@ function FriendsContent({ scope }: { scope: AuthQueryScope }) {
         {!searching ? (
           <FriendsQuerySection label="받은 요청" queryKey={receivedQueryOptions(scope).queryKey}>
             <ReceivedRequestsSection
-              scope={scope}
               pendingActionId={pendingActionId}
               onAccept={acceptRequest}
               onReject={rejectRequest}
@@ -471,7 +481,6 @@ function FriendsContent({ scope }: { scope: AuthQueryScope }) {
             <FriendEmailSearch
               key={email}
               email={email}
-              scope={scope}
               onReceived={() => {
                 trackButtonClick(
                   'Friends Received Requests Open Clicked',
@@ -487,7 +496,6 @@ function FriendsContent({ scope }: { scope: AuthQueryScope }) {
                   queryKey={friendsQueryOptions(scope).queryKey}
                 >
                   <FriendsSection
-                    scope={scope}
                     userId={userId}
                     query={query}
                     pendingActionId={pendingActionId}
@@ -515,7 +523,6 @@ function FriendsContent({ scope }: { scope: AuthQueryScope }) {
         ) : (
           <FriendsQuerySection label="친구 목록" queryKey={friendsQueryOptions(scope).queryKey}>
             <FriendsSection
-              scope={scope}
               query={query}
               pendingActionId={pendingActionId}
               onSelectDelete={setDeleteTarget}

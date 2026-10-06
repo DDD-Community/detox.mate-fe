@@ -9,6 +9,7 @@ type ErrorBoundaryProps = {
   children: ReactNode;
   onReset: () => void;
   fallback?: (error: Error, onRetry: () => void) => ReactNode;
+  shouldLogError?: (error: Error) => boolean;
 };
 
 type ErrorBoundaryState = {
@@ -23,6 +24,7 @@ export class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundarySt
   }
 
   componentDidCatch(error: Error, errorInfo: ErrorInfo) {
+    if (this.props.shouldLogError?.(error) === false) return;
     logError(normalizeError(error), {
       scope: 'render',
       componentStack: errorInfo.componentStack,

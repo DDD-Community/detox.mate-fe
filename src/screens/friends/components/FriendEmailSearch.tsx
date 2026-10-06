@@ -1,7 +1,12 @@
-import { useQueryClient, useQuery } from '@tanstack/react-query';
+import {
+  QueryErrorResetBoundary,
+  useQueryClient,
+  useSuspenseQuery,
+  type Query,
+} from '@tanstack/react-query';
 import { isCancel } from 'axios';
 import { Image } from 'expo-image';
-import { useEffect, useState } from 'react';
+import { Suspense, useEffect, useRef, useState } from 'react';
 import { ActivityIndicator, Pressable, StyleSheet, Text, View } from 'react-native';
 import Svg, { Defs, LinearGradient, Rect, Stop } from 'react-native-svg';
 
@@ -12,7 +17,7 @@ import {
 import { logError, normalizeError } from '../../../api/errors';
 import { requireId } from '../utils/friendsListData';
 import { ErrorBoundary } from '../../../components/AppErrorBoundary/AppErrorBoundary';
-import type { AuthQueryScope } from '../../../lib/query/authQueryScope';
+import { useAuthQueryScope } from '../../../lib/query/authQueryScope';
 import { fontFamily } from '../../../lib/token/primitive/fonts';
 import { useSendFriendRequest } from '../hooks/useSendFriendRequest';
 import { searchQueryOptions } from '../utils/friendsQueryOptions';
@@ -27,18 +32,16 @@ const missingEmail = (error: unknown) => {
 
 function SearchResult({
   email,
-  scope,
   onReceived,
   renderFriend,
   user,
 }: {
   email: string;
   user: FriendSearchResponse;
-  scope: AuthQueryScope;
   onReceived: () => void;
   renderFriend: (userId: number) => React.ReactNode;
 }) {
-  const { send, pending, error } = useSendFriendRequest(email, user, scope);
+  const { send, pending, error } = useSendFriendRequest(email, user);
   const [imageFailed, setImageFailed] = useState(false);
   useEffect(() => setImageFailed(false), [user.profileImageUrl]);
   const requested = user.relationshipStatus === RelationshipStatus.PENDING_SENT;
@@ -106,18 +109,17 @@ function SearchResult({
 
 function SearchQuery({
   email,
-  scope,
   onReceived,
   renderFriend,
   empty,
 }: {
   email: string;
-  scope: AuthQueryScope;
   onReceived: () => void;
   renderFriend: (userId: number) => React.ReactNode;
   empty: React.ReactNode;
 }) {
-  const result = useQuery(searchQueryOptions(email, scope));
+  const scope = useAuthQueryScope();
+  const result = useSuspenseQuery(searchQueryOptions(email, scope));
   const failure =
     result.error && !result.isFetching && !isCancel(result.error) ? result.error : null;
   const requested = result.data?.relationshipStatus === RelationshipStatus.PENDING_SENT;
@@ -126,27 +128,16 @@ function SearchQuery({
       logError(normalizeError(failure), { scope: 'api', operation: 'searchFriendByEmail' });
     }
   }, [failure]);
-  if (result.isPending || (result.data === undefined && result.isFetching))
-    return (
-      <ActivityIndicator
-        style={{ padding: 24 }}
-        color="#5a8974"
-        accessibilityLabel="이메일 검색 중"
-      />
-    );
   const feedback = failure ? (
     <FriendsQueryFeedback error={failure} onRetry={() => void result.refetch()} />
   ) : null;
   if (failure && !requested) {
-    if (missingEmail(failure)) return empty;
-    return feedback;
+    return missingEmail(failure) ? empty : feedback;
   }
-  if (!result.data) return feedback;
   return (
     <>
       <SearchResult
         email={email}
-        scope={scope}
         user={result.data}
         onReceived={onReceived}
         renderFriend={renderFriend}
@@ -158,32 +149,72 @@ function SearchQuery({
 
 export function FriendEmailSearch({
   email,
-  scope,
   onReceived,
   renderFriend,
   empty,
 }: {
   email: string;
-  scope: AuthQueryScope;
   onReceived: () => void;
   renderFriend: (userId: number) => React.ReactNode;
   empty: React.ReactNode;
 }) {
+  const scope = useAuthQueryScope();
   const client = useQueryClient();
   const options = searchQueryOptions(email, scope);
+  const mountedQuery = useRef<Query | null>(null);
+  useEffect(() => {
+    const queryKey = searchQueryOptions(email, scope).queryKey;
+    const query = client.getQueryCache().find({ queryKey, exact: true });
+    mountedQuery.current = query ?? null;
+    return () => {
+      mountedQuery.current = null;
+      // StrictMode immediately restores the same visit; wait before removing its pending query.
+      queueMicrotask(() => {
+        if (mountedQuery.current === query) return;
+        // Also discard an unfinished read so its late failure cannot trap the next visit.
+        const current = client.getQueryCache().find({ queryKey, exact: true });
+        if (
+          current &&
+          current === query &&
+          current.state.data === undefined &&
+          current.getObserversCount() === 0
+        )
+          client.removeQueries({ queryKey, exact: true });
+      });
+    };
+  }, [client, email, scope]);
   return (
-    <ErrorBoundary
-      onReset={() => void client.resetQueries({ queryKey: options.queryKey, exact: true })}
-      fallback={(error, retry) => <FriendsQueryFeedback error={error} onRetry={retry} />}
-    >
-      <SearchQuery
-        email={email}
-        scope={scope}
-        onReceived={onReceived}
-        renderFriend={renderFriend}
-        empty={empty}
-      />
-    </ErrorBoundary>
+    <QueryErrorResetBoundary>
+      {({ reset }) => (
+        <ErrorBoundary
+          onReset={() => {
+            reset();
+            void client.resetQueries({ queryKey: options.queryKey, exact: true });
+          }}
+          shouldLogError={(error) => !missingEmail(error)}
+          fallback={(error, retry) =>
+            missingEmail(error) ? empty : <FriendsQueryFeedback error={error} onRetry={retry} />
+          }
+        >
+          <Suspense
+            fallback={
+              <ActivityIndicator
+                style={{ padding: 24 }}
+                color="#5a8974"
+                accessibilityLabel="이메일 검색 중"
+              />
+            }
+          >
+            <SearchQuery
+              email={email}
+              onReceived={onReceived}
+              renderFriend={renderFriend}
+              empty={empty}
+            />
+          </Suspense>
+        </ErrorBoundary>
+      )}
+    </QueryErrorResetBoundary>
   );
 }
 

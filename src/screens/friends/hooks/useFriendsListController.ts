@@ -1,19 +1,14 @@
-import {
-  useIsFetching,
-  usePrefetchQuery,
-  useQueryClient,
-  type QueryKey,
-} from '@tanstack/react-query';
-import { isCancel } from 'axios';
+import { useIsFetching, usePrefetchQuery, useQueryClient } from '@tanstack/react-query';
+import { CanceledError, isCancel } from 'axios';
 import { useRef, useState } from 'react';
 
 import { logError } from '../../../api/errors/logger';
 import { getUserErrorMessage } from '../../../api/errors/messages';
 import { normalizeError } from '../../../api/errors/normalizeError';
 import {
-  getAcceptRequestMutationOptions,
-  getDeletePendingRequestMutationOptions,
-  getUnfriendMutationOptions,
+  acceptRequest,
+  deletePendingRequest,
+  unfriend,
   useAcceptRequest,
   useDeletePendingRequest,
   useUnfriend,
@@ -22,13 +17,12 @@ import type {
   FriendReceivedRequestResponse,
   FriendResponse,
 } from '../../../api/query-generated/model';
-import { isCurrentAuthQueryScope, type AuthQueryScope } from '../../../lib/query/authQueryScope';
+import { isCurrentAuthQueryScope, useAuthQueryScope } from '../../../lib/query/authQueryScope';
 import { trackEvent } from '../../../lib/analytics';
 import {
   friendsQueryOptions,
   receivedQueryOptions,
   isScopeSearch,
-  guardFriendMutation,
 } from '../utils/friendsQueryOptions';
 import { requireId } from '../utils/friendsListData';
 
@@ -37,7 +31,8 @@ type Action =
   | { kind: 'reject'; requestId: number }
   | { kind: 'delete'; friendshipId: number };
 
-export function useFriendsListController(scope?: AuthQueryScope) {
+export function useFriendsListController() {
+  const scope = useAuthQueryScope();
   const client = useQueryClient();
   const friendsOptions = friendsQueryOptions(scope);
   const requestsOptions = receivedQueryOptions(scope);
@@ -55,13 +50,31 @@ export function useFriendsListController(scope?: AuthQueryScope) {
       }) >
     0;
   const { mutateAsync: accept } = useAcceptRequest({
-    mutation: guardFriendMutation(getAcceptRequestMutationOptions(), scope),
+    mutation: {
+      mutationFn: ({ requestId }) => {
+        if (!isCurrentAuthQueryScope(scope))
+          throw new CanceledError('The authentication session changed.');
+        return acceptRequest(requestId);
+      },
+    },
   });
   const { mutateAsync: reject } = useDeletePendingRequest({
-    mutation: guardFriendMutation(getDeletePendingRequestMutationOptions(), scope),
+    mutation: {
+      mutationFn: ({ requestId }) => {
+        if (!isCurrentAuthQueryScope(scope))
+          throw new CanceledError('The authentication session changed.');
+        return deletePendingRequest(requestId);
+      },
+    },
   });
   const { mutateAsync: remove } = useUnfriend({
-    mutation: guardFriendMutation(getUnfriendMutationOptions(), scope),
+    mutation: {
+      mutationFn: ({ friendshipId }) => {
+        if (!isCurrentAuthQueryScope(scope))
+          throw new CanceledError('The authentication session changed.');
+        return unfriend(friendshipId);
+      },
+    },
   });
   const lock = useRef(false);
   const [pendingActionId, setPendingActionId] = useState<string | null>(null);
@@ -74,15 +87,16 @@ export function useFriendsListController(scope?: AuthQueryScope) {
     ]);
   };
 
-  const refreshKeys = async (keys: QueryKey[]) => {
+  const refresh = async () => {
     if (lock.current) return;
+    const keys = [friendsOptions.queryKey, requestsOptions.queryKey];
     setError(null);
     try {
       await Promise.all(
         keys.map((queryKey) => client.refetchQueries({ queryKey }, { throwOnError: true }))
       );
     } catch (failure) {
-      if (isCancel(failure) || (scope && !isCurrentAuthQueryScope(scope))) return;
+      if (isCancel(failure) || !isCurrentAuthQueryScope(scope)) return;
       // Query errors are displayed by their own region; reserve the action banner for other failures.
       if (!keys.some((key) => client.getQueryState(key)?.error)) {
         logError(normalizeError(failure), { scope: 'api', operation: 'refreshFriends' });
@@ -90,7 +104,6 @@ export function useFriendsListController(scope?: AuthQueryScope) {
       }
     }
   };
-  const refresh = () => refreshKeys([friendsOptions.queryKey, requestsOptions.queryKey]);
 
   const reconcile = async () => {
     await Promise.all([
@@ -106,7 +119,7 @@ export function useFriendsListController(scope?: AuthQueryScope) {
     const keys = [friendsOptions.queryKey, requestsOptions.queryKey];
     const queries = keys.map((queryKey) => cache.find({ queryKey, exact: true }));
     const ownsQueries = () =>
-      (!scope || isCurrentAuthQueryScope(scope)) &&
+      isCurrentAuthQueryScope(scope) &&
       queries.every(
         (query, index) =>
           query !== undefined && cache.find({ queryKey: keys[index], exact: true }) === query
@@ -158,7 +171,7 @@ export function useFriendsListController(scope?: AuthQueryScope) {
       }
       // The write is confirmed; reconciliation belongs to the query regions, not the action pending.
       void reconcile().catch((failure) => {
-        if (!isCancel(failure) && (!scope || isCurrentAuthQueryScope(scope))) {
+        if (!isCancel(failure) && isCurrentAuthQueryScope(scope)) {
           logError(normalizeError(failure), { scope: 'api', operation: 'reconcileFriendship' });
         }
       });
@@ -182,8 +195,6 @@ export function useFriendsListController(scope?: AuthQueryScope) {
     error,
     pendingActionId,
     refresh,
-    refreshFriends: () => refreshKeys([friendsOptions.queryKey]),
-    refreshRequests: () => refreshKeys([requestsOptions.queryKey]),
     acceptRequest: (requestId: number) => changeFriendship({ kind: 'accept', requestId }),
     rejectRequest: (requestId: number) => changeFriendship({ kind: 'reject', requestId }),
     deleteFriend: (friendshipId: number) => changeFriendship({ kind: 'delete', friendshipId }),
