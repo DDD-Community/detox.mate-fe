@@ -4,13 +4,12 @@ import * as AppleAuthentication from 'expo-apple-authentication';
 import { sha256 } from '@noble/hashes/sha256';
 import { bytesToHex } from '@noble/hashes/utils';
 import * as SecureStore from 'expo-secure-store';
-import {
-  changeAuthQueryScope,
-  getAuthQueryScope,
-  isCurrentAuthQueryScope,
-} from '../lib/query/authQueryScope';
 import { queryClient } from '../lib/query/queryClient';
-import apiClient from './client';
+import apiClient, {
+  cancelAuthenticatedRequests,
+  getAuthenticatedRequestSignal,
+  resumeAuthenticatedRequests,
+} from './client';
 import { AppError, normalizeError } from './errors';
 import { getDevAuth } from './generated/dev-auth/dev-auth';
 import type { AuthLoginResponse } from './generated/model';
@@ -45,8 +44,7 @@ const persistLoginResponse = async (
     throw new Error('로그인 응답이 올바르지 않습니다.');
   }
 
-  // End the previous identity before any stored credential can change.
-  changeAuthQueryScope(null);
+  cancelAuthenticatedRequests();
   queryClient.clear();
   await SecureStore.setItemAsync('accessTokenKey', data.accessToken);
   await SecureStore.setItemAsync('refreshTokenKey', data.refreshToken);
@@ -61,7 +59,7 @@ const persistLoginResponse = async (
   }
 
   queryClient.clear();
-  changeAuthQueryScope(String(data.id));
+  resumeAuthenticatedRequests();
 
   return {
     id: data.id,
@@ -140,11 +138,11 @@ export async function loginWithTestUser(testUserKey: string): Promise<OAuthLogin
 }
 
 export async function refreshAccessToken(): Promise<ServerResponseTokens> {
-  const scope = getAuthQueryScope();
+  const signal = getAuthenticatedRequestSignal();
   const assertCurrentSession = () => {
-    if (!isCurrentAuthQueryScope(scope))
-      throw new CanceledError('The authentication session changed.');
+    if (signal.aborted) throw new CanceledError('The authentication session ended.');
   };
+  assertCurrentSession();
   const refreshToken = await SecureStore.getItemAsync('refreshTokenKey');
   assertCurrentSession();
   if (!refreshToken) {
@@ -161,6 +159,7 @@ export async function refreshAccessToken(): Promise<ServerResponseTokens> {
       {
         skipAuth: true,
         skipAuthRefresh: true,
+        signal,
       }
     );
 
@@ -173,11 +172,12 @@ export async function refreshAccessToken(): Promise<ServerResponseTokens> {
     await SecureStore.setItemAsync('accessTokenKey', accessToken);
     assertCurrentSession();
     await SecureStore.setItemAsync('refreshTokenKey', updatedRefreshToken);
+    assertCurrentSession();
 
     return data;
   } catch (error) {
-    if (isCancel(error) || !isCurrentAuthQueryScope(scope)) {
-      throw new CanceledError('The authentication session changed.');
+    if (isCancel(error) || signal.aborted) {
+      throw new CanceledError('The authentication session ended.');
     }
     await clearAuthSession();
     const appError = normalizeError(error);
@@ -190,8 +190,8 @@ export async function refreshAccessToken(): Promise<ServerResponseTokens> {
 }
 
 export async function clearAuthSession(): Promise<void> {
-  changeAuthQueryScope(null);
-  const endedScope = getAuthQueryScope();
+  cancelAuthenticatedRequests();
+  const endedSignal = getAuthenticatedRequestSignal();
   queryClient.clear();
   try {
     await SecureStore.deleteItemAsync('refreshTokenKey');
@@ -200,7 +200,7 @@ export async function clearAuthSession(): Promise<void> {
     await SecureStore.deleteItemAsync(IS_TEST_ACCOUNT_KEY);
   } finally {
     // 비동기 토큰 삭제 중 다시 시작된 조회도 이전 세션 캐시에 남기지 않는다.
-    if (isCurrentAuthQueryScope(endedScope)) queryClient.clear();
+    if (endedSignal === getAuthenticatedRequestSignal()) queryClient.clear();
   }
 }
 
@@ -212,8 +212,12 @@ export async function isTestAccountSession(): Promise<boolean> {
 }
 
 export async function logout(): Promise<void> {
+  cancelAuthenticatedRequests();
+  const endedSignal = getAuthenticatedRequestSignal();
+  queryClient.clear();
   try {
     const refreshToken = await SecureStore.getItemAsync('refreshTokenKey');
+    if (endedSignal !== getAuthenticatedRequestSignal()) return;
     if (refreshToken) {
       await apiClient.post(
         '/auth/logout',
@@ -229,6 +233,6 @@ export async function logout(): Promise<void> {
   } catch {
     // 토큰 조회·서버 로그아웃 실패와 무관하게 기기 내 세션은 정리한다.
   } finally {
-    await clearAuthSession();
+    if (endedSignal === getAuthenticatedRequestSignal()) await clearAuthSession();
   }
 }

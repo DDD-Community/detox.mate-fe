@@ -22,15 +22,33 @@ const isPublicAuthRequest = (url?: string) =>
   Boolean(url && PUBLIC_AUTH_PATHS.some((path) => url.includes(path)));
 
 let refreshPromise: Promise<unknown> | null = null;
+let authenticatedRequests = new AbortController();
+
+export const getAuthenticatedRequestSignal = () => authenticatedRequests.signal;
+
+export function cancelAuthenticatedRequests() {
+  authenticatedRequests.abort();
+  refreshPromise = null;
+}
+
+export function resumeAuthenticatedRequests() {
+  authenticatedRequests = new AbortController();
+  refreshPromise = null;
+}
 
 apiClient.interceptors.request.use(async (config) => {
   if (config.skipAuth || isPublicAuthRequest(config.url)) {
     return config;
   }
 
+  const authSignal = (config._authRequestSignal ??= getAuthenticatedRequestSignal());
+  config.signal ??= authSignal;
+  if (authSignal.aborted) {
+    throw new CanceledError('The authentication session ended.');
+  }
   const accessToken = await SecureStore.getItemAsync('accessTokenKey');
-  if (config.authScopeIsCurrent && !config.authScopeIsCurrent()) {
-    throw new CanceledError('The authentication session changed.');
+  if (authSignal.aborted) {
+    throw new CanceledError('The authentication session ended.');
   }
   if (accessToken) {
     config.headers['Authorization'] = `Bearer ${accessToken}`;
@@ -64,16 +82,16 @@ const extractErrorMessage = (data: unknown): string | undefined => {
 
 apiClient.interceptors.response.use(
   (response) => {
-    if (response.config.authScopeIsCurrent && !response.config.authScopeIsCurrent()) {
-      throw new CanceledError('The authentication session changed.');
+    if (response.config._authRequestSignal?.aborted) {
+      throw new CanceledError('The authentication session ended.');
     }
     return response;
   },
   async (error: AxiosError) => {
     if (isCancel(error)) return Promise.reject(error);
     const originalRequest = error.config;
-    if (originalRequest?.authScopeIsCurrent && !originalRequest.authScopeIsCurrent()) {
-      return Promise.reject(new CanceledError('The authentication session changed.'));
+    if (originalRequest?._authRequestSignal?.aborted) {
+      return Promise.reject(new CanceledError('The authentication session ended.'));
     }
     const canRefresh =
       error.response?.status === 401 &&
@@ -85,16 +103,29 @@ apiClient.interceptors.response.use(
     if (canRefresh) {
       originalRequest._retry = true;
       try {
-        refreshPromise ??= refreshAccessToken().finally(() => {
-          refreshPromise = null;
-        });
+        if (!refreshPromise) {
+          const pendingRefresh = refreshAccessToken().finally(() => {
+            if (refreshPromise === pendingRefresh) refreshPromise = null;
+          });
+          refreshPromise = pendingRefresh;
+        }
         await refreshPromise;
+        if (originalRequest._authRequestSignal?.aborted) {
+          throw new CanceledError('The authentication session ended.');
+        }
         return apiClient(originalRequest);
       } catch (refreshError) {
         if (isCancel(refreshError)) return Promise.reject(refreshError);
+        const authSignal = originalRequest._authRequestSignal;
+        if (authSignal && authSignal !== getAuthenticatedRequestSignal()) {
+          return Promise.reject(new CanceledError('The authentication session ended.'));
+        }
         const appError = normalizeError(refreshError);
         logError(appError, { scope: 'auth.refresh', operation: 'refreshAccessToken' });
-        await clearAuthSession();
+        if (!authSignal?.aborted) await clearAuthSession();
+        if (authSignal && authSignal !== getAuthenticatedRequestSignal()) {
+          return Promise.reject(new CanceledError('The authentication session ended.'));
+        }
         router.replace({ pathname: '/login', params: { reason: 'sessionExpired' } });
         return Promise.reject(appError);
       }

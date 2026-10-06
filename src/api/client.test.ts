@@ -1,8 +1,7 @@
 import { AxiosError, CanceledError, type InternalAxiosRequestConfig } from 'axios';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
-import apiClient from './client';
-import { changeAuthQueryScope } from '../lib/query/authQueryScope';
+import apiClient, { cancelAuthenticatedRequests, resumeAuthenticatedRequests } from './client';
 import { friendAxios } from './friendMutator';
 
 const mocks = vi.hoisted(() => ({
@@ -44,6 +43,8 @@ const response = (config: InternalAxiosRequestConfig, data: unknown, status = 20
 
 beforeEach(() => {
   vi.resetAllMocks();
+  cancelAuthenticatedRequests();
+  resumeAuthenticatedRequests();
   mocks.getItemAsync.mockResolvedValue('fixture-access-token');
 });
 
@@ -52,7 +53,7 @@ afterEach(() => {
 });
 
 describe('공통 API 클라이언트의 인증 경합과 오류 처리', () => {
-  it('친구 요청의 인증 값 복원 중 계정이 바뀌면 새 계정으로 이전 쓰기를 보내지 않는다', async () => {
+  it('친구 요청의 인증 값 복원 중 로그아웃하면 이전 쓰기를 서버에 보내지 않는다', async () => {
     const credentials = Promise.withResolvers<string>();
     const started = Promise.withResolvers<void>();
     mocks.getItemAsync.mockImplementation(() => {
@@ -61,7 +62,6 @@ describe('공통 API 클라이언트의 인증 경합과 오류 처리', () => {
     });
     const dispatch = vi.fn();
     apiClient.defaults.adapter = dispatch;
-    changeAuthQueryScope('first-user');
     const writing = friendAxios({
       url: '/friends/requests',
       method: 'POST',
@@ -69,7 +69,8 @@ describe('공통 API 클라이언트의 인증 경합과 오류 처리', () => {
     });
     const rejected = expect(writing).rejects.toMatchObject({ code: 'ERR_CANCELED' });
     await started.promise;
-    changeAuthQueryScope('second-user');
+    cancelAuthenticatedRequests();
+    resumeAuthenticatedRequests();
     credentials.resolve('fictional-second-account-credential');
     await rejected;
     expect(dispatch).not.toHaveBeenCalled();
@@ -82,7 +83,6 @@ describe('공통 API 클라이언트의 인증 경합과 오류 처리', () => {
       dispatched.resolve(config);
       return result.promise;
     };
-    changeAuthQueryScope('first-user');
     const writing = friendAxios({
       url: '/friends/requests',
       method: 'POST',
@@ -90,7 +90,8 @@ describe('공통 API 클라이언트의 인증 경합과 오류 처리', () => {
     });
     const rejected = expect(writing).rejects.toMatchObject({ code: 'ERR_CANCELED' });
     const config = await dispatched.promise;
-    changeAuthQueryScope('second-user');
+    cancelAuthenticatedRequests();
+    resumeAuthenticatedRequests();
     result.reject(
       new AxiosError(
         'Unauthorized',
@@ -121,7 +122,6 @@ describe('공통 API 클라이언트의 인증 경합과 오류 처리', () => {
         response(config, {}, 401)
       );
     };
-    changeAuthQueryScope('first-user');
     const writing = friendAxios({
       url: '/friends/requests',
       method: 'POST',
@@ -129,8 +129,9 @@ describe('공통 API 클라이언트의 인증 경합과 오류 처리', () => {
     });
     const rejected = expect(writing).rejects.toMatchObject({ code: 'ERR_CANCELED' });
     await started.promise;
-    changeAuthQueryScope('second-user');
-    refreshed.reject(new CanceledError('The authentication session changed.'));
+    cancelAuthenticatedRequests();
+    resumeAuthenticatedRequests();
+    refreshed.reject(new CanceledError('The authentication session ended.'));
     await rejected;
     expect(mocks.clearAuthSession).not.toHaveBeenCalled();
     expect(mocks.replace).not.toHaveBeenCalled();
@@ -172,6 +173,28 @@ describe('공통 API 클라이언트의 인증 경합과 오류 처리', () => {
     expect(mocks.refreshAccessToken).toHaveBeenCalledOnce();
     expect(mocks.clearAuthSession).not.toHaveBeenCalled();
     expect(mocks.replace).not.toHaveBeenCalled();
+  });
+
+  it('현재 세션의 토큰 갱신이 실패하면 세션을 정리하고 로그인으로 이동한다', async () => {
+    mocks.refreshAccessToken.mockRejectedValue(new Error('갱신 실패'));
+    mocks.clearAuthSession.mockImplementation(async () => cancelAuthenticatedRequests());
+    apiClient.defaults.adapter = async (config) => {
+      throw new AxiosError(
+        'Unauthorized',
+        'ERR_BAD_REQUEST',
+        config,
+        undefined,
+        response(config, {}, 401)
+      );
+    };
+
+    await expect(apiClient.get('/private/resource')).rejects.toBeDefined();
+
+    expect(mocks.clearAuthSession).toHaveBeenCalledOnce();
+    expect(mocks.replace).toHaveBeenCalledWith({
+      pathname: '/login',
+      params: { reason: 'sessionExpired' },
+    });
   });
 
   it('화면이 처리할 네트워크 실패는 전역 재시도 큐에 대기하지 않고 화면에 반환한다', async () => {

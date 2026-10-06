@@ -19,8 +19,10 @@ import {
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
-import { useAuthQueryScope } from '../../../lib/query/authQueryScope';
-import { friendsQueryOptions, receivedQueryOptions } from '../utils/friendsQueryOptions';
+import {
+  getGetFriendsSuspenseQueryOptions,
+  getGetReceivedRequestsSuspenseQueryOptions,
+} from '../../../api/query-generated/friend';
 import { useDebouncedEmail } from '../hooks/useDebouncedEmail';
 import { FriendEmailSearch } from '../components/FriendEmailSearch';
 import { FriendsErrorFeedback } from '../components/FriendsErrorFeedback';
@@ -129,8 +131,7 @@ function ReceivedRequestsSection({
   onAccept: (id: number) => Promise<boolean>;
   onReject: (id: number) => Promise<boolean>;
 }) {
-  const scope = useAuthQueryScope();
-  const result = useSuspenseQuery(receivedQueryOptions(scope));
+  const result = useSuspenseQuery(getGetReceivedRequestsSuspenseQueryOptions());
   const receivedRequests = result.data.map(toReceivedRequest);
   const busy = pendingActionId !== null;
   return (
@@ -199,8 +200,7 @@ function FriendsSection({
   pendingActionId: string | null;
   onSelectDelete: (friend: FriendsListItem) => void;
 }) {
-  const scope = useAuthQueryScope();
-  const result = useSuspenseQuery(friendsQueryOptions(scope));
+  const result = useSuspenseQuery(getGetFriendsSuspenseQueryOptions());
   const friends = result.data.map(toFriendListItem);
   const busy = pendingActionId !== null;
   const searching = query.trim().length > 0;
@@ -266,28 +266,9 @@ function FriendsSection({
 }
 
 export default function FriendsScreen() {
-  const scope = useAuthQueryScope();
-  const content =
-    scope.userId === null ? (
-      <View style={styles.root}>
-        <Pressable
-          accessibilityRole="button"
-          onPress={() => router.replace('/login')}
-          style={{ padding: 24 }}
-        >
-          <Text style={styles.emailHint}>다시 로그인해 주세요.</Text>
-        </Pressable>
-      </View>
-    ) : (
-      <FriendsContent key={`${scope.userId}:${scope.version}`} />
-    );
   return (
-    <LoggingPage
-      eventName="Friends Viewed"
-      properties={{ pageName: 'Friends' }}
-      enabled={scope.userId !== null}
-    >
-      {content}
+    <LoggingPage eventName="Friends Viewed" properties={{ pageName: 'Friends' }}>
+      <FriendsContent />
     </LoggingPage>
   );
 }

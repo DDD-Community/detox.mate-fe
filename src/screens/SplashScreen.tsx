@@ -9,7 +9,6 @@ import { getGroupChallenge } from '../api/generated/group-challenge/group-challe
 import { LoggingPage } from '../components';
 import { setAnalyticsUserId, trackEvent } from '../lib/analytics';
 import { consumePendingInviteCode } from '../lib/pendingInvite';
-import { getAuthQueryScope } from '../lib/query/authQueryScope';
 import { TERMS_ACCEPTED_KEY } from './auth/authStorageKeys';
 
 type InitialFeedRouteParams = {
@@ -54,7 +53,7 @@ export default function SplashScreen() {
 
     const redirect = async () => {
       const accessToken = await SecureStore.getItemAsync('accessTokenKey');
-      const currentUserId = getAuthQueryScope().userId;
+      const currentUserId = await SecureStore.getItemAsync('currentUserId');
       if (cancelled) return;
 
       if (accessToken && currentUserId) {

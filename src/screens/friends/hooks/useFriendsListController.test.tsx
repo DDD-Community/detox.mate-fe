@@ -1,5 +1,10 @@
 // @vitest-environment jsdom
-import { QueryClient, QueryClientProvider, useSuspenseQuery } from '@tanstack/react-query';
+import {
+  MutationCache,
+  QueryClient,
+  QueryClientProvider,
+  useSuspenseQuery,
+} from '@tanstack/react-query';
 import { act, createElement, Suspense } from 'react';
 import { createRoot } from 'react-dom/client';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
@@ -9,11 +14,9 @@ import type {
   FriendResponse,
 } from '../../../api/query-generated/model';
 import {
-  changeAuthQueryScope,
-  getAuthQueryScope,
-  useAuthQueryScope,
-} from '../../../lib/query/authQueryScope';
-import { friendsQueryOptions, receivedQueryOptions } from '../utils/friendsQueryOptions';
+  getGetFriendsSuspenseQueryOptions,
+  getGetReceivedRequestsSuspenseQueryOptions,
+} from '../../../api/query-generated/friend';
 import { useFriendsListController } from './useFriendsListController';
 
 const api = vi.hoisted(() => ({
@@ -53,7 +56,7 @@ function deferred<T>() {
 
 beforeEach(() => {
   vi.resetAllMocks();
-  changeAuthQueryScope('1');
+
   api.friends.mockResolvedValue([friend]);
   api.received.mockResolvedValue([request]);
   api.accept.mockResolvedValue({ friendshipId: 42, user: request.user });
@@ -68,19 +71,20 @@ afterEach(async () => {
   await act(() => cleanups.splice(0).forEach((cleanup) => cleanup()));
 });
 
-async function setup() {
-  const client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+async function setup(onMutate?: () => Promise<void>) {
+  const client = new QueryClient({
+    defaultOptions: { queries: { retry: false } },
+    mutationCache: new MutationCache({ onMutate }),
+  });
   let current!: ReturnType<typeof useFriendsListController>;
   let rows: FriendResponse[] = [];
   let requests: FriendReceivedRequestResponse[] = [];
   function FriendsData() {
-    const scope = useAuthQueryScope();
-    rows = useSuspenseQuery(friendsQueryOptions(scope)).data;
+    rows = useSuspenseQuery(getGetFriendsSuspenseQueryOptions()).data;
     return null;
   }
   function RequestsData() {
-    const scope = useAuthQueryScope();
-    requests = useSuspenseQuery(receivedQueryOptions(scope)).data;
+    requests = useSuspenseQuery(getGetReceivedRequestsSuspenseQueryOptions()).data;
     return null;
   }
   function Content() {
@@ -92,18 +96,18 @@ async function setup() {
       createElement(RequestsData)
     );
   }
-  function Harness() {
-    const scope = useAuthQueryScope();
-    return createElement(Content, { key: scope.version });
-  }
   const root = createRoot(document.createElement('div'));
   cleanups.push(() => {
     root.unmount();
     client.clear();
   });
+  let mountKey = 0;
   const show = async () => {
+    mountKey += 1;
     await act(() => {
-      root.render(createElement(QueryClientProvider, { client }, createElement(Harness)));
+      root.render(
+        createElement(QueryClientProvider, { client }, createElement(Content, { key: mountKey }))
+      );
     });
   };
   await show();
@@ -137,12 +141,11 @@ describe('친구 목록 조회와 변경 액션', () => {
     api.friends.mockReturnValue(friendsRead.promise);
     api.received.mockReturnValue(requestsRead.promise);
     const client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
-    const scope = getAuthQueryScope();
 
     function InitialQueries() {
       // 같은 자식에서 순차로 suspend해도 상위 controller가 두 요청을 먼저 시작해야 한다.
-      useSuspenseQuery(friendsQueryOptions(scope));
-      useSuspenseQuery(receivedQueryOptions(scope));
+      useSuspenseQuery(getGetFriendsSuspenseQueryOptions());
+      useSuspenseQuery(getGetReceivedRequestsSuspenseQueryOptions());
       return null;
     }
     function InitialMount() {
@@ -168,6 +171,53 @@ describe('친구 목록 조회와 변경 액션', () => {
         await Promise.all([friendsRead.promise, requestsRead.promise]);
       });
     }
+  });
+
+  it('화면이 유지된 채 조회 캐시가 정리되고 다시 생성돼도 다음 변경은 새 조회 결과에 적용한다', async () => {
+    const screen = await setup();
+    const friendsOptions = getGetFriendsSuspenseQueryOptions();
+    const requestsOptions = getGetReceivedRequestsSuspenseQueryOptions();
+    await act(async () => {
+      screen.client.removeQueries({ queryKey: requestsOptions.queryKey, exact: true });
+      await screen.client.fetchQuery(requestsOptions);
+    });
+    const accepted = { friendshipId: 42, user: request.user };
+    api.accept.mockImplementationOnce(async () => {
+      api.friends.mockResolvedValue([friend, accepted]);
+      api.received.mockResolvedValue([]);
+      return accepted;
+    });
+    await act(async () => {
+      expect(await screen.state.acceptRequest(72)).toBe(true);
+    });
+    expect(api.accept).toHaveBeenCalledTimes(1);
+    expect(screen.client.getQueryData(friendsOptions.queryKey)).toContainEqual(accepted);
+    expect(api.track.mock.calls).toEqual([['Friend Request Accepted']]);
+  });
+
+  it('변경 시작 뒤 인증 정리 중 캐시가 삭제되면 새 목록을 조회해도 이전 수락은 전송하지 않는다', async () => {
+    const entered = deferred<void>();
+    const resume = deferred<void>();
+    const screen = await setup(() => {
+      entered.resolve();
+      return resume.promise;
+    });
+    let writing!: Promise<boolean>;
+    await act(async () => {
+      writing = screen.state.acceptRequest(72);
+      await entered.promise;
+    });
+    await act(() => screen.client.clear());
+    await screen.show();
+    await act(async () => {
+      resume.resolve();
+      expect(await writing).toBe(false);
+    });
+    expect(api.accept).not.toHaveBeenCalled();
+    expect(screen.rows).toEqual([friend]);
+    expect(screen.requests).toEqual([request]);
+    expect(screen.state.error).toBeNull();
+    expect(api.track).not.toHaveBeenCalled();
   });
 
   it('친구 삭제 중에는 중복 변경을 즉시 차단하고 삭제 실패 후에는 재시도를 허용한다', async () => {
@@ -246,17 +296,15 @@ describe('친구 목록 조회와 변경 액션', () => {
       const nextRequest = { requestId: 72, user: { userId: 11, displayName: '새 계정 요청' } };
       api.friends.mockResolvedValue([nextFriend]);
       api.received.mockResolvedValue([nextRequest]);
-      let scope!: ReturnType<typeof getAuthQueryScope>;
       await act(() => {
-        changeAuthQueryScope(null);
-        changeAuthQueryScope('2');
-        scope = getAuthQueryScope();
         screen.client.clear();
-        screen.client.setQueryData(friendsQueryOptions(scope).queryKey, [nextFriend]);
-        screen.client.setQueryData(receivedQueryOptions(scope).queryKey, [nextRequest]);
+        screen.client.setQueryData(getGetFriendsSuspenseQueryOptions().queryKey, [nextFriend]);
+        screen.client.setQueryData(getGetReceivedRequestsSuspenseQueryOptions().queryKey, [
+          nextRequest,
+        ]);
       });
       await screen.show();
-      const friendsOptions = friendsQueryOptions(scope);
+      const friendsOptions = getGetFriendsSuspenseQueryOptions();
 
       const nextRead = deferred<FriendResponse[]>();
       const nextReadStarted = deferred<void>();

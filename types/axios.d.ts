@@ -3,7 +3,7 @@ import type { RequestErrorPolicy, RetryPolicy } from '../src/api/errors';
 
 declare module 'axios' {
   export interface AxiosRequestConfig {
-    authScopeIsCurrent?: () => boolean;
+    _authRequestSignal?: AbortSignal;
     skipAuth?: boolean;
     skipAuthRefresh?: boolean;
     _retry?: boolean;

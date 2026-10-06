@@ -5,7 +5,6 @@ import { createRoot } from 'react-dom/client';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import type { FriendResponse } from '../../../api/query-generated/model';
-import { changeAuthQueryScope } from '../../../lib/query/authQueryScope';
 import FriendsScreen from './FriendsScreen';
 
 const api = vi.hoisted(() => ({ friends: vi.fn(), requests: vi.fn() }));
@@ -77,7 +76,7 @@ function deferred<T>() {
 
 beforeEach(() => {
   vi.resetAllMocks();
-  changeAuthQueryScope('1');
+
   vi.spyOn(console, 'error').mockImplementation(() => undefined);
   api.requests.mockImplementation(async () => [request]);
 });

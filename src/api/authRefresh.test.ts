@@ -1,9 +1,15 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
-import { changeAuthQueryScope, getAuthQueryScope } from '../lib/query/authQueryScope';
+import { cancelAuthenticatedRequests, resumeAuthenticatedRequests } from './client';
 import { refreshAccessToken } from './auth';
 
-const mocks = vi.hoisted(() => ({ read: vi.fn(), write: vi.fn(), remove: vi.fn(), post: vi.fn() }));
+const mocks = vi.hoisted(() => ({
+  read: vi.fn(),
+  write: vi.fn(),
+  remove: vi.fn(),
+  post: vi.fn(),
+  requests: new AbortController(),
+}));
 vi.mock('@react-native-seoul/kakao-login', () => ({ login: vi.fn() }));
 vi.mock('expo-apple-authentication', () => ({}));
 vi.mock('expo-secure-store', () => ({
@@ -11,7 +17,14 @@ vi.mock('expo-secure-store', () => ({
   setItemAsync: mocks.write,
   deleteItemAsync: mocks.remove,
 }));
-vi.mock('./client', () => ({ default: { post: mocks.post } }));
+vi.mock('./client', () => ({
+  default: { post: mocks.post },
+  getAuthenticatedRequestSignal: () => mocks.requests.signal,
+  cancelAuthenticatedRequests: () => mocks.requests.abort(),
+  resumeAuthenticatedRequests: () => {
+    mocks.requests = new AbortController();
+  },
+}));
 vi.mock('./errors', async () => {
   const { AppError, normalizeError } = await import('./errors/normalizeError');
   return { AppError, normalizeError };
@@ -20,7 +33,7 @@ vi.mock('./errors', async () => {
 beforeEach(() => {
   vi.resetAllMocks();
   mocks.read.mockResolvedValue('fictional-refresh-credential');
-  changeAuthQueryScope('first-user');
+  resumeAuthenticatedRequests();
 });
 
 describe('토큰 갱신과 계정 변경의 경합', () => {
@@ -38,15 +51,14 @@ describe('토큰 갱신과 계정 변경의 경합', () => {
       const refreshing = refreshAccessToken();
       const rejected = expect(refreshing).rejects.toMatchObject({ code: 'ERR_CANCELED' });
       await started.promise;
-      changeAuthQueryScope('second-user');
-      const current = getAuthQueryScope();
+      cancelAuthenticatedRequests();
+      resumeAuthenticatedRequests();
       if (outcome === '성공')
         reply.resolve({ data: { accessToken: 'old-access', refreshToken: 'old-refresh' } });
       else reply.reject(new Error('offline'));
       await rejected;
       expect(mocks.write).not.toHaveBeenCalled();
       expect(mocks.remove).not.toHaveBeenCalled();
-      expect(getAuthQueryScope()).toEqual(current);
     }
   );
 });

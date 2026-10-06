@@ -1,11 +1,11 @@
 import { QueryProvider } from '../src/lib/query/QueryProvider';
-import { AuthSessionBootstrap } from '../src/lib/query/AuthSessionBootstrap';
 import { useFonts } from 'expo-font';
 import * as Notifications from 'expo-notifications';
 import { router, Stack } from 'expo-router';
 import * as SplashScreen from 'expo-splash-screen';
 import { useEffect, type ComponentType } from 'react';
 import { getGroup } from '../src/api/generated/group/group';
+import { logError, normalizeError } from '../src/api/errors';
 import { fontSources } from '../src/lib/token/primitive/fonts';
 import { NetworkErrorToast } from '../src/components/NetworkErrorToast';
 import { subscribeToDevicePushTokenRefresh } from '../src/lib/fcmToken';
@@ -35,6 +35,17 @@ export default function RootLayout() {
     initAnalytics();
     initAirbridge();
   }, []);
+
+  useEffect(() => {
+    if (fontsLoaded || fontError) {
+      void SplashScreen.hideAsync().catch((failure) => {
+        logError(normalizeError(failure), {
+          scope: 'app.bootstrap',
+          operation: 'hideNativeSplash',
+        });
+      });
+    }
+  }, [fontsLoaded, fontError]);
 
   // FCM registration token 갱신 감지 → 서버에 새 토큰 재등록
   useEffect(() => {
@@ -71,7 +82,7 @@ export default function RootLayout() {
   return (
     <QueryProvider>
       <AppErrorBoundary>
-        <Stack layout={AuthSessionBootstrap} screenOptions={{ headerShown: false }} />
+        <Stack screenOptions={{ headerShown: false }} />
       </AppErrorBoundary>
       <NetworkErrorToast />
     </QueryProvider>

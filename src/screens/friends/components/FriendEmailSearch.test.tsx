@@ -5,8 +5,7 @@ import { createRoot } from 'react-dom/client';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { AppError } from '../../../api/errors/normalizeError';
-import { changeAuthQueryScope, getAuthQueryScope } from '../../../lib/query/authQueryScope';
-import { searchQueryOptions } from '../utils/friendsQueryOptions';
+import { getSearchByEmailSuspenseQueryOptions } from '../../../api/query-generated/friend';
 import { FriendEmailSearch } from './FriendEmailSearch';
 
 const mocks = vi.hoisted(() => ({ search: vi.fn(), send: vi.fn(), log: vi.fn() }));
@@ -40,14 +39,14 @@ vi.mock('react-native', async () => {
 Object.assign(globalThis, { IS_REACT_ACT_ENVIRONMENT: true });
 const cleanups: (() => void)[] = [];
 beforeEach(() => {
-  vi.clearAllMocks();
-  changeAuthQueryScope('1');
+  vi.resetAllMocks();
+  mocks.send.mockResolvedValue({ requestId: 10 });
 });
 afterEach(async () => {
   await act(() => cleanups.splice(0).forEach((cleanup) => cleanup()));
 });
 
-async function mount(client: QueryClient, strict = false) {
+async function mount(client: QueryClient, strict = false, email = 'search@example.com') {
   const element = document.createElement('div');
   const caught = vi.fn();
   const root = createRoot(element, { onCaughtError: caught });
@@ -69,10 +68,10 @@ async function mount(client: QueryClient, strict = false) {
           QueryClientProvider,
           { client },
           createElement(FriendEmailSearch, {
-            email: 'search@example.com',
+            email,
             onRefresh: async () => {},
             onReceived: vi.fn(),
-            renderFriend: () => null,
+            renderFriend: () => createElement('span', {}, '서버 친구 관계'),
             empty: createElement('span', {}, '일치하는 메일이 없어요.'),
           })
         )
@@ -112,7 +111,7 @@ describe('이메일 검색 실패의 정상 화면 복구', () => {
           : AppError({ type: 'server', status: 500 });
       const first = deferred<unknown>();
       mocks.search.mockReturnValue(first.promise);
-      const options = searchQueryOptions('search@example.com', getAuthQueryScope());
+      const options = getSearchByEmailSuspenseQueryOptions({ email: 'search@example.com' });
       const screen = await mount(client, strict);
       expect(screen.element.querySelector('[role="status"]')).not.toBeNull();
       await act(async () => {
@@ -242,7 +241,7 @@ describe('이메일 검색 실패의 정상 화면 복구', () => {
 
   it('확정 요청의 재조회가 실패하면 요청됨을 유지하면서 재시도와 오류 기록을 제공한다', async () => {
     const client = newClient();
-    const options = searchQueryOptions('search@example.com', getAuthQueryScope());
+    const options = getSearchByEmailSuspenseQueryOptions({ email: 'search@example.com' });
     mocks.search.mockResolvedValue({
       userId: 2,
       displayName: '친구',
@@ -286,7 +285,7 @@ describe('이메일 검색 실패의 정상 화면 복구', () => {
 
   it('전송 중 재조회가 먼저 실패해도 전송 성공은 재시도 없이 요청됨 카드로 복구한다', async () => {
     const client = newClient();
-    const options = searchQueryOptions('search@example.com', getAuthQueryScope());
+    const options = getSearchByEmailSuspenseQueryOptions({ email: 'search@example.com' });
     const user = { userId: 2, displayName: '친구', relationshipStatus: 'NONE' as const };
     client.setQueryData(options.queryKey, user);
     const reading = deferred<unknown>();
@@ -321,10 +320,96 @@ describe('이메일 검색 실패의 정상 화면 복구', () => {
     await vi.waitFor(async () => {
       await act(async () => {});
       expect(screen.element.textContent).toContain('요청됨');
-      expect(screen.element.textContent).not.toContain('다시 시도');
+      expect(screen.element.textContent).toContain('다시 시도');
     });
     expect(screen.caught).not.toHaveBeenCalled();
     expect(mocks.log).toHaveBeenCalledTimes(1);
     expect(mocks.send).toHaveBeenCalledTimes(1);
+  });
+
+  it.each(['NONE', 'FRIEND', 'PENDING_RECEIVED', '서버 오류', '검색 없음'] as const)(
+    '전송 성공 뒤 늦은 GET %s는 현재 완료를 되돌리지 않고 재진입 시 서버 관계를 확인한다',
+    async (outcome) => {
+      const client = newClient();
+      const options = getSearchByEmailSuspenseQueryOptions({ email: 'search@example.com' });
+      client.setQueryData(options.queryKey, {
+        userId: 2,
+        displayName: '친구',
+        relationshipStatus: 'NONE',
+      });
+      const reading = deferred<unknown>();
+      mocks.search.mockReturnValue(reading.promise);
+      const screen = await mount(client);
+      await act(() => screen.element.querySelector('button')!.click());
+      await vi.waitFor(async () => {
+        await act(async () => {});
+        expect(screen.element.textContent).toContain('요청됨');
+      });
+      await act(async () => {
+        if (outcome === '서버 오류' || outcome === '검색 없음') {
+          reading.reject(
+            outcome === '검색 없음'
+              ? AppError({ type: 'notFound', status: 404, code: 'NOT_FOUND' })
+              : AppError({ type: 'server', status: 500 })
+          );
+        } else reading.resolve({ userId: 2, displayName: '친구', relationshipStatus: outcome });
+        await reading.promise.catch(() => undefined);
+      });
+      await vi.waitFor(async () => {
+        await act(async () => {});
+        expect(screen.element.textContent).toContain('요청됨');
+        expect(screen.element.textContent).not.toContain('서버 친구 관계');
+        if (outcome === '서버 오류' || outcome === '검색 없음')
+          expect(screen.element.textContent).toContain('다시 시도');
+      });
+      expect(screen.caught).not.toHaveBeenCalled();
+      // 새 방문은 이전 mutation 성공 상태를 이어받지 않고 서버 관계를 사용한다.
+      await act(() => screen.unmount());
+      mocks.search.mockResolvedValue({
+        userId: 2,
+        displayName: '친구',
+        relationshipStatus: 'FRIEND',
+      });
+      const reentered = await mount(client);
+      await vi.waitFor(async () => {
+        await act(async () => {});
+        expect(reentered.element.textContent).toContain('서버 친구 관계');
+        expect(reentered.element.textContent).not.toContain('요청됨');
+      });
+    }
+  );
+
+  it('전송 중 검색을 바꾼 뒤 이전 성공은 새 카드의 완료로 표시되지 않는다', async () => {
+    const client = newClient();
+    mocks.search.mockResolvedValue({
+      userId: 2,
+      displayName: '친구 A',
+      relationshipStatus: 'NONE',
+    });
+    const sending = deferred<unknown>();
+    mocks.send.mockReturnValue(sending.promise);
+    const previous = await mount(client);
+    await vi.waitFor(async () => {
+      await act(async () => {});
+      expect(previous.element.textContent).toContain('친구 요청 보내기');
+    });
+    await act(() => previous.element.querySelector('button')!.click());
+    await act(() => previous.unmount());
+    mocks.search.mockResolvedValue({
+      userId: 3,
+      displayName: '친구 B',
+      relationshipStatus: 'NONE',
+    });
+    const next = await mount(client, false, 'next@example.com');
+    await act(async () => {
+      sending.resolve({ requestId: 10 });
+      await sending.promise;
+    });
+    await vi.waitFor(async () => {
+      await act(async () => {});
+      expect(next.element.textContent).toContain('친구 B');
+      expect(next.element.textContent).toContain('친구 요청 보내기');
+      expect(next.element.textContent).not.toContain('요청됨');
+    });
   });
 });

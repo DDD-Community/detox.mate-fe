@@ -17,10 +17,9 @@ import {
 import { logError, normalizeError } from '../../../api/errors';
 import { requireId } from '../utils/friendsListData';
 import { ErrorBoundary } from '../../../components/AppErrorBoundary/AppErrorBoundary';
-import { useAuthQueryScope } from '../../../lib/query/authQueryScope';
 import { fontFamily } from '../../../lib/token/primitive/fonts';
 import { useSendFriendRequest } from '../hooks/useSendFriendRequest';
-import { searchQueryOptions } from '../utils/friendsQueryOptions';
+import { getSearchByEmailSuspenseQueryOptions } from '../../../api/query-generated/friend';
 import { FriendsErrorFeedback } from './FriendsErrorFeedback';
 import searchAvatar from '@assets/avatars/friend-search.svg';
 
@@ -31,29 +30,27 @@ const missingEmail = (error: unknown) => {
 };
 
 function SearchResult({
-  email,
   onReceived,
   renderFriend,
   user,
 }: {
-  email: string;
   user: FriendSearchResponse;
   onReceived: () => void;
   renderFriend: (userId: number) => React.ReactNode;
 }) {
-  const { send, pending, error } = useSendFriendRequest(email, user);
+  const { send, pending, completed, error } = useSendFriendRequest(requireId(user.userId));
   const [imageFailed, setImageFailed] = useState(false);
   useEffect(() => setImageFailed(false), [user.profileImageUrl]);
-  const requested = user.relationshipStatus === RelationshipStatus.PENDING_SENT;
+  const requested = completed || user.relationshipStatus === RelationshipStatus.PENDING_SENT;
   const received = user.relationshipStatus === RelationshipStatus.PENDING_RECEIVED;
-  requireId(user.userId);
   if (
     !user.relationshipStatus ||
     !Object.values(RelationshipStatus).includes(user.relationshipStatus)
   ) {
     throw new Error('친구 정보를 불러오지 못했어요. 다시 시도해주세요.');
   }
-  if (user.relationshipStatus === RelationshipStatus.FRIEND) return renderFriend(user.userId!);
+  if (!completed && user.relationshipStatus === RelationshipStatus.FRIEND)
+    return renderFriend(user.userId!);
   const count = user.mutualFriendCount ?? 0;
   const name = user.mutualFriendPreviewName;
   const mutual =
@@ -111,18 +108,16 @@ function SearchQuery({
   email,
   onReceived,
   renderFriend,
-  empty,
 }: {
   email: string;
   onReceived: () => void;
   renderFriend: (userId: number) => React.ReactNode;
-  empty: React.ReactNode;
 }) {
-  const scope = useAuthQueryScope();
-  const result = useSuspenseQuery(searchQueryOptions(email, scope));
+  const result = useSuspenseQuery(
+    getSearchByEmailSuspenseQueryOptions({ email }, { query: { refetchOnMount: 'always' } })
+  );
   const failure =
     result.error && !result.isFetching && !isCancel(result.error) ? result.error : null;
-  const requested = result.data?.relationshipStatus === RelationshipStatus.PENDING_SENT;
   useEffect(() => {
     if (failure && !missingEmail(failure)) {
       logError(normalizeError(failure), { scope: 'api', operation: 'searchFriendByEmail' });
@@ -131,18 +126,15 @@ function SearchQuery({
   const feedback = failure ? (
     <FriendsErrorFeedback error={failure} onRetry={() => void result.refetch()} />
   ) : null;
-  if (failure && !requested) {
-    return missingEmail(failure) ? empty : feedback;
-  }
   return (
     <>
       <SearchResult
-        email={email}
+        key={email}
         user={result.data}
         onReceived={onReceived}
         renderFriend={renderFriend}
       />
-      {failure && !missingEmail(failure) ? feedback : null}
+      {feedback}
     </>
   );
 }
@@ -160,12 +152,11 @@ export function FriendEmailSearch({
   renderFriend: (userId: number) => React.ReactNode;
   empty: React.ReactNode;
 }) {
-  const scope = useAuthQueryScope();
   const client = useQueryClient();
-  const options = searchQueryOptions(email, scope);
+  const options = getSearchByEmailSuspenseQueryOptions({ email });
   const mountedQuery = useRef<Query | null>(null);
   useEffect(() => {
-    const queryKey = searchQueryOptions(email, scope).queryKey;
+    const queryKey = getSearchByEmailSuspenseQueryOptions({ email }).queryKey;
     const query = client.getQueryCache().find({ queryKey, exact: true });
     mountedQuery.current = query ?? null;
     return () => {
@@ -184,7 +175,7 @@ export function FriendEmailSearch({
           client.removeQueries({ queryKey, exact: true });
       });
     };
-  }, [client, email, scope]);
+  }, [client, email]);
   return (
     <QueryErrorResetBoundary>
       {({ reset }) => (
@@ -206,12 +197,7 @@ export function FriendEmailSearch({
               />
             }
           >
-            <SearchQuery
-              email={email}
-              onReceived={onReceived}
-              renderFriend={renderFriend}
-              empty={empty}
-            />
+            <SearchQuery email={email} onReceived={onReceived} renderFriend={renderFriend} />
           </Suspense>
         </ErrorBoundary>
       )}
