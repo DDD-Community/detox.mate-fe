@@ -6,7 +6,10 @@ import { getUserErrorMessage } from '../../../api/errors/messages';
 import { normalizeError } from '../../../api/errors/normalizeError';
 import { logError } from '../../../api/errors/logger';
 import { getSendRequestMutationOptions, useSendRequest } from '../../../api/query-generated/friend';
-import type { FriendSearchResponse } from '../../../api/query-generated/model';
+import {
+  FriendSearchResponseRelationshipStatus as RelationshipStatus,
+  type FriendSearchResponse,
+} from '../../../api/query-generated/model';
 import { isCurrentAuthQueryScope, type AuthQueryScope } from '../../../lib/query/authQueryScope';
 import { trackEvent } from '../../../lib/analytics';
 import { guardFriendMutation, searchQueryOptions } from '../utils/friendsQueryOptions';
@@ -38,20 +41,29 @@ export function useSendFriendRequest(
   const [pending, setPending] = useState(false);
   const [error, setError] = useState<string | null>(null);
   useEffect(() => {
-    if (user.relationshipStatus !== 'NONE' && user.relationshipStatus !== 'SELF') setError(null);
+    if (
+      user.relationshipStatus !== RelationshipStatus.NONE &&
+      user.relationshipStatus !== RelationshipStatus.SELF
+    )
+      setError(null);
   }, [user.relationshipStatus]);
   // The component is keyed by the current confirmed email and auth scope.
   // A removed query's old mutation must never recreate a cache in a new session.
   const send = async () => {
     if (!mounted.current || locked.current || activeWrites || !isCurrentAuthQueryScope(scope))
       return;
-    if (user.relationshipStatus !== 'NONE' && user.relationshipStatus !== 'SELF') return;
+    if (
+      user.relationshipStatus !== RelationshipStatus.NONE &&
+      user.relationshipStatus !== RelationshipStatus.SELF
+    )
+      return;
     const query = client.getQueryCache().find({ queryKey: options.queryKey, exact: true });
     const currentUser = query?.state.data as FriendSearchResponse | undefined;
     if (
       !query ||
       currentUser?.userId !== user.userId ||
-      (currentUser?.relationshipStatus !== 'NONE' && currentUser?.relationshipStatus !== 'SELF')
+      (currentUser?.relationshipStatus !== RelationshipStatus.NONE &&
+        currentUser?.relationshipStatus !== RelationshipStatus.SELF)
     )
       return;
     const ownsResult = () =>
@@ -69,7 +81,7 @@ export function useSendFriendRequest(
       client.setQueryData<FriendSearchResponse>(options.queryKey, (previous) => ({
         ...previous,
         ...response.user,
-        relationshipStatus: 'PENDING_SENT',
+        relationshipStatus: RelationshipStatus.PENDING_SENT,
         requestId: response.requestId,
       }));
       try {

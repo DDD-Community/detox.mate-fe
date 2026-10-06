@@ -5,7 +5,10 @@ import { useEffect, useState } from 'react';
 import { ActivityIndicator, Pressable, StyleSheet, Text, View } from 'react-native';
 import Svg, { Defs, LinearGradient, Rect, Stop } from 'react-native-svg';
 
-import type { FriendSearchResponse } from '../../../api/query-generated/model';
+import {
+  FriendSearchResponseRelationshipStatus as RelationshipStatus,
+  type FriendSearchResponse,
+} from '../../../api/query-generated/model';
 import { logError, normalizeError } from '../../../api/errors';
 import { requireId } from '../utils/friendsListData';
 import { ErrorBoundary } from '../../../components/AppErrorBoundary/AppErrorBoundary';
@@ -38,18 +41,16 @@ function SearchResult({
   const { send, pending, error } = useSendFriendRequest(email, user, scope);
   const [imageFailed, setImageFailed] = useState(false);
   useEffect(() => setImageFailed(false), [user.profileImageUrl]);
-  const requested = user.relationshipStatus === 'PENDING_SENT';
-  const received = user.relationshipStatus === 'PENDING_RECEIVED';
+  const requested = user.relationshipStatus === RelationshipStatus.PENDING_SENT;
+  const received = user.relationshipStatus === RelationshipStatus.PENDING_RECEIVED;
   requireId(user.userId);
   if (
     !user.relationshipStatus ||
-    !['NONE', 'SELF', 'FRIEND', 'PENDING_SENT', 'PENDING_RECEIVED'].includes(
-      user.relationshipStatus
-    )
+    !Object.values(RelationshipStatus).includes(user.relationshipStatus)
   ) {
     throw new Error('친구 정보를 불러오지 못했어요. 다시 시도해주세요.');
   }
-  if (user.relationshipStatus === 'FRIEND') return renderFriend(user.userId!);
+  if (user.relationshipStatus === RelationshipStatus.FRIEND) return renderFriend(user.userId!);
   const count = user.mutualFriendCount ?? 0;
   const name = user.mutualFriendPreviewName;
   const mutual =
@@ -119,7 +120,7 @@ function SearchQuery({
   const result = useQuery(searchQueryOptions(email, scope));
   const failure =
     result.error && !result.isFetching && !isCancel(result.error) ? result.error : null;
-  const requested = result.data?.relationshipStatus === 'PENDING_SENT';
+  const requested = result.data?.relationshipStatus === RelationshipStatus.PENDING_SENT;
   useEffect(() => {
     if (failure && !missingEmail(failure)) {
       logError(normalizeError(failure), { scope: 'api', operation: 'searchFriendByEmail' });
