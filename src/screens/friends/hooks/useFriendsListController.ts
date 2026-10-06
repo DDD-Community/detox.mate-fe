@@ -4,13 +4,16 @@ import {
   useQueryClient,
   type QueryKey,
 } from '@tanstack/react-query';
+import { isCancel } from 'axios';
 import { useRef, useState } from 'react';
 
+import { logError } from '../../../api/errors/logger';
 import { getUserErrorMessage } from '../../../api/errors/messages';
 import { normalizeError } from '../../../api/errors/normalizeError';
 import {
-  getGetFriendsSuspenseQueryOptions,
-  getGetReceivedRequestsSuspenseQueryOptions,
+  getAcceptRequestMutationOptions,
+  getDeletePendingRequestMutationOptions,
+  getUnfriendMutationOptions,
   useAcceptRequest,
   useDeletePendingRequest,
   useUnfriend,
@@ -19,6 +22,13 @@ import type {
   FriendReceivedRequestResponse,
   FriendResponse,
 } from '../../../api/query-generated/model';
+import { isCurrentAuthQueryScope, type AuthQueryScope } from '../../../lib/query/authQueryScope';
+import {
+  friendsQueryOptions,
+  receivedQueryOptions,
+  isScopeSearch,
+  guardFriendMutation,
+} from '../utils/friendsQueryOptions';
 import { requireId } from '../utils/friendsListData';
 
 type Action =
@@ -26,10 +36,10 @@ type Action =
   | { kind: 'reject'; requestId: number }
   | { kind: 'delete'; friendshipId: number };
 
-export function useFriendsListController() {
+export function useFriendsListController(scope?: AuthQueryScope) {
   const client = useQueryClient();
-  const friendsOptions = getGetFriendsSuspenseQueryOptions();
-  const requestsOptions = getGetReceivedRequestsSuspenseQueryOptions();
+  const friendsOptions = friendsQueryOptions(scope);
+  const requestsOptions = receivedQueryOptions(scope);
   // Both requests start before either child can suspend; generated keys share in-flight work.
   usePrefetchQuery(friendsOptions);
   usePrefetchQuery(requestsOptions);
@@ -43,9 +53,15 @@ export function useFriendsListController() {
         predicate: (query) => query.state.data !== undefined,
       }) >
     0;
-  const { mutateAsync: accept } = useAcceptRequest();
-  const { mutateAsync: reject } = useDeletePendingRequest();
-  const { mutateAsync: remove } = useUnfriend();
+  const { mutateAsync: accept } = useAcceptRequest({
+    mutation: guardFriendMutation(getAcceptRequestMutationOptions(), scope),
+  });
+  const { mutateAsync: reject } = useDeletePendingRequest({
+    mutation: guardFriendMutation(getDeletePendingRequestMutationOptions(), scope),
+  });
+  const { mutateAsync: remove } = useUnfriend({
+    mutation: guardFriendMutation(getUnfriendMutationOptions(), scope),
+  });
   const lock = useRef(false);
   const [pendingActionId, setPendingActionId] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -65,8 +81,10 @@ export function useFriendsListController() {
         keys.map((queryKey) => client.refetchQueries({ queryKey }, { throwOnError: true }))
       );
     } catch (failure) {
+      if (isCancel(failure) || (scope && !isCurrentAuthQueryScope(scope))) return;
       // Query errors are displayed by their own region; reserve the action banner for other failures.
       if (!keys.some((key) => client.getQueryState(key)?.error)) {
+        logError(normalizeError(failure), { scope: 'api', operation: 'refreshFriends' });
         setError(getUserErrorMessage(normalizeError(failure)));
       }
     }
@@ -77,6 +95,7 @@ export function useFriendsListController() {
     await Promise.all([
       client.invalidateQueries({ queryKey: friendsOptions.queryKey }),
       client.invalidateQueries({ queryKey: requestsOptions.queryKey }),
+      client.invalidateQueries({ predicate: (query) => isScopeSearch(query.queryKey, scope) }),
     ]);
   };
 
@@ -86,6 +105,7 @@ export function useFriendsListController() {
     const keys = [friendsOptions.queryKey, requestsOptions.queryKey];
     const queries = keys.map((queryKey) => cache.find({ queryKey, exact: true }));
     const ownsQueries = () =>
+      (!scope || isCurrentAuthQueryScope(scope)) &&
       queries.every(
         (query, index) =>
           query !== undefined && cache.find({ queryKey: keys[index], exact: true }) === query
@@ -125,10 +145,19 @@ export function useFriendsListController() {
         );
       }
       // The write is confirmed; reconciliation belongs to the query regions, not the action pending.
-      void reconcile().catch(() => undefined);
+      void reconcile().catch((failure) => {
+        if (!isCancel(failure) && (!scope || isCurrentAuthQueryScope(scope))) {
+          logError(normalizeError(failure), { scope: 'api', operation: 'reconcileFriendship' });
+        }
+      });
       return true;
     } catch (failure) {
-      if (ownsQueries()) setError(getUserErrorMessage(normalizeError(failure)));
+      if (isCancel(failure)) return false;
+      if (ownsQueries()) {
+        const appError = normalizeError(failure);
+        logError(appError, { scope: 'api', operation: 'changeFriendship' });
+        setError(getUserErrorMessage(appError));
+      }
       return false;
     } finally {
       lock.current = false;

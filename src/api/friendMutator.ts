@@ -11,7 +11,11 @@ export const friendAxios = <T>(config: AxiosRequestConfig): Promise<T> => {
     authScopeIsCurrent: () => isCurrentAuthQueryScope(scope),
     ...config,
     timeout: config.timeout ?? 15_000,
-    errorPolicy: { ...config.errorPolicy, presentation: 'inline' },
+    errorPolicy: {
+      ...config.errorPolicy,
+      presentation: 'inline',
+      ...(config.url === '/friends/search' ? { log: false } : {}),
+    },
   });
 };
 

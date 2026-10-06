@@ -21,6 +21,7 @@ const api = vi.hoisted(() => ({
   reject: vi.fn(),
   remove: vi.fn(),
 }));
+vi.mock('../../../api/errors/logger', () => ({ logError: vi.fn() }));
 vi.mock('../../../api/friendMutator', () => ({
   friendAxios: ({ url, method }: { url: string; method: string }) => {
     if (url === '/friends') return api.friends();
@@ -225,7 +226,10 @@ describe('친구 목록 조회와 변경 액션', () => {
         nextRead.resolve([refreshedFriend]);
         expect(await reading).toEqual([refreshedFriend]);
       });
-      expect(screen.client.getQueryData(friendsOptions.queryKey)).toEqual([refreshedFriend]);
+      await vi.waitFor(async () => {
+        await act(async () => {});
+        expect(screen.rows).toEqual([refreshedFriend]);
+      });
       await act(async () => {
         expect(await screen.state.rejectRequest(72)).toBe(true);
       });

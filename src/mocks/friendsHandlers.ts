@@ -44,6 +44,15 @@ let requests: MockRequest[] = [];
 let acceptedRequests = new Map<number, number>();
 let nextFriendshipId = 2101;
 let latencyMs = 280;
+let users: MockUser[] = [];
+let sentRequests = new Map<number, number>();
+let nextRequestId = 4002;
+const mutualConnections = new Map<number, number[]>([
+  [1201, [1001, 1002, 1003]],
+  [1202, []],
+  [1203, [1001]],
+  [1204, [1001, 1002]],
+]);
 
 /** Restore this fictional account; state otherwise persists across reads and navigation. */
 export function resetFriendsMockData(options: { latencyMs?: number } = {}) {
@@ -74,6 +83,29 @@ export function resetFriendsMockData(options: { latencyMs?: number } = {}) {
   }));
   acceptedRequests = new Map();
   nextFriendshipId = 2101;
+  nextRequestId = 4002;
+  sentRequests = new Map([[1204, 4001]]);
+  users = [
+    ...friends.map((friend) => friend.user),
+    ...requests.map((request) => request.user),
+    ...(
+      [
+        [1, '나', 'self', 'SELF'],
+        [1201, '홍길동', 'add', 'NONE'],
+        [1202, '김다은', 'solo', 'NONE'],
+        [1203, '이서진', 'one', 'NONE'],
+        [1204, '정예린', 'sent', 'PENDING_SENT'],
+        [1205, '송유나', 'conflict', 'NONE'],
+      ] as const
+    ).map(([userId, displayName, email, relationshipStatus]) => ({
+      userId,
+      displayName,
+      email: `${email}@example.com`,
+      profileImageUrl: null,
+      relationshipStatus,
+      requestId: null,
+    })),
+  ];
 }
 resetFriendsMockData();
 
@@ -83,11 +115,23 @@ const jsonResponse = (value: unknown, status = 200) =>
     headers: { 'Content-Type': 'application/json' },
   });
 
-const errorResponse = (status: 404 | 409) =>
+const errorResponse = (status: 400 | 404 | 409 | 500) =>
   jsonResponse(
     {
-      code: status === 404 ? 'NOT_FOUND' : 'CONFLICT',
-      message: status === 404 ? 'Not Found' : 'Conflict',
+      code:
+        status === 404
+          ? 'NOT_FOUND'
+          : status === 409
+            ? 'CONFLICT'
+            : status === 400
+              ? 'INVALID_REQUEST'
+              : 'INTERNAL_SERVER_ERROR',
+      message:
+        status === 404
+          ? 'Not Found'
+          : status === 400
+            ? '본인에게 친구 요청을 보낼 수 없습니다.'
+            : 'Conflict',
       status,
     },
     status
@@ -96,6 +140,71 @@ const respondAfterLatency = () => new Promise<void>((resolve) => setTimeout(reso
 
 // Explicit development origin: never intercept another backend or production origin.
 export const friendsHandlers = [
+  http.get(`${FRIENDS_MOCK_ORIGIN}/friends/search`, async ({ request }) => {
+    const email = new URL(request.url).searchParams.get('email')?.trim().toLowerCase();
+    await respondAfterLatency();
+    if (email === 'error@example.com') return errorResponse(500);
+    const user = users.find((candidate) => candidate.email === email);
+    if (!user) return errorResponse(404);
+    const friend = friends.find((item) => item.user.userId === user.userId);
+    const received = requests.find((item) => item.user.userId === user.userId);
+    const sent = sentRequests.get(user.userId!);
+    const mutual = (mutualConnections.get(user.userId!) ?? [])
+      .map((id) => friends.find((item) => item.user.userId === id))
+      .filter((item) => item !== undefined);
+    return jsonResponse({
+      userId: user.userId,
+      displayName: user.displayName,
+      profileImageUrl: user.profileImageUrl,
+      relationshipStatus:
+        user.userId === 1
+          ? 'SELF'
+          : friend
+            ? 'FRIEND'
+            : received
+              ? 'PENDING_RECEIVED'
+              : sent
+                ? 'PENDING_SENT'
+                : 'NONE',
+      requestId: received?.requestId ?? sent ?? null,
+      mutualFriendCount: mutual.length,
+      mutualFriendPreviewName: mutual[0]?.user.displayName ?? null,
+    });
+  }),
+  http.post(`${FRIENDS_MOCK_ORIGIN}/friends/requests`, async ({ request }) => {
+    const { targetUserId } = (await request.json()) as { targetUserId: number };
+    await respondAfterLatency();
+    if (targetUserId === 1) return errorResponse(400);
+    const user = users.find((candidate) => candidate.userId === targetUserId);
+    if (!user) return errorResponse(404);
+    // A fictional concurrent relationship change exercises conflict reconciliation.
+    if (targetUserId === 1205 && !sentRequests.has(targetUserId)) {
+      sentRequests.set(targetUserId, nextRequestId++);
+      return errorResponse(409);
+    }
+    if (
+      friends.some((item) => item.user.userId === targetUserId) ||
+      requests.some((item) => item.user.userId === targetUserId) ||
+      sentRequests.has(targetUserId)
+    )
+      return errorResponse(409);
+    const requestId = nextRequestId++;
+    sentRequests.set(targetUserId, requestId);
+    return jsonResponse(
+      {
+        requestId,
+        user: {
+          userId: user.userId,
+          displayName: user.displayName,
+          profileImageUrl: user.profileImageUrl,
+          relationshipStatus: 'PENDING_SENT',
+          requestId,
+        },
+        createdAt: new Date().toISOString(),
+      },
+      201
+    );
+  }),
   http.get(`${FRIENDS_MOCK_ORIGIN}/friends`, async () => {
     await respondAfterLatency();
     return jsonResponse(friends);
