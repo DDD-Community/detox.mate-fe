@@ -1,12 +1,7 @@
-import {
-  QueryErrorResetBoundary,
-  useQueryClient,
-  useQuery,
-  type QueryClient,
-} from '@tanstack/react-query';
+import { useQueryClient, useQuery } from '@tanstack/react-query';
 import { isCancel } from 'axios';
 import { Image } from 'expo-image';
-import { Suspense, useEffect, useMemo, useRef, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { ActivityIndicator, Pressable, StyleSheet, Text, View } from 'react-native';
 import Svg, { Defs, LinearGradient, Rect, Stop } from 'react-native-svg';
 
@@ -14,7 +9,7 @@ import type { FriendSearchResponse } from '../../../api/query-generated/model';
 import { logError, normalizeError } from '../../../api/errors';
 import { requireId } from '../utils/friendsListData';
 import { ErrorBoundary } from '../../../components/AppErrorBoundary/AppErrorBoundary';
-import { isCurrentAuthQueryScope, type AuthQueryScope } from '../../../lib/query/authQueryScope';
+import type { AuthQueryScope } from '../../../lib/query/authQueryScope';
 import { fontFamily } from '../../../lib/token/primitive/fonts';
 import { useSendFriendRequest } from '../hooks/useSendFriendRequest';
 import { searchQueryOptions } from '../utils/friendsQueryOptions';
@@ -26,27 +21,6 @@ const missingEmail = (error: unknown) => {
   const normalized = normalizeError(error);
   return normalized.status === 404 && normalized.code === 'NOT_FOUND';
 };
-
-// Query 실패는 캐시에 유지하고 Suspense는 조회가 끝났다는 사실만 기다린다.
-const readinessByRequest = new WeakMap<Promise<unknown>, Promise<void>>();
-function suspendSearch(client: QueryClient, options: ReturnType<typeof searchQueryOptions>): never {
-  let query = client.getQueryCache().find({ queryKey: options.queryKey, exact: true });
-  if (!query || query.state.fetchStatus === 'idle') {
-    void client.prefetchQuery(options);
-    query = client.getQueryCache().find({ queryKey: options.queryKey, exact: true });
-  }
-  const request = query?.promise;
-  if (!request) throw new Error('친구 정보를 불러오지 못했어요. 다시 시도해주세요.');
-  let readiness = readinessByRequest.get(request);
-  if (!readiness) {
-    readiness = request.then(
-      () => undefined,
-      () => undefined
-    );
-    readinessByRequest.set(request, readiness);
-  }
-  throw readiness;
-}
 
 function SearchResult({
   email,
@@ -142,27 +116,29 @@ function SearchQuery({
   renderFriend: (userId: number) => React.ReactNode;
   empty: React.ReactNode;
 }) {
-  const client = useQueryClient();
-  const options = searchQueryOptions(email, scope);
-  // 실패 뒤 Suspense가 재시도 렌더할 때 자동 mount retry로 다시 대기하지 않는다.
-  // 새 검색 진입과 명시적 재시도는 상위 영역에서 다시 시작한다.
-  const result = useQuery({ ...options, retryOnMount: false });
+  const result = useQuery(searchQueryOptions(email, scope));
   const failure =
     result.error && !result.isFetching && !isCancel(result.error) ? result.error : null;
   const requested = result.data?.relationshipStatus === 'PENDING_SENT';
   useEffect(() => {
-    if (requested && failure && !missingEmail(failure)) {
+    if (failure && !missingEmail(failure)) {
       logError(normalizeError(failure), { scope: 'api', operation: 'searchFriendByEmail' });
     }
-  }, [failure, requested]);
+  }, [failure]);
   if (result.isPending || (result.data === undefined && result.isFetching))
-    suspendSearch(client, options);
+    return (
+      <ActivityIndicator
+        style={{ padding: 24 }}
+        color="#5a8974"
+        accessibilityLabel="이메일 검색 중"
+      />
+    );
   const feedback = failure ? (
     <FriendsQueryFeedback error={failure} onRetry={() => void result.refetch()} />
   ) : null;
   if (failure && !requested) {
     if (missingEmail(failure)) return empty;
-    throw failure;
+    return feedback;
   }
   if (!result.data) return feedback;
   return (
@@ -193,49 +169,20 @@ export function FriendEmailSearch({
   empty: React.ReactNode;
 }) {
   const client = useQueryClient();
-  const options = useMemo(() => searchQueryOptions(email, scope), [email, scope]);
-  const entered = useRef(false);
-  if (!entered.current) {
-    entered.current = true;
-    const previous = client.getQueryState(options.queryKey);
-    // 오류 캐시로 다시 검색한 첫 렌더도 완료 전에는 Suspense에서 기다린다.
-    if (previous?.error && previous.data === undefined && isCurrentAuthQueryScope(scope)) {
-      void client.prefetchQuery(options);
-    }
-  }
+  const options = searchQueryOptions(email, scope);
   return (
-    <QueryErrorResetBoundary>
-      {({ reset }) => (
-        <ErrorBoundary
-          shouldLog={(error) => !missingEmail(error)}
-          onReset={() => {
-            reset();
-            void client.resetQueries({ queryKey: options.queryKey, exact: true });
-          }}
-          fallback={(error, retry) =>
-            missingEmail(error) ? empty : <FriendsQueryFeedback error={error} onRetry={retry} />
-          }
-        >
-          <Suspense
-            fallback={
-              <ActivityIndicator
-                style={{ padding: 24 }}
-                color="#5a8974"
-                accessibilityLabel="이메일 검색 중"
-              />
-            }
-          >
-            <SearchQuery
-              email={email}
-              scope={scope}
-              onReceived={onReceived}
-              renderFriend={renderFriend}
-              empty={empty}
-            />
-          </Suspense>
-        </ErrorBoundary>
-      )}
-    </QueryErrorResetBoundary>
+    <ErrorBoundary
+      onReset={() => void client.resetQueries({ queryKey: options.queryKey, exact: true })}
+      fallback={(error, retry) => <FriendsQueryFeedback error={error} onRetry={retry} />}
+    >
+      <SearchQuery
+        email={email}
+        scope={scope}
+        onReceived={onReceived}
+        renderFriend={renderFriend}
+        empty={empty}
+      />
+    </ErrorBoundary>
   );
 }
 

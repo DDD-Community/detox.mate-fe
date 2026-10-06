@@ -87,7 +87,7 @@ function deferred<T>() {
 
 const newClient = () =>
   new QueryClient({
-    defaultOptions: { queries: { retry: false, retryOnMount: false, refetchOnMount: false } },
+    defaultOptions: { queries: { retry: false } },
   });
 
 describe('이메일 검색 실패의 정상 화면 복구', () => {
@@ -103,12 +103,15 @@ describe('이메일 검색 실패의 정상 화면 복구', () => {
       first.reject(missing);
       await first.promise.catch(() => undefined);
     });
-    expect(screen.element.textContent).toContain('일치하는 메일이 없어요.');
+    await vi.waitFor(async () => {
+      await act(async () => {});
+      expect(screen.element.textContent).toContain('일치하는 메일이 없어요.');
+    });
     expect(screen.caught).not.toHaveBeenCalled();
     expect(mocks.log).not.toHaveBeenCalled();
     expect(client.getQueryState(options.queryKey)?.error).toBe(missing);
 
-    // 실패 캐시의 재진입도 끝난 Promise를 반복 대기하지 않고 새 조회를 기다린다.
+    // 실패 캐시가 남아 있어도 검색에 다시 진입하면 새 조회를 기다린다.
     await act(() => screen.unmount());
     const second = deferred<unknown>();
     mocks.search.mockReturnValue(second.promise);
@@ -118,13 +121,16 @@ describe('이메일 검색 실패의 정상 화면 복구', () => {
       second.resolve({ userId: 2, displayName: '새 친구', relationshipStatus: 'NONE' });
       await second.promise;
     });
-    expect(reentered.element.textContent).toContain('친구 요청 보내기');
+    await vi.waitFor(async () => {
+      await act(async () => {});
+      expect(reentered.element.textContent).toContain('친구 요청 보내기');
+    });
     expect(reentered.element.querySelector('[role="status"]')).toBeNull();
     expect(reentered.caught).not.toHaveBeenCalled();
     expect(mocks.log).not.toHaveBeenCalled();
   });
 
-  it('초기 서버 오류는 경계에서 기록하고 재시도하면 실제 조회로 복구한다', async () => {
+  it('초기 서버 오류는 화면에서 안내와 기록을 제공하고 재시도하면 실제 조회로 복구한다', async () => {
     const client = newClient();
     const first = deferred<unknown>();
     mocks.search.mockReturnValue(first.promise);
@@ -133,22 +139,31 @@ describe('이메일 검색 실패의 정상 화면 복구', () => {
       first.reject(AppError({ type: 'server', status: 500 }));
       await first.promise.catch(() => undefined);
     });
-    expect(screen.element.textContent).toContain('다시 시도');
-    expect(screen.caught).toHaveBeenCalledTimes(1);
-    expect(mocks.log).toHaveBeenCalledWith(
-      expect.objectContaining({ status: 500 }),
-      expect.objectContaining({ scope: 'render', componentStack: expect.any(String) })
-    );
+    await vi.waitFor(async () => {
+      await act(async () => {});
+      expect(screen.element.textContent).toContain('다시 시도');
+    });
+    expect(screen.caught).not.toHaveBeenCalled();
+    expect(mocks.log).toHaveBeenCalledWith(expect.objectContaining({ status: 500 }), {
+      scope: 'api',
+      operation: 'searchFriendByEmail',
+    });
 
     const retry = deferred<unknown>();
     mocks.search.mockReturnValue(retry.promise);
     await act(() => screen.element.querySelector('button')!.click());
-    expect(screen.element.querySelector('[role="status"]')).not.toBeNull();
+    await vi.waitFor(async () => {
+      await act(async () => {});
+      expect(screen.element.querySelector('[role="status"]')).not.toBeNull();
+    });
     await act(async () => {
       retry.resolve({ userId: 2, displayName: '친구', relationshipStatus: 'NONE' });
       await retry.promise;
     });
-    expect(screen.element.textContent).toContain('친구 요청 보내기');
+    await vi.waitFor(async () => {
+      await act(async () => {});
+      expect(screen.element.textContent).toContain('친구 요청 보내기');
+    });
     expect(screen.element.querySelector('[role="status"]')).toBeNull();
     expect(mocks.log).toHaveBeenCalledTimes(1);
   });
@@ -163,11 +178,16 @@ describe('이메일 검색 실패의 정상 화면 복구', () => {
       requestId: 10,
     });
     await client.fetchQuery(options);
-    mocks.search.mockRejectedValue(AppError({ type: 'server', status: 500 }));
-    await client.fetchQuery(options).catch(() => undefined);
     const screen = await mount(client);
+    mocks.search.mockRejectedValue(AppError({ type: 'server', status: 500 }));
+    await act(async () => {
+      await client.fetchQuery(options).catch(() => undefined);
+    });
     expect(screen.element.textContent).toContain('요청됨');
-    expect(screen.element.textContent).toContain('다시 시도');
+    await vi.waitFor(async () => {
+      await act(async () => {});
+      expect(screen.element.textContent).toContain('다시 시도');
+    });
     expect(screen.caught).not.toHaveBeenCalled();
     expect(mocks.log).toHaveBeenCalledTimes(1);
   });

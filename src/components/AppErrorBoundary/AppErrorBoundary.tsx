@@ -7,7 +7,6 @@ import { primitiveColors, radius, spacing, typography } from '@/lib/token';
 
 type ErrorBoundaryProps = {
   children: ReactNode;
-  shouldLog?: (error: Error) => boolean;
   onReset: () => void;
   fallback?: (error: Error, onRetry: () => void) => ReactNode;
 };
@@ -24,7 +23,6 @@ export class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundarySt
   }
 
   componentDidCatch(error: Error, errorInfo: ErrorInfo) {
-    if (this.props.shouldLog?.(error) === false) return;
     logError(normalizeError(error), {
       scope: 'render',
       componentStack: errorInfo.componentStack,
