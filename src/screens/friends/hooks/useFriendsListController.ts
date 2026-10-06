@@ -82,20 +82,32 @@ export function useFriendsListController() {
 
   const changeFriendship = async (action: Action): Promise<boolean> => {
     if (lock.current) return false;
+    const cache = client.getQueryCache();
+    const keys = [friendsOptions.queryKey, requestsOptions.queryKey];
+    const queries = keys.map((queryKey) => cache.find({ queryKey, exact: true }));
+    const ownsQueries = () =>
+      queries.every(
+        (query, index) =>
+          query !== undefined && cache.find({ queryKey: keys[index], exact: true }) === query
+      );
+    if (!ownsQueries()) return false;
     lock.current = true;
     setError(null);
     try {
       const id = requireId(action.kind === 'delete' ? action.friendshipId : action.requestId);
       setPendingActionId(`${action.kind === 'delete' ? 'friend' : 'request'}:${id}`);
       await cancelReads();
+      if (!ownsQueries()) return false;
       const accepted =
         action.kind === 'accept'
           ? await accept({ requestId: id })
           : await (action.kind === 'reject'
               ? reject({ requestId: id })
               : remove({ friendshipId: id }));
+      if (!ownsQueries()) return false;
       // A refetch may have started while writing. Cancel its cache completion before the patch.
       await cancelReads();
+      if (!ownsQueries()) return false;
       if (action.kind === 'accept' && accepted) {
         client.setQueryData<FriendResponse[]>(friendsOptions.queryKey, (previous) =>
           previous
@@ -116,7 +128,7 @@ export function useFriendsListController() {
       void reconcile().catch(() => undefined);
       return true;
     } catch (failure) {
-      setError(getUserErrorMessage(normalizeError(failure)));
+      if (ownsQueries()) setError(getUserErrorMessage(normalizeError(failure)));
       return false;
     } finally {
       lock.current = false;

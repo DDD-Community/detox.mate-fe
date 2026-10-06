@@ -4,7 +4,10 @@ import { act, createElement, Suspense } from 'react';
 import { createRoot } from 'react-dom/client';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
-import type { FriendResponse } from '../../../api/query-generated/model';
+import type {
+  FriendReceivedRequestResponse,
+  FriendResponse,
+} from '../../../api/query-generated/model';
 import {
   getGetFriendsSuspenseQueryOptions,
   getGetReceivedRequestsSuspenseQueryOptions,
@@ -63,12 +66,13 @@ async function setup() {
   const client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
   let current!: ReturnType<typeof useFriendsListController>;
   let rows: FriendResponse[] = [];
+  let requests: FriendReceivedRequestResponse[] = [];
   function FriendsData() {
     rows = useSuspenseQuery(getGetFriendsSuspenseQueryOptions()).data;
     return null;
   }
   function RequestsData() {
-    useSuspenseQuery(getGetReceivedRequestsSuspenseQueryOptions());
+    requests = useSuspenseQuery(getGetReceivedRequestsSuspenseQueryOptions()).data;
     return null;
   }
   function Harness() {
@@ -95,6 +99,9 @@ async function setup() {
     },
     get rows() {
       return rows;
+    },
+    get requests() {
+      return requests;
     },
   };
 }
@@ -165,4 +172,64 @@ describe('친구 목록 조회와 변경 액션', () => {
     expect(screen.state.pendingActionId).toBeNull();
     expect(screen.state.error).toBeNull();
   });
+
+  it.each(['성공', '실패'] as const)(
+    '로그아웃 후 새 목록을 조회하는 동안 이전 요청 수락이 %s해도 새 목록과 조회를 보존하고 다음 액션을 허용한다',
+    async (outcome) => {
+      const screen = await setup();
+      const oldWrite = deferred<FriendResponse>();
+      api.accept.mockReturnValueOnce(oldWrite.promise);
+      let writing!: Promise<boolean>;
+      await act(() => {
+        writing = screen.state.acceptRequest(72);
+      });
+
+      const nextFriend = { friendshipId: 99, user: { userId: 10, displayName: '새 계정 친구' } };
+      const nextRequest = { requestId: 72, user: { userId: 11, displayName: '새 계정 요청' } };
+      api.friends.mockResolvedValue([nextFriend]);
+      api.received.mockResolvedValue([nextRequest]);
+      const friendsOptions = getGetFriendsSuspenseQueryOptions();
+      const requestsOptions = getGetReceivedRequestsSuspenseQueryOptions();
+      await act(() => {
+        screen.client.clear();
+        screen.client.setQueryData(friendsOptions.queryKey, [nextFriend]);
+        screen.client.setQueryData(requestsOptions.queryKey, [nextRequest]);
+      });
+
+      const nextRead = deferred<FriendResponse[]>();
+      const nextReadStarted = deferred<void>();
+      api.friends.mockImplementationOnce(() => {
+        nextReadStarted.resolve();
+        return nextRead.promise;
+      });
+      let reading!: Promise<FriendResponse[]>;
+      await act(async () => {
+        reading = screen.client.fetchQuery(friendsOptions);
+        await nextReadStarted.promise;
+      });
+      await act(async () => {
+        if (outcome === '성공') oldWrite.resolve({ friendshipId: 42, user: request.user });
+        else oldWrite.reject(new Error('offline'));
+        expect(await writing).toBe(false);
+      });
+      expect(screen.rows).toEqual([nextFriend]);
+      expect(screen.requests).toEqual([nextRequest]);
+      expect(screen.state.pendingActionId).toBeNull();
+      expect(screen.state.error).toBeNull();
+
+      const refreshedFriend = {
+        ...nextFriend,
+        user: { ...nextFriend.user, displayName: '갱신된 친구' },
+      };
+      await act(async () => {
+        nextRead.resolve([refreshedFriend]);
+        expect(await reading).toEqual([refreshedFriend]);
+      });
+      expect(screen.client.getQueryData(friendsOptions.queryKey)).toEqual([refreshedFriend]);
+      await act(async () => {
+        expect(await screen.state.rejectRequest(72)).toBe(true);
+      });
+      expect(screen.requests).toEqual([]);
+    }
+  );
 });
