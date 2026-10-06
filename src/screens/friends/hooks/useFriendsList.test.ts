@@ -19,10 +19,12 @@ afterEach(async () => {
 
 function deferred<T>() {
   let resolve!: (value: T) => void;
-  const promise = new Promise<T>((res) => {
+  let reject!: (reason: unknown) => void;
+  const promise = new Promise<T>((res, rej) => {
     resolve = res;
+    reject = rej;
   });
-  return { promise, resolve };
+  return { promise, resolve, reject };
 }
 
 async function setup(overrides: Partial<FriendsListApi> = {}, strict = false) {
@@ -187,6 +189,38 @@ describe('screen-local friends list', () => {
     expect(screen.state.friends).toEqual([]);
   });
 
+  it('does not let an older read failure interrupt a newer refresh', async () => {
+    const screen = await setup();
+    const old = deferred<FriendResponse[]>();
+    const next = deferred<FriendResponse[]>();
+    const newerFriend: FriendResponse = {
+      friendshipId: 43,
+      user: { userId: 10, displayName: '새 친구' },
+    };
+    screen.api.getFriends.mockReturnValueOnce(old.promise).mockReturnValueOnce(next.promise);
+    let refresh!: Promise<void>;
+    await act(() => {
+      refresh = screen.state.refresh();
+    });
+    let latestRefresh!: Promise<void>;
+    await act(() => {
+      latestRefresh = screen.state.refresh();
+    });
+    await act(async () => {
+      old.reject(new Error('old request offline'));
+      await refresh;
+    });
+    expect(screen.state.error).toBeNull();
+    expect(screen.state.refreshing).toBe(true);
+    await act(async () => {
+      next.resolve([newerFriend]);
+      await latestRefresh;
+    });
+    expect(screen.state.friends).toEqual([newerFriend]);
+    expect(screen.state.error).toBeNull();
+    expect(screen.state.refreshing).toBe(false);
+  });
+
   it('clears data on blur and ignores old reads after refocusing', async () => {
     const screen = await setup();
     const old = deferred<FriendResponse[]>();
@@ -230,6 +264,40 @@ describe('screen-local friends list', () => {
       next.resolve();
       await deleting;
     });
+  });
+
+  it('ignores an old mutation failure while a refocused screen is writing and remains retryable', async () => {
+    const old = deferred<FriendResponse>();
+    const next = deferred<void>();
+    const screen = await setup({ acceptRequest: () => old.promise, unfriend: () => next.promise });
+    let accepting!: Promise<boolean>;
+    await act(() => {
+      accepting = screen.state.changeFriendship({ kind: 'accept', requestId: 72 });
+    });
+    await screen.focus(false);
+    await screen.focus(true);
+    let deleting!: Promise<boolean>;
+    await act(() => {
+      deleting = screen.state.changeFriendship({ kind: 'delete', friendshipId: 41 });
+    });
+    await act(async () => {
+      old.reject(new Error('old write offline'));
+      expect(await accepting).toBe(false);
+    });
+    expect(screen.state.error).toBeNull();
+    expect(screen.state.friends).toEqual([friend]);
+    expect(await change(screen, { kind: 'reject', requestId: 72 })).toBe(false);
+    expect(screen.api.deletePendingRequest).not.toHaveBeenCalled();
+    screen.api.getFriends.mockResolvedValue([]);
+    await act(async () => {
+      next.resolve();
+      expect(await deleting).toBe(true);
+    });
+    expect(screen.state.friends).toEqual([]);
+    expect(screen.state.error).toBeNull();
+    screen.api.getReceivedRequests.mockResolvedValue([]);
+    expect(await change(screen, { kind: 'reject', requestId: 72 })).toBe(true);
+    expect(screen.state.receivedRequests).toEqual([]);
   });
 
   it('keeps screen instances isolated and ignores an unmounted mutation', async () => {
