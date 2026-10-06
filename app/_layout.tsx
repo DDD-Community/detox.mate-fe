@@ -9,6 +9,7 @@ import { registerAppShield, SHIELD_ACTIONS, SHIELD_CONFIGURATION } from '../src/
 import { APP_UNLOCK_REQUEST_NOTIFICATION_TYPE } from '../src/lib/notificationTypes';
 import { ensureDailyUsageMonitoring } from '../src/lib/screenTimeMonitoring';
 import { syncScreenTimeHistory } from '../src/lib/screenTimeHistory';
+import { syncTimeLimitFromServer } from '../src/lib/timeLimitSync';
 import { syncTargetMinutes } from '../src/lib/sharedDisplayConfig';
 import { useLockStore } from '../src/stores/lockStore';
 import { fontSources } from '../src/lib/token/primitive/fonts';
@@ -50,6 +51,8 @@ export default function RootLayout() {
     }
     ensureDailyUsageMonitoring(lockedApps, familyActivitySelectionsByAppId);
     syncScreenTimeHistory(lockedApps.map((app) => app.id));
+    // 서버에 저장된 제한 시간을 불러와 로컬 값에 반영한다(없거나 실패하면 로컬 값 유지).
+    syncTimeLimitFromServer();
   }, []);
 
   // FCM registration token 갱신 감지 → 서버에 새 토큰 재등록

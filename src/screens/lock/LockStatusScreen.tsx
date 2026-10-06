@@ -1,8 +1,10 @@
-import { useRouter } from 'expo-router';
+import { useLocalSearchParams, useRouter } from 'expo-router';
+import { useEffect } from 'react';
 import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { DetoxmateWordmark } from '../../components/DetoxmateWordmark';
 import { Icon } from '../../components/Icon';
+import { Toast, useToastVisibility } from '../../components/Toast';
 import { LoggingButton } from '../../components/LoggingButton';
 import { fontFamily, primitiveColors, spacing, typography } from '../../lib/token';
 import { useLockStore } from '../../stores/lockStore';
@@ -17,8 +19,18 @@ const formatTodayLabel = () => {
 
 export default function LockStatusScreen() {
   const router = useRouter();
+  const { goalChanged } = useLocalSearchParams<{ goalChanged?: string }>();
+  const goalChangedToast = useToastVisibility();
   const { targetMinutes, lockedApps, familyActivitySelectionsByAppId } = useLockStore();
   const allSelectionTokens = Object.values(familyActivitySelectionsByAppId);
+
+  // 제한 시간 변경을 마치고 돌아오면 한 번만 완료 토스트를 띄우고, 파라미터는 지운다.
+  useEffect(() => {
+    if (goalChanged !== '1') return;
+    goalChangedToast.showWithMessage('제한 시간 변경이 완료되었어요');
+    router.setParams({ goalChanged: undefined });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [goalChanged]);
 
   return (
     <View style={styles.root}>
@@ -122,6 +134,11 @@ export default function LockStatusScreen() {
           <Text style={styles.tempShowcaseButtonText}>[임시] UI 커스텀 샘플 보기</Text>
         </Pressable>
       </ScrollView>
+      <Toast
+        visible={goalChangedToast.visible}
+        message={goalChangedToast.message}
+        icon={<Icon name="checkCircle" size={16} weight="fill" color={green[300]} />}
+      />
     </View>
   );
 }

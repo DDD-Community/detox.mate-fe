@@ -1,8 +1,9 @@
 import { useLocalSearchParams, useRouter } from 'expo-router';
-import { useState } from 'react';
+import { useRef, useState } from 'react';
 import { StyleSheet, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
+import { getTimeLimit } from '../../api/generated/time-limit/time-limit';
 import { spacing } from '../../lib/token';
 import { useLockStore } from '../../stores/lockStore';
 import { pickRandomFriendNames } from './mockLockApps';
@@ -23,9 +24,26 @@ export default function GoalTimeConfirmScreen() {
   const { confirmTargetMinutes } = useLockStore();
   const [notifiedFriends] = useState(() => pickRandomFriendNames(3));
 
-  const handleConfirm = () => {
-    confirmTargetMinutes(Number(hours) * 60);
-    router.dismissTo('/(lock)/restricted-apps');
+  const isSavingRef = useRef(false);
+
+  // 서버(/me/time-limit)에 먼저 저장하고, 성공했을 때만 로컬 값을 바꾼다. 실패하면 화면에
+  // 남는다(네트워크 오류 안내는 전역 토스트가 담당). 10초 타이머 종료와 버튼이 겹쳐도 한 번만 저장한다.
+  const handleConfirm = async () => {
+    if (isSavingRef.current) return;
+    isSavingRef.current = true;
+    const minutes = Number(hours) * 60;
+    try {
+      await getTimeLimit().set({ totalLockMinutes: minutes });
+    } catch {
+      isSavingRef.current = false;
+      return;
+    }
+    confirmTargetMinutes(minutes);
+    router.dismissTo({
+      pathname: '/(lock)/restricted-apps',
+      // 변경 모드일 때만 완료 토스트를 띄우도록 현황 화면에 알린다.
+      params: mode === 'change' ? { goalChanged: '1' } : {},
+    });
   };
 
   if (mode === 'change') {

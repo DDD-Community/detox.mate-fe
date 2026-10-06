@@ -4,13 +4,14 @@ import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Button } from '../../components/Button';
 import { Icon } from '../../components/Icon';
+import { Toast } from '../../components/Toast';
 import { fontFamily, primitiveColors, radius, spacing, typography } from '../../lib/token';
 import { useLockStore } from '../../stores/lockStore';
 
-const { gray, green } = primitiveColors;
+const { gray, green, system } = primitiveColors;
 
 const MIN_HOURS = 1;
-const MAX_HOURS = 12;
+const MAX_HOURS = 4;
 
 // 실제 차단은 앱을 등록하는 시점(SelectAppsScreen)에 이미 걸린다.
 // 여기서는 앱 전체에 공통으로 적용되는 목표 시간(표시/추적용)만 저장한다.
@@ -21,6 +22,10 @@ export default function GoalTimeScreen() {
   const [hours, setHours] = useState(() =>
     Math.min(Math.max(Math.round(targetMinutes / 60), MIN_HOURS), MAX_HOURS)
   );
+
+  const isChangeMode = mode === 'change';
+  // 변경 모드에서 기존 제한 시간과 같은 값이면 "다음"을 막고 안내 토스트를 띄운다.
+  const isUnchanged = isChangeMode && hours * 60 === targetMinutes;
 
   const handleNext = () => {
     router.push({
@@ -36,6 +41,7 @@ export default function GoalTimeScreen() {
           <Pressable hitSlop={8} onPress={() => router.back()}>
             <Icon name="caretLeft" size={22} color={gray[900]} />
           </Pressable>
+          {isChangeMode ? <Text style={styles.headerTitle}>제한 시간 변경</Text> : null}
         </View>
 
         <View style={styles.card}>
@@ -74,11 +80,19 @@ export default function GoalTimeScreen() {
           </View>
         </View>
 
+        <Toast
+          visible={isUnchanged}
+          message="기존에 설정한 제한 시간과 동일해요"
+          icon={<Icon name="warningCircle" size={16} weight="fill" color={system.red.opacity100} />}
+          position="aboveCta"
+        />
+
         <Button
           label="다음"
           variant="solid"
           color="primary"
           size="lg"
+          disabled={isUnchanged}
           onPress={handleNext}
           style={styles.confirmButton}
         />
@@ -100,7 +114,13 @@ const styles = StyleSheet.create({
   },
   header: {
     height: 44,
-    justifyContent: 'center',
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing[8],
+  },
+  headerTitle: {
+    ...typography.primary.title1M,
+    color: gray[800],
   },
   card: {
     backgroundColor: green[50],
