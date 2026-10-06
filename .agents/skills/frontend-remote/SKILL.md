@@ -23,6 +23,24 @@ Orval이 HTTP·타입·Query 연결을 생성하고, 작은 remote 조합 계층
 - 생성이 필요하면 요청 범위의 tag/operation과 출력 경로를 선택한다. 점진 이전 시 기존 출력과 schemas를 분리하는 등 `clean`이 아직 사용 중인 생성물을 지우지 않게 한다.
 - 공식 문서의 예제보다 설치 버전의 타입과 실제 생성 결과를 우선한다. 오래된 positional Query API나 설치 버전보다 새로운 생성 옵션을 그대로 복사하지 않는다.
 
+## Query key와 사용 범위
+
+- 경로 segment로 나뉜 key를 생성하도록 기존 `output.override.query` 설정에 `shouldSplitQueryKey: true`를 사용한다. 설정 변경이 필요하면 기존 Query 옵션을 유지하고 해당 tag/operation만 재생성한다. 생성 파일을 직접 고치지 않는다.
+- key의 출처는 Orval 생성물 하나로 유지한다. 결과를 바꾸는 path/query parameter를 생성 함수에 전달하고, key literal·수동 key registry·key를 다시 만드는 wrapper를 작성하지 않는다. generated options를 그대로 쓰는 무의미한 alias도 추가하지 않는다.
+- 렌더 GET과 prefetch는 generated options 전체를 재사용한다. 단일 캐시의 `getQueryData`·`setQueryData`·`getQueryState`와 단일 query를 찾거나 reset/refetch/invalidate/cancel/remove/isFetching하는 작업은 같은 options의 `queryKey`를 사용한다.
+- 단일 query를 대상으로 하는 filter에는 `exact: true`를 지정한다. `getQueryData`·`setQueryData`·`getQueryState`는 key로 정확히 조회하므로 존재하지 않는 `exact` 옵션을 추가하지 않는다.
+- generated options의 `DataTag`가 보존되도록 key 타입을 `QueryKey`·`string[]` 등으로 넓히지 않고, 캐시 API에 수동 DTO generic을 붙여 응답 타입 추론을 대체하지 않는다.
+- 관련 query 그룹을 의도적으로 함께 처리할 때는 여러 endpoint나 parameter 변형을 포함할 수 있다. generated key getter로 얻은 prefix를 사용하고, getter가 허용할 때만 parameter를 생략한다. 예를 들어 `getSearchByEmailQueryKey()`로 검색 그룹을 갱신하며, 실제로 관련된 그룹만 선택한다.
+- split key에서 친구 목록 key `['friends']`는 친구 도메인의 root이기도 하다. 목록 하나만 갱신하려면 목록 options의 key와 `exact: true`를 사용하며, prefix로 처리하면 검색·요청 등 하위 query까지 포함된다.
+- `mutationKey`는 mutation의 식별·기본값을 위한 별도 key이며 GET 응답 캐시의 `queryKey`로 사용하지 않는다.
+
+```ts
+const options = getSearchByEmailQueryOptions({ email });
+await queryClient.prefetchQuery(options);
+const cached = queryClient.getQueryData(options.queryKey);
+await queryClient.invalidateQueries({ queryKey: options.queryKey, exact: true });
+```
+
 ## 서버 상태와 캐시
 
 - 실행 중 안정적인 동일 QueryClient와 필요한 상위 Provider를 사용한다. 렌더마다 client를 만들지 않는다. 이미 있는 provider/client를 재사용한다.
