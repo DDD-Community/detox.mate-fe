@@ -1,5 +1,3 @@
-import { getDefaultStore } from 'jotai/vanilla';
-import { resetFriendsListAtom } from '../features/friends/friendsListAtoms';
 import { KakaoOAuthToken, login } from '@react-native-seoul/kakao-login';
 import * as AppleAuthentication from 'expo-apple-authentication';
 import { sha256 } from '@noble/hashes/sha256';
@@ -40,7 +38,6 @@ const persistLoginResponse = async (
     throw new Error('로그인 응답이 올바르지 않습니다.');
   }
 
-  getDefaultStore().set(resetFriendsListAtom);
   await SecureStore.setItemAsync('accessTokenKey', data.accessToken);
   await SecureStore.setItemAsync('refreshTokenKey', data.refreshToken);
   await SecureStore.setItemAsync('currentUserId', String(data.id));
@@ -169,7 +166,6 @@ export async function refreshAccessToken(): Promise<ServerResponseTokens> {
 }
 
 export async function clearAuthSession(): Promise<void> {
-  getDefaultStore().set(resetFriendsListAtom);
   await SecureStore.deleteItemAsync('refreshTokenKey');
   await SecureStore.deleteItemAsync('accessTokenKey');
   await SecureStore.deleteItemAsync('currentUserId');
