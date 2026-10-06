@@ -1,6 +1,7 @@
 export * from './generated/activity-record/activity-record';
 export * from './generated/feed/feed';
-export * from './generated/friend/friend';
+export * from './query-generated/friend';
+export * from './query-generated/model';
 export { getFirstScreenTime } from './generated/first-screen-time/first-screen-time';
 export * from './generated/group/group';
 export * from './generated/group-member/group-member';

@@ -3,7 +3,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import apiClient from './client';
 import { beginAuthTransition, completeAuthTransition } from '../stores/authSessionStore';
-import { getFriend } from './generated/friend/friend';
+import * as api from './query-generated/friend';
 
 const mocks = vi.hoisted(() => ({
   getItemAsync: vi.fn(),
@@ -34,7 +34,6 @@ vi.mock('../stores/networkErrorToastStore', () => ({
 }));
 
 const originalAdapter = apiClient.defaults.adapter;
-const api = getFriend();
 const requests: InternalAxiosRequestConfig[] = [];
 const response = (config: InternalAxiosRequestConfig, data: unknown, status = 200) => ({
   config,

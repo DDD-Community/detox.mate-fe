@@ -4,7 +4,7 @@ import type {
   FriendListUserResponse,
   FriendReceivedRequestResponse,
   FriendResponse,
-} from '../api/generated/model';
+} from '../api/query-generated/model';
 
 export const FRIENDS_MOCK_ORIGIN = 'https://api-dev.detoxmate.co.kr';
 
