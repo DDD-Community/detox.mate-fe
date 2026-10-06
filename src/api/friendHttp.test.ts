@@ -2,6 +2,7 @@ import { AxiosError, type AxiosAdapter, type InternalAxiosRequestConfig } from '
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import apiClient from './client';
+import { beginAuthTransition, completeAuthTransition } from '../stores/authSessionStore';
 import { getFriend } from './generated/friend/friend';
 
 const mocks = vi.hoisted(() => ({
@@ -51,6 +52,7 @@ const useAdapter = (adapter: AxiosAdapter) => {
 
 beforeEach(() => {
   vi.resetAllMocks();
+  completeAuthTransition(beginAuthTransition(), 1);
   requests.length = 0;
   mocks.getItemAsync.mockResolvedValue('fixture-access-token');
 });
@@ -144,11 +146,16 @@ describe('generated friend client through shared HTTP interceptors', () => {
   });
 
   it('retains shared 401 refresh and retries with the refreshed bearer token', async () => {
+    const refreshing = Promise.withResolvers<void>();
+    const initialRequests = Promise.withResolvers<void>();
+    let dispatched = 0;
     mocks.refreshAccessToken.mockImplementation(async () => {
+      await refreshing.promise;
       mocks.getItemAsync.mockResolvedValue('fixture-refreshed-token');
     });
     useAdapter(async (config) => {
-      if (!config._retry)
+      if (!config._retry) {
+        if (++dispatched === 2) initialRequests.resolve();
         throw new AxiosError(
           'Unauthorized',
           'ERR_BAD_REQUEST',
@@ -156,12 +163,73 @@ describe('generated friend client through shared HTTP interceptors', () => {
           undefined,
           response(config, {}, 401)
         );
+      }
       return response(config, []);
     });
-    await expect(api.getFriends()).resolves.toEqual([]);
+    const reading = Promise.all([api.getFriends(), api.getReceivedRequests()]);
+    await initialRequests.promise;
+    // Let both rejected requests enter the response interceptor before releasing refresh.
+    await new Promise<void>((resolve) => setImmediate(resolve));
+    refreshing.resolve();
+    await expect(reading).resolves.toEqual([[], []]);
     expect(mocks.refreshAccessToken).toHaveBeenCalledOnce();
-    expect(requests).toHaveLength(2);
-    expect(requests[1].headers.get('Authorization')).toBe('Bearer fixture-refreshed-token');
+    expect(mocks.clearAuthSession).not.toHaveBeenCalled();
+    expect(mocks.replace).not.toHaveBeenCalled();
+  });
+
+  it('does not refresh or clear the next login for a late old-session 401', async () => {
+    let rejectOld!: () => void;
+    const started = Promise.withResolvers<void>();
+    useAdapter(
+      (config) =>
+        new Promise((_, reject) => {
+          rejectOld = () =>
+            reject(
+              new AxiosError(
+                'Unauthorized',
+                'ERR_BAD_REQUEST',
+                config,
+                undefined,
+                response(config, {}, 401)
+              )
+            );
+          started.resolve();
+        })
+    );
+    const reading = api.getFriends();
+    const rejection = expect(reading).rejects.toMatchObject({ type: 'auth' });
+    await started.promise;
+    completeAuthTransition(beginAuthTransition(), 2);
+    rejectOld();
+    await rejection;
+    expect(mocks.refreshAccessToken).not.toHaveBeenCalled();
+    expect(mocks.clearAuthSession).not.toHaveBeenCalled();
+    expect(mocks.replace).not.toHaveBeenCalled();
+  });
+
+  it('does not clear a login still being persisted when an old refresh fails', async () => {
+    const started = Promise.withResolvers<void>();
+    const refreshing = Promise.withResolvers<void>();
+    mocks.refreshAccessToken.mockImplementation(() => {
+      started.resolve();
+      return refreshing.promise;
+    });
+    useAdapter(async (config) => {
+      throw new AxiosError(
+        'Unauthorized',
+        'ERR_BAD_REQUEST',
+        config,
+        undefined,
+        response(config, {}, 401)
+      );
+    });
+    const rejection = expect(api.getFriends()).rejects.toMatchObject({ isAppError: true });
+    await started.promise;
+    // The scope is temporarily null here while a new login persists its tokens.
+    const next = beginAuthTransition();
+    refreshing.reject(new Error('old refresh failed'));
+    await rejection;
+    completeAuthTransition(next, 2);
     expect(mocks.clearAuthSession).not.toHaveBeenCalled();
     expect(mocks.replace).not.toHaveBeenCalled();
   });

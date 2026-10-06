@@ -8,13 +8,14 @@ import { primitiveColors, radius, spacing, typography } from '@/lib/token';
 type ErrorBoundaryProps = {
   children: ReactNode;
   onReset: () => void;
+  fallback?: (error: Error, onRetry: () => void) => ReactNode;
 };
 
 type ErrorBoundaryState = {
   error: Error | null;
 };
 
-class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundaryState> {
+export class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundaryState> {
   state: ErrorBoundaryState = { error: null };
 
   static getDerivedStateFromError(error: Error): ErrorBoundaryState {
@@ -22,6 +23,7 @@ class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundaryState> {
   }
 
   componentDidCatch(error: Error, errorInfo: ErrorInfo) {
+    if (error && typeof error === 'object' && 'isAppError' in error) return;
     logError(normalizeError(error), {
       scope: 'render',
       componentStack: errorInfo.componentStack,
@@ -29,8 +31,8 @@ class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundaryState> {
   }
 
   handleRetry = () => {
-    this.setState({ error: null });
     this.props.onReset();
+    this.setState({ error: null });
   };
 
   handleGoHome = () => {
@@ -41,6 +43,7 @@ class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundaryState> {
   render() {
     if (!this.state.error) return this.props.children;
 
+    if (this.props.fallback) return this.props.fallback(this.state.error, this.handleRetry);
     return <FallbackScreen onRetry={this.handleRetry} onGoHome={this.handleGoHome} />;
   }
 }

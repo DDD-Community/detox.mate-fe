@@ -1,6 +1,6 @@
 import { Image } from 'expo-image';
 import { router } from 'expo-router';
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useRef, useState, type ReactNode } from 'react';
 import {
   ActivityIndicator,
   Alert,
@@ -42,9 +42,11 @@ const { regular, medium, bold } = fontFamily.primary;
 const green = '#5a8974';
 
 export interface FriendsListViewProps {
-  friends: FriendsListItem[];
-  receivedRequests: FriendReceivedRequest[];
-  loading: boolean;
+  friends?: FriendsListItem[];
+  receivedRequests?: FriendReceivedRequest[];
+  loading?: boolean;
+  renderFriends?: (query: string, onSelectDelete: (friend: FriendsListItem) => void) => ReactNode;
+  renderReceived?: (onConfirmAccept: (request: FriendReceivedRequest) => void) => ReactNode;
   refreshing: boolean;
   error: string | null;
   pendingActionId: string | null;
@@ -127,10 +129,123 @@ function CloseButton({
   );
 }
 
-export function FriendsListView({
-  friends,
+export function ReceivedRequestsSection({
   receivedRequests,
-  loading,
+  pendingActionId,
+  onConfirmAccept,
+  onReject,
+}: {
+  receivedRequests: FriendReceivedRequest[];
+  pendingActionId: string | null;
+  onConfirmAccept: (request: FriendReceivedRequest) => void;
+  onReject: (id: number) => Promise<boolean>;
+}) {
+  const busy = pendingActionId !== null;
+  if (!receivedRequests.length) return null;
+  return (
+    <View style={styles.section}>
+      <Text style={styles.sectionTitle}>받은 요청 ({receivedRequests.length})</Text>
+      <View style={styles.rows}>
+        {receivedRequests.map((request) => (
+          <View key={request.requestId} style={styles.row}>
+            <Avatar uri={request.user.profileImageUrl} />
+            <UserLabel user={request.user} />
+            <Pressable
+              accessibilityRole="button"
+              accessibilityLabel={`${request.user.displayName} 친구 요청 수락`}
+              accessibilityState={{
+                disabled: busy,
+                busy: pendingActionId === `request:${request.requestId}`,
+              }}
+              disabled={busy}
+              hitSlop={{ top: 6, bottom: 6 }}
+              onPress={() => onConfirmAccept(request)}
+              style={[styles.acceptButton, busy && styles.disabled]}
+            >
+              {pendingActionId === `request:${request.requestId}` ? (
+                <ActivityIndicator size="small" color={green} />
+              ) : (
+                <Text style={styles.acceptText}>수락</Text>
+              )}
+            </Pressable>
+            <CloseButton
+              label={`${request.user.displayName} 친구 요청 거절`}
+              disabled={busy}
+              received
+              onPress={() => {
+                void onReject(request.requestId);
+              }}
+            />
+          </View>
+        ))}
+      </View>
+    </View>
+  );
+}
+
+export function FriendsSection({
+  friends,
+  query,
+  pendingActionId,
+  onSelectDelete,
+  onShare,
+}: {
+  friends: FriendsListItem[];
+  query: string;
+  pendingActionId: string | null;
+  onSelectDelete: (friend: FriendsListItem) => void;
+  onShare: () => void;
+}) {
+  const busy = pendingActionId !== null;
+  const searching = query.trim().length > 0;
+  const emailSearch = query.includes('@');
+  const filteredFriends = emailSearch ? [] : filterFriendsByName(friends, query);
+  return filteredFriends.length > 0 ? (
+    <View style={[styles.section, searching && styles.searchSection]}>
+      <Text style={styles.sectionTitle}>내 친구</Text>
+      <View style={styles.rows}>
+        {filteredFriends.map((friend) => (
+          <View key={friend.friendshipId} style={styles.row}>
+            <Avatar uri={friend.user.profileImageUrl} />
+            <UserLabel user={friend.user} />
+            <CloseButton
+              label={`${friend.user.displayName} 친구 삭제`}
+              disabled={busy}
+              onPress={() => {
+                Keyboard.dismiss();
+                onSelectDelete(friend);
+              }}
+            />
+          </View>
+        ))}
+      </View>
+    </View>
+  ) : searching ? (
+    <View style={styles.searchEmpty}>
+      <Text style={styles.emptyTitle}>
+        {emailSearch ? '이메일로 친구 추가는 준비 중이에요.' : '일치하는 친구가 없어요.'}
+      </Text>
+      <Text style={styles.emptyDescription}>
+        {emailSearch
+          ? '친구 추가 화면에서 제공할 예정이에요.'
+          : '프로필을 공유하거나,\n친구의 메일을 입력해 친구를 추가해보세요.'}
+      </Text>
+      <ShareButton onPress={onShare} />
+    </View>
+  ) : friends.length === 0 ? (
+    <View style={styles.friendsEmpty}>
+      <Text style={styles.emptyTitle}>아직 친구가 없어요.</Text>
+      <Text style={styles.emptyDescription}>친구와 함께 디톡스를 시작해보세요.</Text>
+    </View>
+  ) : null;
+}
+
+export function FriendsListView({
+  friends = [],
+  receivedRequests = [],
+  loading = false,
+  renderFriends,
+  renderReceived,
   refreshing,
   error,
   pendingActionId,
@@ -152,10 +267,13 @@ export function FriendsListView({
   );
   const initializedDeleteTarget = useRef(initialDeleteFriendId == null || deleteTarget !== null);
   const searching = query.trim().length > 0;
-  const emailSearch = query.includes('@');
-  const filteredFriends = emailSearch ? [] : filterFriendsByName(friends, query);
   const busy = pendingActionId !== null;
-  const failedInitialRead = error !== null && friends.length === 0 && receivedRequests.length === 0;
+  const failedInitialRead =
+    !renderFriends &&
+    !renderReceived &&
+    error !== null &&
+    friends.length === 0 &&
+    receivedRequests.length === 0;
   const deleting =
     deleteTarget !== null && pendingActionId === `friend:${deleteTarget.friendshipId}`;
 
@@ -297,88 +415,37 @@ export function FriendsListView({
               </Pressable>
             ) : null}
 
-            {!searching && receivedRequests.length > 0 ? (
-              <View style={styles.section}>
-                <Text style={styles.sectionTitle}>받은 요청 ({receivedRequests.length})</Text>
-                <View style={styles.rows}>
-                  {receivedRequests.map((request) => (
-                    <View key={request.requestId} style={styles.row}>
-                      <Avatar uri={request.user.profileImageUrl} />
-                      <UserLabel user={request.user} />
-                      <Pressable
-                        accessibilityRole="button"
-                        accessibilityLabel={`${request.user.displayName} 친구 요청 수락`}
-                        accessibilityState={{
-                          disabled: busy,
-                          busy: pendingActionId === `request:${request.requestId}`,
-                        }}
-                        disabled={busy}
-                        hitSlop={{ top: 6, bottom: 6 }}
-                        onPress={() => confirmAccept(request)}
-                        style={[styles.acceptButton, busy && styles.disabled]}
-                      >
-                        {pendingActionId === `request:${request.requestId}` ? (
-                          <ActivityIndicator size="small" color={green} />
-                        ) : (
-                          <Text style={styles.acceptText}>수락</Text>
-                        )}
-                      </Pressable>
-                      <CloseButton
-                        label={`${request.user.displayName} 친구 요청 거절`}
-                        disabled={busy}
-                        received
-                        onPress={() => {
-                          void onReject(request.requestId);
-                        }}
-                      />
-                    </View>
-                  ))}
-                </View>
-              </View>
+            {!searching ? (
+              renderReceived ? (
+                renderReceived(confirmAccept)
+              ) : (
+                <ReceivedRequestsSection
+                  receivedRequests={receivedRequests}
+                  pendingActionId={pendingActionId}
+                  onConfirmAccept={confirmAccept}
+                  onReject={onReject}
+                />
+              )
             ) : null}
 
-            {filteredFriends.length > 0 ? (
-              <View style={[styles.section, searching && styles.searchSection]}>
-                <Text style={styles.sectionTitle}>내 친구</Text>
-                <View style={styles.rows}>
-                  {filteredFriends.map((friend) => (
-                    <View key={friend.friendshipId} style={styles.row}>
-                      <Avatar uri={friend.user.profileImageUrl} />
-                      <UserLabel user={friend.user} />
-                      <CloseButton
-                        label={`${friend.user.displayName} 친구 삭제`}
-                        disabled={busy}
-                        onPress={() => {
-                          Keyboard.dismiss();
-                          setDeleteTarget(friend);
-                        }}
-                      />
-                    </View>
-                  ))}
-                </View>
-              </View>
-            ) : searching ? (
-              <View style={styles.searchEmpty}>
-                <Text style={styles.emptyTitle}>
-                  {emailSearch ? '이메일로 친구 추가는 준비 중이에요.' : '일치하는 친구가 없어요.'}
-                </Text>
-                <Text style={styles.emptyDescription}>
-                  {emailSearch
-                    ? '친구 추가 화면에서 제공할 예정이에요.'
-                    : '프로필을 공유하거나,\n친구의 메일을 입력해 친구를 추가해보세요.'}
-                </Text>
-                <ShareButton onPress={onShare} />
-              </View>
-            ) : !error && friends.length === 0 ? (
-              <View style={styles.friendsEmpty}>
-                <Text style={styles.emptyTitle}>아직 친구가 없어요.</Text>
-                <Text style={styles.emptyDescription}>친구와 함께 디톡스를 시작해보세요.</Text>
-              </View>
-            ) : null}
+            {renderFriends ? (
+              renderFriends(query, setDeleteTarget)
+            ) : (
+              <FriendsSection
+                friends={friends}
+                query={query}
+                pendingActionId={pendingActionId}
+                onSelectDelete={setDeleteTarget}
+                onShare={onShare}
+              />
+            )}
 
             {!searching ? (
               <View
-                style={[styles.shareFooter, receivedRequests.length === 0 && styles.baseFooter]}
+                style={[
+                  styles.shareFooter,
+                  !renderReceived && receivedRequests.length === 0 && styles.baseFooter,
+                ]}
               >
                 <Text style={styles.emptyTitle}>친구를 찾을 수 없나요?</Text>
                 <Text style={styles.footerDescription}>

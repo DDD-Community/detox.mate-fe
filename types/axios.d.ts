@@ -6,6 +6,7 @@ declare module 'axios' {
     skipAuth?: boolean;
     skipAuthRefresh?: boolean;
     _retry?: boolean;
+    _authSessionRevision?: number;
     errorPolicy?: RequestErrorPolicy;
     skipGlobalError?: boolean;
     retryPolicy?: RetryPolicy;

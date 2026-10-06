@@ -17,14 +17,6 @@ export interface FriendReceivedRequest {
   user: FriendListUser;
 }
 
-export interface FriendsListApi {
-  getFriends: () => Promise<FriendResponse[]>;
-  getReceivedRequests: () => Promise<FriendReceivedRequestResponse[]>;
-  acceptRequest: (requestId: number) => Promise<FriendResponse>;
-  deletePendingRequest: (requestId: number) => Promise<void>;
-  unfriend: (friendshipId: number) => Promise<void>;
-}
-
 export function requireId(value: number | undefined): number {
   if (!Number.isSafeInteger(value) || value == null || value <= 0) {
     throw new Error('친구 정보를 불러오지 못했어요. 다시 시도해주세요.');
@@ -53,13 +45,4 @@ export function filterFriendsByName(friends: FriendsListItem[], query: string): 
   const name = query.trim().toLocaleLowerCase();
   if (!name) return friends;
   return friends.filter((friend) => friend.user.displayName.toLocaleLowerCase().includes(name));
-}
-
-export interface FriendsListState {
-  friends: FriendsListItem[];
-  receivedRequests: FriendReceivedRequest[];
-  loading: boolean;
-  refreshing: boolean;
-  error: string | null;
-  pendingActionId: string | null;
 }

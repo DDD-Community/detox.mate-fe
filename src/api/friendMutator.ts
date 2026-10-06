@@ -1,3 +1,4 @@
+import type { AppError } from './errors/types';
 import type { AxiosRequestConfig } from 'axios';
 
 import { customAxios } from './mutator';
@@ -11,3 +12,7 @@ export const friendAxios = <T>(config: AxiosRequestConfig): Promise<T> =>
     retryPolicy: 'none',
     skipGlobalError: true,
   });
+
+// Orval expects a generic ErrorType even though this mutator normalizes every error.
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
+export type ErrorType<_Error> = AppError;

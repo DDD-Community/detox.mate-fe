@@ -1,3 +1,4 @@
+import { QueryProvider } from '../src/lib/query/QueryProvider';
 import { useFonts } from 'expo-font';
 import * as Notifications from 'expo-notifications';
 import { router, Stack } from 'expo-router';
@@ -62,15 +63,19 @@ export default function RootLayout() {
   if (!fontsLoaded && !fontError) return null;
 
   if (StorybookUIRoot) {
-    return <StorybookUIRoot />;
+    return (
+      <QueryProvider>
+        <StorybookUIRoot />
+      </QueryProvider>
+    );
   }
 
   return (
-    <>
+    <QueryProvider>
       <AppErrorBoundary>
         <Stack screenOptions={{ headerShown: false }} />
       </AppErrorBoundary>
       <NetworkErrorToast />
-    </>
+    </QueryProvider>
   );
 }
