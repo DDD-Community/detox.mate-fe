@@ -1,4 +1,4 @@
-import axios, { AxiosError, isCancel, type AxiosRequestConfig } from 'axios';
+import axios, { AxiosError, CanceledError, isCancel, type AxiosRequestConfig } from 'axios';
 import { router } from 'expo-router';
 import * as SecureStore from 'expo-secure-store';
 import { env } from '../config/env';
@@ -29,6 +29,9 @@ apiClient.interceptors.request.use(async (config) => {
   }
 
   const accessToken = await SecureStore.getItemAsync('accessTokenKey');
+  if (config.authScopeIsCurrent && !config.authScopeIsCurrent()) {
+    throw new CanceledError('The authentication session changed.');
+  }
   if (accessToken) {
     config.headers['Authorization'] = `Bearer ${accessToken}`;
   }
@@ -60,10 +63,18 @@ const extractErrorMessage = (data: unknown): string | undefined => {
 };
 
 apiClient.interceptors.response.use(
-  (response) => response,
+  (response) => {
+    if (response.config.authScopeIsCurrent && !response.config.authScopeIsCurrent()) {
+      throw new CanceledError('The authentication session changed.');
+    }
+    return response;
+  },
   async (error: AxiosError) => {
     if (isCancel(error)) return Promise.reject(error);
     const originalRequest = error.config;
+    if (originalRequest?.authScopeIsCurrent && !originalRequest.authScopeIsCurrent()) {
+      return Promise.reject(new CanceledError('The authentication session changed.'));
+    }
     const canRefresh =
       error.response?.status === 401 &&
       originalRequest &&
@@ -80,6 +91,7 @@ apiClient.interceptors.response.use(
         await refreshPromise;
         return apiClient(originalRequest);
       } catch (refreshError) {
+        if (isCancel(refreshError)) return Promise.reject(refreshError);
         const appError = normalizeError(refreshError);
         logError(appError, { scope: 'auth.refresh', operation: 'refreshAccessToken' });
         await clearAuthSession();

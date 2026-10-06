@@ -1,8 +1,14 @@
+import { CanceledError, isCancel } from 'axios';
 import { KakaoOAuthToken, login } from '@react-native-seoul/kakao-login';
 import * as AppleAuthentication from 'expo-apple-authentication';
 import { sha256 } from '@noble/hashes/sha256';
 import { bytesToHex } from '@noble/hashes/utils';
 import * as SecureStore from 'expo-secure-store';
+import {
+  changeAuthQueryScope,
+  getAuthQueryScope,
+  isCurrentAuthQueryScope,
+} from '../lib/query/authQueryScope';
 import { queryClient } from '../lib/query/queryClient';
 import apiClient from './client';
 import { AppError, normalizeError } from './errors';
@@ -39,6 +45,9 @@ const persistLoginResponse = async (
     throw new Error('로그인 응답이 올바르지 않습니다.');
   }
 
+  // End the previous identity before any stored credential can change.
+  changeAuthQueryScope(null);
+  queryClient.clear();
   await SecureStore.setItemAsync('accessTokenKey', data.accessToken);
   await SecureStore.setItemAsync('refreshTokenKey', data.refreshToken);
   await SecureStore.setItemAsync('currentUserId', String(data.id));
@@ -50,6 +59,9 @@ const persistLoginResponse = async (
   } else {
     await SecureStore.deleteItemAsync(IS_TEST_ACCOUNT_KEY);
   }
+
+  queryClient.clear();
+  changeAuthQueryScope(String(data.id));
 
   return {
     id: data.id,
@@ -128,7 +140,13 @@ export async function loginWithTestUser(testUserKey: string): Promise<OAuthLogin
 }
 
 export async function refreshAccessToken(): Promise<ServerResponseTokens> {
+  const scope = getAuthQueryScope();
+  const assertCurrentSession = () => {
+    if (!isCurrentAuthQueryScope(scope))
+      throw new CanceledError('The authentication session changed.');
+  };
   const refreshToken = await SecureStore.getItemAsync('refreshTokenKey');
+  assertCurrentSession();
   if (!refreshToken) {
     await clearAuthSession();
     throw AppError({ type: 'auth', message: '다시 로그인해 주세요.' });
@@ -146,16 +164,21 @@ export async function refreshAccessToken(): Promise<ServerResponseTokens> {
       }
     );
 
+    assertCurrentSession();
     const { accessToken, refreshToken: updatedRefreshToken } = data;
     if (!accessToken || !updatedRefreshToken) {
       throw AppError({ type: 'auth', message: '토큰 재발급 응답이 올바르지 않습니다.' });
     }
 
     await SecureStore.setItemAsync('accessTokenKey', accessToken);
+    assertCurrentSession();
     await SecureStore.setItemAsync('refreshTokenKey', updatedRefreshToken);
 
     return data;
   } catch (error) {
+    if (isCancel(error) || !isCurrentAuthQueryScope(scope)) {
+      throw new CanceledError('The authentication session changed.');
+    }
     await clearAuthSession();
     const appError = normalizeError(error);
     throw AppError({
@@ -167,6 +190,8 @@ export async function refreshAccessToken(): Promise<ServerResponseTokens> {
 }
 
 export async function clearAuthSession(): Promise<void> {
+  changeAuthQueryScope(null);
+  const endedScope = getAuthQueryScope();
   queryClient.clear();
   try {
     await SecureStore.deleteItemAsync('refreshTokenKey');
@@ -175,7 +200,7 @@ export async function clearAuthSession(): Promise<void> {
     await SecureStore.deleteItemAsync(IS_TEST_ACCOUNT_KEY);
   } finally {
     // 비동기 토큰 삭제 중 다시 시작된 조회도 이전 세션 캐시에 남기지 않는다.
-    queryClient.clear();
+    if (isCurrentAuthQueryScope(endedScope)) queryClient.clear();
   }
 }
 
