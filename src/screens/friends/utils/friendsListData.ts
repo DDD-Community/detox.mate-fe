@@ -1,4 +1,4 @@
-import type { FriendReceivedRequestResponse, FriendResponse } from '../../api/generated/model';
+import type { FriendReceivedRequestResponse, FriendResponse } from '../../../api/generated/model';
 
 export interface FriendListUser {
   userId: number;

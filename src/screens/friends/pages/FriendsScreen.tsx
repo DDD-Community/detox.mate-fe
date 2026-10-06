@@ -1,7 +1,7 @@
 import { Alert } from 'react-native';
 
-import { useFriendsListController } from '@/features/friends/useFriendsListController';
-import { FriendsListView } from './FriendsListView';
+import { useFriendsListController } from '../hooks/useFriendsListController';
+import { FriendsListView } from '../components/FriendsListView';
 
 export default function FriendsScreen() {
   const controller = useFriendsListController();

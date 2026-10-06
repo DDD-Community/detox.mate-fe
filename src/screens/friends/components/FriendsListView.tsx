@@ -22,21 +22,21 @@ import {
   filterFriendsByName,
   type FriendReceivedRequest,
   type FriendsListItem,
-} from '@/features/friends/useFriendsListController';
+} from '../utils/friendsListData';
 import { goBackOrReplace } from '@/lib/navigation';
 import { fontFamily } from '@/lib/token/primitive/fonts';
 
 const assets = {
-  avatar: require('../../../assets/avatars/default.svg'),
-  avatarSmall: require('../../../assets/avatars/default-small.svg'),
-  back: require('../../../assets/icons/back.svg'),
-  search: require('../../../assets/icons/search.svg'),
-  share: require('../../../assets/icons/share.svg'),
-  export: require('../../../assets/icons/export.svg'),
-  close: require('../../../assets/icons/close.svg'),
-  feed: require('../../../assets/icons/feed.svg'),
-  apps: require('../../../assets/icons/apps.svg'),
-  me: require('../../../assets/icons/me.svg'),
+  avatar: require('../../../../assets/avatars/default.svg'),
+  avatarSmall: require('../../../../assets/avatars/default-small.svg'),
+  back: require('../../../../assets/icons/back.svg'),
+  search: require('../../../../assets/icons/search.svg'),
+  share: require('../../../../assets/icons/share.svg'),
+  export: require('../../../../assets/icons/export.svg'),
+  close: require('../../../../assets/icons/close.svg'),
+  feed: require('../../../../assets/icons/feed.svg'),
+  apps: require('../../../../assets/icons/apps.svg'),
+  me: require('../../../../assets/icons/me.svg'),
 };
 const { regular, medium, bold } = fontFamily.primary;
 const green = '#5a8974';

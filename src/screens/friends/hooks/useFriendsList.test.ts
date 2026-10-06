@@ -3,8 +3,8 @@ import { act, createElement, StrictMode, useEffect } from 'react';
 import { createRoot } from 'react-dom/client';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
-import type { FriendResponse } from '../../api/generated/model';
-import type { FriendsListApi } from './friendsListData';
+import type { FriendResponse } from '../../../api/generated/model';
+import type { FriendsListApi } from '../utils/friendsListData';
 import { useFriendsList } from './useFriendsList';
 
 Object.assign(globalThis, { IS_REACT_ACT_ENVIRONMENT: true });

@@ -1,14 +1,14 @@
 import { useCallback, useRef, useState } from 'react';
 
-import { getUserErrorMessage } from '../../api/errors/messages';
-import { normalizeError } from '../../api/errors/normalizeError';
+import { getUserErrorMessage } from '../../../api/errors/messages';
+import { normalizeError } from '../../../api/errors/normalizeError';
 import {
   requireId,
   toFriendListItem,
   toReceivedRequest,
   type FriendsListApi,
   type FriendsListState,
-} from './friendsListData';
+} from '../utils/friendsListData';
 
 const initialState: FriendsListState = {
   friends: [],

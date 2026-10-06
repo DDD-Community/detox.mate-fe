@@ -1,10 +1,7 @@
 import { useFocusEffect } from 'expo-router';
 
-import { getFriend } from '../../api/generated/friend/friend';
+import { getFriend } from '../../../api/generated/friend/friend';
 import { useFriendsList } from './useFriendsList';
-
-export { filterFriendsByName } from './friendsListData';
-export type { FriendsListItem, FriendReceivedRequest } from './friendsListData';
 
 const api = getFriend();
 
