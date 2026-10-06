@@ -9,8 +9,6 @@ export const friendAxios = <T>(config: AxiosRequestConfig): Promise<T> =>
     ...config,
     timeout: config.timeout ?? 15_000,
     errorPolicy: { ...config.errorPolicy, presentation: 'inline' },
-    retryPolicy: 'none',
-    skipGlobalError: true,
   });
 
 // Orval expects a generic ErrorType even though this mutator normalizes every error.
