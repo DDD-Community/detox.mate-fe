@@ -22,8 +22,8 @@ beforeEach(() => resetFriendsMockData({ latencyMs: 0 }));
 afterEach(() => server.resetHandlers());
 afterAll(() => server.close());
 
-describe('Swagger friends MSW HTTP contract', () => {
-  it('returns distinct realistic users, nullable photos and separate relationship IDs', async () => {
+describe('Swagger 기반 친구 MSW HTTP 계약', () => {
+  it('목록 조회 시 서로 다른 사용자와 null을 허용하는 사진, 사용자 ID와 구분되는 친구 관계 ID를 반환한다', async () => {
     const friends = await read('/friends');
     const received = await read('/friends/requests/received');
     expect(friends).toHaveLength(8);
@@ -46,7 +46,7 @@ describe('Swagger friends MSW HTTP contract', () => {
     expect(friends[0].friendshipId).not.toBe(friends[0].user.userId);
   });
 
-  it('accepts through HTTP, then subsequent reads preserve the new friendship', async () => {
+  it('HTTP로 요청을 수락하면 이후 조회에 새 친구 관계가 유지되고 같은 요청의 재처리는 충돌한다', async () => {
     const response = await request('/friends/requests/3001/accept', 'POST');
     expect(response.status).toBe(200);
     const accepted = await response.json();
@@ -72,7 +72,7 @@ describe('Swagger friends MSW HTTP contract', () => {
     }
   });
 
-  it('serializes duplicate acceptance into one friendship and one conflict', async () => {
+  it('같은 요청을 동시에 수락하면 친구 관계 하나를 생성하고 나머지는 충돌로 처리한다', async () => {
     const responses = await Promise.all([
       request('/friends/requests/3001/accept', 'POST'),
       request('/friends/requests/3001/accept', 'POST'),
@@ -82,7 +82,7 @@ describe('Swagger friends MSW HTTP contract', () => {
     expect(await read('/friends/requests/received')).toHaveLength(2);
   });
 
-  it('limits every handler to the development API origin', () => {
+  it('모든 핸들러는 개발 API 출처의 친구 경로만 처리한다', () => {
     expect(friendsHandlers).toHaveLength(5);
     for (const handler of friendsHandlers) {
       expect(handler.info.path).toEqual(
@@ -91,7 +91,7 @@ describe('Swagger friends MSW HTTP contract', () => {
     }
   });
 
-  it('rejects a pending request with 204 without adding a friendship', async () => {
+  it('대기 요청을 거절하면 204를 반환하고 친구 관계를 추가하지 않는다', async () => {
     const response = await request('/friends/requests/3002', 'DELETE');
     expect(response.status).toBe(204);
     expect(await response.text()).toBe('');
@@ -102,7 +102,7 @@ describe('Swagger friends MSW HTTP contract', () => {
     expect((await request('/friends/requests/3002', 'DELETE')).status).toBe(404);
   });
 
-  it('deletes only the specified friendship and preserves incoming requests', async () => {
+  it('지정한 친구 관계만 삭제하고 받은 요청 목록은 유지한다', async () => {
     const response = await request('/friends/2003', 'DELETE');
     expect(response.status).toBe(204);
     expect(await response.text()).toBe('');
@@ -118,15 +118,22 @@ describe('Swagger friends MSW HTTP contract', () => {
     ['/friends/99999', 'DELETE'],
     ['/friends/requests/99999', 'DELETE'],
     ['/friends/requests/99999/accept', 'POST'],
-  ])('returns the Swagger NOT_FOUND shape for %s', async (path, method) => {
-    const response = await request(path, method);
-    expect(response.status).toBe(404);
-    expect(await response.json()).toEqual({ code: 'NOT_FOUND', message: 'Not Found', status: 404 });
-    expect(await read('/friends')).toHaveLength(8);
-    expect(await read('/friends/requests/received')).toHaveLength(3);
-  });
+  ])(
+    '존재하지 않는 %s 요청은 Swagger의 NOT_FOUND 형식으로 응답하고 목록을 유지한다',
+    async (path, method) => {
+      const response = await request(path, method);
+      expect(response.status).toBe(404);
+      expect(await response.json()).toEqual({
+        code: 'NOT_FOUND',
+        message: 'Not Found',
+        status: 404,
+      });
+      expect(await read('/friends')).toHaveLength(8);
+      expect(await read('/friends/requests/received')).toHaveLength(3);
+    }
+  );
 
-  it('resets mutations and the next relationship ID for repeatable simulator runs', async () => {
+  it('모의 데이터를 초기화하면 변경된 목록과 다음 친구 관계 ID가 초기 상태로 돌아간다', async () => {
     await request('/friends/requests/3001/accept', 'POST');
     await request('/friends/2001', 'DELETE');
     resetFriendsMockData({ latencyMs: 0 });

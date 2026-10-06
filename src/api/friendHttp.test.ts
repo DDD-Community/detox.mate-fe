@@ -60,8 +60,8 @@ afterEach(() => {
   apiClient.defaults.adapter = originalAdapter;
 });
 
-describe('generated friend client through shared HTTP interceptors', () => {
-  it('reads friends and received request arrays with the stored bearer token', async () => {
+describe('공통 HTTP 인터셉터를 통한 생성 친구 클라이언트 호출', () => {
+  it('저장된 Bearer 토큰으로 친구와 받은 요청 목록을 조회한다', async () => {
     const friends = [
       { friendshipId: 51, user: { userId: 3, displayName: '친구', email: 'friend@example.com' } },
     ];
@@ -86,14 +86,14 @@ describe('generated friend client through shared HTTP interceptors', () => {
     expect(mocks.getItemAsync).toHaveBeenCalledWith('accessTokenKey');
   });
 
-  it('accepts a request ID and preserves the friendship response', async () => {
+  it('요청 ID로 친구 요청을 수락하면 친구 관계 응답을 그대로 반환한다', async () => {
     const friendship = { friendshipId: 501, user: { userId: 7, displayName: '새 친구' } };
     useAdapter(async (config) => response(config, friendship));
     await expect(api.acceptRequest(92)).resolves.toEqual(friendship);
     expect(requests[0]).toMatchObject({ method: 'post', url: '/friends/requests/92/accept' });
   });
 
-  it('uses separate request and friendship deletion routes and handles 204', async () => {
+  it('요청과 친구 관계를 각각의 경로로 삭제하고 204 응답을 처리한다', async () => {
     useAdapter(async (config) => response(config, undefined, 204));
     await expect(api.deletePendingRequest(92)).resolves.toBeUndefined();
     await expect(api.unfriend(501)).resolves.toBeUndefined();
@@ -104,7 +104,7 @@ describe('generated friend client through shared HTTP interceptors', () => {
   });
 
   it.each(['ERR_NETWORK', 'ECONNABORTED'])(
-    'rejects %s promptly for inline retry without the global queue',
+    '%s 오류가 발생하면 전역 재시도 큐에 넣지 않고 inline 재시도를 위해 즉시 실패를 반환한다',
     async (code) => {
       useAdapter(async (config) => {
         throw new AxiosError('Network Error', code, config);
@@ -124,7 +124,7 @@ describe('generated friend client through shared HTTP interceptors', () => {
     }
   );
 
-  it('returns backend failures to the screen without a second global message', async () => {
+  it('서버 오류가 발생하면 전역 메시지를 추가로 표시하지 않고 화면에 오류를 반환한다', async () => {
     const payload = { code: 'FRIEND_REQUEST_NOT_FOUND', message: '요청을 찾을 수 없습니다.' };
     useAdapter(async (config) => {
       throw new AxiosError(
@@ -145,7 +145,7 @@ describe('generated friend client through shared HTTP interceptors', () => {
     expect(mocks.showMessage).not.toHaveBeenCalled();
   });
 
-  it('retains shared 401 refresh and retries with the refreshed bearer token', async () => {
+  it('두 요청에 401 응답이 발생하면 토큰을 한 번만 갱신하고 두 요청을 재시도한다', async () => {
     const refreshing = Promise.withResolvers<void>();
     const initialRequests = Promise.withResolvers<void>();
     let dispatched = 0;
@@ -168,7 +168,7 @@ describe('generated friend client through shared HTTP interceptors', () => {
     });
     const reading = Promise.all([api.getFriends(), api.getReceivedRequests()]);
     await initialRequests.promise;
-    // Let both rejected requests enter the response interceptor before releasing refresh.
+    // 토큰 갱신을 완료하기 전에 실패한 두 요청이 응답 인터셉터에 진입하도록 한다.
     await new Promise<void>((resolve) => setImmediate(resolve));
     refreshing.resolve();
     await expect(reading).resolves.toEqual([[], []]);
@@ -177,7 +177,7 @@ describe('generated friend client through shared HTTP interceptors', () => {
     expect(mocks.replace).not.toHaveBeenCalled();
   });
 
-  it('does not refresh or clear the next login for a late old-session 401', async () => {
+  it('이전 세션의 401 응답이 늦게 도착해도 새 로그인 토큰을 갱신하거나 세션을 삭제하지 않는다', async () => {
     let rejectOld!: () => void;
     const started = Promise.withResolvers<void>();
     useAdapter(
@@ -207,7 +207,7 @@ describe('generated friend client through shared HTTP interceptors', () => {
     expect(mocks.replace).not.toHaveBeenCalled();
   });
 
-  it('does not clear a login still being persisted when an old refresh fails', async () => {
+  it('새 로그인 정보를 저장하는 중 이전 토큰 갱신이 실패해도 새 세션을 삭제하지 않는다', async () => {
     const started = Promise.withResolvers<void>();
     const refreshing = Promise.withResolvers<void>();
     mocks.refreshAccessToken.mockImplementation(() => {
@@ -225,7 +225,7 @@ describe('generated friend client through shared HTTP interceptors', () => {
     });
     const rejection = expect(api.getFriends()).rejects.toMatchObject({ isAppError: true });
     await started.promise;
-    // The scope is temporarily null here while a new login persists its tokens.
+    // 새 로그인 토큰을 저장하는 동안 세션 범위는 일시적으로 null이다.
     const next = beginAuthTransition();
     refreshing.reject(new Error('old refresh failed'));
     await rejection;

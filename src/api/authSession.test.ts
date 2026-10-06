@@ -56,8 +56,8 @@ beforeEach(() => {
   });
 });
 
-describe('authentication session storage', () => {
-  it('finishes a native write already in flight before persisting the next login', async () => {
+describe('인증 세션 저장소', () => {
+  it('이전 토큰의 네이티브 저장이 진행 중이면 완료를 기다린 뒤 새 로그인 정보를 저장한다', async () => {
     const started = deferred<void>();
     const heldWrite = deferred<void>();
     mocks.setItemAsync.mockImplementation(async (key, value) => {
@@ -79,7 +79,7 @@ describe('authentication session storage', () => {
     expect(storage.get('currentUserId')).toBe('2');
   });
 
-  it('does not rotate another session token returned by a delayed native read', async () => {
+  it('이전 세션의 네이티브 조회가 새 세션의 토큰을 반환해도 해당 토큰으로 갱신하지 않는다', async () => {
     const started = deferred<void>();
     const heldRead = deferred<string>();
     mocks.getItemAsync.mockImplementation(async (key) => {
@@ -92,7 +92,7 @@ describe('authentication session storage', () => {
     const oldRefresh = expect(refreshAccessToken()).rejects.toMatchObject({ type: 'auth' });
     await started.promise;
     const loggingIn = loginWithTestUser('fixture');
-    // Wait until the new login has invalidated the old scope before the native read returns.
+    // 네이티브 조회를 완료하기 전에 새 로그인으로 이전 세션 범위가 무효화될 때까지 기다린다.
     await vi.waitFor(() => expect(useAuthSessionStore.getState().scope).toBeNull());
     heldRead.resolve('new-refresh');
     await oldRefresh;
