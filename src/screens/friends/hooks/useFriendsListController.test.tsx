@@ -146,4 +146,23 @@ describe('친구 목록 조회와 변경 액션', () => {
     expect(screen.rows).toEqual([]);
     expect(screen.state.pendingActionId).toBeNull();
   });
+
+  it('확정된 삭제는 받은 요청 재조회를 기다리지 않고 완료되며 이후 재조회 실패도 삭제를 되돌리지 않는다', async () => {
+    const screen = await setup();
+    const reconciliation = deferred<(typeof request)[]>();
+    api.received.mockReturnValueOnce(reconciliation.promise);
+
+    expect(await remove(screen)).toBe(true);
+    expect(screen.state.pendingActionId).toBeNull();
+    expect(screen.rows).toEqual([]);
+    expect(screen.state.refreshing).toBe(true);
+
+    await act(async () => {
+      reconciliation.reject(new Error('offline'));
+      await reconciliation.promise.catch(() => undefined);
+    });
+    expect(screen.rows).toEqual([]);
+    expect(screen.state.pendingActionId).toBeNull();
+    expect(screen.state.error).toBeNull();
+  });
 });

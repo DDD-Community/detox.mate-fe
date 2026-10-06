@@ -73,6 +73,13 @@ export function useFriendsListController() {
   };
   const refresh = () => refreshKeys([friendsOptions.queryKey, requestsOptions.queryKey]);
 
+  const reconcile = async () => {
+    await Promise.all([
+      client.invalidateQueries({ queryKey: friendsOptions.queryKey }),
+      client.invalidateQueries({ queryKey: requestsOptions.queryKey }),
+    ]);
+  };
+
   const changeFriendship = async (action: Action): Promise<boolean> => {
     if (lock.current) return false;
     lock.current = true;
@@ -105,11 +112,8 @@ export function useFriendsListController() {
           previous?.filter((item) => item.requestId !== id)
         );
       }
-      // This write is confirmed. A failed reconciliation is never reported as a failed write.
-      await Promise.all([
-        client.invalidateQueries({ queryKey: friendsOptions.queryKey }),
-        client.invalidateQueries({ queryKey: requestsOptions.queryKey }),
-      ]);
+      // The write is confirmed; reconciliation belongs to the query regions, not the action pending.
+      void reconcile().catch(() => undefined);
       return true;
     } catch (failure) {
       setError(getUserErrorMessage(normalizeError(failure)));
