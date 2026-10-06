@@ -42,6 +42,7 @@ description: Select, write, review, or prune DetoxMate FE tests for important lo
 
 ## 작성 규칙
 
+- `describe`·`it`·`test`의 제목과 검증 의도를 설명하는 주석은 한글로 쓴다. 제목은 조건 → 행동 → 기대 결과가 드러나도록 작성한다. API·함수명·오류 코드·상태코드 등 고정 식별자와 테스트 실행기의 지시문은 원문을 유지한다.
 - 조건 → 공개 행동 → 불변식으로 사례를 쓴다. 내부 ref·revision·캐시 구조와 구현을 복제한 기대값은 검사하지 않는다.
 - 경합은 deferred Promise로 순서를 제어한다. 시간이 요구사항인 경우에만 타이머를 제어한다. 임의 sleep을 사용하지 않는다.
 - 필요한 최소 fixture를 쓰고 테스트별 상태·모킹·타이머·렌더를 정리한다. 실제 네트워크나 실행 순서에 의존하지 않는다.
