@@ -25,8 +25,9 @@ description: DetoxMate FE 컴포넌트를 구현, 수정, 분리하거나 리뷰
 
 ## 3. Suspense와 렌더 조회
 
-- 렌더에 필요한 GET의 초기 로딩은 Suspense fallback으로 처리한다. `useSuspenseQuery`처럼 suspend 가능한 조회를 경계 아래 자식에서 호출한다. 단순 `useEffect + fetch`를 Suspense로 감싸는 것만으로 로딩이 연동되지 않는다.
+- 렌더에 필요한 GET은 가능한 한 `useSuspenseQuery` 또는 생성된 Suspense 조회 훅을 우선 사용하고, 초기 로딩은 Suspense fallback에 맡긴다. 조회는 경계 아래 자식에서 호출하고, 별도 `loading` state나 `isLoading` 분기로 초기 로딩을 중복 관리하지 않는다. Suspense를 적용하기 어려운 구체적인 이유가 있을 때만 일반 조회 훅과 명시적 로딩 처리를 사용한다. 단순 `useEffect + fetch`를 Suspense로 감싸는 것만으로 로딩이 연동되지 않는다.
 - 배치는 **Error Boundary → Suspense → 조회 자식**으로 한다. 같은 함수에서 조회 hook을 먼저 호출하고 반환 JSX 안에 경계를 두면 그 hook은 해당 경계의 보호를 받지 못한다.
+- 같은 Suspense 영역에서 필요한 독립 query가 여러 개라면 직렬 요청(waterfall)이 생기지 않도록 병렬로 시작한다. 동일 컴포넌트에서 `useSuspenseQuery`를 연속 호출하면 첫 조회가 suspend하면서 뒤 조회의 시작이 늦어진다. 함께 표시할 독립 조회는 생성 query options와 `useSuspenseQueries`를 우선 사용한다. 영역별 경계를 유지해야 한다면 공통 상위에서 독립 조회를 함께 prefetch하는 등 실제 병렬 시작을 구성하고, 경계나 컴포넌트 분리만으로 병렬성을 보장했다고 판단하지 않는다. 앞 조회 결과가 다음 요청의 입력인 실제 의존 query만 순차 실행한다. 캐시가 없는 초기 진입에서 요청 시작 시점을 확인한다. query options와 prefetch 구성은 [frontend-remote](../frontend-remote/SKILL.md)의 기준을 따른다.
 - queryFn 오류를 `try/catch`로 삼키거나 빈 배열 같은 성공값으로 바꾸지 않는다. 오류는 데이터 계층에 전달하고, 정상적인 empty 결과와 구분한다. 렌더할 때마다 새 요청 Promise를 생성하지 않는다.
 - fallback은 해당 영역에 맞는 로딩 표시를 제공한다. 기존 데이터가 있는 재조회와 이벤트 mutation을 모두 초기 로딩 화면으로 바꾸지 않는다.
 
@@ -48,4 +49,4 @@ description: DetoxMate FE 컴포넌트를 구현, 수정, 분리하거나 리뷰
 
 필요한 저장소 참고: `app/_layout.tsx`, `src/components/AppErrorBoundary/`, `src/api/errors/`, `src/api/client.ts`, `src/observability/sentry.ts`, `docs/error-handling-architecture.md`. 오류 처리를 구현·수정했다면 이벤트 catch와 boundary 각각의 수집·제외 정책 및 중복 방지를 확인한다. 로컬 logger 호출 확인과 운영 Sentry 수신 확인을 구분해 보고한다. 테스트를 선택할 때는 기존 [frontend-testing](../frontend-testing/SKILL.md) 정책을 따르고 광범위한 테스트 추가를 기본값으로 삼지 않는다.
 
-공식 근거: [React Error Boundary](https://react.dev/reference/react/Component#catching-rendering-errors-with-an-error-boundary), [React Suspense](https://react.dev/reference/react/Suspense), [TanStack Query Suspense](https://tanstack.com/query/v5/docs/framework/react/guides/suspense).
+공식 근거: [React Error Boundary](https://react.dev/reference/react/Component#catching-rendering-errors-with-an-error-boundary), [React Suspense](https://react.dev/reference/react/Suspense), [TanStack Query Suspense](https://tanstack.com/query/v5/docs/framework/react/guides/suspense), [TanStack Query Parallel Queries](https://tanstack.com/query/v5/docs/framework/react/guides/parallel-queries).
