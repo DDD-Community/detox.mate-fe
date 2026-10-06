@@ -1,8 +1,9 @@
 import { useLocalSearchParams, useRouter } from 'expo-router';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { StyleSheet, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
+import { getUser } from '../../api';
 import { spacing } from '../../lib/token';
 import { pickRandomFriendNames } from './mockLockApps';
 import { TenSecondCountdownScreen } from './TenSecondCountdownScreen';
@@ -14,6 +15,14 @@ export default function UnregisterTimerScreen() {
   const router = useRouter();
   const { appId } = useLocalSearchParams<{ appId: string }>();
   const [notifiedFriends] = useState(() => pickRandomFriendNames(3));
+  const [displayName, setDisplayName] = useState('');
+
+  useEffect(() => {
+    getUser()
+      .getMe()
+      .then((me) => setDisplayName(me.displayName ?? ''))
+      .catch(() => {});
+  }, []);
 
   return (
     <View style={styles.root}>
@@ -21,6 +30,8 @@ export default function UnregisterTimerScreen() {
         <TenSecondCountdownScreen
           title="10초 동안 다시 생각해볼까요?"
           notifiedFriends={notifiedFriends}
+          notificationPreview={`${`${displayName || '회원'}님이`} 앱을 등록 해제했어요.`}
+          pauseInBackground
           cancelLabel="해제 안 할래요"
           onCancel={() => router.back()}
           onComplete={() =>
