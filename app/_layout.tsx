@@ -1,4 +1,5 @@
 import { QueryProvider } from '../src/lib/query/QueryProvider';
+import { AuthSessionBootstrap } from '../src/lib/query/AuthSessionBootstrap';
 import { useFonts } from 'expo-font';
 import * as Notifications from 'expo-notifications';
 import { router, Stack } from 'expo-router';
@@ -29,9 +30,6 @@ const StorybookUIRoot = STORYBOOK_ENABLED
 
 export default function RootLayout() {
   const [fontsLoaded, fontError] = useFonts(fontSources);
-
-  // hideAsync()는 SplashScreen 컴포넌트(app/index.tsx)에서 호출한다.
-  // app/index.tsx는 항상 초기 라우트로 마운트되므로 여기서 호출할 필요가 없다.
 
   useEffect(() => {
     initAnalytics();
@@ -73,7 +71,7 @@ export default function RootLayout() {
   return (
     <QueryProvider>
       <AppErrorBoundary>
-        <Stack screenOptions={{ headerShown: false }} />
+        <Stack layout={AuthSessionBootstrap} screenOptions={{ headerShown: false }} />
       </AppErrorBoundary>
       <NetworkErrorToast />
     </QueryProvider>

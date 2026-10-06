@@ -1,5 +1,4 @@
 import * as SecureStore from 'expo-secure-store';
-import * as ExpoSplashScreen from 'expo-splash-screen';
 import { useRouter } from 'expo-router';
 import { useEffect } from 'react';
 import { Image, StyleSheet, View } from 'react-native';
@@ -10,6 +9,7 @@ import { getGroupChallenge } from '../api/generated/group-challenge/group-challe
 import { LoggingPage } from '../components';
 import { setAnalyticsUserId, trackEvent } from '../lib/analytics';
 import { consumePendingInviteCode } from '../lib/pendingInvite';
+import { getAuthQueryScope } from '../lib/query/authQueryScope';
 import { TERMS_ACCEPTED_KEY } from './auth/authStorageKeys';
 
 type InitialFeedRouteParams = {
@@ -49,18 +49,12 @@ const getInitialFeedRouteParams = async (): Promise<InitialFeedRouteParams | nul
 export default function SplashScreen() {
   const router = useRouter();
 
-  // 네이티브 스플래시를 React SplashScreen이 mount된 시점에 숨겨
-  // 네이티브→React 전환이 보이지 않도록 한다.
-  useEffect(() => {
-    ExpoSplashScreen.hideAsync();
-  }, []);
-
   useEffect(() => {
     let cancelled = false;
 
     const redirect = async () => {
       const accessToken = await SecureStore.getItemAsync('accessTokenKey');
-      const currentUserId = await SecureStore.getItemAsync('currentUserId');
+      const currentUserId = getAuthQueryScope().userId;
       if (cancelled) return;
 
       if (accessToken && currentUserId) {

@@ -1,6 +1,5 @@
 import { QueryErrorResetBoundary, useSuspenseQuery } from '@tanstack/react-query';
 import { Image } from 'expo-image';
-import * as SecureStore from 'expo-secure-store';
 import { router } from 'expo-router';
 import { Suspense, useEffect, useState } from 'react';
 import {
@@ -20,11 +19,7 @@ import {
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
-import {
-  getAuthQueryScope,
-  restoreAuthQueryScope,
-  useAuthQueryScope,
-} from '../../../lib/query/authQueryScope';
+import { useAuthQueryScope } from '../../../lib/query/authQueryScope';
 import { friendsQueryOptions, receivedQueryOptions } from '../utils/friendsQueryOptions';
 import { useDebouncedEmail } from '../hooks/useDebouncedEmail';
 import { FriendEmailSearch } from '../components/FriendEmailSearch';
@@ -40,8 +35,6 @@ import {
 import { goBackOrReplace } from '@/lib/navigation';
 import { LoggingPage } from '@/components/LoggingPage';
 import { trackButtonClick } from '@/lib/analytics';
-import { logError } from '@/api/errors/logger';
-import { normalizeError } from '@/api/errors/normalizeError';
 import { fontFamily } from '@/lib/token/primitive/fonts';
 import defaultSmallAvatar from '@assets/avatars/default-small.svg';
 import defaultAvatar from '@assets/avatars/default.svg';
@@ -274,57 +267,16 @@ function FriendsSection({
 
 export default function FriendsScreen() {
   const scope = useAuthQueryScope();
-  const [restorationError, setRestorationError] = useState<unknown>(null);
-  const [restoring, setRestoring] = useState(true);
-  const [attempt, setAttempt] = useState(0);
-  useEffect(() => {
-    const initial = getAuthQueryScope();
-    if (initial.userId !== null || initial.version !== 0) {
-      setRestoring(false);
-      return;
-    }
-    let active = true;
-    setRestorationError(null);
-    setRestoring(true);
-    void SecureStore.getItemAsync('currentUserId')
-      .then((userId) => {
-        if (active) restoreAuthQueryScope(userId, initial);
-      })
-      .catch((error) => {
-        if (active && getAuthQueryScope() === initial) {
-          logError(normalizeError(error), {
-            scope: 'app.bootstrap',
-            operation: 'restoreFriendSession',
-          });
-          setRestorationError(error);
-        }
-      })
-      .finally(() => {
-        if (active) setRestoring(false);
-      });
-    return () => {
-      active = false;
-    };
-  }, [attempt]);
   const content =
     scope.userId === null ? (
       <View style={styles.root}>
-        {restorationError ? (
-          <FriendsErrorFeedback
-            error={restorationError}
-            onRetry={() => setAttempt((value) => value + 1)}
-          />
-        ) : restoring ? (
-          <ActivityIndicator color={green} style={{ padding: 24 }} />
-        ) : (
-          <Pressable
-            accessibilityRole="button"
-            onPress={() => router.replace('/login')}
-            style={{ padding: 24 }}
-          >
-            <Text style={styles.emailHint}>다시 로그인해 주세요.</Text>
-          </Pressable>
-        )}
+        <Pressable
+          accessibilityRole="button"
+          onPress={() => router.replace('/login')}
+          style={{ padding: 24 }}
+        >
+          <Text style={styles.emailHint}>다시 로그인해 주세요.</Text>
+        </Pressable>
       </View>
     ) : (
       <FriendsContent key={`${scope.userId}:${scope.version}`} />
