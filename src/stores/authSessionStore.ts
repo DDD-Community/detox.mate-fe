@@ -10,6 +10,13 @@ export const useAuthSessionStore = create<{
   scope: AuthScope | null;
 }>(() => ({ ready: false, scope: null }));
 
+// Use only below an authenticated mount guard; preserve scope identity for async checks.
+export function useAuthenticatedScope(): AuthScope {
+  const scope = useAuthSessionStore((state) => state.scope);
+  if (!scope) throw new Error('Authenticated content requires a login session.');
+  return scope;
+}
+
 // Invalidate the old scope before async persistence or deletion starts.
 export function beginAuthTransition(): number {
   const transition = ++sessionId;

@@ -8,8 +8,8 @@ import type { FriendResponse } from '../../../api/query-generated/model';
 import {
   beginAuthTransition,
   completeAuthTransition,
+  useAuthenticatedScope,
   useAuthSessionStore,
-  type AuthScope,
 } from '../../../stores/authSessionStore';
 import { friendsQueryOptions, receivedRequestsQueryOptions } from './friendsQueries';
 import { useFriendsListController } from './useFriendsListController';
@@ -47,9 +47,8 @@ function deferred<T>() {
   return { promise, resolve, reject };
 }
 
-function login(userId: number): AuthScope {
+function login(userId: number) {
   completeAuthTransition(beginAuthTransition(), userId);
-  return useAuthSessionStore.getState().scope!;
 }
 
 beforeEach(() => {
@@ -68,44 +67,50 @@ afterEach(async () => {
   await act(() => cleanups.splice(0).forEach((cleanup) => cleanup()));
 });
 
-async function setup(scope = login(1)) {
+async function setup() {
   const client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
   let current!: ReturnType<typeof useFriendsListController>;
   let rows: FriendResponse[] = [];
-  function FriendsData({ scope }: { scope: AuthScope }) {
+  function FriendsData() {
+    const scope = useAuthenticatedScope();
     rows = useSuspenseQuery(friendsQueryOptions(scope)).data;
     return null;
   }
-  function RequestsData({ scope }: { scope: AuthScope }) {
+  function RequestsData() {
+    const scope = useAuthenticatedScope();
     useSuspenseQuery(receivedRequestsQueryOptions(scope));
     return null;
   }
-  function Harness({ scope }: { scope: AuthScope }) {
-    current = useFriendsListController(scope);
+  function Harness() {
+    current = useFriendsListController();
     return createElement(
       Suspense,
       { fallback: null },
-      createElement(FriendsData, { scope }),
-      createElement(RequestsData, { scope })
+      createElement(FriendsData),
+      createElement(RequestsData)
     );
   }
+  function AuthenticatedHarness() {
+    const { ready, scope } = useAuthSessionStore();
+    return ready && scope ? createElement(Harness, { key: scope.sessionId }) : null;
+  }
   const root = createRoot(document.createElement('div'));
-  const render = async (nextScope: AuthScope) => {
-    await act(() =>
-      root.render(
-        createElement(
-          QueryClientProvider,
-          { client },
-          createElement(Harness, { scope: nextScope, key: nextScope.sessionId })
-        )
-      )
-    );
+  const render = async (userId: number) => {
+    await act(() => {
+      login(userId);
+    });
   };
   cleanups.push(() => {
     root.unmount();
     client.clear();
+    beginAuthTransition();
   });
-  await render(scope);
+  await act(() => {
+    login(1);
+    root.render(
+      createElement(QueryClientProvider, { client }, createElement(AuthenticatedHarness))
+    );
+  });
   return {
     client,
     render,
@@ -126,8 +131,8 @@ async function remove(screen: Awaited<ReturnType<typeof setup>>) {
   return result;
 }
 
-describe('friends query actions', () => {
-  it('blocks duplicate writes synchronously and remains retryable after a write failure', async () => {
+describe('친구 목록 조회와 변경 액션', () => {
+  it('친구 삭제 중에는 중복 변경을 즉시 차단하고 삭제 실패 후에는 재시도를 허용한다', async () => {
     const pending = deferred<void>();
     const screen = await setup();
     api.remove.mockReturnValueOnce(pending.promise);
@@ -146,7 +151,7 @@ describe('friends query actions', () => {
     expect(screen.rows).toEqual([]);
   });
 
-  it('retains a confirmed deletion when reconciliation fails and when an older read arrives', async () => {
+  it('친구 삭제가 확정되면 후속 재조회가 실패하거나 이전 조회가 늦게 도착해도 삭제 결과를 유지한다', async () => {
     const screen = await setup();
     const oldRead = deferred<FriendResponse[]>();
     api.friends.mockReturnValueOnce(oldRead.promise);
@@ -166,7 +171,7 @@ describe('friends query actions', () => {
     expect(screen.state.pendingActionId).toBeNull();
   });
 
-  it('keeps late reads invisible across A to B to C account changes', async () => {
+  it('A에서 B, C 계정으로 전환한 뒤 이전 계정의 조회가 완료되어도 현재 계정의 목록을 유지한다', async () => {
     const screen = await setup();
     const oldA = deferred<FriendResponse[]>();
     const oldB = deferred<FriendResponse[]>();
@@ -175,20 +180,18 @@ describe('friends query actions', () => {
     await act(() => {
       readingA = screen.state.refresh();
     });
-    const scopeB = login(2);
     api.friends.mockResolvedValue([
       { friendshipId: 88, user: { userId: 11, displayName: 'B 친구' } },
     ]);
-    await screen.render(scopeB);
+    await screen.render(2);
     api.friends.mockReturnValueOnce(oldB.promise);
     let readingB!: Promise<void>;
     await act(() => {
       readingB = screen.state.refresh();
     });
-    const scopeC = login(3);
     const currentFriend = { friendshipId: 99, user: { userId: 12, displayName: 'C 친구' } };
     api.friends.mockResolvedValue([currentFriend]);
-    await screen.render(scopeC);
+    await screen.render(3);
     await act(async () => {
       oldB.resolve([friend]);
       oldA.resolve([friend]);
@@ -199,7 +202,7 @@ describe('friends query actions', () => {
   });
 
   it.each([2, 1])(
-    'isolates late reads and writes when the next login is user %s',
+    '사용자 %s로 새로 로그인한 뒤 이전 세션의 조회와 변경이 완료되어도 새 세션의 목록을 유지한다',
     async (nextUserId) => {
       const screen = await setup();
       const oldRead = deferred<FriendResponse[]>();
@@ -214,10 +217,9 @@ describe('friends query actions', () => {
       await act(() => {
         writing = screen.state.deleteFriend(41);
       });
-      const next = login(nextUserId);
       const newFriend = { friendshipId: 99, user: { userId: 10, displayName: '새 세션 친구' } };
       api.friends.mockResolvedValue([newFriend]);
-      await screen.render(next);
+      await screen.render(nextUserId);
       await act(async () => {
         oldWrite.resolve();
         oldRead.resolve([friend]);

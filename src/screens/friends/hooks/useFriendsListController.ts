@@ -17,7 +17,7 @@ import type {
   FriendReceivedRequestResponse,
   FriendResponse,
 } from '../../../api/query-generated/model';
-import { isCurrentAuthScope, type AuthScope } from '../../../stores/authSessionStore';
+import { isCurrentAuthScope, useAuthenticatedScope } from '../../../stores/authSessionStore';
 import { requireId } from '../utils/friendsListData';
 import { friendsQueryOptions, receivedRequestsQueryOptions } from './friendsQueries';
 
@@ -26,7 +26,8 @@ type Action =
   | { kind: 'reject'; requestId: number }
   | { kind: 'delete'; friendshipId: number };
 
-export function useFriendsListController(scope: AuthScope) {
+export function useFriendsListController() {
+  const scope = useAuthenticatedScope();
   const client = useQueryClient();
   const friendsOptions = friendsQueryOptions(scope);
   const requestsOptions = receivedRequestsQueryOptions(scope);
