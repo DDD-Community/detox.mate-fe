@@ -5,6 +5,7 @@ import { router, Stack } from 'expo-router';
 import * as SplashScreen from 'expo-splash-screen';
 import { useEffect, type ComponentType } from 'react';
 import { getGroup } from '../src/api/generated/group/group';
+import { logError, normalizeError } from '../src/api/errors';
 import { fontSources } from '../src/lib/token/primitive/fonts';
 import { NetworkErrorToast } from '../src/components/NetworkErrorToast';
 import { subscribeToDevicePushTokenRefresh } from '../src/lib/fcmToken';
@@ -30,13 +31,21 @@ const StorybookUIRoot = STORYBOOK_ENABLED
 export default function RootLayout() {
   const [fontsLoaded, fontError] = useFonts(fontSources);
 
-  // hideAsync()는 SplashScreen 컴포넌트(app/index.tsx)에서 호출한다.
-  // app/index.tsx는 항상 초기 라우트로 마운트되므로 여기서 호출할 필요가 없다.
-
   useEffect(() => {
     initAnalytics();
     initAirbridge();
   }, []);
+
+  useEffect(() => {
+    if (fontsLoaded || fontError) {
+      void SplashScreen.hideAsync().catch((failure) => {
+        logError(normalizeError(failure), {
+          scope: 'app.bootstrap',
+          operation: 'hideNativeSplash',
+        });
+      });
+    }
+  }, [fontsLoaded, fontError]);
 
   // FCM registration token 갱신 감지 → 서버에 새 토큰 재등록
   useEffect(() => {

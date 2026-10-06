@@ -1,5 +1,4 @@
 import * as SecureStore from 'expo-secure-store';
-import * as ExpoSplashScreen from 'expo-splash-screen';
 import { useRouter } from 'expo-router';
 import { useEffect } from 'react';
 import { Image, StyleSheet, View } from 'react-native';
@@ -48,12 +47,6 @@ const getInitialFeedRouteParams = async (): Promise<InitialFeedRouteParams | nul
 
 export default function SplashScreen() {
   const router = useRouter();
-
-  // 네이티브 스플래시를 React SplashScreen이 mount된 시점에 숨겨
-  // 네이티브→React 전환이 보이지 않도록 한다.
-  useEffect(() => {
-    ExpoSplashScreen.hideAsync();
-  }, []);
 
   useEffect(() => {
     let cancelled = false;
