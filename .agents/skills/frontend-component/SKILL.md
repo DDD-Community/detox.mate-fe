@@ -17,6 +17,7 @@ description: DetoxMate FE 컴포넌트와 훅을 구현, 수정, 분리하거나
 
 ## 2. Error Boundary와 복구
 
+- 공통 `ErrorBoundary`와 기본 fallback을 우선 재사용한다. 기본 안내·재시도로 충분하면 `fallback`을 생략하고 기존 새로고침 동작을 연결한다. 화면·조회마다 전용 오류 컴포넌트나 fallback을 만들지 않는다. 예상된 검색 결과 없음, 기존 성공 데이터 유지, 확정된 변경 상태 보존 등 명확한 표시·복구 정책 차이가 있을 때만 필요한 범위를 커스텀한다.
 - 컴포넌트의 렌더 오류와 렌더에 필요한 GET 실패는 상위 Error Boundary가 보호하도록 한다. 먼저 기존 ancestor의 보호 범위를 확인하고, 사용자가 함께 실패를 보고 재시도할 단위에 경계를 둔다. 모든 leaf에 래퍼를 복제하지 않는다.
 - Error Boundary는 일반 이벤트 handler나 effect 안에서 시작한 비동기 실패를 자동으로 잡지 않는다. 렌더 조회 실패는 suspend 가능한 데이터 계층이 렌더 중 throw하도록 연결한다. 화면 데이터 GET은 아래 Suspense 규칙에 맞춰 렌더 조회로 연결한다. 그 밖의 effect 비동기 부수효과는 자체 예외 처리 또는 명시적인 렌더 오류 전달을 사용한다.
 - Error Boundary가 잡은 오류는 `componentDidCatch` 등 경계의 오류 처리 지점에서 기존 `logError`를 통해 Sentry에 기록한다. `scope: 'render'`와 `componentStack`을 전달하고 fallback 렌더 중에는 기록하지 않는다. `AppError` 등 정규화된 오류라는 이유만으로 건너뛰지 않는다. 동일 실패가 다른 계층에서 실제 수집되는 경로가 확인된 경우에만 중복 기록을 막는다.
