@@ -24,6 +24,7 @@ import {
   type FriendsListItem,
 } from '@/features/friends/useFriendsListController';
 import { goBackOrReplace } from '@/lib/navigation';
+import { fontFamily } from '@/lib/token/primitive/fonts';
 
 const assets = {
   avatar: require('../../../assets/friends/avatar.svg'),
@@ -37,9 +38,7 @@ const assets = {
   apps: require('../../../assets/friends/apps.svg'),
   me: require('../../../assets/friends/me.svg'),
 };
-const regular = 'FriendsPretendardRegular';
-const medium = 'FriendsPretendardMedium';
-const bold = 'FriendsPretendardBold';
+const { regular, medium, bold } = fontFamily.primary;
 const green = '#5a8974';
 
 export interface FriendsListViewProps {
@@ -630,7 +629,12 @@ const styles = StyleSheet.create({
   tab: { flex: 1, alignItems: 'center', justifyContent: 'center', borderRadius: 999, gap: 1 },
   activeTab: { backgroundColor: '#ededed' },
   tabIcon: { width: 26, height: 26 },
-  tabLabel: { fontSize: 11, lineHeight: 14, fontWeight: '600', color: '#2b2f38' },
+  tabLabel: {
+    fontFamily: fontFamily.primary.semibold,
+    fontSize: 11,
+    lineHeight: 14,
+    color: '#2b2f38',
+  },
   modalRoot: { flex: 1, justifyContent: 'flex-end' },
   backdrop: { ...StyleSheet.absoluteFillObject, backgroundColor: 'rgba(74,74,74,0.48)' },
   sheet: {

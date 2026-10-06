@@ -22,7 +22,7 @@ import { AppLogo, Button, HeaderAction, LoggingButton, LoggingPage } from '@/com
 import { trackEvent } from '@/lib/analytics';
 import { formatHHMMToDisplay, formatMinutesAsHourMinute } from '@/lib/formatDuration';
 import { goBackOrReplace } from '@/lib/navigation';
-import { primitiveColors, radius, spacing, typography } from '@/lib/token';
+import { fontFamily, primitiveColors, radius, spacing, typography } from '@/lib/token';
 
 const { brown, gray } = primitiveColors;
 
@@ -477,6 +477,7 @@ const styles = StyleSheet.create({
     overflow: 'hidden',
   },
   pickerTitle: {
+    fontFamily: fontFamily.primary.regular,
     fontSize: 16,
     lineHeight: 24,
     fontWeight: '400',
@@ -522,6 +523,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   wheelText: {
+    fontFamily: fontFamily.primary.regular,
     fontSize: 20,
     lineHeight: WHEEL_ITEM_HEIGHT,
     fontWeight: '400',
@@ -532,6 +534,7 @@ const styles = StyleSheet.create({
     color: '#000000',
   },
   selectedWheelUnit: {
+    fontFamily: fontFamily.primary.bold,
     position: 'absolute',
     top: WHEEL_HEIGHT / 2 - WHEEL_ITEM_HEIGHT / 2,
     left: 36,
