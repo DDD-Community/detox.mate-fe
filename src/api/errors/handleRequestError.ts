@@ -20,6 +20,8 @@ export function handleRequestError(
     error: appError,
     message: getUserErrorMessage(appError, policy),
     presentation,
-    shouldLog: policy?.log ?? (presentation === 'silent' || appError.type === 'server'),
+    shouldLog:
+      policy?.log ??
+      (presentation === 'silent' || appError.type === 'server' || appError.type === 'unknown'),
   };
 }

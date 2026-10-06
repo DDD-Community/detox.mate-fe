@@ -116,4 +116,11 @@ describe('handleRequestError 오류 표시 정책', () => {
     expect(result.presentation).toBe('toast');
     expect(result.shouldLog).toBe(true);
   });
+
+  it('화면이 예상 밖 오류를 안내해도 기록하고 명시적인 로그 제외 정책은 유지한다', () => {
+    const error = AppError({ type: 'unknown' });
+
+    expect(handleRequestError(error, { presentation: 'inline' }).shouldLog).toBe(true);
+    expect(handleRequestError(error, { presentation: 'inline', log: false }).shouldLog).toBe(false);
+  });
 });

@@ -1,8 +1,9 @@
 import * as Sentry from '@sentry/react-native';
+import { isAxiosError, isCancel } from 'axios';
 
 import type { ErrorLogContext } from '@/api/errors/logger';
 import type { AppError } from '@/api/errors/types';
-import { env } from '@/config/env';
+import { env } from '../config/env';
 
 const ALWAYS_REPORTABLE_SCOPES = new Set(['render', 'auth.refresh']);
 
@@ -31,6 +32,7 @@ const SENSITIVE_CONTEXT_KEYS = new Set([
 ]);
 
 let initialized = false;
+const observedErrors = new WeakSet<object>();
 
 const shouldEnableSentry = () => env.appEnv === 'production' && Boolean(env.sentryDsn);
 
@@ -104,6 +106,16 @@ export function initSentry() {
 
 const shouldCapture = (error: AppError, context?: ErrorLogContext) => {
   if (!shouldEnableSentry()) return false;
+  if (isCancel(error) || isCancel(error.originalError)) return false;
+  if (context?.scope === 'api') {
+    return error.type === 'server' || error.type === 'unknown';
+  }
+  if (
+    context?.scope === 'render' &&
+    (error.type === 'validation' || error.type === 'notFound' || error.type === 'conflict')
+  ) {
+    return false;
+  }
   if (context?.scope && ALWAYS_REPORTABLE_SCOPES.has(context.scope)) return true;
   if (context?.scope && BLOCKING_FLOW_SCOPES.has(context.scope)) {
     return (
@@ -137,7 +149,11 @@ const shouldCapture = (error: AppError, context?: ErrorLogContext) => {
 };
 
 const getReportableError = (error: AppError, context?: ErrorLogContext) => {
-  if (context?.scope === 'render' && error.originalError instanceof Error) {
+  if (
+    context?.scope === 'render' &&
+    error.originalError instanceof Error &&
+    !isAxiosError(error.originalError)
+  ) {
     return error.originalError;
   }
 
@@ -151,6 +167,13 @@ export function captureObservedError(error: AppError, context?: ErrorLogContext)
 
   if (!shouldCapture(error, context)) return;
 
+  const originalError = error.originalError;
+  const identity =
+    originalError && (typeof originalError === 'object' || typeof originalError === 'function')
+      ? originalError
+      : error;
+  if (observedErrors.has(identity)) return;
+
   const sanitizedContext = toSentryContext(error, context);
 
   Sentry.withScope((scope) => {
@@ -163,5 +186,6 @@ export function captureObservedError(error: AppError, context?: ErrorLogContext)
 
     scope.setContext('app_error', sanitizeValue(sanitizedContext) as Record<string, unknown>);
     Sentry.captureException(getReportableError(error, context));
+    observedErrors.add(identity);
   });
 }

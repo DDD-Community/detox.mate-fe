@@ -23,7 +23,6 @@ export class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundarySt
   }
 
   componentDidCatch(error: Error, errorInfo: ErrorInfo) {
-    if (error && typeof error === 'object' && 'isAppError' in error) return;
     logError(normalizeError(error), {
       scope: 'render',
       componentStack: errorInfo.componentStack,
