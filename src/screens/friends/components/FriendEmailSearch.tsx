@@ -11,7 +11,7 @@ import { ActivityIndicator, Pressable, StyleSheet, Text, View } from 'react-nati
 import Svg, { Defs, LinearGradient, Rect, Stop } from 'react-native-svg';
 
 import {
-  FriendSearchResponseRelationshipStatus as RelationshipStatus,
+  FriendRelationshipStatus as RelationshipStatus,
   type FriendSearchResponse,
 } from '../../../api/query-generated/model';
 import { logError, normalizeError } from '../../../api/errors';

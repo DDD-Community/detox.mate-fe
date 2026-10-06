@@ -5,10 +5,10 @@
  * OpenAPI spec version: v0
  */
 
-export type FriendSearchResponseRelationshipStatus =
-  (typeof FriendSearchResponseRelationshipStatus)[keyof typeof FriendSearchResponseRelationshipStatus];
+export type FriendRelationshipStatus =
+  (typeof FriendRelationshipStatus)[keyof typeof FriendRelationshipStatus];
 
-export const FriendSearchResponseRelationshipStatus = {
+export const FriendRelationshipStatus = {
   NONE: 'NONE',
   SELF: 'SELF',
   PENDING_SENT: 'PENDING_SENT',

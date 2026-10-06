@@ -16,10 +16,6 @@ import {
   useDeletePendingRequest,
   useUnfriend,
 } from '../../../api/query-generated/friend';
-import type {
-  FriendReceivedRequestResponse,
-  FriendResponse,
-} from '../../../api/query-generated/model';
 import { trackEvent } from '../../../lib/analytics';
 import { requireId } from '../utils/friendsListData';
 
@@ -47,10 +43,12 @@ export function useFriendsListController() {
   const refreshing =
     useIsFetching({
       queryKey: friendsOptions.queryKey,
+      exact: true,
       predicate: (query) => query.state.data !== undefined,
     }) +
       useIsFetching({
         queryKey: requestsOptions.queryKey,
+        exact: true,
         predicate: (query) => query.state.data !== undefined,
       }) >
     0;
@@ -84,8 +82,8 @@ export function useFriendsListController() {
 
   const cancelReads = async () => {
     await Promise.all([
-      client.cancelQueries({ queryKey: friendsOptions.queryKey }),
-      client.cancelQueries({ queryKey: requestsOptions.queryKey }),
+      client.cancelQueries({ queryKey: friendsOptions.queryKey, exact: true }),
+      client.cancelQueries({ queryKey: requestsOptions.queryKey, exact: true }),
     ]);
   };
 
@@ -95,7 +93,9 @@ export function useFriendsListController() {
     setError(null);
     try {
       await Promise.all(
-        keys.map((queryKey) => client.refetchQueries({ queryKey }, { throwOnError: true }))
+        keys.map((queryKey) =>
+          client.refetchQueries({ queryKey, exact: true }, { throwOnError: true })
+        )
       );
     } catch (failure) {
       if (isCancel(failure) || !ownsQueries(queries)) return;
@@ -109,8 +109,8 @@ export function useFriendsListController() {
 
   const reconcile = async () => {
     await Promise.all([
-      client.invalidateQueries({ queryKey: friendsOptions.queryKey }),
-      client.invalidateQueries({ queryKey: requestsOptions.queryKey }),
+      client.invalidateQueries({ queryKey: friendsOptions.queryKey, exact: true }),
+      client.invalidateQueries({ queryKey: requestsOptions.queryKey, exact: true }),
       client.invalidateQueries({ queryKey: getSearchByEmailQueryKey() }),
     ]);
   };
@@ -139,18 +139,18 @@ export function useFriendsListController() {
       await cancelReads();
       if (!ownsActionQueries()) return false;
       if (action.kind === 'accept' && accepted) {
-        client.setQueryData<FriendResponse[]>(friendsOptions.queryKey, (previous) =>
+        client.setQueryData(friendsOptions.queryKey, (previous) =>
           previous
             ? [...previous.filter((item) => item.friendshipId !== accepted.friendshipId), accepted]
             : undefined
         );
       }
       if (action.kind === 'delete') {
-        client.setQueryData<FriendResponse[]>(friendsOptions.queryKey, (previous) =>
+        client.setQueryData(friendsOptions.queryKey, (previous) =>
           previous?.filter((item) => item.friendshipId !== id)
         );
       } else {
-        client.setQueryData<FriendReceivedRequestResponse[]>(requestsOptions.queryKey, (previous) =>
+        client.setQueryData(requestsOptions.queryKey, (previous) =>
           previous?.filter((item) => item.requestId !== id)
         );
       }

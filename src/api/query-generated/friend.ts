@@ -174,7 +174,7 @@ export const getFriends = (signal?: AbortSignal) => {
 };
 
 export const getGetFriendsQueryKey = () => {
-  return [`/friends`] as const;
+  return ['friends'] as const;
 };
 
 export const getGetFriendsQueryOptions = <
@@ -342,7 +342,7 @@ export const searchByEmail = (params: SearchByEmailParams, signal?: AbortSignal)
 };
 
 export const getSearchByEmailQueryKey = (params?: SearchByEmailParams) => {
-  return [`/friends/search`, ...(params ? [params] : [])] as const;
+  return ['friends', 'search', ...(params ? [params] : [])] as const;
 };
 
 export const getSearchByEmailQueryOptions = <
@@ -535,7 +535,7 @@ export const getSentRequests = (signal?: AbortSignal) => {
 };
 
 export const getGetSentRequestsQueryKey = () => {
-  return [`/friends/requests/sent`] as const;
+  return ['friends', 'requests', 'sent'] as const;
 };
 
 export const getGetSentRequestsQueryOptions = <
@@ -714,7 +714,7 @@ export const getReceivedRequests = (signal?: AbortSignal) => {
 };
 
 export const getGetReceivedRequestsQueryKey = () => {
-  return [`/friends/requests/received`] as const;
+  return ['friends', 'requests', 'received'] as const;
 };
 
 export const getGetReceivedRequestsQueryOptions = <
@@ -899,7 +899,7 @@ export const getMyInvite = (signal?: AbortSignal) => {
 };
 
 export const getGetMyInviteQueryKey = () => {
-  return [`/friends/invite`] as const;
+  return ['friends', 'invite'] as const;
 };
 
 export const getGetMyInviteQueryOptions = <
@@ -1072,7 +1072,7 @@ export const getInvitee = (code: string, signal?: AbortSignal) => {
 };
 
 export const getGetInviteeQueryKey = (code: string) => {
-  return [`/friends/invite/${code}`] as const;
+  return ['friends', 'invite', code] as const;
 };
 
 export const getGetInviteeQueryOptions = <
