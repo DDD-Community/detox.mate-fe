@@ -8,6 +8,7 @@ import { logError } from '../../../api/errors/logger';
 import { getSendRequestMutationOptions, useSendRequest } from '../../../api/query-generated/friend';
 import type { FriendSearchResponse } from '../../../api/query-generated/model';
 import { isCurrentAuthQueryScope, type AuthQueryScope } from '../../../lib/query/authQueryScope';
+import { trackEvent } from '../../../lib/analytics';
 import { guardFriendMutation, searchQueryOptions } from '../utils/friendsQueryOptions';
 import { requireId } from '../utils/friendsListData';
 
@@ -71,6 +72,11 @@ export function useSendFriendRequest(
         relationshipStatus: 'PENDING_SENT',
         requestId: response.requestId,
       }));
+      try {
+        trackEvent('Friend Request Sent');
+      } catch (failure) {
+        logError(normalizeError(failure), { scope: 'api', operation: 'logFriendRequestSent' });
+      }
       // Keep the confirmed result while allowing the next visit to reconcile with the server.
       void client.invalidateQueries({
         queryKey: options.queryKey,

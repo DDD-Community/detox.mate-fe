@@ -12,6 +12,7 @@ import { FriendEmailSearch } from './FriendEmailSearch';
 const mocks = vi.hoisted(() => ({ search: vi.fn(), log: vi.fn() }));
 vi.mock('../../../api/friendMutator', () => ({ friendAxios: mocks.search }));
 vi.mock('../../../api/errors/logger', () => ({ logError: mocks.log }));
+vi.mock('../../../lib/analytics', () => ({ trackEvent: vi.fn() }));
 vi.mock('../../../lib/token/icons', () => ({ iconNames: [] }));
 vi.mock('expo-router', () => ({ router: { replace: vi.fn() } }));
 vi.mock('expo-image', () => ({ Image: () => null }));

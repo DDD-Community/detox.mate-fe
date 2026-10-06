@@ -20,7 +20,9 @@ const api = vi.hoisted(() => ({
   accept: vi.fn(),
   reject: vi.fn(),
   remove: vi.fn(),
+  track: vi.fn(),
 }));
+vi.mock('../../../lib/analytics', () => ({ trackEvent: api.track }));
 vi.mock('../../../api/errors/logger', () => ({ logError: vi.fn() }));
 vi.mock('../../../api/friendMutator', () => ({
   friendAxios: ({ url, method }: { url: string; method: string }) => {
@@ -131,8 +133,10 @@ describe('친구 목록 조회와 변경 액션', () => {
       expect(await first).toBe(false);
     });
     expect(screen.rows).toEqual([friend]);
+    expect(api.track).not.toHaveBeenCalled();
     expect(await remove(screen)).toBe(true);
     expect(screen.rows).toEqual([]);
+    expect(api.track.mock.calls).toEqual([['Friend Removed']]);
   });
 
   it('친구 삭제가 확정되면 후속 재조회가 실패하거나 이전 조회가 늦게 도착해도 삭제 결과를 유지한다', async () => {
@@ -172,6 +176,7 @@ describe('친구 목록 조회와 변경 액션', () => {
     expect(screen.rows).toEqual([]);
     expect(screen.state.pendingActionId).toBeNull();
     expect(screen.state.error).toBeNull();
+    expect(api.track.mock.calls).toEqual([['Friend Removed']]);
   });
 
   it.each(['성공', '실패'] as const)(
@@ -217,6 +222,7 @@ describe('친구 목록 조회와 변경 액션', () => {
       expect(screen.requests).toEqual([nextRequest]);
       expect(screen.state.pendingActionId).toBeNull();
       expect(screen.state.error).toBeNull();
+      expect(api.track).not.toHaveBeenCalled();
 
       const refreshedFriend = {
         ...nextFriend,
@@ -234,6 +240,7 @@ describe('친구 목록 조회와 변경 액션', () => {
         expect(await screen.state.rejectRequest(72)).toBe(true);
       });
       expect(screen.requests).toEqual([]);
+      expect(api.track.mock.calls).toEqual([['Friend Request Rejected']]);
     }
   );
 });

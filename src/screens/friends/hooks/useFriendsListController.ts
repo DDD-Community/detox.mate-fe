@@ -23,6 +23,7 @@ import type {
   FriendResponse,
 } from '../../../api/query-generated/model';
 import { isCurrentAuthQueryScope, type AuthQueryScope } from '../../../lib/query/authQueryScope';
+import { trackEvent } from '../../../lib/analytics';
 import {
   friendsQueryOptions,
   receivedQueryOptions,
@@ -143,6 +144,17 @@ export function useFriendsListController(scope?: AuthQueryScope) {
         client.setQueryData<FriendReceivedRequestResponse[]>(requestsOptions.queryKey, (previous) =>
           previous?.filter((item) => item.requestId !== id)
         );
+      }
+      try {
+        trackEvent(
+          action.kind === 'accept'
+            ? 'Friend Request Accepted'
+            : action.kind === 'reject'
+              ? 'Friend Request Rejected'
+              : 'Friend Removed'
+        );
+      } catch (failure) {
+        logError(normalizeError(failure), { scope: 'api', operation: 'logFriendshipSuccess' });
       }
       // The write is confirmed; reconciliation belongs to the query regions, not the action pending.
       void reconcile().catch((failure) => {

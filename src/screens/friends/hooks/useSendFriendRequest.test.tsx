@@ -18,7 +18,8 @@ import {
 import { searchQueryOptions } from '../utils/friendsQueryOptions';
 import { useSendFriendRequest } from './useSendFriendRequest';
 
-const api = vi.hoisted(() => ({ search: vi.fn(), send: vi.fn(), log: vi.fn() }));
+const api = vi.hoisted(() => ({ search: vi.fn(), send: vi.fn(), track: vi.fn(), log: vi.fn() }));
+vi.mock('../../../lib/analytics', () => ({ trackEvent: api.track }));
 vi.mock('../../../api/friendMutator', () => ({
   friendAxios: ({
     method,
@@ -133,8 +134,10 @@ describe('친구 요청 전송의 경합과 복구', () => {
         expect(screen.state.error).toBeNull();
         expect(api.log).not.toHaveBeenCalled();
       } else expect(screen.state.error).not.toBeNull();
+      expect(api.track).not.toHaveBeenCalled();
       await act(() => screen.state.send());
       expect(screen.user.relationshipStatus).toBe('PENDING_SENT');
+      expect(api.track.mock.calls).toEqual([['Friend Request Sent']]);
     }
   );
 
@@ -190,6 +193,7 @@ describe('친구 요청 전송의 경합과 복구', () => {
       expect(screen.user.relationshipStatus).toBe('NONE');
       expect(screen.state.error).toBeNull();
       expect(screen.state.pending).toBe(false);
+      expect(api.track).not.toHaveBeenCalled();
     }
   );
 
@@ -206,5 +210,6 @@ describe('친구 요청 전송의 경합과 복구', () => {
     expect(screen.user.mutualFriendCount).toBe(3);
     expect(screen.state.error).toBeNull();
     expect(screen.state.pending).toBe(false);
+    expect(api.track.mock.calls).toEqual([['Friend Request Sent']]);
   });
 });

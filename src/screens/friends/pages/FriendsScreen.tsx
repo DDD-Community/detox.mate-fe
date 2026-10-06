@@ -39,6 +39,8 @@ import {
   type FriendsListItem,
 } from '../utils/friendsListData';
 import { goBackOrReplace } from '@/lib/navigation';
+import { LoggingPage } from '@/components/LoggingPage';
+import { trackButtonClick } from '@/lib/analytics';
 import { logError } from '@/api/errors/logger';
 import { normalizeError } from '@/api/errors/normalizeError';
 import { fontFamily } from '@/lib/token/primitive/fonts';
@@ -316,7 +318,15 @@ export default function FriendsScreen() {
     ) : (
       <FriendsContent key={`${scope.userId}:${scope.version}`} scope={scope} />
     );
-  return content;
+  return (
+    <LoggingPage
+      eventName="Friends Viewed"
+      properties={{ pageName: 'Friends' }}
+      enabled={scope.userId !== null}
+    >
+      {content}
+    </LoggingPage>
+  );
 }
 
 function FriendsContent({ scope }: { scope: AuthQueryScope }) {
@@ -463,6 +473,11 @@ function FriendsContent({ scope }: { scope: AuthQueryScope }) {
               email={email}
               scope={scope}
               onReceived={() => {
+                trackButtonClick(
+                  'Friends Received Requests Open Clicked',
+                  'Friends',
+                  '받은 요청 확인'
+                );
                 setQuery('');
                 Keyboard.dismiss();
               }}
