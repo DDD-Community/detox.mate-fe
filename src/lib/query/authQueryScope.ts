@@ -1,14 +1,15 @@
-import { create } from 'zustand';
+import { useStore } from 'zustand';
+import { createStore } from 'zustand/vanilla';
 
 export type AuthQueryScope = { userId: string | null; version: number };
-const useAuthQueryScopeStore = create<AuthQueryScope>(() => ({ userId: null, version: 0 }));
+const authQueryScopeStore = createStore<AuthQueryScope>(() => ({ userId: null, version: 0 }));
 
-export const getAuthQueryScope = () => useAuthQueryScopeStore.getState();
+export const getAuthQueryScope = () => authQueryScopeStore.getState();
 export const isCurrentAuthQueryScope = (candidate: AuthQueryScope) =>
   candidate === getAuthQueryScope();
 
 export function changeAuthQueryScope(userId: string | null) {
-  useAuthQueryScopeStore.setState((scope) => ({ userId, version: scope.version + 1 }));
+  authQueryScopeStore.setState((scope) => ({ userId, version: scope.version + 1 }));
 }
 
 export function restoreAuthQueryScope(userId: string | null, initial: AuthQueryScope) {
@@ -19,5 +20,5 @@ export function restoreAuthQueryScope(userId: string | null, initial: AuthQueryS
 }
 
 export function useAuthQueryScope() {
-  return useAuthQueryScopeStore();
+  return useStore(authQueryScopeStore);
 }
