@@ -90,11 +90,10 @@ afterEach(async () => {
 async function setup() {
   const client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
   client.setQueryData(getMyProfileQueryOptions().queryKey, {
+    ...SAVED,
     id: 1,
-    displayName: SAVED.displayName,
     userCode: 'ABCDE',
-    profileImageUrl: SAVED.profileImageUrl,
-    pushNotificationEnabled: true,
+    pushNotificationEnabled: false,
   });
   let current!: ReturnType<typeof useProfileEditor>;
   function Harness() {
