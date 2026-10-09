@@ -1,5 +1,6 @@
-import type { GroupMemberProfileResponse, GroupResponse, MyProfileResponse } from '@/api';
+import type { GroupMemberProfileResponse, GroupResponse } from '@/api';
 import { formatMinutesAsHourMinute } from '@/lib/formatDuration';
+import type { LegacyMyProfile } from './legacyMyProfile';
 
 const getDifferenceMinutes = (
   averageUsedMinutes: number | undefined,
@@ -14,7 +15,7 @@ const getDifferenceMinutes = (
 interface BuildMyPageViewModelOptions {
   isFriend: boolean;
   friendName?: string;
-  profile: MyProfileResponse | null;
+  profile: LegacyMyProfile | null;
   memberProfile: GroupMemberProfileResponse | null;
   friendProfile: GroupMemberProfileResponse | null;
   groups: GroupResponse[];

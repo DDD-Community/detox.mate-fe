@@ -1,1 +1,1 @@
-export { default } from '@/screens/group/MyPageScreen';
+export { default } from '@/screens/mypage/pages/MyProfileScreen';

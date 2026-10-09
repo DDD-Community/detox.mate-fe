@@ -5,9 +5,8 @@
  * OpenAPI spec version: v0
  */
 
-export interface MyProfileResponse {
-  id?: number;
+export interface MyPageResponse {
   displayName?: string;
+  userCode?: string;
   profileImageUrl?: string;
-  pushNotificationEnabled?: boolean;
 }

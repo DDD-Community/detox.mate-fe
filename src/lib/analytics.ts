@@ -24,6 +24,8 @@ export const ANALYTICS_EVENT_NAMES = [
   'Feed Post Detail Viewed',
   'Notification List Viewed',
   'My Page Viewed',
+  'My Profile Viewed',
+  'My Profile Edit Viewed',
   'Friends Viewed',
   'Settings Viewed',
   'Group Info Viewed',
@@ -91,6 +93,10 @@ export const ANALYTICS_EVENT_NAMES = [
   'Calendar History Feed Card Profile Open Clicked',
   'Notification List Close Clicked',
   'Notification List Notification Item Open Clicked',
+  'My Profile Settings Clicked',
+  'My Profile Edit Clicked',
+  'My Profile Friends List Clicked',
+  'My Profile Photo Edit Clicked',
   'My Page Back Clicked',
   'My Page Home Open Clicked',
   'My Page Settings Open Clicked',
@@ -162,6 +168,7 @@ export const ANALYTICS_EVENT_NAMES = [
   'Goal Time Set',
   'Verification Completed',
   'Push Notification Setting Updated',
+  'My Profile Updated',
 ] as const;
 
 export type AnalyticsEventName = (typeof ANALYTICS_EVENT_NAMES)[number];
