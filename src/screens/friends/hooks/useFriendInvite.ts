@@ -7,8 +7,10 @@ import {
   getGetInviteeSuspenseQueryOptions,
   useSendRequest,
 } from '../../../api/query-generated/friend';
+import { FriendRelationshipStatus } from '../../../api/query-generated/model';
 
 import { trackEvent } from '../../../lib/analytics';
+import { requireId } from '../utils/friendsListData';
 
 export function useFriendInvite(code: string) {
   const client = useQueryClient();
@@ -27,13 +29,11 @@ export function useFriendInvite(code: string) {
   }, []);
 
   const invitee = result.data;
+  const userId = requireId(invitee.userId);
   if (
-    !Number.isSafeInteger(invitee.userId) ||
-    (invitee.userId ?? 0) <= 0 ||
     !invitee.displayName ||
-    !['NONE', 'PENDING_SENT', 'PENDING_RECEIVED', 'FRIEND', 'SELF'].includes(
-      invitee.relationshipStatus ?? ''
-    )
+    !invitee.relationshipStatus ||
+    !Object.values(FriendRelationshipStatus).includes(invitee.relationshipStatus)
   ) {
     throw AppError({ type: 'unknown', message: '초대 정보를 불러오지 못했어요.' });
   }
@@ -47,14 +47,14 @@ export function useFriendInvite(code: string) {
       query !== undefined &&
       cache.find({ queryKey: options.queryKey, exact: true }) === query;
     const current = client.getQueryData(options.queryKey);
-    if (!ownsQuery() || current?.relationshipStatus !== 'NONE') return false;
+    if (!ownsQuery() || current?.relationshipStatus !== FriendRelationshipStatus.NONE) return false;
     lock.current = true;
     setSending(true);
     setSendError(null);
     try {
       await client.cancelQueries({ queryKey: options.queryKey, exact: true });
       if (!ownsQuery()) return false;
-      const response = await mutateAsync({ data: { targetUserId: invitee.userId! } });
+      const response = await mutateAsync({ data: { targetUserId: userId } });
       if (!ownsQuery()) return false;
       // Reads started during the write must not overwrite the confirmed relationship.
       await client.cancelQueries({ queryKey: options.queryKey, exact: true });
@@ -63,7 +63,7 @@ export function useFriendInvite(code: string) {
         previous
           ? {
               ...previous,
-              relationshipStatus: 'PENDING_SENT' as const,
+              relationshipStatus: FriendRelationshipStatus.PENDING_SENT,
               requestId: response.requestId,
             }
           : undefined
