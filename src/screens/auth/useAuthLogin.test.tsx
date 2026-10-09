@@ -156,6 +156,34 @@ describe('초대 링크의 카카오 로그인과 권한 안내 복귀', () => {
     expect(screen.state.permissionGuideConfirming).toBe(false);
   });
 
+  it('대기 중인 초대가 없으면 권한 안내를 마친 뒤 제한 앱 탭으로 바로 이동한다', async () => {
+    vi.useFakeTimers();
+    mocks.kakao.mockResolvedValueOnce({ accessToken: 'provider-token' });
+    const screen = await setup();
+
+    await act(() => screen.state.handleKakaoLogin());
+    expect(screen.state.permissionGuideVisible).toBe(true);
+    expect(mocks.replace).not.toHaveBeenCalled();
+
+    await act(async () => {
+      const confirming = screen.state.handleConfirmPermissionGuide();
+      await vi.advanceTimersByTimeAsync(350);
+      await confirming;
+    });
+    expect(mocks.replace).toHaveBeenLastCalledWith('/(tabs)/restricted-apps');
+  });
+
+  it('권한 안내를 이미 본 사용자가 초대 없이 로그인하면 안내 없이 제한 앱 탭으로 이동한다', async () => {
+    mocks.storage.set(APP_ACCESS_PERMISSION_GUIDE_SEEN_KEY, 'true');
+    mocks.kakao.mockResolvedValueOnce({ accessToken: 'provider-token' });
+    const screen = await setup();
+
+    await act(() => screen.state.handleKakaoLogin());
+
+    expect(screen.state.permissionGuideVisible).toBe(false);
+    expect(mocks.replace).toHaveBeenLastCalledWith('/(tabs)/restricted-apps');
+  });
+
   it('권한 안내를 마친 사용자가 기존 그룹 초대로 로그인하면 그룹 참여로 복귀한다', async () => {
     mocks.storage.set('pendingInviteCode', 'ABCDE');
     mocks.storage.set(APP_ACCESS_PERMISSION_GUIDE_SEEN_KEY, 'true');

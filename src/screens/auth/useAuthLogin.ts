@@ -31,6 +31,9 @@ export const TEST_USER_KEYS: TestUserKey[] = [
   'server-c',
 ];
 
+// 로그인(권한 안내 포함)을 마친 뒤 대기 중인 초대·알림이 없을 때 처음 보여줄 화면.
+export const POST_LOGIN_DEFAULT_ROUTE = '/(tabs)/restricted-apps';
+
 const NATIVE_PERMISSION_PROMPT_DELAY_MS = 350;
 
 const waitForPermissionPromptReady = () =>
@@ -53,13 +56,13 @@ export function useAuthLogin({ onLoginFailure }: UseAuthLoginOptions = {}) {
     };
   }, []);
 
-  // 로그인 완료 후, 딥링크로 들어온 대기 초대 코드가 있으면 초대 화면으로,
-  // 없으면 기본 그룹 홈으로 이동한다.
+  // 로그인 완료 후, 딥링크로 들어온 대기 초대 코드나 알림 진입이 있으면 해당 화면으로,
+  // 없으면 제한 앱 탭으로 바로 이동한다.
   const navigateAfterLogin = async () => {
     await navigateAuthenticated({
       replace: (destination) => router.replace(destination),
       isActive: () => active.current,
-      resolveDefault: async () => '/(group)/home',
+      resolveDefault: async () => POST_LOGIN_DEFAULT_ROUTE,
     });
   };
 
