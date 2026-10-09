@@ -29,7 +29,7 @@ async function prepareShareContent(signal: AbortSignal) {
   const message = [
     '디톡스메이트에서 함께 스크린타임을 줄여봐요.',
     `초대 링크: ${url}`,
-    `초대 코드: ${invite.code}`,
+    `초대 코드: ${invite.userCode}`,
     '링크가 열리지 않으면 친구 목록 검색창에 초대 코드를 입력해주세요.',
   ].join('\n');
   return { url, message };

@@ -53,7 +53,7 @@ beforeEach(() => {
   actions.auth = new AbortController();
   actions.request.mockImplementation(async ({ url }: { url: string }) =>
     url === '/friends/invite'
-      ? { code: 'A1B2C' }
+      ? { code: 'a'.repeat(64), userCode: 'ABCDE' }
       : { userId: 1, displayName: '희정', relationshipStatus: 'SELF' }
   );
   actions.createLink.mockResolvedValue('https://abr.ge/test-invite');
@@ -93,7 +93,8 @@ describe('친구 초대 공유의 비동기 보호', () => {
     async (os) => {
       actions.platform.OS = os;
       actions.request.mockResolvedValue({
-        code: 'A1B2C',
+        code: 'a'.repeat(64),
+        userCode: 'ABCDE',
         email: os === 'ios' ? 'my@example.com' : undefined,
       });
       const screen = await setup();
@@ -101,7 +102,9 @@ describe('친구 초대 공유의 비동기 보호', () => {
         await screen.state.share();
       });
       const content = actions.share.mock.calls[0][0];
-      expect(content.message).toContain('초대 코드: A1B2C');
+      expect(content.message).toContain('초대 코드: ABCDE');
+      expect(content.message).not.toContain('a'.repeat(64));
+      expect(actions.createLink).toHaveBeenCalledWith('a'.repeat(64));
       expect(content.message).toContain('친구 목록 검색창에 초대 코드를 입력해주세요.');
       expect(content.message).not.toContain('이메일');
       expect(content.message).not.toContain('my@example.com');
@@ -250,7 +253,7 @@ describe('친구 초대 공유의 비동기 보호', () => {
       await screen.state.share();
     });
     expect(actions.share.mock.calls[0][0].url).toBe(screen.state.inviteUrl);
-    expect(actions.share.mock.calls[0][0].message).toContain('초대 코드: A1B2C');
+    expect(actions.share.mock.calls[0][0].message).toContain('초대 코드: ABCDE');
   });
 
   it('공유 시트가 실패하면 안내 후 다음 공유를 다시 실행할 수 있다', async () => {
