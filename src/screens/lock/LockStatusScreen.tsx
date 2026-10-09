@@ -2,13 +2,13 @@ import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useEffect } from 'react';
 import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { ScreenTimeReportView } from '../../../modules/screen-time-report';
 import { BrandHeader } from '../../components/BrandHeader/BrandHeader';
 import { Icon } from '../../components/Icon';
-import { Toast, useToastVisibility } from '../../components/Toast';
 import { LoggingButton } from '../../components/LoggingButton';
+import { Toast, useToastVisibility } from '../../components/Toast';
 import { fontFamily, primitiveColors, spacing, typography } from '../../lib/token';
 import { useLockStore } from '../../stores/lockStore';
-import { ScreenTimeReportView } from '../../../modules/screen-time-report';
 
 const { gray, green } = primitiveColors;
 
@@ -79,18 +79,23 @@ export default function LockStatusScreen() {
       </SafeAreaView>
 
       <ScrollView contentInsetAdjustmentBehavior="automatic" contentContainerStyle={styles.content}>
-        <Pressable
-          style={styles.summaryRow}
-          onPress={() => router.push({ pathname: '/(lock)/goal-time', params: { mode: 'change' } })}
-        >
-          <Text style={styles.summaryText}>
-            제한 시간 <Text style={styles.summaryTextStrong}>{targetMinutes}분</Text> 중
-          </Text>
-          <View style={styles.changeButton}>
-            <Text style={styles.changeButtonText}>변경</Text>
-            <Icon name="caretRight" size={16} color={gray[400]} />
-          </View>
-        </Pressable>
+        {/* 잠근 앱이 있을 때만 제한 시간 요약과 변경 버튼을 보여준다. */}
+        {lockedApps.length > 0 ? (
+          <Pressable
+            style={styles.summaryRow}
+            onPress={() =>
+              router.push({ pathname: '/(lock)/goal-time', params: { mode: 'change' } })
+            }
+          >
+            <Text style={styles.summaryText}>
+              제한 시간 <Text style={styles.summaryTextStrong}>{targetMinutes}분</Text> 중
+            </Text>
+            <View style={styles.changeButton}>
+              <Text style={styles.changeButtonText}>변경</Text>
+              <Icon name="caretRight" size={16} color={gray[400]} />
+            </View>
+          </Pressable>
+        ) : null}
 
         {allSelectionTokens.length > 0 ? (
           <ScreenTimeReportView
