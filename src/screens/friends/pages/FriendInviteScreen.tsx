@@ -16,14 +16,13 @@ import Svg, { Defs, LinearGradient, Rect, Stop } from 'react-native-svg';
 
 import { normalizeError } from '../../../api/errors';
 import { getGetInviteeSuspenseQueryOptions } from '../../../api/query-generated/friend';
+import { BrandHeader } from '../../../components/BrandHeader/BrandHeader';
 import { ErrorBoundary } from '../../../components/AppErrorBoundary/AppErrorBoundary';
 import { LoggingButton } from '../../../components/LoggingButton/LoggingButton';
 import { fontFamily } from '../../../lib/token/primitive/fonts';
 import { FriendsErrorFeedback } from '../components/FriendsErrorFeedback';
 import { useFriendInvite } from '../hooks/useFriendInvite';
 import defaultAvatar from '@assets/friend-invite/default-avatar.svg';
-import detoxLogo from '@assets/friend-invite/detox.svg';
-import mateLogo from '@assets/friend-invite/mate.svg';
 
 const friends = () => router.replace('/(tabs)/friends');
 
@@ -62,20 +61,7 @@ function InviteLayout({ children }: { children: ReactNode }) {
         { paddingTop: insets.top, paddingBottom: insets.bottom + 59 },
       ]}
     >
-      <View style={styles.header} accessibilityLabel="Detoxmate">
-        <View style={styles.logo}>
-          <Image
-            source={detoxLogo}
-            style={{ width: 47.7617, height: 13.5168 }}
-            contentFit="contain"
-          />
-          <Image
-            source={mateLogo}
-            style={{ width: 45.5715, height: 13.0564, marginTop: 0.71 }}
-            contentFit="contain"
-          />
-        </View>
-      </View>
+      <BrandHeader />
       {children}
     </ScrollView>
   );
@@ -254,8 +240,6 @@ export default function FriendInviteScreen({ code }: { code: string }) {
 const styles = StyleSheet.create({
   root: { flex: 1, backgroundColor: 'white' },
   content: { flexGrow: 1, alignItems: 'center' },
-  header: { height: 56, justifyContent: 'center', alignItems: 'center', width: '100%' },
-  logo: { flexDirection: 'row', alignItems: 'center', gap: 4.9983 },
   profileCard: {
     width: '85.07%',
     maxWidth: 420,
