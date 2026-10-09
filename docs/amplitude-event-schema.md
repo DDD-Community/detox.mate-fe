@@ -39,8 +39,8 @@
 | `/(feed)/calendar-history`                                | `CalendarHistory`               | `Calendar History Viewed`                  | `event_type`, `page_name`                                 |
 | `/(feed)/post-detail`                                     | `FeedPostDetail`                | `Feed Post Detail Viewed`                  | `event_type`, `page_name`                                 |
 | `/(group)/notifications`                                  | `NotificationList`              | `Notification List Viewed`                 | `event_type`, `page_name`                                 |
-| (라우팅 해제) `screens/group/MyPageScreen`                | `MyPage`                        | `My Page Viewed`                           | `event_type`, `page_name`, `profile_mode`                 |
-| `/(group)/mypage`                                         | `MyProfile`                     | `My Profile Viewed`                        | `event_type`, `page_name`                                 |
+| `/(group)/friend-profile` (기존 MyPageScreen)             | `MyPage`                        | `My Page Viewed`                           | `event_type`, `page_name`, `profile_mode`                 |
+| `/(tabs)/mypage`                                          | `MyProfile`                     | `My Profile Viewed`                        | `event_type`, `page_name`                                 |
 | `/(group)/mypage-edit`                                    | `MyProfileEdit`                 | `My Profile Edit Viewed`                   | `event_type`, `page_name`                                 |
 | `/(group)/settings`                                       | `Settings`                      | `Settings Viewed`                          | `event_type`, `page_name`                                 |
 | (라우팅 해제) `GroupInfoScreen`                           | `GroupInfo`                     | `Group Info Viewed`                        | `event_type`, `page_name`                                 |

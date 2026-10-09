@@ -112,7 +112,7 @@ export function useProfileEditor(saved: SavedProfile) {
           exact: true,
         });
       }
-      goBackOrReplace('/(group)/mypage');
+      goBackOrReplace('/(tabs)/mypage');
     } catch (failure) {
       if (failure instanceof UnsupportedImageFormatError) {
         Alert.alert(

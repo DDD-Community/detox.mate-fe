@@ -192,7 +192,7 @@ export function SentenceTypingChallengeScreen({
   };
 
   const handleCancel = () => {
-    router.dismissTo('/(lock)/restricted-apps');
+    router.dismissTo('/(tabs)/restricted-apps');
   };
 
   return (

@@ -52,7 +52,7 @@ function ProfileEditContent() {
     <View style={styles.flex}>
       <View style={styles.header}>
         <Pressable
-          onPress={() => goBackOrReplace('/(group)/mypage')}
+          onPress={() => goBackOrReplace('/(tabs)/mypage')}
           hitSlop={8}
           style={styles.back}
           accessibilityRole="button"

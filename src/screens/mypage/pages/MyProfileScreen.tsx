@@ -92,7 +92,7 @@ function MyProfileContent() {
           properties={{ pageName: 'MyProfile', buttonName: '친구 목록' }}
         >
           <Pressable
-            onPress={() => router.push('/(group)/friends')}
+            onPress={() => router.push('/(tabs)/friends')}
             style={styles.friendsTitle}
             accessibilityRole="button"
           >

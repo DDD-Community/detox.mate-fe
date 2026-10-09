@@ -484,7 +484,7 @@ const routeSenderProfileFromFeed = async (
   if (!sender?.groupMemberId || !feed.groupId) return false;
 
   router.push({
-    pathname: '/(group)/mypage',
+    pathname: '/(group)/friend-profile',
     params: {
       memberId: String(sender.groupMemberId),
       friendName: sender.displayName ?? '',
@@ -521,7 +521,7 @@ const routeSenderProfileFromGroup = async (
   }
 
   router.push({
-    pathname: '/(group)/mypage',
+    pathname: '/(group)/friend-profile',
     params: {
       memberId: String(sender.id),
       friendName: sender.displayName ?? '',

@@ -175,8 +175,7 @@ export default function UnlockDurationScreen() {
     // 해제를 시작하면 현황 화면(my-lock-status)으로 이동한다. "앱 잠금이 해제됐어요" 토스트는
     // 그 화면이 파라미터를 보고 2초 동안 띄운다.
     setIsStarted(true);
-    router.dismissAll();
-    router.replace({ pathname: '/(lock)/restricted-apps', params: { unlocked: '1' } });
+    router.dismissTo({ pathname: '/(tabs)/restricted-apps', params: { unlocked: '1' } });
   };
 
   return (

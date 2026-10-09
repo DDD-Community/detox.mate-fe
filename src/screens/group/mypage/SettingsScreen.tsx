@@ -161,7 +161,7 @@ export default function SettingsScreen() {
   );
 
   const handleBack = () => {
-    goBackOrReplace('/(group)/mypage');
+    goBackOrReplace('/(tabs)/mypage');
   };
 
   const applyPushPreference = async (enabled: boolean) => {

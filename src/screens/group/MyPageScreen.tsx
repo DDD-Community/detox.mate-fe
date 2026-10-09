@@ -132,8 +132,9 @@ export default function MyPageScreen() {
       eventName="My Page Viewed"
       properties={{ pageName: 'MyPage', profile_mode: isFriend ? 'friend' : 'me' }}
     >
-      <View style={styles.root}>
+      <View collapsable={false} style={styles.root}>
         <ScrollView
+          contentInsetAdjustmentBehavior={isFriend ? 'never' : 'automatic'}
           style={styles.screenScroll}
           contentContainerStyle={styles.screenContent}
           showsVerticalScrollIndicator={false}
@@ -157,7 +158,7 @@ export default function MyPageScreen() {
           {!isFriend ? (
             <Pressable
               accessibilityRole="button"
-              onPress={() => router.push('/(group)/friends')}
+              onPress={() => router.push('/(tabs)/friends')}
               style={styles.friendsEntry}
             >
               <Text style={styles.friendsEntryText}>친구 목록</Text>
