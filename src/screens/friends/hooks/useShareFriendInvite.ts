@@ -3,7 +3,7 @@ import { useEffect, useRef, useState } from 'react';
 import { Alert, Platform, Share } from 'react-native';
 
 import { getAuthenticatedRequestSignal } from '../../../api/client';
-import { AppError, getUserErrorMessage, logError, normalizeError } from '../../../api/errors';
+import { getUserErrorMessage, logError, normalizeError } from '../../../api/errors';
 import { getMyInvite } from '../../../api/query-generated/friend';
 import { trackEvent } from '../../../lib/analytics';
 import { createFriendInviteShareUrl } from '../../../lib/friendInviteShare';
@@ -14,10 +14,7 @@ async function prepareShareContent(signal: AbortSignal) {
   if (signal.aborted || authSignal.aborted) throw new Error('Invitation preparation canceled.');
   let url: string;
   try {
-    if (!invite.code?.trim()) {
-      throw AppError({ type: 'unknown', message: '친구 초대 코드를 받지 못했어요.' });
-    }
-    url = await createFriendInviteShareUrl(invite.code);
+    url = createFriendInviteShareUrl(invite.code);
   } catch (failure) {
     const error = normalizeError(failure);
     if (!signal.aborted && !authSignal.aborted) {
@@ -25,7 +22,6 @@ async function prepareShareContent(signal: AbortSignal) {
     }
     throw error;
   }
-  if (signal.aborted || authSignal.aborted) throw new Error('Invitation preparation canceled.');
   const message = [
     '디톡스메이트에서 함께 스크린타임을 줄여봐요.',
     `초대 링크: ${url}`,
@@ -44,13 +40,12 @@ function logShareClick() {
 }
 
 interface UseShareFriendInviteOptions {
-  // 초대 링크 생성은 Airbridge 트래킹 링크를 새로 만들고 앱당 개수 제한이 있다.
-  // URL을 화면에 보여주지 않는 곳은 false로 두어 공유를 누를 때만 만든다.
+  // URL을 표시하지 않는 화면은 공유를 누를 때만 초대 정보를 조회한다.
   prepareOnMount?: boolean;
 }
 
 export function useShareFriendInvite({ prepareOnMount = true }: UseShareFriendInviteOptions = {}) {
-  // SDK preparation includes the message so display and sharing use the same prepared content.
+  // Prepare the message and URL together so display and sharing use the same content.
   // Failure must not suspend or hide the friends list.
   const content = useQuery({
     queryKey: ['friendInviteShareUrl'],
@@ -80,7 +75,7 @@ export function useShareFriendInvite({ prepareOnMount = true }: UseShareFriendIn
       const prepared = content.data ? content : await content.refetch();
       if (!active()) return;
       if (!prepared.data) {
-        // Preparation owns SDK logging and the HTTP interceptor owns request logging.
+        // Preparation owns link configuration logging; the interceptor owns request logging.
         Alert.alert('친구 초대 공유', getUserErrorMessage(normalizeError(prepared.error)));
         return;
       }
