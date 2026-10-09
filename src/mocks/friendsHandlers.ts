@@ -58,12 +58,12 @@ const mutualConnections = new Map<number, number[]>([
 let inviteReadFailures = 1;
 
 export const FRIEND_INVITE_MOCK_CODES = {
-  NONE: 'n7Kp2Rt9Xc4V',
-  PENDING_SENT: 's9Mq5Ba3Ld8H',
-  PENDING_RECEIVED: 'r6Yn1Ce8Wk3P',
-  FRIEND: 'f4Jh8Ds2Uv7N',
-  SELF: 'k8Vt4Nz2Qp7R',
-  RETRY: 'x5Qa9Lp2Tc7M',
+  NONE: 'A1B2C',
+  PENDING_SENT: 'S9MQ5',
+  PENDING_RECEIVED: 'R6YN1',
+  FRIEND: 'F4JH8',
+  SELF: 'K8VT4',
+  RETRY: 'X5QA9',
 } as const;
 
 const inviteUsers: Record<string, FriendInviteeResponse> = {
@@ -209,7 +209,7 @@ const respondAfterLatency = () => new Promise<void>((resolve) => setTimeout(reso
 export const friendsHandlers = [
   http.get(`${FRIENDS_MOCK_ORIGIN}/friends/invite`, async () => {
     await respondAfterLatency();
-    return jsonResponse({ code: FRIEND_INVITE_MOCK_CODES.SELF, email: 'heejeong@example.com' });
+    return jsonResponse({ code: FRIEND_INVITE_MOCK_CODES.SELF });
   }),
   http.get(`${FRIENDS_MOCK_ORIGIN}/friends/invite/:code`, async ({ params }) => {
     await respondAfterLatency();
