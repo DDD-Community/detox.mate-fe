@@ -29,7 +29,11 @@ const endOfDay = { hour: 23, minute: 59, second: 59 };
  */
 export const startDailyUsageMonitoring = async (appId: string, token: string) => {
   const events: ReactNativeDeviceActivity.DeviceActivityEvent[] = [];
-  for (let minutes = THRESHOLD_STEP_MINUTES; minutes <= THRESHOLD_MAX_MINUTES; minutes += THRESHOLD_STEP_MINUTES) {
+  for (
+    let minutes = THRESHOLD_STEP_MINUTES;
+    minutes <= THRESHOLD_MAX_MINUTES;
+    minutes += THRESHOLD_STEP_MINUTES
+  ) {
     events.push({
       familyActivitySelection: token,
       threshold: { minute: minutes },

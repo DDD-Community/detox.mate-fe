@@ -1,5 +1,5 @@
 const {
   createConfig,
-} = require("react-native-device-activity/config-plugin/createExpoTargetConfig");
+} = require('react-native-device-activity/config-plugin/createExpoTargetConfig');
 
-module.exports = createConfig("shield-configuration");
+module.exports = createConfig('shield-configuration');

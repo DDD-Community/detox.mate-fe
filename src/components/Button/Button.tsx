@@ -63,7 +63,8 @@ const getColors = ({
   const solidFg = color === 'neutral' ? gray[800] : WHITE;
 
   if (variant === 'solid') {
-    if (disabled) return { bg: palette.disabledBg, border: 'transparent', fg: solidFg, opacity: 0.3 };
+    if (disabled)
+      return { bg: palette.disabledBg, border: 'transparent', fg: solidFg, opacity: 0.3 };
     if (pressed) return { bg: palette.press, border: 'transparent', fg: solidFg };
     return { bg: palette.normal, border: 'transparent', fg: solidFg };
   }
