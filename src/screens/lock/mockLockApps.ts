@@ -1,21 +1,15 @@
+export const UNREGISTER_REASONS = [
+  '목표(시험 등) 달성으로 제한할 필요가 없어요',
+  '시간을 지키기 힘들어요.',
+  '습관이 자리 잡았어요.',
+  '기타',
+] as const;
+
 /**
- * 실기기 Screen Time 연동(react-native-device-activity) 도입 전까지 쓰는 목업 앱 목록.
- * 실제 연동 시 FamilyActivityPicker 결과로 대체된다.
+ * 그룹 친구 목록 연동 전까지 쓰는 목업 친구 풀.
+ * 실제 연동 시 그룹 멤버 목록으로 대체된다.
  */
-export interface LockCandidateApp {
-  id: string;
-  name: string;
-}
+export const MOCK_FRIEND_POOL = ['한빈', '지민', '서연', '도윤', '하은'] as const;
 
-export const MOCK_APP_CATALOG: LockCandidateApp[] = [
-  { id: 'instagram', name: 'Instagram' },
-  { id: 'youtube', name: 'YouTube' },
-  { id: 'tiktok', name: 'TikTok' },
-  { id: 'kakaotalk', name: 'KakaoTalk' },
-  { id: 'discord', name: 'Discord' },
-  { id: 'x', name: 'X' },
-  { id: 'facebook', name: 'Facebook' },
-  { id: 'netflix', name: 'Netflix' },
-];
-
-export const GOAL_TIME_OPTIONS_MINUTES = [60, 120, 180, 240] as const;
+export const pickRandomFriendNames = (count = 3): string[] =>
+  [...MOCK_FRIEND_POOL].sort(() => Math.random() - 0.5).slice(0, count);
