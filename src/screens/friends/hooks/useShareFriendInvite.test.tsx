@@ -48,7 +48,7 @@ function deferred<T>() {
 beforeEach(() => {
   vi.resetAllMocks();
   actions.platform.OS = 'ios';
-  actions.createLink.mockResolvedValue('https://detoxmate.airbridge.io/test-invite');
+  actions.createLink.mockResolvedValue('https://abr.ge/test-invite');
   actions.share.mockResolvedValue({ action: 'dismissedAction' });
 });
 afterEach(async () => {
@@ -90,11 +90,66 @@ describe('친구 초대 공유의 비동기 보호', () => {
       const content = actions.share.mock.calls[0][0];
       expect(content.message).toContain('희정');
       expect(content.message).toContain('my@example.com');
-      expect(os === 'ios' ? content.url : content.message).toContain(
-        'https://detoxmate.airbridge.io/test-invite'
-      );
+      expect(os === 'ios' ? content.url : content.message).toContain('https://abr.ge/test-invite');
     }
   );
+
+  it('자동으로 준비한 URL을 표시하고 공유에 재사용하며 실제 클릭만 기록한다', async () => {
+    const pending = deferred<string>();
+    actions.createLink.mockReturnValueOnce(pending.promise);
+    const screen = await setup();
+    expect(actions.track).not.toHaveBeenCalled();
+    expect(actions.share).not.toHaveBeenCalled();
+
+    await act(async () => {
+      pending.resolve('https://abr.ge/prepared-invite');
+      await screen.state.share();
+    });
+    expect(screen.state.inviteUrl).toBe('https://abr.ge/prepared-invite');
+    expect(actions.share.mock.calls[0][0].url).toBe(screen.state.inviteUrl);
+    await act(async () => {
+      await screen.state.share();
+    });
+    expect(actions.createLink).toHaveBeenCalledTimes(1);
+    expect(actions.track).toHaveBeenCalledTimes(2);
+  });
+
+  it('자동 준비 중 세션이 정리되면 늦게 생성된 이전 URL을 표시하지 않는다', async () => {
+    const pending = deferred<string>();
+    actions.createLink.mockReturnValueOnce(pending.promise);
+    const screen = await setup();
+    await act(async () => {
+      screen.client.clear();
+      pending.resolve('https://abr.ge/old-user');
+      await pending.promise;
+    });
+    expect(screen.state.inviteUrl).toBeUndefined();
+    expect(actions.share).not.toHaveBeenCalled();
+    expect(actions.alert).not.toHaveBeenCalled();
+    expect(actions.track).not.toHaveBeenCalled();
+  });
+
+  it('자동 준비 실패를 기록하고 이후 공유 클릭으로 링크를 다시 준비할 수 있다', async () => {
+    const pending = deferred<string>();
+    actions.createLink.mockReturnValueOnce(pending.promise);
+    const screen = await setup();
+    await act(async () => {
+      pending.reject(new Error('링크 생성 실패'));
+      await pending.promise.catch(() => undefined);
+    });
+    expect(screen.state.inviteUrl).toBeUndefined();
+    expect(actions.alert).not.toHaveBeenCalled();
+    expect(actions.track).not.toHaveBeenCalled();
+    expect(actions.log).toHaveBeenCalledExactlyOnceWith(expect.anything(), {
+      scope: 'api',
+      operation: 'friends.invite.prepare',
+    });
+    await act(async () => {
+      await screen.state.share();
+    });
+    expect(actions.share.mock.calls[0][0].url).toBe(screen.state.inviteUrl);
+    expect(screen.state.sharing).toBe(false);
+  });
 
   it('링크 생성 중 세션이 정리되면 이전 사용자의 메시지와 이메일을 공유하지 않는다', async () => {
     const pending = deferred<string>();
@@ -140,6 +195,10 @@ describe('친구 초대 공유의 비동기 보호', () => {
     });
     expect(screen.state.sharing).toBe(false);
     expect(actions.alert).toHaveBeenCalledTimes(1);
+    expect(actions.log.mock.calls.map(([, context]) => context.operation)).toEqual([
+      'logFriendInviteShareClick',
+      'friends.invite.prepare',
+    ]);
 
     await act(async () => {
       await screen.state.share();

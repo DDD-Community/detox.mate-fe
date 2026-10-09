@@ -1,4 +1,4 @@
-import { useQueryClient } from '@tanstack/react-query';
+import { queryOptions, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useEffect, useRef, useState } from 'react';
 import { Alert, Platform, Share } from 'react-native';
 
@@ -15,6 +15,30 @@ export function useShareFriendInvite() {
   const lock = useRef(false);
   const mounted = useRef(true);
   const [sharing, setSharing] = useState(false);
+  const linkOptions = queryOptions({
+    // This is an SDK result, separate from the generated invitation HTTP query.
+    queryKey: ['friendInviteShareUrl'],
+    queryFn: async ({ signal }) => {
+      const invite = await client.fetchQuery(getGetMyInviteQueryOptions());
+      if (signal.aborted) throw new Error('The authentication session ended.');
+      try {
+        if (!invite.code?.trim()) {
+          throw AppError({ type: 'unknown', message: '친구 초대 코드를 받지 못했어요.' });
+        }
+        return await createFriendInviteShareUrl(invite.code);
+      } catch (failure) {
+        const error = normalizeError(failure);
+        if (!signal.aborted) {
+          logError(error, { scope: 'api', operation: 'friends.invite.prepare' });
+        }
+        throw error;
+      }
+    },
+    // The personal invitation code stays fixed for this login session.
+    staleTime: Infinity,
+  });
+  // SDK preparation must not suspend or hide the friends list on failure.
+  const link = useQuery(linkOptions);
 
   useEffect(() => {
     mounted.current = true;
@@ -33,25 +57,24 @@ export function useShareFriendInvite() {
       logError(normalizeError(failure), { scope: 'api', operation: 'logFriendInviteShareClick' });
     }
 
-    const options = getGetMyInviteQueryOptions();
-    const invitePromise = client.fetchQuery(options);
+    const urlPromise = client.fetchQuery(linkOptions);
     const cache = client.getQueryCache();
-    const query = cache.find({ queryKey: options.queryKey, exact: true });
+    const query = cache.find({ queryKey: linkOptions.queryKey, exact: true });
     // Clearing the auth cache invalidates this identity, including same-user re-login.
     const ownsSession = () =>
       mounted.current &&
       query !== undefined &&
-      cache.find({ queryKey: options.queryKey, exact: true }) === query;
+      cache.find({ queryKey: linkOptions.queryKey, exact: true }) === query;
     try {
-      const invite = await invitePromise;
+      const url = await urlPromise;
+      if (!ownsSession()) return;
+      const invite = await client.fetchQuery(getGetMyInviteQueryOptions());
       if (!ownsSession()) return;
       if (!invite.code?.trim()) {
         throw AppError({ type: 'unknown', message: '친구 초대 코드를 받지 못했어요.' });
       }
       // The personal code resolves our own profile through the same invitation API.
       const profile = await client.fetchQuery(getGetInviteeQueryOptions(invite.code));
-      if (!ownsSession()) return;
-      const url = await createFriendInviteShareUrl(invite.code);
       if (!ownsSession()) return;
 
       const name = profile.displayName?.trim() || '친구';
@@ -72,7 +95,10 @@ export function useShareFriendInvite() {
     } catch (failure) {
       if (!ownsSession()) return;
       const error = normalizeError(failure);
-      logError(error, { scope: 'api', operation: 'friends.invite.share' });
+      // Preparation owns its failure logging, including background SDK failures.
+      if (client.getQueryState(linkOptions.queryKey)?.error !== failure) {
+        logError(error, { scope: 'api', operation: 'friends.invite.share' });
+      }
       Alert.alert('친구 초대 공유', getUserErrorMessage(error));
     } finally {
       lock.current = false;
@@ -80,5 +106,5 @@ export function useShareFriendInvite() {
     }
   };
 
-  return { share, sharing };
+  return { share, sharing, inviteUrl: link.data, preparing: link.isFetching };
 }

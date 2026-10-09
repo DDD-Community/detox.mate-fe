@@ -282,7 +282,7 @@ export default function FriendsScreen() {
 }
 
 function FriendsContent() {
-  const { share, sharing } = useShareFriendInvite();
+  const { share, sharing, inviteUrl, preparing } = useShareFriendInvite();
   const {
     refreshing,
     error,
@@ -402,8 +402,11 @@ function FriendsContent() {
             <Avatar small />
             <View style={styles.inviteLabel}>
               <Text style={styles.inviteTitle}>친구 초대</Text>
-              <Text numberOfLines={1} style={styles.inviteSubtitle}>
-                {sharing ? '초대 링크를 준비하고 있어요' : '친구와 함께 디톡스를 시작해보세요'}
+              <Text style={styles.inviteSubtitle}>
+                {inviteUrl ||
+                  (preparing
+                    ? '초대 링크를 준비하고 있어요'
+                    : '눌러서 초대 링크를 다시 준비해보세요')}
               </Text>
             </View>
             <Image source={exportIcon} style={styles.exportIcon} contentFit="contain" />
@@ -638,8 +641,9 @@ const styles = StyleSheet.create({
   content: { flexGrow: 1 },
   inviteCard: {
     marginHorizontal: 16,
-    height: 68,
+    minHeight: 68,
     paddingHorizontal: 16,
+    paddingVertical: 12,
     borderWidth: 1,
     borderColor: '#d0d3d9',
     borderRadius: 16,
@@ -647,7 +651,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     gap: 8,
   },
-  inviteLabel: { flex: 1 },
+  inviteLabel: { flex: 1, minWidth: 0 },
   inviteTitle: { fontFamily: bold, fontSize: 16, lineHeight: 24, color: 'black' },
   inviteSubtitle: {
     fontFamily: regular,
