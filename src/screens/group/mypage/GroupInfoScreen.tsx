@@ -109,7 +109,7 @@ export default function GroupInfoScreen() {
   }, []);
 
   const handleBack = () => {
-    goBackOrReplace('/(group)/mypage');
+    goBackOrReplace('/(tabs)/mypage');
   };
 
   const handleCopyInviteCode = async () => {
@@ -245,7 +245,7 @@ export default function GroupInfoScreen() {
                       style={styles.memberCard}
                       onPress={() =>
                         router.push({
-                          pathname: '/(group)/mypage',
+                          pathname: '/(group)/friend-profile',
                           params: {
                             memberId: m.id != null ? String(m.id) : '',
                             friendName: displayName,

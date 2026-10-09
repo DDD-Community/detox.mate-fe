@@ -68,7 +68,7 @@ export default function FeedHeader({
           <Pressable
             style={styles.iconButton}
             hitSlop={8}
-            onPress={() => router.push('/(group)/mypage')}
+            onPress={() => router.push('/(tabs)/mypage')}
           >
             <Icon name="user" size={24} color={gray[800]} />
           </Pressable>

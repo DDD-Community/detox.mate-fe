@@ -114,7 +114,7 @@ export default function GoalSetupScreen({ mode = 'initial' }: GoalSetupScreenPro
   );
 
   const handleCancel = () => {
-    goBackOrReplace('/(group)/mypage');
+    goBackOrReplace('/(tabs)/mypage');
   };
 
   const handleSave = async () => {
@@ -151,7 +151,7 @@ export default function GoalSetupScreen({ mode = 'initial' }: GoalSetupScreenPro
       trackEvent('Goal Time Set', { mode });
 
       if (isEditMode) {
-        goBackOrReplace('/(group)/mypage');
+        goBackOrReplace('/(tabs)/mypage');
       } else {
         router.replace('/(feed)/home');
       }

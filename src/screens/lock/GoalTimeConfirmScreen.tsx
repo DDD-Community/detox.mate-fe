@@ -40,7 +40,7 @@ export default function GoalTimeConfirmScreen() {
     }
     confirmTargetMinutes(minutes);
     router.dismissTo({
-      pathname: '/(lock)/restricted-apps',
+      pathname: '/(tabs)/restricted-apps',
       // 변경 모드일 때만 완료 토스트를 띄우도록 현황 화면에 알린다.
       params: mode === 'change' ? { goalChanged: '1' } : {},
     });

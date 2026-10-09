@@ -50,7 +50,7 @@ export default function LockStatusScreen() {
   }, [unlocked]);
 
   return (
-    <View style={styles.root}>
+    <View collapsable={false} style={styles.root}>
       <SafeAreaView edges={['top']} style={styles.safeArea}>
         <View style={styles.header}>
           <DetoxmateWordmark />
@@ -73,7 +73,7 @@ export default function LockStatusScreen() {
         </View>
       </SafeAreaView>
 
-      <ScrollView contentContainerStyle={styles.content}>
+      <ScrollView contentInsetAdjustmentBehavior="automatic" contentContainerStyle={styles.content}>
         <Pressable
           style={styles.summaryRow}
           onPress={() => router.push({ pathname: '/(lock)/goal-time', params: { mode: 'change' } })}
@@ -190,6 +190,7 @@ const styles = StyleSheet.create({
   },
   content: {
     paddingTop: spacing[16],
+    paddingBottom: spacing[24],
   },
   summaryRow: {
     flexDirection: 'row',
