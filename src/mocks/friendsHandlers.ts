@@ -282,7 +282,6 @@ export const friendsHandlers = [
         user: {
           userId: user.userId,
           displayName: user.displayName,
-          userCode: user.userCode,
           profileImageUrl: user.profileImageUrl,
           relationshipStatus: 'PENDING_SENT',
           requestId,
