@@ -89,9 +89,13 @@ async function setup() {
 
 describe('친구 초대 공유의 비동기 보호', () => {
   it.each(['ios', 'android'])(
-    '%s에서 이메일이 없어도 표시한 초대 링크와 5자 코드를 함께 공유한다',
+    '%s에서 이메일 유무와 무관하게 표시한 링크·코드를 공유하고 이메일은 제외한다',
     async (os) => {
       actions.platform.OS = os;
+      actions.request.mockResolvedValue({
+        code: 'A1B2C',
+        email: os === 'ios' ? 'my@example.com' : undefined,
+      });
       const screen = await setup();
       await act(async () => {
         await screen.state.share();
@@ -100,6 +104,7 @@ describe('친구 초대 공유의 비동기 보호', () => {
       expect(content.message).toContain('초대 코드: A1B2C');
       expect(content.message).toContain('친구 목록 검색창에 초대 코드를 입력해주세요.');
       expect(content.message).not.toContain('이메일');
+      expect(content.message).not.toContain('my@example.com');
       expect(content.message).toContain(screen.state.inviteUrl);
       expect(os === 'ios' ? content.url : content.message).toContain('https://abr.ge/test-invite');
     }
