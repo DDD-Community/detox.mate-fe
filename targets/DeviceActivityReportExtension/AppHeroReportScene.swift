@@ -17,6 +17,8 @@ struct AppHeroView: View {
   let data: TotalActivityData
 
   var body: some View {
+    // 앱 이름과 사용 시간은 왼쪽 정렬(아이콘만 가운데). 이름은 Label(token)을 쓰면 가로 폭을 꽉 채우고
+    // 왼쪽 정렬로 그려지므로 그대로 둔다 — 가운데 정렬은 이름이 잘려서 포기했다.
     VStack(spacing: 0) {
       if let app = data.apps.first {
         AppIconView(token: app.id, size: 83)
@@ -24,11 +26,13 @@ struct AppHeroView: View {
           .labelStyle(.titleOnly)
           .font(.system(size: 16, weight: .medium))
           .foregroundColor(detoxGray800)
+          .frame(maxWidth: .infinity, alignment: .leading)
           .frame(height: 26)
           .padding(.top, 12)
         Text(formatUsageDuration(data.totalDuration))
           .font(.system(size: 24, weight: .medium))
           .foregroundColor(detoxGray900)
+          .frame(maxWidth: .infinity, alignment: .leading)
           .frame(height: 32)
           .padding(.top, 4)
       } else {

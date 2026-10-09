@@ -14,6 +14,8 @@ struct AppUsage: Identifiable {
   /// 화면을 켜고 이 앱을 집어든(pickup) 횟수 / 받은 알림 수 — 애플이 같이 집계해준다.
   var pickups: Int = 0
   var notifications: Int = 0
+  /// 리포트 확장 안에서는 앱 이름을 문자열로 읽을 수 있다(메인 앱에서는 Label(token)으로만 가능).
+  var name: String? = nil
 }
 
 struct TotalActivityData {
@@ -28,6 +30,7 @@ func aggregateTotalActivityData(
   var appDurations: [ApplicationToken: TimeInterval] = [:]
   var appPickups: [ApplicationToken: Int] = [:]
   var appNotifications: [ApplicationToken: Int] = [:]
+  var appNames: [ApplicationToken: String] = [:]
 
   for await datum in data {
     for await segment in datum.activitySegments {
@@ -37,6 +40,7 @@ func aggregateTotalActivityData(
           appDurations[token, default: 0] += app.totalActivityDuration
           appPickups[token, default: 0] += app.numberOfPickups
           appNotifications[token, default: 0] += app.numberOfNotifications
+          if let name = app.application.localizedDisplayName { appNames[token] = name }
         }
       }
     }
@@ -48,7 +52,8 @@ func aggregateTotalActivityData(
         id: $0.key,
         duration: $0.value,
         pickups: appPickups[$0.key] ?? 0,
-        notifications: appNotifications[$0.key] ?? 0
+        notifications: appNotifications[$0.key] ?? 0,
+        name: appNames[$0.key]
       )
     }
     .sorted { $0.duration > $1.duration }
