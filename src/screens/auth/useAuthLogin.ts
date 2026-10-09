@@ -43,7 +43,6 @@ interface UseAuthLoginOptions {
 export function useAuthLogin({ onLoginFailure }: UseAuthLoginOptions = {}) {
   const router = useRouter();
   const [pendingProvider, setPendingProvider] = useState<LoginProvider | null>(null);
-  const loginInFlight = useRef(false);
   const [permissionGuideVisible, setPermissionGuideVisible] = useState(false);
   const [permissionGuideConfirming, setPermissionGuideConfirming] = useState(false);
   const active = useRef(true);
@@ -65,9 +64,8 @@ export function useAuthLogin({ onLoginFailure }: UseAuthLoginOptions = {}) {
   };
 
   const completeLogin = async (provider: LoginProvider, login: LoginAction) => {
-    if (loginInFlight.current) return;
+    if (pendingProvider) return;
 
-    loginInFlight.current = true;
     setPendingProvider(provider);
     try {
       const user = await login();
@@ -96,7 +94,6 @@ export function useAuthLogin({ onLoginFailure }: UseAuthLoginOptions = {}) {
       logError(appError, { scope: 'auth.login', provider });
       onLoginFailure?.(appError);
     } finally {
-      loginInFlight.current = false;
       setPendingProvider(null);
     }
   };

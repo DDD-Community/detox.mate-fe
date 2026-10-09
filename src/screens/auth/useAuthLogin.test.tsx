@@ -12,7 +12,6 @@ const mocks = vi.hoisted(() => ({
   storage: new Map<string, string>(),
   replace: vi.fn(),
   kakao: vi.fn(),
-  testLogin: vi.fn(),
   authHttp: vi.fn(),
   requests: new AbortController(),
   mediaPermission: vi.fn(),
@@ -30,9 +29,6 @@ vi.mock('expo-secure-store', () => ({
 vi.mock('expo-router', () => ({ useRouter: () => ({ replace: mocks.replace }) }));
 vi.mock('@react-native-seoul/kakao-login', () => ({ login: mocks.kakao }));
 vi.mock('expo-apple-authentication', () => ({}));
-vi.mock('../../api/generated/dev-auth/dev-auth', () => ({
-  getDevAuth: () => ({ testLogin: mocks.testLogin }),
-}));
 vi.mock('../../api/client', () => ({
   getAuthenticatedRequestSignal: () => mocks.requests.signal,
   cancelAuthenticatedRequests: () => mocks.requests.abort(),
@@ -98,11 +94,6 @@ beforeEach(() => {
       isNewUser: false,
     },
   });
-  mocks.testLogin.mockResolvedValue({
-    id: 22,
-    accessToken: 'test-session-token',
-    refreshToken: 'test-refresh-token',
-  });
   mocks.mediaPermission.mockResolvedValue({ status: 'granted' });
   mocks.notificationPermission.mockResolvedValue({ status: 'granted' });
 });
@@ -113,10 +104,10 @@ afterEach(async () => {
   mocks.storage.clear();
 });
 
-async function setup(onLoginFailure = vi.fn()) {
+async function setup() {
   let current!: ReturnType<typeof useAuthLogin>;
   function Harness() {
-    current = useAuthLogin({ onLoginFailure });
+    current = useAuthLogin();
     return null;
   }
   const root = createRoot(document.createElement('div'));
@@ -176,38 +167,5 @@ describe('초대 링크의 카카오 로그인과 권한 안내 복귀', () => {
       params: { inviteCode: 'ABCDE' },
     });
     expect(await peekPendingInvite()).toBeNull();
-  });
-});
-
-describe('심사용 테스트 로그인', () => {
-  it('계정 선택이 연속되어도 한 번만 로그인하고 실패를 안내한 뒤 다른 계정으로 재시도한다', async () => {
-    mocks.storage.set(APP_ACCESS_PERMISSION_GUIDE_SEEN_KEY, 'true');
-    const login = Promise.withResolvers<never>();
-    mocks.testLogin.mockReturnValueOnce(login.promise);
-    const onLoginFailure = vi.fn();
-    const screen = await setup(onLoginFailure);
-
-    await act(() => {
-      screen.state.handleTestLogin('front-a');
-      screen.state.handleTestLogin('front-b');
-      screen.state.handleKakaoLogin();
-    });
-
-    expect(mocks.testLogin).toHaveBeenCalledTimes(1);
-    expect(mocks.kakao).not.toHaveBeenCalled();
-    expect(screen.state.pendingProvider).toBe('test');
-
-    await act(() => login.reject(new Error('테스트 로그인 실패')));
-
-    expect(onLoginFailure).toHaveBeenCalledOnce();
-    expect(screen.state.pendingProvider).toBeNull();
-    expect(mocks.replace).not.toHaveBeenCalled();
-
-    await act(() => screen.state.handleTestLogin('front-b'));
-
-    expect(mocks.testLogin).toHaveBeenLastCalledWith({ testUserKey: 'front-b' });
-    expect(mocks.storage.get('currentUserId')).toBe('22');
-    expect(mocks.replace).toHaveBeenCalledOnce();
-    expect(screen.state.pendingProvider).toBeNull();
   });
 });
