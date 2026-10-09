@@ -4,7 +4,7 @@ import { Alert, Platform, Share } from 'react-native';
 
 import { getAuthenticatedRequestSignal } from '../../../api/client';
 import { AppError, getUserErrorMessage, logError, normalizeError } from '../../../api/errors';
-import { getInvitee, getMyInvite } from '../../../api/query-generated/friend';
+import { getMyInvite } from '../../../api/query-generated/friend';
 import { trackEvent } from '../../../lib/analytics';
 import { createFriendInviteShareUrl } from '../../../lib/friendInviteShare';
 
@@ -26,19 +26,12 @@ async function prepareShareContent(signal: AbortSignal) {
     throw error;
   }
   if (signal.aborted || authSignal.aborted) throw new Error('Invitation preparation canceled.');
-  const profile = await getInvitee(invite.code, signal);
-  if (signal.aborted || authSignal.aborted) throw new Error('Invitation preparation canceled.');
-  const name = profile.displayName?.trim() || '친구';
-  const email = invite.email?.trim();
   const message = [
-    `${name}님에게 친구 요청을 보내 함께 스크린타임을 줄여보세요.`,
-    ...(email
-      ? [
-          '링크가 원활하지 않은 경우, 앱에서 이메일 입력을 통해 친구 요청을 보낼 수 있습니다.',
-          `${name} (${email})`,
-        ]
-      : []),
-  ].join('\n\n');
+    '디톡스메이트에서 함께 스크린타임을 줄여봐요.',
+    `초대 링크: ${url}`,
+    `초대 코드: ${invite.code}`,
+    '링크가 열리지 않으면 친구 목록 검색창에 초대 코드를 입력해주세요.',
+  ].join('\n');
   return { url, message };
 }
 
@@ -85,9 +78,7 @@ export function useShareFriendInvite() {
         return;
       }
       const { message, url } = prepared.data;
-      await Share.share(
-        Platform.OS === 'ios' ? { message, url } : { message: `${message}\n\n${url}` }
-      );
+      await Share.share(Platform.OS === 'ios' ? { message, url } : { message });
     } catch (failure) {
       if (!active()) return;
       const error = normalizeError(failure);
