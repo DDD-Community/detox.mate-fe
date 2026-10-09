@@ -69,7 +69,7 @@ export function MyPageProfileHeader({
           <View style={styles.profileBackgroundDim} />
         </>
       ) : null}
-      <SafeAreaView edges={['top']}>
+      <SafeAreaView edges={isFriend ? ['top'] : []}>
         <View style={styles.header}>
           {isFriend ? (
             <LoggingButton

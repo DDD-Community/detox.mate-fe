@@ -25,7 +25,7 @@ import defaultAvatar from '@assets/friend-invite/default-avatar.svg';
 import detoxLogo from '@assets/friend-invite/detox.svg';
 import mateLogo from '@assets/friend-invite/mate.svg';
 
-const friends = () => router.replace('/(group)/friends');
+const friends = () => router.replace('/(tabs)/friends');
 
 function InviteButton({
   label,

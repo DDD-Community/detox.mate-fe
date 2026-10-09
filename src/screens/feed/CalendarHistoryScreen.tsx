@@ -227,13 +227,13 @@ export default function CalendarHistoryScreen() {
 
   const openMemberProfile = (item: FeedItem) => {
     if (item.isMe) {
-      router.push('/(group)/mypage');
+      router.push('/(tabs)/mypage');
       return;
     }
     const info = memberStore.get(Number(item.id));
     if (!info) return;
     router.push({
-      pathname: '/(group)/mypage',
+      pathname: '/(group)/friend-profile',
       params: {
         memberId: String(info.groupMemberId),
         friendName: info.displayName,
