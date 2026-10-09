@@ -56,6 +56,8 @@ const config: ExpoConfig = {
   },
   ios: {
     bundleIdentifier: isProduction ? 'com.detoxmate.app' : 'com.detoxmate.app.dev2',
+    // @bacons/apple-targets(react-native-device-activity 익스텐션 타겟 생성기)가
+    // 익스텐션의 DEVELOPMENT_TEAM을 채우는 데 최상위 ios.appleTeamId를 요구한다.
     ...(isProduction ? {} : { appleTeamId: 'V4328A485M' }),
     googleServicesFile: iosGoogleServicesFile,
     supportsTablet: false,
@@ -141,6 +143,7 @@ const config: ExpoConfig = {
         ios: {
           useFrameworks: 'static',
           forceStaticLinking: ['RNFBApp', 'RNFBMessaging'],
+          deploymentTarget: '15.1',
         },
       },
     ],
@@ -160,6 +163,13 @@ const config: ExpoConfig = {
       },
     ],
     './plugins/with-sdk55-app-delegate-fixes',
+    [
+      'react-native-device-activity',
+      {
+        appleTeamId: 'V4328A485M',
+        appGroup: 'group.com.detoxmate.app.dev2',
+      },
+    ],
   ],
   extra: {
     appEnv,
