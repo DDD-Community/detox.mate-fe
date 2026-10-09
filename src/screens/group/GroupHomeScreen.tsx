@@ -34,7 +34,7 @@ export default function GroupHomeScreen() {
     const now = Date.now();
     if (now - lastTurtleTapAt.current < DOUBLE_TAP_DELAY_MS) {
       lastTurtleTapAt.current = 0;
-      router.push('/(lock)/restricted-apps');
+      router.push('/(tabs)/restricted-apps');
       return;
     }
     lastTurtleTapAt.current = now;
@@ -100,7 +100,7 @@ export default function GroupHomeScreen() {
               <Pressable
                 style={styles.iconButton}
                 hitSlop={8}
-                onPress={() => router.push('/(group)/mypage')}
+                onPress={() => router.push('/(tabs)/mypage')}
               >
                 <Icon name="user" size={24} color={gray[800]} />
               </Pressable>

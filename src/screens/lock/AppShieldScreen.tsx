@@ -22,7 +22,7 @@ export default function AppShieldScreen() {
       router.back();
       return;
     }
-    router.replace('/(lock)/restricted-apps');
+    router.replace('/(tabs)/restricted-apps');
   };
 
   const handleRequestUnlock = async () => {

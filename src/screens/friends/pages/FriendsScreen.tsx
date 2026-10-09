@@ -1,6 +1,5 @@
 import { QueryErrorResetBoundary, useSuspenseQuery } from '@tanstack/react-query';
 import { Image } from 'expo-image';
-import { router } from 'expo-router';
 import { Suspense, useEffect, useState } from 'react';
 import {
   ActivityIndicator,
@@ -40,12 +39,9 @@ import { trackButtonClick } from '@/lib/analytics';
 import { fontFamily } from '@/lib/token/primitive/fonts';
 import defaultSmallAvatar from '@assets/avatars/default-small.svg';
 import defaultAvatar from '@assets/avatars/default.svg';
-import appsIcon from '@assets/icons/apps.svg';
 import backIcon from '@assets/icons/back.svg';
 import closeIcon from '@assets/icons/close.svg';
 import exportIcon from '@assets/icons/export.svg';
-import feedIcon from '@assets/icons/feed.svg';
-import meIcon from '@assets/icons/me.svg';
 import searchIcon from '@assets/icons/search.svg';
 import shareIcon from '@assets/icons/share.svg';
 
@@ -364,25 +360,11 @@ function FriendsContent() {
   } = useFriendsListController();
   const insets = useSafeAreaInsets();
   const [query, setQuery] = useState('');
-  const [keyboardVisible, setKeyboardVisible] = useState(false);
   const [deleteTarget, setDeleteTarget] = useState<FriendsListItem | null>(null);
   const searching = query.trim().length > 0;
   const busy = pendingActionId !== null;
   const deleting =
     deleteTarget !== null && pendingActionId === `friend:${deleteTarget.friendshipId}`;
-
-  useEffect(() => {
-    const show = Keyboard.addListener('keyboardWillShow', () => setKeyboardVisible(true));
-    const hide = Keyboard.addListener('keyboardWillHide', () => setKeyboardVisible(false));
-    const androidShow = Keyboard.addListener('keyboardDidShow', () => setKeyboardVisible(true));
-    const androidHide = Keyboard.addListener('keyboardDidHide', () => setKeyboardVisible(false));
-    return () => {
-      show.remove();
-      hide.remove();
-      androidShow.remove();
-      androidHide.remove();
-    };
-  }, []);
 
   const confirmDelete = async () => {
     if (!deleteTarget || busy) return;
@@ -391,6 +373,7 @@ function FriendsContent() {
 
   return (
     <KeyboardAvoidingView
+      collapsable={false}
       style={styles.root}
       behavior={Platform.OS === 'ios' ? 'padding' : undefined}
     >
@@ -399,7 +382,7 @@ function FriendsContent() {
           <Pressable
             accessibilityRole="button"
             accessibilityLabel="뒤로 가기"
-            onPress={() => goBackOrReplace('/(group)/mypage')}
+            onPress={() => goBackOrReplace('/(tabs)/mypage')}
             style={styles.backButton}
             hitSlop={{ left: 10, right: 10 }}
           >
@@ -428,10 +411,8 @@ function FriendsContent() {
 
       <ScrollView
         style={styles.scroll}
-        contentContainerStyle={[
-          styles.content,
-          { paddingBottom: keyboardVisible ? 24 : insets.bottom + 108 },
-        ]}
+        contentContainerStyle={styles.content}
+        contentInsetAdjustmentBehavior="automatic"
         keyboardShouldPersistTaps="handled"
         keyboardDismissMode="on-drag"
         refreshControl={
@@ -539,31 +520,6 @@ function FriendsContent() {
         ) : null}
       </ScrollView>
 
-      {!keyboardVisible ? (
-        <View style={[styles.navigationWrap, { bottom: Math.max(insets.bottom - 10, 16) }]}>
-          <View style={styles.navigation}>
-            {(
-              [
-                { label: '피드', icon: feedIcon, route: '/(feed)/home' },
-                { label: '제한 앱', icon: appsIcon, route: '/(lock)/restricted-apps' },
-                { label: '마이페이지', icon: meIcon, route: '/(group)/mypage' },
-              ] as const
-            ).map((tab) => (
-              <Pressable
-                key={tab.label}
-                accessibilityRole="tab"
-                accessibilityState={{ selected: tab.label === '마이페이지' }}
-                onPress={() => router.replace(tab.route)}
-                style={[styles.tab, tab.label === '마이페이지' && styles.activeTab]}
-              >
-                <Image source={tab.icon} style={styles.tabIcon} contentFit="contain" />
-                <Text style={styles.tabLabel}>{tab.label}</Text>
-              </Pressable>
-            ))}
-          </View>
-        </View>
-      ) : null}
-
       <Modal
         visible={deleteTarget !== null}
         transparent
@@ -670,7 +626,7 @@ const styles = StyleSheet.create({
     height: 40,
   },
   scroll: { flex: 1 },
-  content: { flexGrow: 1 },
+  content: { paddingBottom: 24, flexGrow: 1 },
   inviteCard: {
     marginHorizontal: 16,
     minHeight: 68,
@@ -771,24 +727,6 @@ const styles = StyleSheet.create({
     lineHeight: 21,
     color: 'white',
     letterSpacing: -0.28,
-  },
-  navigationWrap: { position: 'absolute', alignSelf: 'center' },
-  navigation: {
-    width: 282,
-    height: 61,
-    borderRadius: 999,
-    backgroundColor: '#f7f7f7',
-    padding: 4,
-    flexDirection: 'row',
-  },
-  tab: { flex: 1, alignItems: 'center', justifyContent: 'center', borderRadius: 999, gap: 1 },
-  activeTab: { backgroundColor: '#ededed' },
-  tabIcon: { width: 26, height: 26 },
-  tabLabel: {
-    fontFamily: fontFamily.primary.semibold,
-    fontSize: 11,
-    lineHeight: 14,
-    color: '#2b2f38',
   },
   modalRoot: { flex: 1, justifyContent: 'flex-end' },
   backdrop: { ...StyleSheet.absoluteFillObject, backgroundColor: 'rgba(74,74,74,0.48)' },
