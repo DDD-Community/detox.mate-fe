@@ -8,7 +8,7 @@ import { normalizeError } from '../../../api/errors/normalizeError';
 import {
   getGetFriendsSuspenseQueryOptions,
   getGetReceivedRequestsSuspenseQueryOptions,
-  getSearchByEmailQueryKey,
+  getSearchByUserCodeQueryKey,
   acceptRequest,
   deletePendingRequest,
   unfriend,
@@ -111,7 +111,7 @@ export function useFriendsListController() {
     await Promise.all([
       client.invalidateQueries({ queryKey: friendsOptions.queryKey, exact: true }),
       client.invalidateQueries({ queryKey: requestsOptions.queryKey, exact: true }),
-      client.invalidateQueries({ queryKey: getSearchByEmailQueryKey() }),
+      client.invalidateQueries({ queryKey: getSearchByUserCodeQueryKey() }),
     ]);
   };
 

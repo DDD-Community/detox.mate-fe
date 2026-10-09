@@ -7,7 +7,7 @@ export interface FriendListUser {
   userId: number;
   displayName: string;
   profileImageUrl?: string;
-  email?: string;
+  userCode: string;
 }
 
 export interface FriendsListItem {
@@ -32,7 +32,7 @@ function toUser(user: FriendResponse['user']): FriendListUser {
     userId: requireId(user?.userId),
     displayName: user?.displayName ?? '이름 없음',
     profileImageUrl: user?.profileImageUrl,
-    email: user?.email,
+    userCode: user!.userCode,
   };
 }
 

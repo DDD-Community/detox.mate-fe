@@ -1,4 +1,4 @@
-import type { GroupMemberProfileResponse, GroupResponse, MyProfileResponse } from '@/api';
+import type { GroupMemberProfileResponse, GroupResponse, MyPageResponse } from '@/api';
 import { formatMinutesAsHourMinute } from '@/lib/formatDuration';
 
 const getDifferenceMinutes = (
@@ -14,7 +14,7 @@ const getDifferenceMinutes = (
 interface BuildMyPageViewModelOptions {
   isFriend: boolean;
   friendName?: string;
-  profile: MyProfileResponse | null;
+  profile: MyPageResponse | null;
   memberProfile: GroupMemberProfileResponse | null;
   friendProfile: GroupMemberProfileResponse | null;
   groups: GroupResponse[];

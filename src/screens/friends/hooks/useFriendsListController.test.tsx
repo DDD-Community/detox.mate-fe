@@ -17,7 +17,7 @@ import type {
 import {
   getGetFriendsSuspenseQueryOptions,
   getGetReceivedRequestsSuspenseQueryOptions,
-  getSearchByEmailQueryOptions,
+  getSearchByUserCodeQueryOptions,
 } from '../../../api/query-generated/friend';
 import { useFriendsListController } from './useFriendsListController';
 
@@ -42,8 +42,11 @@ vi.mock('../../../api/friendMutator', () => ({
   },
 }));
 Object.assign(globalThis, { IS_REACT_ACT_ENVIRONMENT: true });
-const friend: FriendResponse = { friendshipId: 41, user: { userId: 8, displayName: '홍길동' } };
-const request = { requestId: 72, user: { userId: 9, displayName: '친구' } };
+const friend: FriendResponse = {
+  friendshipId: 41,
+  user: { userCode: 'ABCDE', userId: 8, displayName: '홍길동' },
+};
+const request = { requestId: 72, user: { userCode: 'ABCDE', userId: 9, displayName: '친구' } };
 const cleanups: (() => void)[] = [];
 
 function deferred<T>() {
@@ -139,7 +142,7 @@ async function remove(screen: Awaited<ReturnType<typeof setup>>) {
 describe('친구 목록 조회와 변경 액션', () => {
   it('검색 갱신 중에는 목록을 갱신하거나 친구 삭제를 시작해도 검색 응답을 취소하지 않고 목록 갱신 표시도 켜지 않는다', async () => {
     const screen = await setup();
-    const options = getSearchByEmailQueryOptions({ email: 'search@example.com' });
+    const options = getSearchByUserCodeQueryOptions({ userCode: 'ABCDE' });
     const user = { userId: 8, displayName: '검색한 친구' };
     const searchRead = deferred<typeof user>();
     const writeStarted = deferred<void>();
@@ -335,8 +338,14 @@ describe('친구 목록 조회와 변경 액션', () => {
         writing = screen.state.acceptRequest(72);
       });
 
-      const nextFriend = { friendshipId: 99, user: { userId: 10, displayName: '새 계정 친구' } };
-      const nextRequest = { requestId: 72, user: { userId: 11, displayName: '새 계정 요청' } };
+      const nextFriend = {
+        friendshipId: 99,
+        user: { userCode: 'ABCDE', userId: 10, displayName: '새 계정 친구' },
+      };
+      const nextRequest = {
+        requestId: 72,
+        user: { userCode: 'ABCDE', userId: 11, displayName: '새 계정 요청' },
+      };
       api.friends.mockResolvedValue([nextFriend]);
       api.received.mockResolvedValue([nextRequest]);
       await act(() => {

@@ -5,9 +5,6 @@
  * OpenAPI spec version: v0
  */
 
-export type SearchByEmailParams = {
-  /**
-   * @minLength 1
-   */
-  email: string;
+export type SearchByUserCodeParams = {
+  userCode?: string;
 };

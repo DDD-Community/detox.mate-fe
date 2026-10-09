@@ -6,6 +6,10 @@
  */
 
 export interface FriendInviteResponse {
-  code?: string;
-  email?: string;
+  code: string;
+  /**
+   * @minLength 5
+   * @maxLength 5
+   */
+  userCode: string;
 }

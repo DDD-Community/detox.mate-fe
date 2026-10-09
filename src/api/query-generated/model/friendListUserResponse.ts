@@ -12,5 +12,9 @@ export interface FriendListUserResponse {
   profileImageUrl?: string;
   relationshipStatus?: FriendRelationshipStatus;
   requestId?: number;
-  email?: string;
+  /**
+   * @minLength 5
+   * @maxLength 5
+   */
+  userCode: string;
 }

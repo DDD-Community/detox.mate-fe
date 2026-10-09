@@ -19,12 +19,12 @@ import { requireId } from '../utils/friendsListData';
 import { ErrorBoundary } from '../../../components/AppErrorBoundary/AppErrorBoundary';
 import { fontFamily } from '../../../lib/token/primitive/fonts';
 import { useSendFriendRequest } from '../hooks/useSendFriendRequest';
-import { getSearchByEmailSuspenseQueryOptions } from '../../../api/query-generated/friend';
+import { getSearchByUserCodeSuspenseQueryOptions } from '../../../api/query-generated/friend';
 import { FriendsErrorFeedback } from './FriendsErrorFeedback';
 import searchAvatar from '@assets/avatars/friend-search.svg';
 
 const { regular, bold } = fontFamily.primary;
-const missingEmail = (error: unknown) => {
+const missingCode = (error: unknown) => {
   const normalized = normalizeError(error);
   return normalized.status === 404 && normalized.code === 'NOT_FOUND';
 };
@@ -105,22 +105,22 @@ function SearchResult({
 }
 
 function SearchQuery({
-  email,
+  userCode,
   onReceived,
   renderFriend,
 }: {
-  email: string;
+  userCode: string;
   onReceived: () => void;
   renderFriend: (userId: number) => React.ReactNode;
 }) {
   const result = useSuspenseQuery(
-    getSearchByEmailSuspenseQueryOptions({ email }, { query: { refetchOnMount: 'always' } })
+    getSearchByUserCodeSuspenseQueryOptions({ userCode }, { query: { refetchOnMount: 'always' } })
   );
   const failure =
     result.error && !result.isFetching && !isCancel(result.error) ? result.error : null;
   useEffect(() => {
-    if (failure && !missingEmail(failure)) {
-      logError(normalizeError(failure), { scope: 'api', operation: 'searchFriendByEmail' });
+    if (failure && !missingCode(failure)) {
+      logError(normalizeError(failure), { scope: 'api', operation: 'searchFriendByUserCode' });
     }
   }, [failure]);
   const feedback = failure ? (
@@ -129,7 +129,7 @@ function SearchQuery({
   return (
     <>
       <SearchResult
-        key={email}
+        key={userCode}
         user={result.data}
         onReceived={onReceived}
         renderFriend={renderFriend}
@@ -139,24 +139,24 @@ function SearchQuery({
   );
 }
 
-export function FriendEmailSearch({
-  email,
+export function FriendCodeSearch({
+  userCode,
   onRefresh,
   onReceived,
   renderFriend,
   empty,
 }: {
-  email: string;
+  userCode: string;
   onRefresh: () => Promise<void>;
   onReceived: () => void;
   renderFriend: (userId: number) => React.ReactNode;
   empty: React.ReactNode;
 }) {
   const client = useQueryClient();
-  const options = getSearchByEmailSuspenseQueryOptions({ email });
+  const options = getSearchByUserCodeSuspenseQueryOptions({ userCode });
   const mountedQuery = useRef<Query | null>(null);
   useEffect(() => {
-    const queryKey = getSearchByEmailSuspenseQueryOptions({ email }).queryKey;
+    const queryKey = getSearchByUserCodeSuspenseQueryOptions({ userCode }).queryKey;
     const query = client.getQueryCache().find({ queryKey, exact: true });
     mountedQuery.current = query ?? null;
     return () => {
@@ -175,7 +175,7 @@ export function FriendEmailSearch({
           client.removeQueries({ queryKey, exact: true });
       });
     };
-  }, [client, email]);
+  }, [client, userCode]);
   return (
     <QueryErrorResetBoundary>
       {({ reset }) => (
@@ -185,19 +185,19 @@ export function FriendEmailSearch({
             reset();
             await client.resetQueries({ queryKey: options.queryKey, exact: true });
           }}
-          shouldLogError={(error) => !missingEmail(error)}
-          fallback={(error) => (missingEmail(error) ? empty : undefined)}
+          shouldLogError={(error) => !missingCode(error)}
+          fallback={(error) => (missingCode(error) ? empty : undefined)}
         >
           <Suspense
             fallback={
               <ActivityIndicator
                 style={{ padding: 24 }}
                 color="#5a8974"
-                accessibilityLabel="이메일 검색 중"
+                accessibilityLabel="초대코드 검색 중"
               />
             }
           >
-            <SearchQuery email={email} onReceived={onReceived} renderFriend={renderFriend} />
+            <SearchQuery userCode={userCode} onReceived={onReceived} renderFriend={renderFriend} />
           </Suspense>
         </ErrorBoundary>
       )}
