@@ -44,6 +44,8 @@ vi.mock('expo-image-picker', () => ({
   requestMediaLibraryPermissionsAsync: mocks.mediaPermission,
 }));
 vi.mock('expo-notifications', () => ({
+  DEFAULT_ACTION_IDENTIFIER: 'tap',
+  getLastNotificationResponse: () => null,
   requestPermissionsAsync: mocks.notificationPermission,
   getPermissionsAsync: async () => ({ status: 'granted' }),
 }));

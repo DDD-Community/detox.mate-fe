@@ -4,12 +4,21 @@ import { redirectSystemPath } from '../../app/+native-intent';
 import { handleInviteDeeplink } from './airbridge';
 import { navigateAuthenticated, parseInviteDeeplink } from './inviteDestination';
 import { peekPendingInvite, setPendingInvite } from './pendingInvite';
+import type { NotificationResponse } from 'expo-notifications';
 
 const mocks = vi.hoisted(() => ({
   storage: new Map<string, string>(),
   get: vi.fn(),
   replace: vi.fn(),
   log: vi.fn(),
+  notification: null as NotificationResponse | null,
+}));
+vi.mock('expo-notifications', () => ({
+  DEFAULT_ACTION_IDENTIFIER: 'tap',
+  getLastNotificationResponse: () => mocks.notification,
+  clearLastNotificationResponse: () => {
+    mocks.notification = null;
+  },
 }));
 vi.mock('expo-secure-store', () => ({
   getItemAsync: mocks.get,
@@ -21,6 +30,7 @@ vi.mock('expo-secure-store', () => ({
   },
 }));
 vi.mock('expo-router', () => ({ router: { replace: mocks.replace } }));
+vi.mock('react-native', () => ({ Platform: { OS: 'ios' } }));
 vi.mock('airbridge-react-native-sdk', () => ({ Airbridge: { setOnDeeplinkReceived: vi.fn() } }));
 vi.mock('../api/errors', () => ({
   normalizeError: (error: unknown) => error,
@@ -38,6 +48,7 @@ function deferred<T>() {
 
 beforeEach(() => {
   mocks.storage.clear();
+  mocks.notification = null;
   vi.resetAllMocks();
   mocks.storage.set('accessTokenKey', 'session');
   mocks.get.mockImplementation(async (key: string) => mocks.storage.get(key) ?? null);
@@ -49,6 +60,60 @@ const navigate = (options: Partial<Parameters<typeof navigateAuthenticated>[0]> 
     resolveDefault: async () => '/(group)/home',
     ...options,
   });
+
+function tapNotification(data: Record<string, unknown>) {
+  mocks.notification = {
+    actionIdentifier: 'tap',
+    notification: { request: { content: { data } } },
+  } as NotificationResponse;
+}
+
+describe('인증과 비동기 시작 과정에서 알림 복귀', () => {
+  it('미로그인 알림은 보존하고 로그인 후 목적지로 한 번만 이동한다', async () => {
+    tapNotification({ targetType: 'FRIEND_REQUESTS' });
+    mocks.storage.delete('accessTokenKey');
+    await navigate();
+    expect(mocks.replace).toHaveBeenLastCalledWith('/login');
+    expect(mocks.notification).not.toBeNull();
+
+    mocks.storage.set('accessTokenKey', 'session');
+    await navigate();
+    expect(mocks.replace).toHaveBeenLastCalledWith('/friends');
+    expect(mocks.notification).toBeNull();
+    await navigate();
+    expect(mocks.replace).toHaveBeenLastCalledWith('/(group)/home');
+  });
+
+  it('기본 피드 조회 중 도착한 알림을 늦은 피드 응답이 덮어쓰지 않는다', async () => {
+    const feed = deferred<'/(feed)/home'>();
+    const started = deferred<void>();
+    const navigation = navigate({
+      resolveDefault: () => {
+        started.resolve();
+        return feed.promise;
+      },
+    });
+    await started.promise;
+    tapNotification({ targetType: 'NONE', type: 'APP_RELOCK_REMINDER' });
+    feed.resolve('/(feed)/home');
+    await navigation;
+    expect(mocks.replace).toHaveBeenCalledOnce();
+    expect(mocks.replace).toHaveBeenCalledWith('/restricted-apps');
+  });
+
+  it('시작 화면이 취소되거나 라우팅이 실패하면 알림을 소비하지 않는다', async () => {
+    tapNotification({ targetType: 'FRIENDS' });
+    await navigate({ isActive: () => false });
+    expect(mocks.replace).not.toHaveBeenCalled();
+    expect(mocks.notification).not.toBeNull();
+
+    mocks.replace.mockImplementationOnce(() => {
+      throw new Error('router unavailable');
+    });
+    await expect(navigate()).rejects.toThrow('router unavailable');
+    expect(mocks.notification).not.toBeNull();
+  });
+});
 
 describe('인증과 비동기 시작 과정에서 초대 복귀', () => {
   it('미로그인 초대는 로그인 중 보존하고 인증 후 친구 초대로 복귀한다', async () => {

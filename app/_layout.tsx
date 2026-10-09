@@ -4,15 +4,15 @@ import * as Notifications from 'expo-notifications';
 import { router, Stack } from 'expo-router';
 import * as SplashScreen from 'expo-splash-screen';
 import { useEffect, type ComponentType } from 'react';
+import { Platform } from 'react-native';
 import * as ReactNativeDeviceActivity from 'react-native-device-activity';
-import { getGroup } from '../src/api/generated/group/group';
 import {
   ensureShieldIcon,
   registerAppShield,
   SHIELD_ACTIONS,
   SHIELD_CONFIGURATION,
 } from '../src/lib/shieldConfig';
-import { APP_UNLOCK_REQUEST_NOTIFICATION_TYPE } from '../src/lib/notificationTypes';
+import { getNotificationPath } from '../src/lib/notificationDestination';
 import { ensureDailyUsageMonitoring } from '../src/lib/screenTimeMonitoring';
 import { syncScreenTimeHistory } from '../src/lib/screenTimeHistory';
 import { syncTimeLimitFromServer } from '../src/lib/timeLimitSync';
@@ -81,36 +81,22 @@ export default function RootLayout() {
     return subscribeToDevicePushTokenRefresh();
   }, []);
 
-  // 푸시 알림 탭 시 라우팅. 앱 잠금 해제 요청 알림이면 타이머 화면으로,
-  // 그 외에는 기존처럼 그룹 여부에 따라 라우팅한다.
   useEffect(() => {
-    const subscription = Notifications.addNotificationResponseReceivedListener(async (response) => {
-      const data = response.notification.request.content.data as
-        | Record<string, unknown>
-        | undefined;
-      if (data?.type === APP_UNLOCK_REQUEST_NOTIFICATION_TYPE) {
-        // 어떤 앱의 해제 요청인지는 앱별 쉴드 설정이 userInfo에 심어둔 appId로 안다(shieldConfig.ts).
-        const appId = typeof data.appId === 'string' ? data.appId : undefined;
-        router.push({
-          pathname: '/(lock)/unlock-timer',
-          params: appId ? { appId } : {},
-        });
-        return;
+    if ((!fontsLoaded && !fontError) || STORYBOOK_ENABLED || Platform.OS === 'web') return;
+    const openNotification = (response: Notifications.NotificationResponse) => {
+      if (
+        response.actionIdentifier === Notifications.DEFAULT_ACTION_IDENTIFIER &&
+        getNotificationPath(response.notification.request.content.data)
+      ) {
+        // 인증 진입점에서 응답을 소비한다. 열린 친구 화면의 검색·스크롤도 초기화된다.
+        router.replace('/');
       }
-
-      try {
-        const groups = await getGroup().getMyGroups();
-        if (groups.length === 0) {
-          router.push('/(group)/home');
-        } else {
-          router.push('/(group)/notifications');
-        }
-      } catch {
-        // 미로그인 등 API 실패 시 앱 자체 인증 흐름에 위임
-      }
-    });
+    };
+    const subscription = Notifications.addNotificationResponseReceivedListener(openNotification);
+    const response = Notifications.getLastNotificationResponse();
+    if (response) openNotification(response);
     return () => subscription.remove();
-  }, []);
+  }, [fontsLoaded, fontError]);
 
   if (!fontsLoaded && !fontError) return null;
 

@@ -1,8 +1,11 @@
 import type { router } from 'expo-router';
 import * as SecureStore from 'expo-secure-store';
+import * as Notifications from 'expo-notifications';
+import { Platform } from 'react-native';
 
 import { logError, normalizeError } from '../api/errors';
 import { clearPendingInvite, peekPendingInvite, type PendingInvite } from './pendingInvite';
+import { getNotificationPath } from './notificationDestination';
 
 type Destination = Parameters<typeof router.replace>[0];
 
@@ -40,7 +43,7 @@ export function getInviteDestination(invite: PendingInvite): Destination {
     : { pathname: '/(group)/join', params: { inviteCode: invite.code } };
 }
 
-/** 기본 화면 조회가 끝날 때에도 초대·세션을 다시 확인하여 늦은 딥링크를 보존한다. */
+/** 기본 화면 조회가 끝날 때에도 알림·초대·세션을 다시 확인한다. */
 export async function navigateAuthenticated({
   replace,
   resolveDefault,
@@ -56,6 +59,23 @@ export async function navigateAuthenticated({
     if (!isActive()) return true;
     if (!accessToken) {
       replace('/login');
+      return true;
+    }
+    const response = Platform.OS === 'web' ? null : Notifications.getLastNotificationResponse();
+    const notificationPath =
+      response?.actionIdentifier === Notifications.DEFAULT_ACTION_IDENTIFIER
+        ? getNotificationPath(response.notification.request.content.data)
+        : null;
+    if (notificationPath) {
+      replace(notificationPath);
+      try {
+        Notifications.clearLastNotificationResponse();
+      } catch (error) {
+        logError(normalizeError(error), {
+          scope: 'app.bootstrap',
+          operation: 'clearNotificationResponse',
+        });
+      }
       return true;
     }
     if (!pending) return false;

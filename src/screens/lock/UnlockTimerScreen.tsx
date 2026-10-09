@@ -1,6 +1,6 @@
-import { useLocalSearchParams, useRouter } from 'expo-router';
+import { Redirect, useLocalSearchParams, useRouter } from 'expo-router';
 import { useEffect, useState } from 'react';
-import { StyleSheet, View } from 'react-native';
+import { ActivityIndicator, StyleSheet, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { minimizeApp, ScreenTimeReportView } from '../../../modules/screen-time-report';
@@ -19,14 +19,26 @@ export default function UnlockTimerScreen() {
   const router = useRouter();
   const { appId } = useLocalSearchParams<{ appId?: string }>();
   const [notifiedFriends] = useState(() => pickRandomFriendNames(3));
-  const { familyActivitySelectionsByAppId } = useLockStore();
+  const { lockedApps, familyActivitySelectionsByAppId } = useLockStore();
+  const [hydrated, setHydrated] = useState(useLockStore.persist.hasHydrated);
   const allSelectionTokens = Object.values(familyActivitySelectionsByAppId);
+
+  useEffect(() => {
+    const unsubscribe = useLockStore.persist.onFinishHydration(() => setHydrated(true));
+    setHydrated(useLockStore.persist.hasHydrated());
+    return unsubscribe;
+  }, []);
 
   // 친구 알림 안내는 제한 시간을 넘긴 경우에만 보여 준다. 사용 시간은 리포트 확장만 알아서, 이름만
   // 앱 그룹에 써두고 넘겼는지 판단과 문구 표시는 확장이 한다.
   useEffect(() => {
     syncUnlockNoticeNames(notifiedFriends);
   }, [notifiedFriends]);
+
+  if (!hydrated) return <ActivityIndicator accessibilityLabel="제한 앱 불러오는 중" />;
+  if (!appId || !lockedApps.some((app) => app.id === appId)) {
+    return <Redirect href="/(tabs)/restricted-apps" />;
+  }
 
   return (
     <View style={styles.root}>
@@ -47,7 +59,7 @@ export default function UnlockTimerScreen() {
           onComplete={() =>
             router.replace({
               pathname: '/(lock)/unlock-duration',
-              params: appId ? { appId } : {},
+              params: { appId },
             })
           }
         />
