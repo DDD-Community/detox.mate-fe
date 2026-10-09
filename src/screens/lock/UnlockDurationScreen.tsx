@@ -1,5 +1,5 @@
 import { useLocalSearchParams, useRouter } from 'expo-router';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 import * as ReactNativeDeviceActivity from 'react-native-device-activity';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -8,6 +8,8 @@ import { ScreenTimeReportView } from '../../../modules/screen-time-report';
 import { Button } from '../../components/Button';
 import { Icon } from '../../components/Icon';
 import { fontFamily, primitiveColors, radius, spacing, typography } from '../../lib/token';
+import { scheduleRelockWarning } from '../../lib/relockWarning';
+import { syncUsageBarExtraMinutes } from '../../lib/sharedDisplayConfig';
 import { useLockStore } from '../../stores/lockStore';
 
 const { gray, green } = primitiveColors;
@@ -15,7 +17,6 @@ const { gray, green } = primitiveColors;
 const STEP_MINUTES = 5;
 const MIN_MINUTES = 0;
 const MAX_MINUTES = 30;
-const STARTED_TOAST_DELAY_MS = 1800;
 // Apple의 DeviceActivitySchedule 최소 길이.
 const MIN_SCHEDULE_MINUTES = 15;
 const RELOCK_EVENT_NAME = 'relock';
@@ -138,7 +139,15 @@ export default function UnlockDurationScreen() {
       : undefined;
   const selectionToken = app ? familyActivitySelectionsByAppId[app.id] : undefined;
   const [stepperMinutes, setStepperMinutes] = useState(0);
-  const [showStartedToast, setShowStartedToast] = useState(false);
+  // 한 번 완료하면 이동하는 동안 다시 눌러 해제가 중복되지 않게 막는다.
+  const [isStarted, setIsStarted] = useState(false);
+
+  // 스테퍼로 정한 시간을 사용 시간 막대에 실시간으로 반영한다. 화면을 떠나면 0으로 되돌린다.
+  useEffect(() => {
+    syncUsageBarExtraMinutes(stepperMinutes);
+  }, [stepperMinutes]);
+
+  useEffect(() => () => syncUsageBarExtraMinutes(0), []);
 
   const relockTimeLabel = formatTimeLabel(new Date(Date.now() + stepperMinutes * 60000));
 
@@ -151,35 +160,28 @@ export default function UnlockDurationScreen() {
   };
 
   const handleConfirm = () => {
+    if (isStarted) return;
     if (app) {
       extendUsage(app.id);
 
       const token = familyActivitySelectionsByAppId[app.id];
       if (token && stepperMinutes > 0) {
         unlockAppForMinutes(token, stepperMinutes);
+        // 다시 잠기기 1분 전에 "곧 잠겨요" 알림을 보낸다.
+        scheduleRelockWarning(app.id, new Date(Date.now() + stepperMinutes * 60000));
       }
     }
 
-    setShowStartedToast(true);
-    setTimeout(() => {
-      router.dismissAll();
-      router.replace('/(lock)/restricted-apps');
-    }, STARTED_TOAST_DELAY_MS);
+    // 해제를 시작하면 현황 화면(my-lock-status)으로 이동한다. "앱 잠금이 해제됐어요" 토스트는
+    // 그 화면이 파라미터를 보고 2초 동안 띄운다.
+    setIsStarted(true);
+    router.dismissAll();
+    router.replace({ pathname: '/(lock)/restricted-apps', params: { unlocked: '1' } });
   };
 
   return (
     <View style={styles.root}>
       <SafeAreaView edges={['top']} style={styles.safeArea}>
-        {showStartedToast && (
-          <>
-            <View style={styles.dimOverlay} />
-            <View style={styles.toast}>
-              <Text style={styles.toastText}>타이머가 시작됐어요.</Text>
-              <Text style={styles.toastText}>앱 사용을 위해 돌아가세요.</Text>
-            </View>
-          </>
-        )}
-
         <View style={styles.content}>
           {selectionToken ? (
             // 앱 이름은 토큰으로만 그릴 수 있어서 네이티브 라벨로 보여준다("Instagram,").
@@ -210,7 +212,7 @@ export default function UnlockDurationScreen() {
               styles.stepperButton,
               stepperMinutes <= MIN_MINUTES && styles.stepperButtonDisabled,
             ]}
-            disabled={stepperMinutes <= MIN_MINUTES}
+            disabled={isStarted || stepperMinutes <= MIN_MINUTES}
             onPress={handleDecrement}
           >
             <Icon name="minus" size={20} color="#FFFFFF" />
@@ -221,7 +223,7 @@ export default function UnlockDurationScreen() {
               styles.stepperButton,
               stepperMinutes >= MAX_MINUTES && styles.stepperButtonDisabled,
             ]}
-            disabled={stepperMinutes >= MAX_MINUTES}
+            disabled={isStarted || stepperMinutes >= MAX_MINUTES}
             onPress={handleIncrement}
           >
             <Icon name="plus" size={20} color="#FFFFFF" />
@@ -233,6 +235,8 @@ export default function UnlockDurationScreen() {
           variant="solid"
           color="primary"
           size="lg"
+          // 0분이면 해제할 시간이 없으니 완료할 수 없다.
+          disabled={isStarted || stepperMinutes <= MIN_MINUTES}
           onPress={handleConfirm}
           style={styles.confirmButton}
         />
@@ -250,28 +254,6 @@ const styles = StyleSheet.create({
     flex: 1,
     paddingHorizontal: spacing[16],
     paddingBottom: spacing[16],
-  },
-  dimOverlay: {
-    ...StyleSheet.absoluteFillObject,
-    backgroundColor: 'rgba(43, 47, 56, 0.35)',
-    zIndex: 1,
-  },
-  toast: {
-    position: 'absolute',
-    top: spacing[16],
-    left: spacing[16],
-    right: spacing[16],
-    backgroundColor: 'rgba(43, 47, 56, 0.92)',
-    borderRadius: radius[16],
-    paddingVertical: spacing[12],
-    paddingHorizontal: spacing[16],
-    alignItems: 'center',
-    zIndex: 2,
-  },
-  toastText: {
-    ...typography.primary.body2B,
-    color: '#FFFFFF',
-    textAlign: 'center',
   },
   content: {
     paddingTop: spacing[32],

@@ -12,6 +12,11 @@ import { ScreenTimeReportView } from '../../../modules/screen-time-report';
 
 const { gray, green } = primitiveColors;
 
+// 앱 해제 완료 토스트를 보여 주는 시간.
+const UNLOCKED_TOAST_MS = 2000;
+// 토스트를 화면 아래 끝에서 이만큼 띄운다(홈 인디케이터와 겹치지 않게 위로 올림).
+const TOAST_BOTTOM_OFFSET = 96;
+
 const formatTodayLabel = () => {
   const now = new Date();
   return `오늘, ${now.getMonth() + 1}월 ${now.getDate()}일`;
@@ -19,8 +24,12 @@ const formatTodayLabel = () => {
 
 export default function LockStatusScreen() {
   const router = useRouter();
-  const { goalChanged } = useLocalSearchParams<{ goalChanged?: string }>();
+  const { goalChanged, unlocked } = useLocalSearchParams<{
+    goalChanged?: string;
+    unlocked?: string;
+  }>();
   const goalChangedToast = useToastVisibility();
+  const unlockedToast = useToastVisibility(UNLOCKED_TOAST_MS);
   const { targetMinutes, lockedApps, familyActivitySelectionsByAppId } = useLockStore();
   const allSelectionTokens = Object.values(familyActivitySelectionsByAppId);
 
@@ -31,6 +40,14 @@ export default function LockStatusScreen() {
     router.setParams({ goalChanged: undefined });
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [goalChanged]);
+
+  // 앱 해제를 마치고 돌아오면 한 번만 "앱 잠금이 해제됐어요" 토스트를 띄우고, 파라미터는 지운다.
+  useEffect(() => {
+    if (unlocked !== '1') return;
+    unlockedToast.showWithMessage('앱 잠금이 해제됐어요');
+    router.setParams({ unlocked: undefined });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [unlocked]);
 
   return (
     <View style={styles.root}>
@@ -125,18 +142,17 @@ export default function LockStatusScreen() {
             <Text style={styles.addAppChipText}>앱 추가하기</Text>
           </Pressable>
         </LoggingButton>
-
-        {/* [임시] 리포트 UI 커스텀 범위 확인용 — 확인 후 삭제 */}
-        <Pressable
-          style={styles.tempShowcaseButton}
-          onPress={() => router.push('/(lock)/ui-showcase')}
-        >
-          <Text style={styles.tempShowcaseButtonText}>[임시] UI 커스텀 샘플 보기</Text>
-        </Pressable>
       </ScrollView>
       <Toast
         visible={goalChangedToast.visible}
         message={goalChangedToast.message}
+        bottomOffset={TOAST_BOTTOM_OFFSET}
+        icon={<Icon name="checkCircle" size={16} weight="fill" color={green[300]} />}
+      />
+      <Toast
+        visible={unlockedToast.visible}
+        message={unlockedToast.message}
+        bottomOffset={TOAST_BOTTOM_OFFSET}
         icon={<Icon name="checkCircle" size={16} weight="fill" color={green[300]} />}
       />
     </View>
@@ -248,17 +264,6 @@ const styles = StyleSheet.create({
     position: 'absolute',
     left: ROW_TEXT_LEFT,
     top: 35,
-  },
-  tempShowcaseButton: {
-    alignSelf: 'center',
-    paddingVertical: spacing[8],
-    paddingHorizontal: spacing[12],
-    marginBottom: spacing[24],
-  },
-  tempShowcaseButtonText: {
-    ...typography.primary.body3R,
-    color: gray[400],
-    textDecorationLine: 'underline',
   },
   addAppChip: {
     flexDirection: 'row',

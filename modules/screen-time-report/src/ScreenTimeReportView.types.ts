@@ -19,7 +19,6 @@ export type ScreenTimeReportStyle =
    * UserDefaults("detox.targetMinutes")에서 읽는다(syncTargetMinutes 참고). */
   | 'percent'
   /** [임시] 커스텀 가능 범위를 보여주는 샘플 갤러리(스크롤 가능). */
-  | 'showcase'
   /** 앱 이름("Instagram") 가운데 정렬 — 해제 시간 설정 화면 제목용(앱 1개 토큰). */
   | 'nameCenter'
   /** 이 앱의 오늘 사용 시간 막대 + "사용 시간 N분 / 제한 시간 M분" 라벨 — 해제 시간 설정 화면용

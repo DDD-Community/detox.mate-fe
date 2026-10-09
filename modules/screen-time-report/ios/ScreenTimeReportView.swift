@@ -28,7 +28,6 @@ extension DeviceActivityReport.Context {
   static let appHeaderLabel = Self("DetoxAppHeaderLabel")
   static let appHero = Self("DetoxAppHero")
   static let appPercent = Self("DetoxAppPercent")
-  static let showcase = Self("DetoxShowcase")
   static let usageBar = Self("DetoxUsageBar")
 }
 
@@ -41,7 +40,6 @@ enum ReportStyle: String {
   case headerLabel
   case hero
   case percent
-  case showcase
   case nameCenter
   case usageBar
 
@@ -56,7 +54,6 @@ enum ReportStyle: String {
     case .headerLabel: return .appHeaderLabel
     case .hero: return .appHero
     case .percent: return .appPercent
-    case .showcase: return .showcase
     case .nameCenter: return nil
     case .usageBar: return .usageBar
     }
