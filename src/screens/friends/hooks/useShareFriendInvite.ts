@@ -3,7 +3,7 @@ import { useEffect, useRef, useState } from 'react';
 import { Alert, Platform, Share } from 'react-native';
 
 import { getAuthenticatedRequestSignal } from '../../../api/client';
-import { AppError, getUserErrorMessage, logError, normalizeError } from '../../../api/errors';
+import { getUserErrorMessage, logError, normalizeError } from '../../../api/errors';
 import { getInvitee, getMyInvite } from '../../../api/query-generated/friend';
 import { trackEvent } from '../../../lib/analytics';
 import { createFriendInviteShareUrl } from '../../../lib/friendInviteShare';
@@ -12,12 +12,10 @@ async function prepareShareContent(signal: AbortSignal) {
   const authSignal = getAuthenticatedRequestSignal();
   const invite = await getMyInvite(signal);
   if (signal.aborted || authSignal.aborted) throw new Error('Invitation preparation canceled.');
+  const code = invite.code ?? '';
   let url: string;
   try {
-    if (!invite.code?.trim()) {
-      throw AppError({ type: 'unknown', message: '친구 초대 코드를 받지 못했어요.' });
-    }
-    url = await createFriendInviteShareUrl(invite.code);
+    url = createFriendInviteShareUrl(code);
   } catch (failure) {
     const error = normalizeError(failure);
     if (!signal.aborted && !authSignal.aborted) {
@@ -25,8 +23,7 @@ async function prepareShareContent(signal: AbortSignal) {
     }
     throw error;
   }
-  if (signal.aborted || authSignal.aborted) throw new Error('Invitation preparation canceled.');
-  const profile = await getInvitee(invite.code, signal);
+  const profile = await getInvitee(code, signal);
   if (signal.aborted || authSignal.aborted) throw new Error('Invitation preparation canceled.');
   const name = profile.displayName?.trim() || '친구';
   const email = invite.email?.trim();
@@ -51,7 +48,7 @@ function logShareClick() {
 }
 
 export function useShareFriendInvite() {
-  // SDK preparation includes the message so display and sharing use the same prepared content.
+  // Prepare the message and URL together so display and sharing use the same content.
   // Failure must not suspend or hide the friends list.
   const content = useQuery({
     queryKey: ['friendInviteShareUrl'],
@@ -80,7 +77,7 @@ export function useShareFriendInvite() {
       const prepared = content.data ? content : await content.refetch();
       if (!active()) return;
       if (!prepared.data) {
-        // Preparation owns SDK logging and the HTTP interceptor owns request logging.
+        // Preparation owns link configuration logging; the interceptor owns request logging.
         Alert.alert('친구 초대 공유', getUserErrorMessage(normalizeError(prepared.error)));
         return;
       }
