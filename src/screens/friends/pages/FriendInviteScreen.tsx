@@ -148,26 +148,35 @@ function InviteProfile({ code }: { code: string }) {
           </Defs>
           <Rect width="100%" height="100%" rx={23} fill="url(#inviteBackground)" />
         </Svg>
-        <Image
-          source={
-            invitee.profileImageUrl && !imageFailed
-              ? { uri: invitee.profileImageUrl }
-              : defaultAvatar
-          }
-          style={styles.avatar}
-          contentFit="cover"
-          onError={() => setImageFailed(true)}
-          accessibilityLabel={`${invitee.displayName} 프로필 사진`}
-        />
-        <Text style={styles.name} numberOfLines={2}>
-          {invitee.displayName}
-        </Text>
-        <Text style={styles.invitation}>{invitee.displayName}님과 스크린타임을 줄여봐요.</Text>
-        {status === 'SELF' || status === 'FRIEND' ? (
-          <Text style={styles.status}>
-            {status === 'SELF' ? '내 초대 링크예요.' : '이미 친구예요.'}
+        <View style={styles.profileContent}>
+          <Image
+            source={
+              invitee.profileImageUrl && !imageFailed
+                ? { uri: invitee.profileImageUrl }
+                : defaultAvatar
+            }
+            style={styles.avatar}
+            contentFit="cover"
+            onError={() => setImageFailed(true)}
+            accessibilityLabel={`${invitee.displayName} 프로필 사진`}
+          />
+          <Text style={styles.name} numberOfLines={2}>
+            {invitee.displayName}
           </Text>
-        ) : null}
+          <View
+            style={styles.invitation}
+            accessible
+            accessibilityLabel={`${invitee.displayName}님과 스크린타임을 줄여봐요.`}
+          >
+            <Text style={styles.invitationText}>{invitee.displayName}님과</Text>
+            <Text style={styles.invitationText}>스크린타임을 줄여봐요.</Text>
+          </View>
+          {status === 'SELF' || status === 'FRIEND' ? (
+            <Text style={styles.status}>
+              {status === 'SELF' ? '내 초대 링크예요.' : '이미 친구예요.'}
+            </Text>
+          ) : null}
+        </View>
       </View>
       <View style={styles.feedback}>
         {sendError ? (
@@ -255,6 +264,10 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     borderRadius: 23,
     overflow: 'hidden',
+  },
+  profileContent: {
+    width: '100%',
+    alignItems: 'center',
     paddingHorizontal: 16,
   },
   avatar: { width: 180, height: 180, borderRadius: 90, marginTop: 69 },
@@ -267,11 +280,19 @@ const styles = StyleSheet.create({
     textAlign: 'center',
   },
   invitation: {
+    width: '100%',
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    justifyContent: 'center',
+    columnGap: 5,
+    marginTop: 40,
+  },
+  invitationText: {
+    maxWidth: '100%',
     fontFamily: fontFamily.primary.medium,
     fontSize: 20,
     lineHeight: 28,
     color: 'black',
-    marginTop: 40,
     textAlign: 'center',
   },
   status: {
