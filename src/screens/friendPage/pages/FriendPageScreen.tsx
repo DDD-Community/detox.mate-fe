@@ -20,7 +20,7 @@ import {
 
 const { gray } = primitiveColors;
 const AVATAR_SIZE = 128;
-const BACK_ROUTE = '/(group)/mypage';
+const BACK_ROUTE = '/(tabs)/mypage';
 
 export default function FriendPageScreen() {
   const params = parseFriendPageParams(useLocalSearchParams() as RawFriendPageParams);
