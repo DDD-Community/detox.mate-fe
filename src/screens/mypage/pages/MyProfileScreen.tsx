@@ -4,7 +4,6 @@ import { Suspense } from 'react';
 import { ActivityIndicator, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
-import type { FriendResponse } from '@/api';
 import { ErrorBoundary } from '@/components/AppErrorBoundary/AppErrorBoundary';
 import { Icon, LoggingButton, LoggingPage } from '@/components';
 import { BrandHeader } from '@/components/BrandHeader/BrandHeader';
@@ -66,7 +65,15 @@ function MyProfileContent() {
   const { share, sharing } = useShareFriendInvite({ prepareOnMount: false });
   const hasFriends = recentFriends.length > 0;
 
-  const openFriendPage = (friend: FriendResponse) => {
+  const friendItems = recentFriends.map((friend) => ({
+    key: String(friend.friendshipId),
+    displayName: friend.user?.displayName ?? '이름 없음',
+    profileImageUrl: friend.user?.profileImageUrl,
+  }));
+
+  const openFriendPage = (key: string) => {
+    const friend = recentFriends.find((item) => String(item.friendshipId) === key);
+    if (!friend) return;
     const { user, friendshipId } = friend;
     if (!user?.userId || !friendshipId) return;
     router.push({
@@ -117,9 +124,7 @@ function MyProfileContent() {
             <Icon name="caretRight" size={22} color={gray[900]} />
           </Pressable>
         </LoggingButton>
-        {hasFriends ? (
-          <FriendsPreview friends={recentFriends} onPressFriend={openFriendPage} />
-        ) : null}
+        {hasFriends ? <FriendsPreview items={friendItems} onPressItem={openFriendPage} /> : null}
       </View>
 
       <View style={styles.share}>

@@ -1,36 +1,41 @@
 import { Pressable, ScrollView, StyleSheet, Text } from 'react-native';
 
-import type { FriendResponse } from '@/api';
 import { primitiveColors, spacing, typography } from '@/lib/token';
 import { ProfileAvatar } from './ProfileAvatar';
 
 const { gray } = primitiveColors;
 const FRIEND_AVATAR_SIZE = 96;
 
-interface FriendsPreviewProps {
-  friends: FriendResponse[];
-  // 없으면 항목은 눌러도 동작하지 않는다.
-  onPressFriend?: (friend: FriendResponse) => void;
+export interface FriendsPreviewItem {
+  key: string;
+  displayName: string;
+  profileImageUrl?: string | null;
 }
 
-export function FriendsPreview({ friends, onPressFriend }: FriendsPreviewProps) {
+interface FriendsPreviewProps {
+  items: FriendsPreviewItem[];
+  // 없으면 항목은 눌러도 동작하지 않는다.
+  onPressItem?: (key: string) => void;
+}
+
+export function FriendsPreview({ items, onPressItem }: FriendsPreviewProps) {
   return (
     <ScrollView
       horizontal
       showsHorizontalScrollIndicator={false}
       contentContainerStyle={styles.list}
     >
-      {friends.map((friend) => (
+      {items.map((item) => (
         <Pressable
-          key={friend.friendshipId}
+          key={item.key}
           style={styles.item}
-          disabled={!onPressFriend}
-          onPress={() => onPressFriend?.(friend)}
-          accessibilityRole={onPressFriend ? 'button' : undefined}
+          disabled={!onPressItem}
+          onPress={() => onPressItem?.(item.key)}
+          accessibilityRole={onPressItem ? 'button' : undefined}
         >
-          <ProfileAvatar uri={friend.user?.profileImageUrl} size={FRIEND_AVATAR_SIZE} />
+          <ProfileAvatar uri={item.profileImageUrl} size={FRIEND_AVATAR_SIZE} />
           <Text style={styles.name} numberOfLines={1}>
-            {friend.user?.displayName ?? '이름 없음'}
+            {item.displayName}
           </Text>
         </Pressable>
       ))}

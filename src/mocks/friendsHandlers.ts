@@ -293,6 +293,29 @@ export const friendsHandlers = [
     await respondAfterLatency();
     return jsonResponse(friends);
   }),
+  http.get(`${FRIENDS_MOCK_ORIGIN}/friends/:friendUserId/profile`, async ({ params }) => {
+    await respondAfterLatency();
+    const target = friends.find((item) => item.user.userId === Number(params.friendUserId));
+    // 서버는 직접 친구가 아니면 403이다.
+    if (!target) return jsonResponse({ code: 'FORBIDDEN', message: 'Forbidden', status: 403 }, 403);
+    return jsonResponse({
+      userId: target.user.userId,
+      displayName: target.user.displayName,
+      profileImageUrl: target.user.profileImageUrl,
+      userCode: `A${String(target.user.userId).slice(-3)}B`,
+      relationshipStatus: 'FRIEND',
+      // 조회자도 포함해 최근 친구 추가순으로 내려준다.
+      friends: [
+        { displayName: '희정', profileImageUrl: null },
+        ...friends
+          .filter((item) => item !== target)
+          .map((item) => ({
+            displayName: item.user.displayName,
+            profileImageUrl: item.user.profileImageUrl,
+          })),
+      ],
+    });
+  }),
   http.get(`${FRIENDS_MOCK_ORIGIN}/friends/requests/received`, async () => {
     await respondAfterLatency();
     return jsonResponse(requests);

@@ -10,7 +10,7 @@ import { ProfileAvatar } from '@/screens/mypage/components/ProfileAvatar';
 import { FriendFriendsSection } from '../components/FriendFriendsSection';
 import { FriendRemoveSheet } from '../components/FriendRemoveSheet';
 import { FriendStatusButton } from '../components/FriendStatusButton';
-import { useFriendPageExtras } from '../hooks/useFriendPageExtras';
+import { FriendInviteCode } from '../components/FriendInviteCode';
 import { useFriendRelationship } from '../hooks/useFriendRelationship';
 import {
   parseFriendPageParams,
@@ -49,7 +49,6 @@ export default function FriendPageScreen() {
 function FriendPageContent({ params }: { params: FriendPageParams }) {
   const { userId, displayName, profileImageUrl } = params;
   const [removeSheetVisible, setRemoveSheetVisible] = useState(false);
-  const { inviteCode, friends } = useFriendPageExtras(userId);
   const friendship = useFriendRelationship(params);
 
   const handlePressStatus = () => {
@@ -72,7 +71,7 @@ function FriendPageContent({ params }: { params: FriendPageParams }) {
           <ProfileAvatar uri={profileImageUrl} size={AVATAR_SIZE} />
           <View style={styles.identity}>
             <Text style={styles.name}>{displayName}</Text>
-            {inviteCode ? <Text style={styles.inviteCode}>{inviteCode}</Text> : null}
+            {friendship.relationship === 'FRIEND' ? <FriendInviteCode userId={userId} /> : null}
           </View>
           {friendship.relationship === 'FRIEND' ? (
             <LoggingButton
@@ -99,7 +98,7 @@ function FriendPageContent({ params }: { params: FriendPageParams }) {
           ) : null}
         </View>
 
-        {friends ? <FriendFriendsSection friends={friends} /> : null}
+        {friendship.relationship === 'FRIEND' ? <FriendFriendsSection userId={userId} /> : null}
       </ScrollView>
 
       <FriendRemoveSheet
@@ -128,6 +127,5 @@ const styles = StyleSheet.create({
   profile: { alignItems: 'center', paddingTop: spacing[16], gap: spacing[12] },
   identity: { alignItems: 'center', gap: spacing[4] },
   name: { ...typography.primary.h2, lineHeight: 38, color: gray[900] },
-  inviteCode: { ...typography.primary.body2R, fontSize: 15, lineHeight: 22, color: gray[300] },
   error: { ...typography.primary.body2R, textAlign: 'center', color: '#b42318' },
 });
