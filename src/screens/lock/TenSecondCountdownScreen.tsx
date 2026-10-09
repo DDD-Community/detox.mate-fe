@@ -1,4 +1,4 @@
-import { Fragment } from 'react';
+import { Fragment, type ReactNode } from 'react';
 import { Image, StyleSheet, Text, View } from 'react-native';
 import Svg, { Circle } from 'react-native-svg';
 
@@ -24,6 +24,8 @@ export interface TenSecondCountdownScreenProps {
   title: string;
   /** 알림이 가는 친구 이름. 없으면 안내 문구를 숨긴다(임시 해제 타이머). */
   notifiedFriends?: string[];
+  /** 안내 문구 자리에 직접 넣을 노드(조건부 안내용). 있으면 notifiedFriends 대신 이걸 그린다. */
+  notice?: ReactNode;
   /** 친구에게 갈 푸시 알림 미리보기 문구. 없으면 미리보기를 숨긴다. */
   notificationPreview?: string;
   /** 앱이 백그라운드에 가 있는 동안 타이머를 멈출지. */
@@ -40,6 +42,7 @@ export interface TenSecondCountdownScreenProps {
 export function TenSecondCountdownScreen({
   title,
   notifiedFriends,
+  notice,
   notificationPreview,
   pauseInBackground,
   cancelLabel,
@@ -53,7 +56,9 @@ export function TenSecondCountdownScreen({
     <Fragment>
       <View style={styles.center}>
         <Text style={styles.title}>{title}</Text>
-        {notifiedFriends ? (
+        {notice ? (
+          <View style={styles.noticeSlot}>{notice}</View>
+        ) : notifiedFriends ? (
           <Text style={styles.notifyText}>
             <Text style={styles.notifyTextHighlight}>
               {notifiedFriends.map((name) => `${name}님`).join(', ')}
@@ -130,6 +135,10 @@ const styles = StyleSheet.create({
     ...typography.primary.body3R,
     color: gray[800],
     textAlign: 'center',
+    marginTop: NOTIFY_BLOCK_TOP_GAP,
+  },
+  noticeSlot: {
+    alignSelf: 'stretch',
     marginTop: NOTIFY_BLOCK_TOP_GAP,
   },
   notifyTextHighlight: {

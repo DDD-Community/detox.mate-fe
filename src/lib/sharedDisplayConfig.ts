@@ -29,3 +29,17 @@ export const syncUsageBarExtraMinutes = (minutes: number) => {
     // 네이티브 모듈이 없는 환경에선 막대가 스테퍼를 따라가지 않을 뿐이다.
   }
 };
+
+const UNLOCK_NOTICE_NAMES_KEY = 'detox.unlockNoticeNames';
+
+/** 해제 10초 타이머의 "{친구}에게 알림이 가요." 안내에 쓸 이름들을 리포트 확장이 읽을 수 있게 써둔다. */
+export const syncUnlockNoticeNames = (names: string[]) => {
+  try {
+    ReactNativeDeviceActivity.userDefaultsSet(
+      UNLOCK_NOTICE_NAMES_KEY,
+      names.map((name) => `${name}님`).join(', ')
+    );
+  } catch {
+    // 네이티브 모듈이 없는 환경에선 안내가 비어 보일 뿐이다.
+  }
+};

@@ -29,6 +29,7 @@ extension DeviceActivityReport.Context {
   static let appHero = Self("DetoxAppHero")
   static let appPercent = Self("DetoxAppPercent")
   static let usageBar = Self("DetoxUsageBar")
+  static let overLimitNotice = Self("DetoxOverLimitNotice")
 }
 
 /// JS의 `reportStyle` prop과 1:1로 매핑된다.
@@ -42,6 +43,7 @@ enum ReportStyle: String {
   case percent
   case nameCenter
   case usageBar
+  case overLimitNotice
 
   /// nameCenter는 익스텐션을 거치지 않고 메인 앱에서 직접 그린다(nil).
   @available(iOS 16.0, *)
@@ -56,6 +58,7 @@ enum ReportStyle: String {
     case .percent: return .appPercent
     case .nameCenter: return nil
     case .usageBar: return .usageBar
+    case .overLimitNotice: return .overLimitNotice
     }
   }
 }

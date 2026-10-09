@@ -26,5 +26,6 @@ struct DetoxDeviceActivityReportExtension: DeviceActivityReportExtension {
     AppHeroReportScene()
     AppPercentReportScene()
     UsageBarReportScene()
+    OverLimitNoticeReportScene()
   }
 }
