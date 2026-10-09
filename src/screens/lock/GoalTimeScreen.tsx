@@ -10,7 +10,7 @@ import { useLockStore } from '../../stores/lockStore';
 
 const { gray, green, system } = primitiveColors;
 
-const MIN_HOURS = 1;
+const MIN_HOURS = 0;
 const MAX_HOURS = 4;
 
 // 실제 차단은 앱을 등록하는 시점(SelectAppsScreen)에 이미 걸린다.
