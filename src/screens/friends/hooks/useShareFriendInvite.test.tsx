@@ -49,11 +49,7 @@ beforeEach(() => {
   vi.resetAllMocks();
   actions.platform.OS = 'ios';
   actions.auth = new AbortController();
-  actions.request.mockImplementation(async ({ url }: { url: string }) =>
-    url === '/friends/invite'
-      ? { code: 'my-invite', email: 'my@example.com' }
-      : { userId: 1, displayName: '희정', relationshipStatus: 'SELF' }
-  );
+  actions.request.mockResolvedValue({ code: 'my-invite', userCode: 'ABCDE' });
   actions.env.friendInviteBaseUrl = 'https://detoxmate.abr.ge/shared-invite?campaign=friends';
   actions.share.mockResolvedValue({ action: 'dismissedAction' });
 });
@@ -61,11 +57,11 @@ afterEach(async () => {
   await act(() => cleanups.splice(0).forEach((cleanup) => cleanup()));
 });
 
-async function setup() {
+async function setup(options?: Parameters<typeof useShareFriendInvite>[0]) {
   const client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
   let current!: ReturnType<typeof useShareFriendInvite>;
   function Harness() {
-    current = useShareFriendInvite();
+    current = useShareFriendInvite(options);
     return null;
   }
   const root = createRoot(document.createElement('div'));
@@ -87,16 +83,25 @@ async function setup() {
 
 describe('친구 초대 공유의 비동기 보호', () => {
   it.each(['ios', 'android'])(
-    '%s에서 공유하면 초대 링크와 이름·이메일을 함께 전달한다',
+    '%s에서 링크에는 초대 토큰을, 검색 안내에는 사용자 코드를 전달하고 이메일은 제외한다',
     async (os) => {
       actions.platform.OS = os;
+      actions.request.mockResolvedValue({
+        code: 'my-invite',
+        userCode: 'ABCDE',
+        email: 'my@example.com',
+      });
       const screen = await setup();
       await act(async () => {
         await screen.state.share();
       });
       const content = actions.share.mock.calls[0][0];
-      expect(content.message).toContain('희정');
-      expect(content.message).toContain('my@example.com');
+      expect(content.message).toContain('초대 코드: ABCDE');
+      expect(content.message).not.toContain('초대 코드: my-invite');
+      expect(content.message).toContain('친구 목록 검색창에 초대 코드를 입력해주세요.');
+      expect(content.message).not.toContain('이메일');
+      expect(content.message).not.toContain('my@example.com');
+      expect(content.message).toContain(screen.state.inviteUrl);
       expect(os === 'ios' ? content.url : content.message).toContain(
         'https://detoxmate.abr.ge/shared-invite?campaign=friends&friend_invite_code=my-invite'
       );
@@ -107,12 +112,7 @@ describe('친구 초대 공유의 비동기 보호', () => {
     const code = 'invite+/=& 한글';
     actions.env.friendInviteBaseUrl =
       'https://detoxmate.abr.ge/shared-invite?campaign=friends%26family&friend_invite_code=old';
-    const normalRequest = actions.request.getMockImplementation()!;
-    actions.request.mockImplementation((config: { url: string }) =>
-      config.url === '/friends/invite'
-        ? Promise.resolve({ code, email: 'my@example.com' })
-        : normalRequest(config)
-    );
+    actions.request.mockResolvedValue({ code, userCode: 'ABCDE' });
     const screen = await setup();
     await act(async () => {
       await screen.state.share();
@@ -123,14 +123,14 @@ describe('친구 초대 공유의 비동기 보호', () => {
   });
 
   it('자동으로 준비한 URL을 표시하고 공유에 재사용하며 실제 클릭만 기록한다', async () => {
-    const pending = deferred<{ code: string; email: string }>();
+    const pending = deferred<{ code: string; userCode: string }>();
     actions.request.mockReturnValueOnce(pending.promise);
     const screen = await setup();
     expect(actions.track).not.toHaveBeenCalled();
     expect(actions.share).not.toHaveBeenCalled();
 
     await act(async () => {
-      pending.resolve({ code: 'prepared-invite', email: 'my@example.com' });
+      pending.resolve({ code: 'prepared-invite', userCode: 'ABCDE' });
       await screen.state.share();
     });
     expect(screen.state.inviteUrl).toBe(
@@ -143,8 +143,22 @@ describe('친구 초대 공유의 비동기 보호', () => {
     expect(actions.track).toHaveBeenCalledTimes(2);
   });
 
+  it('미리 준비하지 않는 화면은 진입 시 조회하지 않고 공유 클릭 후 링크와 코드를 전달한다', async () => {
+    const screen = await setup({ prepareOnMount: false });
+    expect(actions.request).not.toHaveBeenCalled();
+    expect(screen.state.inviteUrl).toBeUndefined();
+    expect(actions.share).not.toHaveBeenCalled();
+
+    await act(async () => {
+      await screen.state.share();
+    });
+    expect(actions.share).toHaveBeenCalledTimes(1);
+    expect(actions.share.mock.calls[0][0].url).toBe(screen.state.inviteUrl);
+    expect(actions.share.mock.calls[0][0].message).toContain('초대 코드: ABCDE');
+  });
+
   it('공유 준비 중 화면을 떠나면 늦게 조회된 초대 정보로 공유하거나 안내하지 않는다', async () => {
-    const pending = deferred<{ code: string; email: string }>();
+    const pending = deferred<{ code: string; userCode: string }>();
     actions.request.mockReturnValueOnce(pending.promise);
     const screen = await setup();
     let first!: Promise<void>;
@@ -153,7 +167,7 @@ describe('친구 초대 공유의 비동기 보호', () => {
       screen.unmount();
     });
     await act(async () => {
-      pending.resolve({ code: 'old-user', email: 'old@example.com' });
+      pending.resolve({ code: 'old-user', userCode: 'OLD12' });
       await first;
     });
     expect(actions.share).not.toHaveBeenCalled();
@@ -187,8 +201,8 @@ describe('친구 초대 공유의 비동기 보호', () => {
     }
   );
 
-  it('초대 정보 조회 중 세션이 정리되면 이전 사용자의 메시지와 이메일을 공유하지 않는다', async () => {
-    const pending = deferred<{ code: string; email: string }>();
+  it('초대 정보 조회 중 세션이 정리되면 이전 사용자의 메시지와 코드를 공유하지 않는다', async () => {
+    const pending = deferred<{ code: string; userCode: string }>();
     actions.request.mockReturnValueOnce(pending.promise);
     const screen = await setup();
     let first!: Promise<void>;
@@ -197,7 +211,7 @@ describe('친구 초대 공유의 비동기 보호', () => {
     });
     actions.auth.abort();
     await act(async () => {
-      pending.resolve({ code: 'old-user', email: 'old@example.com' });
+      pending.resolve({ code: 'old-user', userCode: 'OLD12' });
       await first;
     });
     expect(actions.share).not.toHaveBeenCalled();
@@ -245,34 +259,27 @@ describe('친구 초대 공유의 비동기 보호', () => {
     expect(screen.state.sharing).toBe(false);
   });
 
-  it.each(['/friends/invite', '/friends/invite/my-invite'])(
-    '%s 준비 조회가 실패하면 불완전한 내용을 공유하지 않고 다음 클릭으로 복구한다',
-    async (failedUrl) => {
-      const pending = deferred<never>();
-      const normalRequest = actions.request.getMockImplementation()!;
-      actions.request.mockImplementation((config: { url: string }) =>
-        config.url === failedUrl ? pending.promise : normalRequest(config)
-      );
-      const screen = await setup();
-      let first!: Promise<void>;
-      await act(async () => {
-        first = screen.state.share();
-      });
-      await act(async () => {
-        pending.reject(new Error('초대 정보 조회 실패'));
-        await first;
-      });
-      expect(actions.share).not.toHaveBeenCalled();
-      expect(actions.alert).toHaveBeenCalledTimes(1);
-      expect(screen.state.sharing).toBe(false);
-      actions.request.mockImplementation(normalRequest);
-      await act(async () => {
-        await screen.state.share();
-      });
-      expect(actions.share.mock.calls[0][0].url).toBe(screen.state.inviteUrl);
-      expect(actions.share.mock.calls[0][0].message).toContain('my@example.com');
-    }
-  );
+  it('초대 정보 조회가 실패하면 불완전한 내용을 공유하지 않고 다음 클릭으로 복구한다', async () => {
+    const pending = deferred<never>();
+    actions.request.mockReturnValueOnce(pending.promise);
+    const screen = await setup();
+    let first!: Promise<void>;
+    await act(async () => {
+      first = screen.state.share();
+    });
+    await act(async () => {
+      pending.reject(new Error('초대 정보 조회 실패'));
+      await first;
+    });
+    expect(actions.share).not.toHaveBeenCalled();
+    expect(actions.alert).toHaveBeenCalledTimes(1);
+    expect(screen.state.sharing).toBe(false);
+    await act(async () => {
+      await screen.state.share();
+    });
+    expect(actions.share.mock.calls[0][0].url).toBe(screen.state.inviteUrl);
+    expect(actions.share.mock.calls[0][0].message).toContain('초대 코드: ABCDE');
+  });
 
   it('공유 시트가 실패하면 안내 후 다음 공유를 다시 실행할 수 있다', async () => {
     actions.share.mockRejectedValueOnce(new Error('공유 시트 실패'));

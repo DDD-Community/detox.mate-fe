@@ -5,12 +5,12 @@ import { Image, StyleSheet, Text, View } from 'react-native';
 import LOGO_APPLE_LOGIN from '@assets/logo-apple-login.png';
 import LOGO_BLACK from '@assets/logo-black.png';
 import LOGO_KAKAO_LOGIN from '@assets/logo-kakao-login.png';
-import TURTLE_HI_IMAGE from '@assets/turtle-hi.png';
 
 import { Icon, LoggingPage, Toast, useToastVisibility } from '@/components';
 import { primitiveColors, typography } from '@/lib/token';
 import { AppAccessPermissionGuideModal } from './AppAccessPermissionGuideModal';
 import { AuthLoginButton } from './AuthLoginButton';
+import { TestLoginTrigger } from './TestLoginTrigger';
 import { useAuthLogin } from './useAuthLogin';
 
 const { brown, gray, system } = primitiveColors;
@@ -24,6 +24,7 @@ export default function LoginScreen() {
   const {
     handleKakaoLogin,
     handleAppleLogin,
+    handleTestLogin,
     handleConfirmPermissionGuide,
     pendingProvider,
     permissionGuideConfirming,
@@ -46,7 +47,7 @@ export default function LoginScreen() {
         <Image source={LOGO_BLACK} style={styles.logoMark} resizeMode="contain" />
         <Text style={styles.tagline}>매일 디지털 디톡스를 하며{'\n'}친구들과 함께 성장해요</Text>
         <View style={styles.turtleArea}>
-          <Image source={TURTLE_HI_IMAGE} style={styles.turtleImage} resizeMode="contain" />
+          <TestLoginTrigger disabled={loginPending} onSelectAccount={handleTestLogin} />
         </View>
 
         <View style={styles.buttonSection}>
@@ -125,10 +126,6 @@ const styles = StyleSheet.create({
     left: 100,
     width: 175,
     height: 231,
-  },
-  turtleImage: {
-    width: '100%',
-    height: '100%',
   },
   buttonSection: {
     position: 'absolute',

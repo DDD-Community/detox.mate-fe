@@ -4,7 +4,7 @@ import { Alert, Platform, Share } from 'react-native';
 
 import { getAuthenticatedRequestSignal } from '../../../api/client';
 import { getUserErrorMessage, logError, normalizeError } from '../../../api/errors';
-import { getInvitee, getMyInvite } from '../../../api/query-generated/friend';
+import { getMyInvite } from '../../../api/query-generated/friend';
 import { trackEvent } from '../../../lib/analytics';
 import { createFriendInviteShareUrl } from '../../../lib/friendInviteShare';
 
@@ -12,10 +12,9 @@ async function prepareShareContent(signal: AbortSignal) {
   const authSignal = getAuthenticatedRequestSignal();
   const invite = await getMyInvite(signal);
   if (signal.aborted || authSignal.aborted) throw new Error('Invitation preparation canceled.');
-  const code = invite.code ?? '';
   let url: string;
   try {
-    url = createFriendInviteShareUrl(code);
+    url = createFriendInviteShareUrl(invite.code);
   } catch (failure) {
     const error = normalizeError(failure);
     if (!signal.aborted && !authSignal.aborted) {
@@ -23,19 +22,12 @@ async function prepareShareContent(signal: AbortSignal) {
     }
     throw error;
   }
-  const profile = await getInvitee(code, signal);
-  if (signal.aborted || authSignal.aborted) throw new Error('Invitation preparation canceled.');
-  const name = profile.displayName?.trim() || '친구';
-  const email = invite.email?.trim();
   const message = [
-    `${name}님에게 친구 요청을 보내 함께 스크린타임을 줄여보세요.`,
-    ...(email
-      ? [
-          '링크가 원활하지 않은 경우, 앱에서 이메일 입력을 통해 친구 요청을 보낼 수 있습니다.',
-          `${name} (${email})`,
-        ]
-      : []),
-  ].join('\n\n');
+    '디톡스메이트에서 함께 스크린타임을 줄여봐요.',
+    `초대 링크: ${url}`,
+    `초대 코드: ${invite.userCode}`,
+    '링크가 열리지 않으면 친구 목록 검색창에 초대 코드를 입력해주세요.',
+  ].join('\n');
   return { url, message };
 }
 
@@ -47,13 +39,19 @@ function logShareClick() {
   }
 }
 
-export function useShareFriendInvite() {
+interface UseShareFriendInviteOptions {
+  // URL을 표시하지 않는 화면은 공유를 누를 때만 초대 정보를 조회한다.
+  prepareOnMount?: boolean;
+}
+
+export function useShareFriendInvite({ prepareOnMount = true }: UseShareFriendInviteOptions = {}) {
   // Prepare the message and URL together so display and sharing use the same content.
   // Failure must not suspend or hide the friends list.
   const content = useQuery({
     queryKey: ['friendInviteShareUrl'],
     queryFn: ({ signal }) => prepareShareContent(signal),
     staleTime: Infinity,
+    enabled: prepareOnMount,
   });
   const lock = useRef(false);
   const mounted = useRef(true);
@@ -82,9 +80,7 @@ export function useShareFriendInvite() {
         return;
       }
       const { message, url } = prepared.data;
-      await Share.share(
-        Platform.OS === 'ios' ? { message, url } : { message: `${message}\n\n${url}` }
-      );
+      await Share.share(Platform.OS === 'ios' ? { message, url } : { message });
     } catch (failure) {
       if (!active()) return;
       const error = normalizeError(failure);

@@ -45,6 +45,7 @@ describe('운영 오류 관측의 수집과 중복 방지', () => {
         },
         { category: 'xhr', data: { url: '/friends/invite' } },
         { category: 'xhr', data: { url: '/friends/requests/received' } },
+        { category: 'xhr', data: { url: '/friends/search?userCode=ABCDE' } },
       ],
     });
 
@@ -53,6 +54,7 @@ describe('운영 오류 관측의 수집과 중복 방지', () => {
       'https://api-dev.detoxmate.co.kr/friends/invite/[Filtered]',
       '/friends/invite',
       '/friends/requests/received',
+      '/friends/search',
     ]);
   });
 
