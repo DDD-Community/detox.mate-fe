@@ -6,7 +6,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { ErrorBoundary } from '@/components/AppErrorBoundary/AppErrorBoundary';
 import { Icon, LoggingButton, LoggingPage } from '@/components';
-import { DetoxmateWordmark } from '@/components/DetoxmateWordmark/DetoxmateWordmark';
+import { BrandHeader } from '@/components/BrandHeader/BrandHeader';
 import { primitiveColors, radius, spacing, typography } from '@/lib/token';
 import { FriendsPreview } from '../components/FriendsPreview';
 import { ProfileAvatar } from '../components/ProfileAvatar';
@@ -21,22 +21,23 @@ export default function MyProfileScreen() {
   return (
     <LoggingPage eventName="My Profile Viewed" properties={{ pageName: 'MyProfile' }}>
       <SafeAreaView style={styles.root} edges={['top']}>
-        <View style={styles.header}>
-          <DetoxmateWordmark />
-          <LoggingButton
-            eventName="My Profile Settings Clicked"
-            properties={{ pageName: 'MyProfile', buttonName: '설정 아이콘' }}
-          >
-            <Pressable
-              onPress={() => router.push('/(group)/settings')}
-              hitSlop={8}
-              accessibilityRole="button"
-              accessibilityLabel="설정"
+        <BrandHeader
+          actions={
+            <LoggingButton
+              eventName="My Profile Settings Clicked"
+              properties={{ pageName: 'MyProfile', buttonName: '설정 아이콘' }}
             >
-              <Icon name="gearSix" size={24} color={gray[900]} />
-            </Pressable>
-          </LoggingButton>
-        </View>
+              <Pressable
+                onPress={() => router.push('/(group)/settings')}
+                hitSlop={8}
+                accessibilityRole="button"
+                accessibilityLabel="설정"
+              >
+                <Icon name="gearSix" size={24} color={gray[900]} />
+              </Pressable>
+            </LoggingButton>
+          }
+        />
         <QueryErrorResetBoundary>
           {({ reset }) => (
             <ErrorBoundary onReset={reset}>
@@ -117,13 +118,6 @@ function MyProfileContent() {
 
 const styles = StyleSheet.create({
   root: { flex: 1, backgroundColor: '#FFFFFF' },
-  header: {
-    height: 54,
-    paddingHorizontal: spacing[16],
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-  },
   loading: { padding: spacing[24] },
   content: { paddingBottom: spacing[40] },
   profile: { alignItems: 'center', paddingTop: spacing[16], gap: spacing[12] },
