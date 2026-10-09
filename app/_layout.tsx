@@ -5,7 +5,6 @@ import { router, Stack } from 'expo-router';
 import * as SplashScreen from 'expo-splash-screen';
 import { useEffect, type ComponentType } from 'react';
 import { getGroup } from '../src/api/generated/group/group';
-import { logError, normalizeError } from '../src/api/errors';
 import { fontSources } from '../src/lib/token/primitive/fonts';
 import { NetworkErrorToast } from '../src/components/NetworkErrorToast';
 import { subscribeToDevicePushTokenRefresh } from '../src/lib/fcmToken';
@@ -13,6 +12,7 @@ import { AppErrorBoundary } from '../src/components/AppErrorBoundary';
 import { initSentry } from '../src/observability/sentry';
 import { initAirbridge } from '../src/lib/airbridge';
 import { initAnalytics } from '../src/lib/analytics';
+import { logError, normalizeError } from '../src/api/errors';
 
 if (__DEV__ && process.env.EXPO_PUBLIC_MSW_ENABLED === 'true') {
   // Load native polyfills and install interception before mounting any routes.
@@ -33,18 +33,16 @@ export default function RootLayout() {
 
   useEffect(() => {
     initAnalytics();
-    initAirbridge();
   }, []);
 
   useEffect(() => {
-    if (fontsLoaded || fontError) {
-      void SplashScreen.hideAsync().catch((failure) => {
-        logError(normalizeError(failure), {
-          scope: 'app.bootstrap',
-          operation: 'hideNativeSplash',
-        });
-      });
-    }
+    // SDK에 캐시된 초대가 즉시 전달될 수 있으므로 Stack이 준비된 뒤 구독한다.
+    if (!fontsLoaded && !fontError) return;
+    // 딥링크는 index를 거치지 않을 수도 있으므로 네이티브 스플래시 종료는 루트에서 맡는다.
+    void SplashScreen.hideAsync().catch((error) => {
+      logError(normalizeError(error), { scope: 'app.bootstrap', operation: 'hideNativeSplash' });
+    });
+    initAirbridge();
   }, [fontsLoaded, fontError]);
 
   // FCM registration token 갱신 감지 → 서버에 새 토큰 재등록

@@ -11,6 +11,9 @@ const api = vi.hoisted(() => ({ friends: vi.fn(), requests: vi.fn() }));
 vi.mock('../../../api/friendMutator', () => ({
   friendAxios: ({ url }: { url: string }) => (url === '/friends' ? api.friends() : api.requests()),
 }));
+vi.mock('../hooks/useShareFriendInvite', () => ({
+  useShareFriendInvite: () => ({ share: vi.fn(), sharing: false }),
+}));
 vi.mock('../../../api/errors/logger', () => ({ logError: vi.fn() }));
 vi.mock('../../../lib/analytics', () => ({ trackEvent: vi.fn(), trackButtonClick: vi.fn() }));
 vi.mock('../../../lib/navigation', () => ({ goBackOrReplace: vi.fn() }));

@@ -4,7 +4,6 @@ import { router } from 'expo-router';
 import { Suspense, useEffect, useState } from 'react';
 import {
   ActivityIndicator,
-  Alert,
   Keyboard,
   KeyboardAvoidingView,
   Modal,
@@ -28,6 +27,7 @@ import { FriendEmailSearch } from '../components/FriendEmailSearch';
 import { FriendsErrorFeedback } from '../components/FriendsErrorFeedback';
 import { ErrorBoundary } from '../../../components/AppErrorBoundary/AppErrorBoundary';
 import { useFriendsListController } from '../hooks/useFriendsListController';
+import { useShareFriendInvite } from '../hooks/useShareFriendInvite';
 import {
   filterFriendsByName,
   toFriendListItem,
@@ -52,8 +52,6 @@ import shareIcon from '@assets/icons/share.svg';
 const { regular, medium, bold } = fontFamily.primary;
 const green = '#5a8974';
 
-const share = () => Alert.alert('친구 초대', '친구 초대 링크는 준비 중이에요.');
-
 function Avatar({ uri, small = false }: { uri?: string; small?: boolean }) {
   const [failed, setFailed] = useState(false);
   useEffect(() => setFailed(false), [uri]);
@@ -68,9 +66,15 @@ function Avatar({ uri, small = false }: { uri?: string; small?: boolean }) {
   );
 }
 
-function ShareButton() {
+function ShareButton({ onPress, sharing }: { onPress: () => void; sharing: boolean }) {
   return (
-    <Pressable accessibilityRole="button" onPress={share} style={styles.shareButton}>
+    <Pressable
+      accessibilityRole="button"
+      accessibilityState={{ disabled: sharing, busy: sharing }}
+      disabled={sharing}
+      onPress={onPress}
+      style={[styles.shareButton, sharing && styles.disabled]}
+    >
       <Image source={shareIcon} style={styles.shareIcon} contentFit="contain" />
       <Text style={styles.shareText}>프로필 공유하기</Text>
     </Pressable>
@@ -194,11 +198,15 @@ function FriendsSection({
   query,
   pendingActionId,
   onSelectDelete,
+  onShare,
+  sharing,
 }: {
   userId?: number;
   query: string;
   pendingActionId: string | null;
   onSelectDelete: (friend: FriendsListItem) => void;
+  onShare: () => void;
+  sharing: boolean;
 }) {
   const result = useSuspenseQuery(getGetFriendsSuspenseQueryOptions());
   const friends = result.data.map(toFriendListItem);
@@ -253,7 +261,7 @@ function FriendsSection({
           <Text style={styles.emptyDescription}>
             프로필을 공유하거나,{'\n'}친구의 메일을 입력해 친구를 추가해보세요.
           </Text>
-          <ShareButton />
+          <ShareButton onPress={onShare} sharing={sharing} />
         </View>
       ) : friends.length === 0 ? (
         <View style={styles.friendsEmpty}>
@@ -274,6 +282,7 @@ export default function FriendsScreen() {
 }
 
 function FriendsContent() {
+  const { share, sharing, inviteUrl, preparing } = useShareFriendInvite();
   const {
     refreshing,
     error,
@@ -385,14 +394,19 @@ function FriendsContent() {
           <Pressable
             accessibilityRole="button"
             accessibilityLabel="친구 초대 공유"
-            onPress={share}
-            style={styles.inviteCard}
+            accessibilityState={{ disabled: sharing, busy: sharing }}
+            disabled={sharing}
+            onPress={() => void share()}
+            style={[styles.inviteCard, sharing && styles.disabled]}
           >
             <Avatar small />
             <View style={styles.inviteLabel}>
               <Text style={styles.inviteTitle}>친구 초대</Text>
-              <Text numberOfLines={1} style={styles.inviteSubtitle}>
-                초대 링크 준비 중
+              <Text style={styles.inviteSubtitle}>
+                {inviteUrl ||
+                  (preparing
+                    ? '초대 링크를 준비하고 있어요'
+                    : '눌러서 초대 링크를 다시 준비해보세요')}
               </Text>
             </View>
             <Image source={exportIcon} style={styles.exportIcon} contentFit="contain" />
@@ -445,6 +459,8 @@ function FriendsContent() {
                           query={query}
                           pendingActionId={pendingActionId}
                           onSelectDelete={setDeleteTarget}
+                          onShare={() => void share()}
+                          sharing={sharing}
                         />
                       )}
                       empty={
@@ -453,7 +469,7 @@ function FriendsContent() {
                           <Text style={styles.emptyDescription}>
                             프로필을 공유해서 초대해보세요.
                           </Text>
-                          <ShareButton />
+                          <ShareButton onPress={() => void share()} sharing={sharing} />
                         </View>
                       }
                     />
@@ -471,6 +487,8 @@ function FriendsContent() {
                     query={query}
                     pendingActionId={pendingActionId}
                     onSelectDelete={setDeleteTarget}
+                    onShare={() => void share()}
+                    sharing={sharing}
                   />
                 )}
               </Suspense>
@@ -484,7 +502,7 @@ function FriendsContent() {
             <Text style={styles.footerDescription}>
               프로필을 공유해서 디톡스메이트에서{'\n'}추가할 수 있게 해주세요.
             </Text>
-            <ShareButton />
+            <ShareButton onPress={() => void share()} sharing={sharing} />
           </View>
         ) : null}
       </ScrollView>
@@ -614,7 +632,6 @@ const styles = StyleSheet.create({
     flex: 1,
     fontFamily: regular,
     fontSize: 16,
-    lineHeight: 24,
     padding: 0,
     color: '#383e49',
     letterSpacing: -0.32,
@@ -624,8 +641,9 @@ const styles = StyleSheet.create({
   content: { flexGrow: 1 },
   inviteCard: {
     marginHorizontal: 16,
-    height: 68,
+    minHeight: 68,
     paddingHorizontal: 16,
+    paddingVertical: 12,
     borderWidth: 1,
     borderColor: '#d0d3d9',
     borderRadius: 16,
@@ -633,7 +651,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     gap: 8,
   },
-  inviteLabel: { flex: 1 },
+  inviteLabel: { flex: 1, minWidth: 0 },
   inviteTitle: { fontFamily: bold, fontSize: 16, lineHeight: 24, color: 'black' },
   inviteSubtitle: {
     fontFamily: regular,

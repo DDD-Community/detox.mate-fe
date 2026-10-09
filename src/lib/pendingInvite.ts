@@ -1,51 +1,54 @@
 import * as SecureStore from 'expo-secure-store';
 
-/**
- * Airbridge 딥링크로 들어온 초대 코드를 잠시 보관하는 저장소.
- *
- * 콜드 스타트 시 딥링크 콜백과 SplashScreen 라우팅이 경합하면서 초대 화면
- * 이동이 덮어써지는 문제를 막기 위해, 코드를 즉시 저장해 두고 라우팅 결정을
- * SplashScreen(및 로그인 완료 시점)으로 일원화한다.
- *
- * 미로그인 유저가 로그인 절차(카카오/애플 OAuth로 앱이 잠시 백그라운드로
- * 전환될 수 있음)를 거치는 동안에도 값이 유지되도록 SecureStore에 보관한다.
- */
-const PENDING_INVITE_CODE_KEY = 'pendingInviteCode';
+export type PendingInvite = { kind: 'friend' | 'group'; code: string };
 
-export async function setPendingInviteCode(code: string): Promise<void> {
-  try {
-    await SecureStore.setItemAsync(PENDING_INVITE_CODE_KEY, code);
-  } catch {
-    // 저장 실패가 딥링크 흐름을 막지 않도록 무시한다.
-  }
+// 운영 중인 그룹 초대도 같은 키를 사용하므로 기존 문자열은 그룹 코드로 읽는다.
+const PENDING_INVITE_KEY = 'pendingInviteCode';
+let operations: Promise<unknown> = Promise.resolve();
+
+function serialize<T>(operation: () => Promise<T>): Promise<T> {
+  const result = operations.then(operation);
+  operations = result.catch(() => undefined);
+  return result;
 }
 
-/** 값을 읽되 삭제하지 않는다. (미로그인 → 로그인 이동 시 코드 보존용) */
-export async function peekPendingInviteCode(): Promise<string | null> {
+function decode(value: string | null): PendingInvite | null {
+  if (!value) return null;
+  if (!value.startsWith('{')) return { kind: 'group', code: value };
+  let invite: unknown;
   try {
-    return await SecureStore.getItemAsync(PENDING_INVITE_CODE_KEY);
+    invite = JSON.parse(value);
   } catch {
-    return null;
+    throw new Error('저장된 초대 정보를 읽을 수 없습니다.');
   }
+  if (
+    typeof invite !== 'object' ||
+    invite === null ||
+    !('kind' in invite) ||
+    !('code' in invite) ||
+    (invite.kind !== 'friend' && invite.kind !== 'group') ||
+    typeof invite.code !== 'string' ||
+    !invite.code
+  ) {
+    throw new Error('저장된 초대 정보를 읽을 수 없습니다.');
+  }
+  return { kind: invite.kind, code: invite.code };
 }
 
-/** 값을 읽고 즉시 삭제한다. (초대 화면으로 실제 이동하는 시점에 사용) */
-export async function consumePendingInviteCode(): Promise<string | null> {
-  try {
-    const code = await SecureStore.getItemAsync(PENDING_INVITE_CODE_KEY);
-    if (code) {
-      await SecureStore.deleteItemAsync(PENDING_INVITE_CODE_KEY);
+export function setPendingInvite(invite: PendingInvite): Promise<void> {
+  return serialize(() => SecureStore.setItemAsync(PENDING_INVITE_KEY, JSON.stringify(invite)));
+}
+
+export function peekPendingInvite(): Promise<PendingInvite | null> {
+  return serialize(async () => decode(await SecureStore.getItemAsync(PENDING_INVITE_KEY)));
+}
+
+/** 라우팅이 확정된 뒤에만 호출한다. 도중에 들어온 다른 초대는 삭제하지 않는다. */
+export function clearPendingInvite(invite: PendingInvite): Promise<void> {
+  return serialize(async () => {
+    const current = decode(await SecureStore.getItemAsync(PENDING_INVITE_KEY));
+    if (current?.kind === invite.kind && current.code === invite.code) {
+      await SecureStore.deleteItemAsync(PENDING_INVITE_KEY);
     }
-    return code;
-  } catch {
-    return null;
-  }
-}
-
-export async function clearPendingInviteCode(): Promise<void> {
-  try {
-    await SecureStore.deleteItemAsync(PENDING_INVITE_CODE_KEY);
-  } catch {
-    // 무시
-  }
+  });
 }
