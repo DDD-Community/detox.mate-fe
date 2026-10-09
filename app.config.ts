@@ -55,7 +55,8 @@ const config: ExpoConfig = {
     imageWidth: 152,
   },
   ios: {
-    bundleIdentifier: isProduction ? 'com.detoxmate.app' : 'com.detoxmate.app.dev',
+    bundleIdentifier: isProduction ? 'com.detoxmate.app' : 'com.detoxmate.app.dev2',
+    ...(isProduction ? {} : { appleTeamId: 'V4328A485M' }),
     googleServicesFile: iosGoogleServicesFile,
     supportsTablet: false,
     associatedDomains: ['applinks:detoxmate.airbridge.io', 'applinks:detoxmate.abr.ge'],
@@ -69,6 +70,7 @@ const config: ExpoConfig = {
       ...(isProduction ? {} : { 'com.apple.developer.family-controls': true }),
     },
     infoPlist: {
+      ...(isProduction ? {} : { CFBundleDisplayName: 'DetoxMate Dev' }),
       LSApplicationQueriesSchemes: ['kakaokompassauth', 'storykompassauth', 'kakaolink'],
       ITSAppUsesNonExemptEncryption: false,
       UIBackgroundModes: ['remote-notification'],
