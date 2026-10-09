@@ -95,7 +95,8 @@
       "esbuild"
     ],
     "patchedDependencies": {
-      "react-native-worklets@0.7.4": "patches/react-native-worklets@0.7.4.patch"
+      "react-native-worklets@0.7.4": "patches/react-native-worklets@0.7.4.patch",
+      "@kingstinct/expo-apple-targets@0.1.19": "patches/@kingstinct__expo-apple-targets@0.1.19.patch"
     }
   },
   "private": true

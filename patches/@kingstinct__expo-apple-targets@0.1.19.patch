@@ -1,0 +1,70 @@
+diff --git a/build/target.d.ts b/build/target.d.ts
+index 1a7fe0abc162ac01ea27b5c8f3f93c0c777d4198..7b264931f6c768ccc8512b0ade303ebe0bf2e111 100644
+--- a/build/target.d.ts
++++ b/build/target.d.ts
+@@ -1,5 +1,5 @@
+ import { PBXNativeTarget, XcodeProject } from "@bacons/xcode";
+-export type ExtensionType = "widget" | "notification-content" | "notification-service" | "share" | "intent" | "bg-download" | "intent-ui" | "spotlight" | "matter" | "quicklook-thumbnail" | "imessage" | "clip" | "watch" | "location-push" | "credentials-provider" | "account-auth" | "action" | "safari" | "app-intent" | "device-activity-monitor" | "shield-action" | "shield-configuration";
++export type ExtensionType = "widget" | "notification-content" | "notification-service" | "share" | "intent" | "bg-download" | "intent-ui" | "spotlight" | "matter" | "quicklook-thumbnail" | "imessage" | "clip" | "watch" | "location-push" | "credentials-provider" | "account-auth" | "action" | "safari" | "app-intent" | "device-activity-monitor" | "device-activity-report" | "shield-action" | "shield-configuration";
+ export declare const KNOWN_EXTENSION_POINT_IDENTIFIERS: Record<string, ExtensionType>;
+ export declare const SHOULD_USE_APP_GROUPS_BY_DEFAULT: Record<ExtensionType, boolean>;
+ export declare function getTargetInfoPlistForType(type: ExtensionType): string;
+diff --git a/build/target.js b/build/target.js
+index f1809af85a1ec6e43fe79bf954dd01a2f8f2c74d..8349fd9fd2b32d47c4fe6d35270a19eeffc77727 100644
+--- a/build/target.js
++++ b/build/target.js
+@@ -24,6 +24,7 @@ exports.KNOWN_EXTENSION_POINT_IDENTIFIERS = {
+     "com.apple.services": "action",
+     "com.apple.appintents-extension": "app-intent",
+     "com.apple.deviceactivity.monitor-extension": "device-activity-monitor",
++    "com.apple.deviceactivityui.report-extension": "device-activity-report",
+     "com.apple.ManagedSettings.shield-action-service": "shield-action",
+     "com.apple.ManagedSettingsUI.shield-configuration-service": "shield-configuration",
+     // "com.apple.intents-service": "intents",
+@@ -83,10 +84,12 @@ function getTargetInfoPlistForType(type) {
+             },
+         });
+     }
+-    else if (type === "app-intent") {
++    else if (type === "app-intent" || type === "device-activity-report") {
+         return plist_1.default.build({
+             EXAppExtensionAttributes: {
+-                EXExtensionPointIdentifier: "com.apple.appintents-extension",
++                EXExtensionPointIdentifier: type === "device-activity-report"
++                    ? "com.apple.deviceactivityui.report-extension"
++                    : "com.apple.appintents-extension",
+             },
+         });
+     }
+@@ -317,6 +320,7 @@ function productTypeForType(type) {
+         case "watch":
+             return "com.apple.product-type.application";
+         case "app-intent":
++        case "device-activity-report":
+             return "com.apple.product-type.extensionkit-extension";
+         default:
+             return "com.apple.product-type.app-extension";
+@@ -395,6 +399,10 @@ function isNativeTargetOfType(target, type) {
+             "com.apple.product-type.application.on-demand-install-capable") {
+         return true;
+     }
++    if (target.props.productType === "com.apple.product-type.extensionkit-extension") {
++        const infoPlist = target.getDefaultConfiguration().getInfoPlist();
++        return exports.KNOWN_EXTENSION_POINT_IDENTIFIERS[infoPlist.EXAppExtensionAttributes?.EXExtensionPointIdentifier] === type;
++    }
+     if (target.props.productType !== "com.apple.product-type.app-extension") {
+         return false;
+     }
+diff --git a/build/withXcodeChanges.js b/build/withXcodeChanges.js
+index 95989d52d95d5e2a1e3c0638b3015dfa4ce4714c..300e80234ca1dd5b4a257b8fc057c61fdc3115dc 100644
+--- a/build/withXcodeChanges.js
++++ b/build/withXcodeChanges.js
+@@ -796,7 +796,7 @@ async function applyXcodeChanges(config, project, props) {
+                     ? "wrapper.extensionkit-extension"
+                     : "wrapper.app-extension",
+                 includeInIndex: 0,
+-                path: productName + (isExtension ? ".appex" : ".app"),
++                path: productName + (isExtension || isExtensionKit ? ".appex" : ".app"),
+                 sourceTree: "BUILT_PRODUCTS_DIR",
+             }),
+             settings: {

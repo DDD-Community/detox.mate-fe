@@ -1,15 +1,7 @@
 /**
- * DeviceActivityReport 익스텐션. react-native-device-activity 패키지의 config-plugin은
- * shield-action/shield-configuration/device-activity-monitor 3종만 지원해서(이 4번째 타입은
- * 지원 안 함), @kingstinct/expo-apple-targets를 직접 써서 수동으로 정의한다.
- *
- * `type` 문자열은 라이브러리가 미리 아는 프리셋이 아니라서 frameworks/entitlements를
- * 전부 직접 채워야 한다. Info.plist도 자동 생성되지 않아서(이미 파일이 있으면 건드리지
- * 않음) 직접 작성했다. NSExtensionPrincipalClass는 일부러 안 넣었다 — Swift @main으로
- * 진입점을 잡는 방식이라 필요 없다(예전 Xcode에선 이 키가 있으면 기기 설치가 실패하는
- * 버그가 있었고, 그 우회법으로 EXAppExtensionAttributes를 쓰라는 정보도 있었지만, 이
- * Xcode 버전에서는 그 방식 자체가 시뮬레이터 설치를 실패시켜서 표준 NSExtension 구조로
- * 되돌렸다).
+ * react-native-device-activity가 생성하지 않는 리포트 확장.
+ * @kingstinct/expo-apple-targets의 pnpm 패치로 ExtensionKit 타깃을 생성한다.
+ * Info.plist와 타깃 타입을 함께 유지해야 App Store 검증과 기기 설치가 통과한다.
  */
 module.exports = () => ({
   type: 'device-activity-report',
