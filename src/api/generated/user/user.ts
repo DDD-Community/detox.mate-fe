@@ -5,7 +5,7 @@
  * OpenAPI spec version: v0
  */
 import type {
-  MyProfileResponse,
+  MyPageResponse,
   UpdateMyProfileRequest,
   UpdatePushNotificationSettingRequest,
 } from '../model';
@@ -14,13 +14,13 @@ import { customAxios } from '../../mutator';
 
 export const getUser = () => {
   const getMe = () => {
-    return customAxios<MyProfileResponse>({ url: `/users/me`, method: 'GET' });
+    return customAxios<MyPageResponse>({ url: `/users/me`, method: 'GET' });
   };
   const withdraw = () => {
     return customAxios<void>({ url: `/users/me`, method: 'DELETE' });
   };
   const updateMe = (updateMyProfileRequest: UpdateMyProfileRequest) => {
-    return customAxios<MyProfileResponse>({
+    return customAxios<MyPageResponse>({
       url: `/users/me`,
       method: 'PATCH',
       headers: { 'Content-Type': 'application/json' },

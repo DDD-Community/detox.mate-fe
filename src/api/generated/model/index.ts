@@ -75,7 +75,7 @@ export * from './listStatus';
 export * from './memberDailyGoalResponse';
 export * from './memberDailyGoalResponseUsageGoalType';
 export * from './memberResponse';
-export * from './myProfileResponse';
+export * from './myPageResponse';
 export * from './notificationHistoryItemResponse';
 export * from './notificationHistoryListResponse';
 export * from './notificationNavigationResponse';
