@@ -7,6 +7,7 @@ import {
 } from '@tanstack/react-query';
 import { act, createElement, Suspense } from 'react';
 import { createRoot } from 'react-dom/client';
+import { useFocusEffect } from 'expo-router';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import type {
@@ -30,6 +31,7 @@ const api = vi.hoisted(() => ({
   track: vi.fn(),
 }));
 vi.mock('../../../lib/analytics', () => ({ trackEvent: api.track }));
+vi.mock('expo-router', () => ({ useFocusEffect: vi.fn() }));
 vi.mock('../../../api/errors/logger', () => ({ logError: vi.fn() }));
 vi.mock('../../../api/friendMutator', () => ({
   friendAxios: ({ url, method }: { url: string; method: string }) => {
@@ -158,6 +160,20 @@ async function remove(screen: Awaited<ReturnType<typeof setup>>) {
 }
 
 describe('친구 목록 조회와 변경 액션', () => {
+  it('화면을 유지한 채 다시 진입하면 외부에서 변경된 친구와 새 받은 요청을 반영한다', async () => {
+    const screen = await setup();
+    const newRequest = { ...request, requestId: 73 };
+    api.friends.mockResolvedValue([]);
+    api.received.mockResolvedValue([request, newRequest]);
+
+    await act(() => {
+      vi.mocked(useFocusEffect).mock.lastCall![0]();
+    });
+
+    await expect.poll(() => screen.rows).toEqual([]);
+    await expect.poll(() => screen.requests).toEqual([request, newRequest]);
+  });
+
   it('검색 갱신 중에는 목록을 갱신하거나 친구 삭제를 시작해도 검색 응답을 취소하지 않고 목록 갱신 표시도 켜지 않는다', async () => {
     const screen = await setup();
     const options = getSearchByUserCodeQueryOptions({ userCode: 'ABCDE' });

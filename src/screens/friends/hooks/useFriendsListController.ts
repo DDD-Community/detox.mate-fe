@@ -1,6 +1,7 @@
 import { useIsFetching, usePrefetchQuery, useQueryClient, type Query } from '@tanstack/react-query';
 import { CanceledError, isCancel } from 'axios';
-import { useRef, useState } from 'react';
+import { useFocusEffect } from 'expo-router';
+import { useCallback, useRef, useState } from 'react';
 
 import { logError } from '../../../api/errors/logger';
 import { getUserErrorMessage } from '../../../api/errors/messages';
@@ -31,6 +32,18 @@ export function useFriendsListController() {
   // Both requests start before either child can suspend; generated keys share in-flight work.
   usePrefetchQuery(friendsOptions);
   usePrefetchQuery(requestsOptions);
+  useFocusEffect(
+    useCallback(() => {
+      void client.refetchQueries(
+        { queryKey: getGetFriendsSuspenseQueryOptions().queryKey, exact: true },
+        { cancelRefetch: false }
+      );
+      void client.refetchQueries(
+        { queryKey: getGetReceivedRequestsSuspenseQueryOptions().queryKey, exact: true },
+        { cancelRefetch: false }
+      );
+    }, [client])
+  );
   const cache = client.getQueryCache();
   const keys = [friendsOptions.queryKey, requestsOptions.queryKey];
   const pendingActionQueries = useRef<(Query | undefined)[] | null>(null);
