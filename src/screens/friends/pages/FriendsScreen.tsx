@@ -27,6 +27,7 @@ import {
 } from '../../../api/query-generated/friend';
 import { FriendsQueryFeedback, FriendsQuerySection } from '../components/FriendsQuerySection';
 import { useFriendsListController } from '../hooks/useFriendsListController';
+import { useShareFriendInvite } from '../hooks/useShareFriendInvite';
 import {
   filterFriendsByName,
   toFriendListItem,
@@ -50,8 +51,6 @@ import shareIcon from '@assets/icons/share.svg';
 const { regular, medium, bold } = fontFamily.primary;
 const green = '#5a8974';
 
-const share = () => Alert.alert('친구 초대', '친구 초대 링크는 준비 중이에요.');
-
 function Avatar({ uri, small = false }: { uri?: string; small?: boolean }) {
   const [failed, setFailed] = useState(false);
   useEffect(() => setFailed(false), [uri]);
@@ -66,9 +65,15 @@ function Avatar({ uri, small = false }: { uri?: string; small?: boolean }) {
   );
 }
 
-function ShareButton() {
+function ShareButton({ onPress, sharing }: { onPress: () => void; sharing: boolean }) {
   return (
-    <Pressable accessibilityRole="button" onPress={share} style={styles.shareButton}>
+    <Pressable
+      accessibilityRole="button"
+      accessibilityState={{ disabled: sharing, busy: sharing }}
+      disabled={sharing}
+      onPress={onPress}
+      style={[styles.shareButton, sharing && styles.disabled]}
+    >
       <Image source={shareIcon} style={styles.shareIcon} contentFit="contain" />
       <Text style={styles.shareText}>프로필 공유하기</Text>
     </Pressable>
@@ -187,11 +192,15 @@ function FriendsSection({
   query,
   pendingActionId,
   onSelectDelete,
+  onShare,
+  sharing,
 }: {
   onRetry: () => Promise<void>;
   query: string;
   pendingActionId: string | null;
   onSelectDelete: (friend: FriendsListItem) => void;
+  onShare: () => void;
+  sharing: boolean;
 }) {
   const result = useSuspenseQuery(getGetFriendsSuspenseQueryOptions());
   const friends = result.data.map(toFriendListItem);
@@ -234,7 +243,7 @@ function FriendsSection({
               ? '친구 추가 화면에서 제공할 예정이에요.'
               : '프로필을 공유하거나,\n친구의 메일을 입력해 친구를 추가해보세요.'}
           </Text>
-          <ShareButton />
+          <ShareButton onPress={onShare} sharing={sharing} />
         </View>
       ) : friends.length === 0 ? (
         <View style={styles.friendsEmpty}>
@@ -247,6 +256,7 @@ function FriendsSection({
 }
 
 export default function FriendsScreen() {
+  const { share, sharing } = useShareFriendInvite();
   const {
     refreshing,
     error,
@@ -374,14 +384,16 @@ export default function FriendsScreen() {
           <Pressable
             accessibilityRole="button"
             accessibilityLabel="친구 초대 공유"
-            onPress={share}
-            style={styles.inviteCard}
+            accessibilityState={{ disabled: sharing, busy: sharing }}
+            disabled={sharing}
+            onPress={() => void share()}
+            style={[styles.inviteCard, sharing && styles.disabled]}
           >
             <Avatar small />
             <View style={styles.inviteLabel}>
               <Text style={styles.inviteTitle}>친구 초대</Text>
               <Text numberOfLines={1} style={styles.inviteSubtitle}>
-                초대 링크 준비 중
+                {sharing ? '초대 링크를 준비하고 있어요' : '친구와 함께 디톡스를 시작해보세요'}
               </Text>
             </View>
             <Image source={exportIcon} style={styles.exportIcon} contentFit="contain" />
@@ -405,6 +417,8 @@ export default function FriendsScreen() {
             pendingActionId={pendingActionId}
             onSelectDelete={setDeleteTarget}
             onRetry={refreshFriends}
+            onShare={() => void share()}
+            sharing={sharing}
           />
         </FriendsQuerySection>
 
@@ -414,7 +428,7 @@ export default function FriendsScreen() {
             <Text style={styles.footerDescription}>
               프로필을 공유해서 디톡스메이트에서{'\n'}추가할 수 있게 해주세요.
             </Text>
-            <ShareButton />
+            <ShareButton onPress={() => void share()} sharing={sharing} />
           </View>
         ) : null}
       </ScrollView>

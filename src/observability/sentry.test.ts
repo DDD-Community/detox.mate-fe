@@ -1,11 +1,15 @@
 import { AxiosError, CanceledError } from 'axios';
+import type { ErrorEvent } from '@sentry/react-native';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { normalizeError } from '../api/errors/normalizeError';
 import { logError } from '../api/errors/logger';
 
 const sentry = vi.hoisted(() => ({
-  init: vi.fn(),
+  init: vi.fn((options: { beforeSend: (event: ErrorEvent) => ErrorEvent }) => {
+    sentry.beforeSend = options.beforeSend;
+  }),
+  beforeSend: undefined as ((event: ErrorEvent) => ErrorEvent) | undefined,
   setTag: vi.fn(),
   setContext: vi.fn(),
   captureException: vi.fn(),
@@ -29,6 +33,29 @@ beforeEach(() => {
 });
 
 describe('운영 오류 관측의 수집과 중복 방지', () => {
+  it('HTTP breadcrumb와 요청 URL의 초대 코드를 지우고 다른 endpoint는 유지한다', () => {
+    logError(normalizeError(new Error('서버 오류')), { scope: 'api' });
+    const event = sentry.beforeSend!({
+      type: undefined,
+      request: { url: 'https://api-dev.detoxmate.co.kr/friends/invite/private-code?secret=value' },
+      breadcrumbs: [
+        {
+          category: 'xhr',
+          data: { url: 'https://api-dev.detoxmate.co.kr/friends/invite/private-code' },
+        },
+        { category: 'xhr', data: { url: '/friends/invite' } },
+        { category: 'xhr', data: { url: '/friends/requests/received' } },
+      ],
+    });
+
+    expect(event.request?.url).toBe('https://api-dev.detoxmate.co.kr/friends/invite/[Filtered]');
+    expect(event.breadcrumbs?.map((breadcrumb) => breadcrumb.data?.url)).toEqual([
+      'https://api-dev.detoxmate.co.kr/friends/invite/[Filtered]',
+      '/friends/invite',
+      '/friends/requests/received',
+    ]);
+  });
+
   it.each([500, undefined])('API 실패가 %s이면 서버 또는 예상 밖 오류를 수집한다', (status) => {
     const failure = normalizeError({
       isAxiosError: true,

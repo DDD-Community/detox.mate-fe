@@ -4,6 +4,7 @@ import type {
   FriendListUserResponse,
   FriendReceivedRequestResponse,
   FriendResponse,
+  FriendInviteeResponse,
 } from '../api/query-generated/model';
 
 export const FRIENDS_MOCK_ORIGIN = 'https://api-dev.detoxmate.co.kr';
@@ -44,6 +45,72 @@ let requests: MockRequest[] = [];
 let acceptedRequests = new Map<number, number>();
 let nextFriendshipId = 2101;
 let latencyMs = 280;
+let sentRequests = new Map<number, number>();
+let inviteReadFailures = 1;
+let nextRequestId = 3101;
+
+export const FRIEND_INVITE_MOCK_CODES = {
+  NONE: 'n7Kp2Rt9Xc4V',
+  PENDING_SENT: 's9Mq5Ba3Ld8H',
+  PENDING_RECEIVED: 'r6Yn1Ce8Wk3P',
+  FRIEND: 'f4Jh8Ds2Uv7N',
+  SELF: 'k8Vt4Nz2Qp7R',
+  RETRY: 'x5Qa9Lp2Tc7M',
+} as const;
+
+const inviteUsers: Record<string, FriendInviteeResponse> = {
+  [FRIEND_INVITE_MOCK_CODES.NONE]: {
+    userId: 1201,
+    displayName: '홍길동',
+    relationshipStatus: 'NONE',
+  },
+  [FRIEND_INVITE_MOCK_CODES.PENDING_SENT]: {
+    userId: 1202,
+    displayName: '이서진',
+    relationshipStatus: 'PENDING_SENT',
+    requestId: 3100,
+  },
+  [FRIEND_INVITE_MOCK_CODES.PENDING_RECEIVED]: {
+    userId: 1101,
+    displayName: '오유진',
+    relationshipStatus: 'PENDING_RECEIVED',
+    requestId: 3001,
+  },
+  [FRIEND_INVITE_MOCK_CODES.FRIEND]: {
+    userId: 1001,
+    displayName: '김서연',
+    relationshipStatus: 'FRIEND',
+  },
+  [FRIEND_INVITE_MOCK_CODES.SELF]: {
+    userId: 9001,
+    displayName: '희정',
+    relationshipStatus: 'SELF',
+  },
+  [FRIEND_INVITE_MOCK_CODES.RETRY]: {
+    userId: 1203,
+    displayName: '김민준',
+    relationshipStatus: 'NONE',
+  },
+};
+
+function currentInvitee(seed: FriendInviteeResponse): FriendInviteeResponse {
+  if (seed.relationshipStatus === 'SELF') return seed;
+  const friend = friends.find((item) => item.user.userId === seed.userId);
+  const request = requests.find((item) => item.user.userId === seed.userId);
+  const sent = sentRequests.get(seed.userId!);
+  return {
+    ...seed,
+    profileImageUrl: friend?.user.profileImageUrl ?? request?.user.profileImageUrl ?? undefined,
+    relationshipStatus: friend
+      ? 'FRIEND'
+      : request
+        ? 'PENDING_RECEIVED'
+        : sent
+          ? 'PENDING_SENT'
+          : 'NONE',
+    requestId: request?.requestId ?? sent,
+  };
+}
 
 /** Restore this fictional account; state otherwise persists across reads and navigation. */
 export function resetFriendsMockData(options: { latencyMs?: number } = {}) {
@@ -74,6 +141,9 @@ export function resetFriendsMockData(options: { latencyMs?: number } = {}) {
   }));
   acceptedRequests = new Map();
   nextFriendshipId = 2101;
+  sentRequests = new Map([[1202, 3100]]);
+  inviteReadFailures = 1;
+  nextRequestId = 3101;
 }
 resetFriendsMockData();
 
@@ -96,6 +166,40 @@ const respondAfterLatency = () => new Promise<void>((resolve) => setTimeout(reso
 
 // Explicit development origin: never intercept another backend or production origin.
 export const friendsHandlers = [
+  http.get(`${FRIENDS_MOCK_ORIGIN}/friends/invite`, async () => {
+    await respondAfterLatency();
+    return jsonResponse({ code: FRIEND_INVITE_MOCK_CODES.SELF, email: 'heejeong@example.com' });
+  }),
+  http.get(`${FRIENDS_MOCK_ORIGIN}/friends/invite/:code`, async ({ params }) => {
+    await respondAfterLatency();
+    if (params.code === FRIEND_INVITE_MOCK_CODES.RETRY && inviteReadFailures > 0) {
+      inviteReadFailures -= 1;
+      return jsonResponse(
+        { code: 'SERVICE_UNAVAILABLE', message: '잠시 후 다시 시도해 주세요.', status: 503 },
+        503
+      );
+    }
+    const seed = inviteUsers[String(params.code)];
+    return seed ? jsonResponse(currentInvitee(seed)) : errorResponse(404);
+  }),
+  http.post(`${FRIENDS_MOCK_ORIGIN}/friends/requests`, async ({ request }) => {
+    await respondAfterLatency();
+    const body = (await request.json()) as { targetUserId?: number };
+    const seed = Object.values(inviteUsers).find((user) => user.userId === body.targetUserId);
+    if (!seed) return errorResponse(404);
+    const user = currentInvitee(seed);
+    if (user.relationshipStatus !== 'NONE') return errorResponse(409);
+    const requestId = nextRequestId++;
+    sentRequests.set(user.userId!, requestId);
+    return jsonResponse(
+      {
+        requestId,
+        user: { ...user, relationshipStatus: 'PENDING_SENT', requestId },
+        createdAt: new Date().toISOString(),
+      },
+      201
+    );
+  }),
   http.get(`${FRIENDS_MOCK_ORIGIN}/friends`, async () => {
     await respondAfterLatency();
     return jsonResponse(friends);

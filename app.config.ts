@@ -58,7 +58,7 @@ const config: ExpoConfig = {
     bundleIdentifier: isProduction ? 'com.detoxmate.app' : 'com.detoxmate.app.dev',
     googleServicesFile: iosGoogleServicesFile,
     supportsTablet: false,
-    associatedDomains: ['applinks:detoxmate.airbridge.io'],
+    associatedDomains: ['applinks:detoxmate.airbridge.io', 'applinks:detoxmate.abr.ge'],
     entitlements: {
       'aps-environment': 'production',
       'com.apple.developer.applesignin': ['Default'],
@@ -81,6 +81,26 @@ const config: ExpoConfig = {
     },
     predictiveBackGestureEnabled: false,
     package: 'com.detoxmate.fe',
+    intentFilters: [
+      {
+        action: 'VIEW',
+        autoVerify: true,
+        category: ['BROWSABLE', 'DEFAULT'],
+        data: [
+          { scheme: 'http', host: 'detoxmate.airbridge.io' },
+          { scheme: 'https', host: 'detoxmate.airbridge.io' },
+        ],
+      },
+      {
+        action: 'VIEW',
+        autoVerify: true,
+        category: ['BROWSABLE', 'DEFAULT'],
+        data: [
+          { scheme: 'http', host: 'detoxmate.abr.ge' },
+          { scheme: 'https', host: 'detoxmate.abr.ge' },
+        ],
+      },
+    ],
     ...(existsSync(androidGoogleServicesFile)
       ? { googleServicesFile: androidGoogleServicesFile }
       : {}),

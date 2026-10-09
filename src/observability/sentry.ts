@@ -4,6 +4,7 @@ import { isAxiosError, isCancel } from 'axios';
 import type { ErrorLogContext } from '@/api/errors/logger';
 import type { AppError } from '@/api/errors/types';
 import { env } from '../config/env';
+import { redactFriendInviteCode } from './redactFriendInviteCode';
 
 const ALWAYS_REPORTABLE_SCOPES = new Set(['render', 'auth.refresh']);
 
@@ -55,11 +56,23 @@ const scrubEvent = (event: Sentry.ErrorEvent): Sentry.ErrorEvent => {
   if (event.request) {
     event.request = {
       ...event.request,
+      url: event.request.url ? redactFriendInviteCode(event.request.url) : event.request.url,
       cookies: undefined,
       data: undefined,
       headers: undefined,
       query_string: undefined,
     };
+  }
+
+  if (event.breadcrumbs) {
+    event.breadcrumbs = event.breadcrumbs.map((breadcrumb) =>
+      typeof breadcrumb.data?.url === 'string'
+        ? {
+            ...breadcrumb,
+            data: { ...breadcrumb.data, url: redactFriendInviteCode(breadcrumb.data.url) },
+          }
+        : breadcrumb
+    );
   }
 
   if (event.contexts) {
