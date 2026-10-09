@@ -127,9 +127,9 @@ export default function SettingsScreen() {
     (async () => {
       const me = await getUser().getMe();
       if (cancelled) return;
-      updateUserPushPreference(me.pushNotificationEnabled ?? true);
+      updateUserPushPreference(me.pushNotificationEnabled);
       setAnalyticsUserProperties({
-        push_notification_enabled: me.pushNotificationEnabled ?? true,
+        push_notification_enabled: me.pushNotificationEnabled,
       });
     })();
     return () => {

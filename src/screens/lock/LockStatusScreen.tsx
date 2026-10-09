@@ -2,7 +2,7 @@ import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useEffect } from 'react';
 import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { DetoxmateWordmark } from '../../components/DetoxmateWordmark';
+import { BrandHeader } from '../../components/BrandHeader/BrandHeader';
 import { Icon } from '../../components/Icon';
 import { Toast, useToastVisibility } from '../../components/Toast';
 import { LoggingButton } from '../../components/LoggingButton';
@@ -52,25 +52,30 @@ export default function LockStatusScreen() {
   return (
     <View collapsable={false} style={styles.root}>
       <SafeAreaView edges={['top']} style={styles.safeArea}>
-        <View style={styles.header}>
-          <DetoxmateWordmark />
-          <View style={styles.headerActions}>
-            <Pressable
-              style={styles.iconButton}
-              hitSlop={8}
-              onPress={() => router.push('/(group)/notifications')}
-            >
-              <Icon name="bell" size={24} color={gray[800]} />
-            </Pressable>
-            <Pressable
-              style={styles.iconButton}
-              hitSlop={8}
-              onPress={() => router.push('/(lock)/select-apps')}
-            >
-              <Icon name="plus" size={24} color={gray[800]} />
-            </Pressable>
-          </View>
-        </View>
+        <BrandHeader
+          actions={
+            <View style={styles.headerActions}>
+              <Pressable
+                accessibilityRole="button"
+                accessibilityLabel="알림"
+                style={styles.iconButton}
+                hitSlop={8}
+                onPress={() => router.push('/(group)/notifications')}
+              >
+                <Icon name="bell" size={24} color={gray[800]} />
+              </Pressable>
+              <Pressable
+                accessibilityRole="button"
+                accessibilityLabel="앱 추가"
+                style={styles.iconButton}
+                hitSlop={8}
+                onPress={() => router.push('/(lock)/select-apps')}
+              >
+                <Icon name="plus" size={24} color={gray[800]} />
+              </Pressable>
+            </View>
+          }
+        />
       </SafeAreaView>
 
       <ScrollView contentInsetAdjustmentBehavior="automatic" contentContainerStyle={styles.content}>
@@ -170,13 +175,6 @@ const styles = StyleSheet.create({
   },
   safeArea: {
     backgroundColor: '#FFFFFF',
-  },
-  header: {
-    height: 54,
-    paddingHorizontal: spacing[16],
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
   },
   headerActions: {
     flexDirection: 'row',

@@ -63,11 +63,11 @@ afterEach(async () => {
   await act(() => cleanups.splice(0).forEach((cleanup) => cleanup()));
 });
 
-async function setup() {
+async function setup(options?: Parameters<typeof useShareFriendInvite>[0]) {
   const client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
   let current!: ReturnType<typeof useShareFriendInvite>;
   function Harness() {
-    current = useShareFriendInvite();
+    current = useShareFriendInvite(options);
     return null;
   }
   const root = createRoot(document.createElement('div'));
@@ -131,6 +131,20 @@ describe('친구 초대 공유의 비동기 보호', () => {
     });
     expect(actions.createLink).toHaveBeenCalledTimes(1);
     expect(actions.track).toHaveBeenCalledTimes(2);
+  });
+
+  it('미리 준비하지 않으면 화면에 들어와도 링크를 만들지 않고 공유할 때 한 번만 만든다', async () => {
+    const screen = await setup({ prepareOnMount: false });
+    expect(actions.createLink).not.toHaveBeenCalled();
+
+    await act(async () => {
+      await screen.state.share();
+    });
+    await act(async () => {
+      await screen.state.share();
+    });
+    expect(actions.createLink).toHaveBeenCalledTimes(1);
+    expect(actions.share).toHaveBeenCalledTimes(2);
   });
 
   it('공유 준비 중 화면을 떠나면 늦게 생성된 URL로 공유하거나 안내하지 않는다', async () => {

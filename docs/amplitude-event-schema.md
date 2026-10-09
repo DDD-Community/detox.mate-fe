@@ -39,11 +39,13 @@
 | `/(feed)/calendar-history`                                | `CalendarHistory`               | `Calendar History Viewed`                  | `event_type`, `page_name`                                 |
 | `/(feed)/post-detail`                                     | `FeedPostDetail`                | `Feed Post Detail Viewed`                  | `event_type`, `page_name`                                 |
 | `/(group)/notifications`                                  | `NotificationList`              | `Notification List Viewed`                 | `event_type`, `page_name`                                 |
-| `/(group)/mypage`                                         | `MyPage`                        | `My Page Viewed`                           | `event_type`, `page_name`, `profile_mode`                 |
+| `/(group)/friend-profile` (기존 MyPageScreen)             | `MyPage`                        | `My Page Viewed`                           | `event_type`, `page_name`, `profile_mode`                 |
+| `/(tabs)/mypage`                                          | `MyProfile`                     | `My Profile Viewed`                        | `event_type`, `page_name`                                 |
+| `/(group)/mypage-edit`                                    | `MyProfileEdit`                 | `My Profile Edit Viewed`                   | `event_type`, `page_name`                                 |
 | `/(group)/settings`                                       | `Settings`                      | `Settings Viewed`                          | `event_type`, `page_name`                                 |
-| `/(group)/group-info`                                     | `GroupInfo`                     | `Group Info Viewed`                        | `event_type`, `page_name`                                 |
-| `/(group)/nickname-edit`                                  | `EditNickname`                  | `Edit Nickname Viewed`                     | `event_type`, `page_name`                                 |
-| `/(group)/goal-time-edit`                                 | `GoalSetup`                     | `Goal Setup Viewed`                        | `event_type`, `page_name`, `mode`                         |
+| (라우팅 해제) `GroupInfoScreen`                           | `GroupInfo`                     | `Group Info Viewed`                        | `event_type`, `page_name`                                 |
+| (라우팅 해제) `EditNicknameScreen`                        | `EditNickname`                  | `Edit Nickname Viewed`                     | `event_type`, `page_name`                                 |
+| (라우팅 해제) `EditGoalTimeScreen`                        | `GoalSetup`                     | `Goal Setup Viewed`                        | `event_type`, `page_name`, `mode`                         |
 | `/(group)/goal`                                           | `GoalSetup`                     | `Goal Setup Viewed`                        | `event_type`, `page_name`, `mode`                         |
 | `/(group)/post`                                           | `PostFeed`                      | `Post Feed Viewed`                         | `event_type`, `page_name`                                 |
 | `/(group)/verify`, `/(feed)/verify`                       | `VerifyHowTo`                   | `Verify How To Viewed`                     | `event_type`, `page_name`, `verify_mode`                  |
@@ -111,6 +113,10 @@
 | `CalendarHistory`               | 피드 카드 프로필            | `피드 카드 프로필`            | `Calendar History Feed Card Profile Open Clicked`                 | `event_type`, `page_name`, `button_name`                  |
 | `NotificationList`              | 닫기                        | `닫기`                        | `Notification List Close Clicked`                                 | `event_type`, `page_name`, `button_name`                  |
 | `NotificationList`              | 알림 항목                   | `알림 항목`                   | `Notification List Notification Item Open Clicked`                | `event_type`, `page_name`, `button_name`                  |
+| `MyProfile`                     | 설정 아이콘                 | `설정 아이콘`                 | `My Profile Settings Clicked`                                     | `event_type`, `page_name`, `button_name`                  |
+| `MyProfile`                     | 편집                        | `편집`                        | `My Profile Edit Clicked`                                         | `event_type`, `page_name`, `button_name`                  |
+| `MyProfile`                     | 친구 목록                   | `친구 목록`                   | `My Profile Friends List Clicked`                                 | `event_type`, `page_name`, `button_name`                  |
+| `MyProfileEdit`                 | 카메라 아이콘               | `카메라 아이콘`               | `My Profile Photo Edit Clicked`                                   | `event_type`, `page_name`, `button_name`                  |
 | `MyPage`                        | 뒤로가기                    | `뒤로가기`                    | `My Page Back Clicked`                                            | `event_type`, `page_name`, `button_name`                  |
 | `MyPage`                        | 홈 아이콘                   | `홈 아이콘`                   | `My Page Home Open Clicked`                                       | `event_type`, `page_name`, `button_name`                  |
 | `MyPage`                        | 설정 아이콘                 | `설정 아이콘`                 | `My Page Settings Open Clicked`                                   | `event_type`, `page_name`, `button_name`                  |
@@ -173,17 +179,18 @@
 
 퍼널과 코호트 기준으로 직접 볼 이벤트는 아래처럼 별도 eventName으로 남긴다. 버튼 클릭 로그와 별개로, 서버 반영 또는 실제 상태 전환이 확인된 뒤 기록한다.
 
-| eventName                           | 발생 시점                                   | properties                  |
-| ----------------------------------- | ------------------------------------------- | --------------------------- |
-| `App Opened`                        | 앱 시작 후 라우팅 판단 시                   | 없음                        |
-| `Onboarding Viewed`                 | 온보딩 첫 진입 또는 단계 변경 시            | `step`                      |
-| `Login Completed`                   | 로그인 성공 후 `setUserId`가 가능한 시점    | `is_new_user`               |
-| `Group Created`                     | `POST /groups` 성공 후                      | 없음                        |
-| `Group Joined`                      | `POST /groups/join` 성공 후                 | `entry_point`               |
-| `Invite Share Button Clicked`       | 초대 공유 버튼 클릭                         | `page_name`                 |
-| `Goal Time Set`                     | 목표 시간 저장 API 성공 후                  | `mode`                      |
-| `Verification Completed`            | 활동 기록 제출 성공 후                      | `goal_achieved`             |
-| `Push Notification Setting Updated` | `PATCH /users/me/notifications` 204 성공 후 | `push_notification_enabled` |
+| eventName                           | 발생 시점                                       | properties                      |
+| ----------------------------------- | ----------------------------------------------- | ------------------------------- |
+| `App Opened`                        | 앱 시작 후 라우팅 판단 시                       | 없음                            |
+| `Onboarding Viewed`                 | 온보딩 첫 진입 또는 단계 변경 시                | `step`                          |
+| `Login Completed`                   | 로그인 성공 후 `setUserId`가 가능한 시점        | `is_new_user`                   |
+| `Group Created`                     | `POST /groups` 성공 후                          | 없음                            |
+| `Group Joined`                      | `POST /groups/join` 성공 후                     | `entry_point`                   |
+| `Invite Share Button Clicked`       | 초대 공유 버튼 클릭                             | `page_name`                     |
+| `Goal Time Set`                     | 목표 시간 저장 API 성공 후                      | `mode`                          |
+| `Verification Completed`            | 활동 기록 제출 성공 후                          | `goal_achieved`                 |
+| `Push Notification Setting Updated` | `PATCH /users/me/notifications` 204 성공 후     | `push_notification_enabled`     |
+| `My Profile Updated`                | 프로필 수정 API 성공 후 (변경 사항이 있을 때만) | `changed_name`, `changed_image` |
 
 ## 1차 적용 우선순위
 
