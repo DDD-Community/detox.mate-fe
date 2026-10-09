@@ -65,6 +65,29 @@ function MyProfileContent() {
   const { share, sharing } = useShareFriendInvite({ prepareOnMount: false });
   const hasFriends = recentFriends.length > 0;
 
+  const friendItems = recentFriends.map((friend) => ({
+    key: String(friend.friendshipId),
+    displayName: friend.user?.displayName ?? '이름 없음',
+    profileImageUrl: friend.user?.profileImageUrl,
+  }));
+
+  const openFriendPage = (key: string) => {
+    const friend = recentFriends.find((item) => String(item.friendshipId) === key);
+    if (!friend) return;
+    const { user, friendshipId } = friend;
+    if (!user?.userId || !friendshipId) return;
+    router.push({
+      pathname: '/(group)/friend-page',
+      params: {
+        userId: String(user.userId),
+        displayName: user.displayName ?? '',
+        ...(user.profileImageUrl ? { profileImageUrl: user.profileImageUrl } : {}),
+        friendshipId: String(friendshipId),
+        relationshipStatus: 'FRIEND',
+      },
+    });
+  };
+
   return (
     <ScrollView contentContainerStyle={styles.content}>
       <View style={styles.profile}>
@@ -101,7 +124,7 @@ function MyProfileContent() {
             <Icon name="caretRight" size={22} color={gray[900]} />
           </Pressable>
         </LoggingButton>
-        {hasFriends ? <FriendsPreview friends={recentFriends} /> : null}
+        {hasFriends ? <FriendsPreview items={friendItems} onPressItem={openFriendPage} /> : null}
       </View>
 
       <View style={styles.share}>

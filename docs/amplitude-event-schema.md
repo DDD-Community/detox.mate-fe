@@ -42,6 +42,7 @@
 | `/(group)/friend-profile` (기존 MyPageScreen)             | `MyPage`                        | `My Page Viewed`                           | `event_type`, `page_name`, `profile_mode`                 |
 | `/(tabs)/mypage`                                          | `MyProfile`                     | `My Profile Viewed`                        | `event_type`, `page_name`                                 |
 | `/(group)/mypage-edit`                                    | `MyProfileEdit`                 | `My Profile Edit Viewed`                   | `event_type`, `page_name`                                 |
+| `/(group)/friend-page`                                    | `FriendPage`                    | `Friend Page Viewed`                       | `event_type`, `page_name`, `relationship_status`          |
 | `/(group)/settings`                                       | `Settings`                      | `Settings Viewed`                          | `event_type`, `page_name`                                 |
 | (라우팅 해제) `GroupInfoScreen`                           | `GroupInfo`                     | `Group Info Viewed`                        | `event_type`, `page_name`                                 |
 | (라우팅 해제) `EditNicknameScreen`                        | `EditNickname`                  | `Edit Nickname Viewed`                     | `event_type`, `page_name`                                 |
@@ -117,6 +118,7 @@
 | `MyProfile`                     | 편집                        | `편집`                        | `My Profile Edit Clicked`                                         | `event_type`, `page_name`, `button_name`                  |
 | `MyProfile`                     | 친구 목록                   | `친구 목록`                   | `My Profile Friends List Clicked`                                 | `event_type`, `page_name`, `button_name`                  |
 | `MyProfileEdit`                 | 카메라 아이콘               | `카메라 아이콘`               | `My Profile Photo Edit Clicked`                                   | `event_type`, `page_name`, `button_name`                  |
+| `FriendPage`                    | 친구                        | `친구`                        | `Friend Page Remove Sheet Open Clicked`                           | `event_type`, `page_name`, `button_name`                  |
 | `MyPage`                        | 뒤로가기                    | `뒤로가기`                    | `My Page Back Clicked`                                            | `event_type`, `page_name`, `button_name`                  |
 | `MyPage`                        | 홈 아이콘                   | `홈 아이콘`                   | `My Page Home Open Clicked`                                       | `event_type`, `page_name`, `button_name`                  |
 | `MyPage`                        | 설정 아이콘                 | `설정 아이콘`                 | `My Page Settings Open Clicked`                                   | `event_type`, `page_name`, `button_name`                  |
