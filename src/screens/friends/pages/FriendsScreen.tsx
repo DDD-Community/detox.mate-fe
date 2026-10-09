@@ -377,7 +377,7 @@ function FriendsContent() {
       behavior={Platform.OS === 'ios' ? 'padding' : undefined}
     >
       <View style={{ paddingTop: insets.top }}>
-        <BrandHeader />
+        <BrandHeader alignStart />
         <View style={styles.searchBox}>
           <Image source={searchIcon} style={styles.searchIcon} contentFit="contain" />
           <TextInput
