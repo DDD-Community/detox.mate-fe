@@ -83,21 +83,21 @@ describe('초대 화면의 친구 요청', () => {
     const screen = await setup();
     const pending = deferred<FriendRequestResponse>();
     api.send.mockReturnValueOnce(pending.promise);
-    let writing!: Promise<boolean>;
+    let writing!: Promise<void>;
     await act(async () => {
       writing = screen.state.sendRequest();
-      expect(await screen.state.sendRequest()).toBe(false);
+      await screen.state.sendRequest();
     });
     expect(api.send).toHaveBeenCalledTimes(1);
     await act(async () => {
       pending.reject(new Error('offline'));
-      expect(await writing).toBe(false);
+      await writing;
     });
     expect(screen.state.sending).toBe(false);
     expect(screen.state.sendError).not.toBeNull();
     expect(api.track).not.toHaveBeenCalled();
     await act(async () => {
-      expect(await screen.state.sendRequest()).toBe(true);
+      await screen.state.sendRequest();
     });
     expect(screen.state.invitee.relationshipStatus).toBe('PENDING_SENT');
     expect(api.track).toHaveBeenCalledExactlyOnceWith('Friend Request Sent', {
@@ -118,7 +118,7 @@ describe('초대 화면의 친구 요청', () => {
       return { requestId: 32 };
     });
     await act(async () => {
-      expect(await screen.state.sendRequest()).toBe(true);
+      await screen.state.sendRequest();
     });
     await act(async () => {
       oldRead.resolve(invitee);
@@ -128,7 +128,7 @@ describe('초대 화면의 친구 요청', () => {
     expect(screen.state.sendError).toBeNull();
     expect(screen.state.readError).not.toBeNull();
     await act(async () => {
-      expect(await screen.state.sendRequest()).toBe(false);
+      await screen.state.sendRequest();
     });
     expect(api.send).toHaveBeenCalledTimes(1);
     expect(api.track).toHaveBeenCalledTimes(1);
@@ -140,7 +140,7 @@ describe('초대 화면의 친구 요청', () => {
       const screen = await setup();
       const oldWrite = deferred<FriendRequestResponse>();
       api.send.mockReturnValueOnce(oldWrite.promise);
-      let writing!: Promise<boolean>;
+      let writing!: Promise<void>;
       await act(() => {
         writing = screen.state.sendRequest();
       });
@@ -154,7 +154,7 @@ describe('초대 화면의 친구 요청', () => {
       await act(async () => {
         if (outcome === '성공') oldWrite.resolve({ requestId: 32 });
         else oldWrite.reject(new Error('offline'));
-        expect(await writing).toBe(false);
+        await writing;
       });
       expect(screen.state.invitee).toEqual(nextUser);
       expect(screen.state.sendError).toBeNull();
