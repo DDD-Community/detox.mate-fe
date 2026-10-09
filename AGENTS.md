@@ -120,3 +120,12 @@ State: `.omc/state/`, `.omc/state/sessions/{sessionId}/`, `.omc/notepad.md`, `.o
 Say "setup omc" or run `/oh-my-Codex:omc-setup`.
 
 <!-- OMC:END -->
+
+# 변경 범위와 복잡성
+
+[Anthropic의 과도한 설계 방지 지침](https://platform.claude.com/docs/en/build-with-claude/prompt-engineering/claude-prompting-best-practices#overeagerness)을 적용한다.
+
+- 요청했거나 요청을 완료하는 데 명백히 필요한 부분만 변경한다. 버그 수정에 주변 코드 정리·리팩터링을 끼워 넣거나, 단순한 기능에 요청하지 않은 설정을 추가하지 않는다.
+- 내부 코드와 프레임워크가 보장하는 계약을 신뢰한다. 사용자 입력·외부 API 등 시스템 경계에서 필요한 검증을 하고, 이미 보장된 조건을 중복 검사하거나 발생할 수 없는 상황을 위한 오류 처리·fallback을 추가하지 않는다.
+- 함수·컴포넌트 분리는 실제 책임을 구분하거나 가독성을 높일 때 한다. 단순한 일회성 처리를 범용 helper·utility·추상화로 감싸지 않는다.
+- 변경하지 않은 코드에 설명 주석·문서 주석·타입 표기를 덧붙이지 않는다. 주석은 코드만으로 의도가 명확하지 않은 부분에만 추가한다.
