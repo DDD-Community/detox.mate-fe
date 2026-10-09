@@ -11,6 +11,7 @@ const mocks = vi.hoisted(() => ({
   deleteItemAsync: vi.fn(),
   post: vi.fn(),
   friends: vi.fn(),
+  requests: new AbortController(),
 }));
 
 vi.mock('@react-native-seoul/kakao-login', () => ({ login: vi.fn() }));
@@ -22,7 +23,14 @@ vi.mock('expo-secure-store', () => ({
     mocks.storage.set(key, value);
   },
 }));
-vi.mock('./client', () => ({ default: { post: mocks.post } }));
+vi.mock('./client', () => ({
+  default: { post: mocks.post },
+  getAuthenticatedRequestSignal: () => mocks.requests.signal,
+  cancelAuthenticatedRequests: () => mocks.requests.abort(),
+  resumeAuthenticatedRequests: () => {
+    mocks.requests = new AbortController();
+  },
+}));
 vi.mock('./errors', async () => import('./errors/normalizeError'));
 vi.mock('./friendMutator', () => ({ friendAxios: mocks.friends }));
 vi.mock('./generated/dev-auth/dev-auth', () => ({
@@ -72,6 +80,43 @@ describe('로그아웃 후 이전 계정의 서버 상태 격리', () => {
     const observer = new QueryObserver(queryClient, options);
     expect(observer.getCurrentResult().data).toBeUndefined();
     expect(queryClient.getMutationCache().getAll()).toHaveLength(0);
+  });
+
+  it('로그아웃의 토큰 조회가 늦게 끝나도 새로 로그인한 토큰을 서버에 보내지 않는다', async () => {
+    await loginWithTestUser('A');
+    const credentials = Promise.withResolvers<string>();
+    mocks.getItemAsync.mockReturnValueOnce(credentials.promise);
+    const signingOut = logout();
+    await loginWithTestUser('B');
+
+    credentials.resolve('fixture-refresh-B');
+    await signingOut;
+
+    expect(mocks.post).not.toHaveBeenCalled();
+    expect(mocks.storage.get('accessTokenKey')).toBe('fixture-B');
+  });
+
+  it('서버 로그아웃 응답이 늦게 돌아와도 다시 로그인한 계정과 캐시를 지우지 않는다', async () => {
+    await loginWithTestUser('A');
+    const loggingOut = Promise.withResolvers<unknown>();
+    const started = Promise.withResolvers<void>();
+    mocks.post.mockImplementationOnce(() => {
+      started.resolve();
+      return loggingOut.promise;
+    });
+    const signingOut = logout();
+    await started.promise;
+    await loginWithTestUser('B');
+    const options = getGetFriendsQueryOptions();
+    const bFriends = [{ friendshipId: 42, user: { userId: 9, displayName: '현재 계정 친구' } }];
+    mocks.friends.mockResolvedValueOnce(bFriends);
+    await queryClient.fetchQuery(options);
+
+    loggingOut.resolve({});
+    await signingOut;
+
+    expect(mocks.storage.get('accessTokenKey')).toBe('fixture-B');
+    expect(queryClient.getQueryData(options.queryKey)).toEqual(bFriends);
   });
 
   it('로그아웃 전에 시작한 친구 조회가 늦게 끝나도 이전 데이터를 캐시에 복원하지 않는다', async () => {

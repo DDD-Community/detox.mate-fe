@@ -27,7 +27,11 @@ export function useShareFriendInvite() {
     if (lock.current) return;
     lock.current = true;
     setSharing(true);
-    trackEvent('Invite Share Button Clicked', { page_name: 'FriendsList' });
+    try {
+      trackEvent('Invite Share Button Clicked', { page_name: 'FriendsList' });
+    } catch (failure) {
+      logError(normalizeError(failure), { scope: 'api', operation: 'logFriendInviteShareClick' });
+    }
 
     const options = getGetMyInviteQueryOptions();
     const invitePromise = client.fetchQuery(options);

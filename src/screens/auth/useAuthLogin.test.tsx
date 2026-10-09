@@ -13,6 +13,7 @@ const mocks = vi.hoisted(() => ({
   replace: vi.fn(),
   kakao: vi.fn(),
   authHttp: vi.fn(),
+  requests: new AbortController(),
   mediaPermission: vi.fn(),
   notificationPermission: vi.fn(),
 }));
@@ -29,6 +30,11 @@ vi.mock('expo-router', () => ({ useRouter: () => ({ replace: mocks.replace }) })
 vi.mock('@react-native-seoul/kakao-login', () => ({ login: mocks.kakao }));
 vi.mock('expo-apple-authentication', () => ({}));
 vi.mock('../../api/client', () => ({
+  getAuthenticatedRequestSignal: () => mocks.requests.signal,
+  cancelAuthenticatedRequests: () => mocks.requests.abort(),
+  resumeAuthenticatedRequests: () => {
+    mocks.requests = new AbortController();
+  },
   default: Object.assign(
     vi.fn(async () => ({ data: undefined })),
     { post: mocks.authHttp }
@@ -76,6 +82,7 @@ const cleanups: (() => void)[] = [];
 beforeEach(() => {
   vi.resetAllMocks();
   mocks.storage.clear();
+  mocks.requests = new AbortController();
   queryClient.clear();
   mocks.kakao.mockResolvedValue({ accessToken: 'provider-token' });
   mocks.authHttp.mockResolvedValue({

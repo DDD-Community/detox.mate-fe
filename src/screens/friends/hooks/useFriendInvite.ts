@@ -1,4 +1,5 @@
 import { useQueryClient, useSuspenseQuery } from '@tanstack/react-query';
+import { isCancel } from 'axios';
 import { useEffect, useRef, useState } from 'react';
 
 import { AppError, getUserErrorMessage, logError, normalizeError } from '../../../api/errors';
@@ -67,14 +68,19 @@ export function useFriendInvite(code: string) {
             }
           : undefined
       );
-      trackEvent('Friend Request Sent', { entry_point: 'invite_link' });
+      try {
+        trackEvent('Friend Request Sent', { entry_point: 'invite_link' });
+      } catch (failure) {
+        logError(normalizeError(failure), { scope: 'api', operation: 'logFriendRequestSent' });
+      }
       // A failed reconciliation keeps the confirmed write and offers a read-only retry.
       void client.invalidateQueries({ queryKey: options.queryKey, exact: true });
       return true;
     } catch (failure) {
+      if (isCancel(failure) || !ownsQuery()) return false;
       const error = normalizeError(failure);
       logError(error, { scope: 'api', operation: 'friends.invite.send' });
-      if (ownsQuery()) setSendError(getUserErrorMessage(error));
+      setSendError(getUserErrorMessage(error));
       return false;
     } finally {
       lock.current = false;
@@ -89,6 +95,7 @@ export function useFriendInvite(code: string) {
         { throwOnError: true }
       );
     } catch (failure) {
+      if (isCancel(failure)) return;
       logError(normalizeError(failure), { scope: 'api', operation: 'friends.invite.refresh' });
       // The query feedback owns the user-facing read error.
     }

@@ -4,13 +4,13 @@
  * OpenAPI definition
  * OpenAPI spec version: v0
  */
-import type { FriendSearchResponseRelationshipStatus } from './friendSearchResponseRelationshipStatus';
+import type { FriendRelationshipStatus } from './friendRelationshipStatus';
 
 export interface FriendSearchResponse {
   userId?: number;
   displayName?: string;
   profileImageUrl?: string;
-  relationshipStatus?: FriendSearchResponseRelationshipStatus;
+  relationshipStatus?: FriendRelationshipStatus;
   requestId?: number;
   mutualFriendCount?: number;
   mutualFriendPreviewName?: string;

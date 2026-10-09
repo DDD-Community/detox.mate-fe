@@ -114,7 +114,10 @@ describe('친구 초대 공유의 비동기 보호', () => {
     expect(screen.state.sharing).toBe(false);
   });
 
-  it('연속 공유는 한 번만 시작하며 실패 후 재시도와 공유창 취소는 정상 종료된다', async () => {
+  it('분석 로그가 실패해도 연속 공유를 막고 공유 실패 후 재시도와 취소가 정상 종료된다', async () => {
+    actions.track.mockImplementationOnce(() => {
+      throw new Error('분석 기록 실패');
+    });
     const pending = deferred<string>();
     actions.createLink.mockReturnValueOnce(pending.promise);
     const screen = await setup();
@@ -124,6 +127,10 @@ describe('친구 초대 공유의 비동기 보호', () => {
       await screen.state.share();
     });
     expect(actions.createLink).toHaveBeenCalledTimes(1);
+    expect(actions.log).toHaveBeenCalledWith(expect.anything(), {
+      scope: 'api',
+      operation: 'logFriendInviteShareClick',
+    });
     expect(actions.track).toHaveBeenCalledExactlyOnceWith('Invite Share Button Clicked', {
       page_name: 'FriendsList',
     });

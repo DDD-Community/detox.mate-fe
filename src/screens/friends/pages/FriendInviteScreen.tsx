@@ -19,7 +19,7 @@ import { getGetInviteeSuspenseQueryOptions } from '../../../api/query-generated/
 import { ErrorBoundary } from '../../../components/AppErrorBoundary/AppErrorBoundary';
 import { LoggingButton } from '../../../components/LoggingButton/LoggingButton';
 import { fontFamily } from '../../../lib/token/primitive/fonts';
-import { FriendsQueryFeedback } from '../components/FriendsQuerySection';
+import { FriendsErrorFeedback } from '../components/FriendsErrorFeedback';
 import { useFriendInvite } from '../hooks/useFriendInvite';
 import defaultAvatar from '@assets/friend-invite/default-avatar.svg';
 import detoxLogo from '@assets/friend-invite/detox.svg';
@@ -176,7 +176,7 @@ function InviteProfile({ code }: { code: string }) {
           </Text>
         ) : null}
         {readError ? (
-          <FriendsQueryFeedback
+          <FriendsErrorFeedback
             error={readError}
             onRetry={() => {
               void refresh();
@@ -205,9 +205,9 @@ export default function FriendInviteScreen({ code }: { code: string }) {
     <QueryErrorResetBoundary>
       {({ reset }) => (
         <ErrorBoundary
-          onReset={() => {
+          onReset={async () => {
             reset();
-            void client.resetQueries({ queryKey: options.queryKey, exact: true });
+            await client.resetQueries({ queryKey: options.queryKey, exact: true });
           }}
           fallback={(error, retry) =>
             normalizeError(error).type === 'notFound' ? (
@@ -215,7 +215,7 @@ export default function FriendInviteScreen({ code }: { code: string }) {
             ) : (
               <InviteLayout>
                 <View style={styles.unusable}>
-                  <FriendsQueryFeedback error={error} onRetry={retry} />
+                  <FriendsErrorFeedback error={error} onRetry={retry} />
                 </View>
                 <LoggingButton
                   eventName="Friend Invite Friends Open Clicked"

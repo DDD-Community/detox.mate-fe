@@ -1,10 +1,9 @@
-import { useSuspenseQuery } from '@tanstack/react-query';
+import { QueryErrorResetBoundary, useSuspenseQuery } from '@tanstack/react-query';
 import { Image } from 'expo-image';
 import { router } from 'expo-router';
-import { useEffect, useState } from 'react';
+import { Suspense, useEffect, useState } from 'react';
 import {
   ActivityIndicator,
-  Alert,
   Keyboard,
   KeyboardAvoidingView,
   Modal,
@@ -20,22 +19,24 @@ import {
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import {
-  getGetFriendsQueryKey,
   getGetFriendsSuspenseQueryOptions,
-  getGetReceivedRequestsQueryKey,
   getGetReceivedRequestsSuspenseQueryOptions,
 } from '../../../api/query-generated/friend';
-import { FriendsQueryFeedback, FriendsQuerySection } from '../components/FriendsQuerySection';
+import { useDebouncedEmail } from '../hooks/useDebouncedEmail';
+import { FriendEmailSearch } from '../components/FriendEmailSearch';
+import { FriendsErrorFeedback } from '../components/FriendsErrorFeedback';
+import { ErrorBoundary } from '../../../components/AppErrorBoundary/AppErrorBoundary';
 import { useFriendsListController } from '../hooks/useFriendsListController';
 import { useShareFriendInvite } from '../hooks/useShareFriendInvite';
 import {
   filterFriendsByName,
   toFriendListItem,
   toReceivedRequest,
-  type FriendReceivedRequest,
   type FriendsListItem,
 } from '../utils/friendsListData';
 import { goBackOrReplace } from '@/lib/navigation';
+import { LoggingPage } from '@/components/LoggingPage';
+import { trackButtonClick } from '@/lib/analytics';
 import { fontFamily } from '@/lib/token/primitive/fonts';
 import defaultSmallAvatar from '@assets/avatars/default-small.svg';
 import defaultAvatar from '@assets/avatars/default.svg';
@@ -126,14 +127,12 @@ function CloseButton({
 }
 
 function ReceivedRequestsSection({
-  onRetry,
   pendingActionId,
-  onConfirmAccept,
+  onAccept,
   onReject,
 }: {
-  onRetry: () => Promise<void>;
   pendingActionId: string | null;
-  onConfirmAccept: (request: FriendReceivedRequest) => void;
+  onAccept: (id: number) => Promise<boolean>;
   onReject: (id: number) => Promise<boolean>;
 }) {
   const result = useSuspenseQuery(getGetReceivedRequestsSuspenseQueryOptions());
@@ -141,8 +140,13 @@ function ReceivedRequestsSection({
   const busy = pendingActionId !== null;
   return (
     <>
-      {result.error && !result.isFetching ? (
-        <FriendsQueryFeedback error={result.error} onRetry={() => void onRetry()} />
+      {result.error ? (
+        <FriendsErrorFeedback
+          error={result.error}
+          onRetry={() => {
+            void result.refetch();
+          }}
+        />
       ) : null}
       {receivedRequests.length > 0 ? (
         <View style={styles.section}>
@@ -161,7 +165,9 @@ function ReceivedRequestsSection({
                   }}
                   disabled={busy}
                   hitSlop={{ top: 6, bottom: 6 }}
-                  onPress={() => onConfirmAccept(request)}
+                  onPress={() => {
+                    void onAccept(request.requestId);
+                  }}
                   style={[styles.acceptButton, busy && styles.disabled]}
                 >
                   {pendingActionId === `request:${request.requestId}` ? (
@@ -188,14 +194,14 @@ function ReceivedRequestsSection({
 }
 
 function FriendsSection({
-  onRetry,
+  userId,
   query,
   pendingActionId,
   onSelectDelete,
   onShare,
   sharing,
 }: {
-  onRetry: () => Promise<void>;
+  userId?: number;
   query: string;
   pendingActionId: string | null;
   onSelectDelete: (friend: FriendsListItem) => void;
@@ -206,12 +212,28 @@ function FriendsSection({
   const friends = result.data.map(toFriendListItem);
   const busy = pendingActionId !== null;
   const searching = query.trim().length > 0;
-  const emailSearch = query.includes('@');
-  const filteredFriends = emailSearch ? [] : filterFriendsByName(friends, query);
+  const filteredFriends =
+    userId != null
+      ? friends.filter((item) => item.user.userId === userId)
+      : filterFriendsByName(friends, query);
+  if (userId != null && filteredFriends.length === 0 && result.isFetching) {
+    return (
+      <ActivityIndicator
+        color={green}
+        style={{ padding: 24 }}
+        accessibilityLabel="친구 정보 불러오는 중"
+      />
+    );
+  }
   return (
     <>
-      {result.error && !result.isFetching ? (
-        <FriendsQueryFeedback error={result.error} onRetry={() => void onRetry()} />
+      {result.error ? (
+        <FriendsErrorFeedback
+          error={result.error}
+          onRetry={() => {
+            void result.refetch();
+          }}
+        />
       ) : null}
       {filteredFriends.length > 0 ? (
         <View style={[styles.section, searching && styles.searchSection]}>
@@ -235,13 +257,9 @@ function FriendsSection({
         </View>
       ) : searching ? (
         <View style={styles.searchEmpty}>
-          <Text style={styles.emptyTitle}>
-            {emailSearch ? '이메일로 친구 추가는 준비 중이에요.' : '일치하는 친구가 없어요.'}
-          </Text>
+          <Text style={styles.emptyTitle}>일치하는 친구가 없어요.</Text>
           <Text style={styles.emptyDescription}>
-            {emailSearch
-              ? '친구 추가 화면에서 제공할 예정이에요.'
-              : '프로필을 공유하거나,\n친구의 메일을 입력해 친구를 추가해보세요.'}
+            프로필을 공유하거나,{'\n'}친구의 메일을 입력해 친구를 추가해보세요.
           </Text>
           <ShareButton onPress={onShare} sharing={sharing} />
         </View>
@@ -256,14 +274,20 @@ function FriendsSection({
 }
 
 export default function FriendsScreen() {
+  return (
+    <LoggingPage eventName="Friends Viewed" properties={{ pageName: 'Friends' }}>
+      <FriendsContent />
+    </LoggingPage>
+  );
+}
+
+function FriendsContent() {
   const { share, sharing } = useShareFriendInvite();
   const {
     refreshing,
     error,
     pendingActionId,
     refresh,
-    refreshFriends,
-    refreshRequests,
     acceptRequest,
     rejectRequest,
     deleteFriend,
@@ -273,6 +297,8 @@ export default function FriendsScreen() {
   const [keyboardVisible, setKeyboardVisible] = useState(false);
   const [deleteTarget, setDeleteTarget] = useState<FriendsListItem | null>(null);
   const searching = query.trim().length > 0;
+  const emailSearch = query.includes('@');
+  const { email, valid } = useDebouncedEmail(query);
   const busy = pendingActionId !== null;
   const deleting =
     deleteTarget !== null && pendingActionId === `friend:${deleteTarget.friendshipId}`;
@@ -290,22 +316,6 @@ export default function FriendsScreen() {
     };
   }, []);
 
-  const confirmAccept = (request: FriendReceivedRequest) => {
-    if (busy) return;
-    Alert.alert(
-      '친구 요청 수락',
-      `${request.user.displayName}님과 친구가 되면 지금까지의 모든 활동 기록을 서로 볼 수 있어요.`,
-      [
-        { text: '취소', style: 'cancel' },
-        {
-          text: '수락',
-          onPress: () => {
-            void acceptRequest(request.requestId);
-          },
-        },
-      ]
-    );
-  };
   const confirmDelete = async () => {
     if (!deleteTarget || busy) return;
     if (await deleteFriend(deleteTarget.friendshipId)) setDeleteTarget(null);
@@ -332,7 +342,7 @@ export default function FriendsScreen() {
         <View style={styles.searchBox}>
           <Image source={searchIcon} style={styles.searchIcon} contentFit="contain" />
           <TextInput
-            accessibilityLabel="친구 이름 검색"
+            accessibilityLabel="친구 이름 또는 이메일 검색"
             placeholder="친구 추가 또는 검색"
             placeholderTextColor="#989fad"
             value={query}
@@ -400,27 +410,88 @@ export default function FriendsScreen() {
           </Pressable>
         ) : null}
 
-        {!searching ? (
-          <FriendsQuerySection label="받은 요청" queryKey={getGetReceivedRequestsQueryKey()}>
-            <ReceivedRequestsSection
-              pendingActionId={pendingActionId}
-              onConfirmAccept={confirmAccept}
-              onReject={rejectRequest}
-              onRetry={refreshRequests}
-            />
-          </FriendsQuerySection>
-        ) : null}
+        <QueryErrorResetBoundary>
+          {({ reset }) => (
+            <ErrorBoundary
+              onReset={async () => {
+                await refresh();
+                reset();
+              }}
+            >
+              <Suspense
+                fallback={
+                  <ActivityIndicator
+                    color={green}
+                    style={{ padding: 24 }}
+                    accessibilityLabel="친구 목록 불러오는 중"
+                  />
+                }
+              >
+                {!searching ? (
+                  <ReceivedRequestsSection
+                    pendingActionId={pendingActionId}
+                    onAccept={acceptRequest}
+                    onReject={rejectRequest}
+                  />
+                ) : null}
 
-        <FriendsQuerySection label="친구 목록" queryKey={getGetFriendsQueryKey()}>
-          <FriendsSection
-            query={query}
-            pendingActionId={pendingActionId}
-            onSelectDelete={setDeleteTarget}
-            onRetry={refreshFriends}
-            onShare={() => void share()}
-            sharing={sharing}
-          />
-        </FriendsQuerySection>
+                {emailSearch ? (
+                  email ? (
+                    <FriendEmailSearch
+                      key={email}
+                      email={email}
+                      onRefresh={refresh}
+                      onReceived={() => {
+                        trackButtonClick(
+                          'Friends Received Requests Open Clicked',
+                          'Friends',
+                          '받은 요청 확인'
+                        );
+                        setQuery('');
+                        Keyboard.dismiss();
+                      }}
+                      renderFriend={(userId) => (
+                        <FriendsSection
+                          userId={userId}
+                          query={query}
+                          pendingActionId={pendingActionId}
+                          onSelectDelete={setDeleteTarget}
+                          onShare={() => void share()}
+                          sharing={sharing}
+                        />
+                      )}
+                      empty={
+                        <View style={styles.searchEmpty}>
+                          <Text style={styles.emptyTitle}>일치하는 메일이 없어요.</Text>
+                          <Text style={styles.emptyDescription}>
+                            프로필을 공유해서 초대해보세요.
+                          </Text>
+                          <ShareButton onPress={() => void share()} sharing={sharing} />
+                        </View>
+                      }
+                    />
+                  ) : valid ? (
+                    <ActivityIndicator
+                      style={{ padding: 24 }}
+                      color={green}
+                      accessibilityLabel="이메일 검색 중"
+                    />
+                  ) : (
+                    <Text style={styles.emailHint}>친구의 전체 이메일 주소를 입력해주세요.</Text>
+                  )
+                ) : (
+                  <FriendsSection
+                    query={query}
+                    pendingActionId={pendingActionId}
+                    onSelectDelete={setDeleteTarget}
+                    onShare={() => void share()}
+                    sharing={sharing}
+                  />
+                )}
+              </Suspense>
+            </ErrorBoundary>
+          )}
+        </QueryErrorResetBoundary>
 
         {!searching ? (
           <View style={styles.shareFooter}>
@@ -529,6 +600,14 @@ export default function FriendsScreen() {
 
 const styles = StyleSheet.create({
   root: { flex: 1, backgroundColor: 'white' },
+  emailHint: {
+    fontFamily: regular,
+    fontSize: 14,
+    lineHeight: 20,
+    color: '#989fad',
+    textAlign: 'center',
+    padding: 24,
+  },
   header: { height: 54, flexDirection: 'row', alignItems: 'center', paddingHorizontal: 16, gap: 8 },
   backButton: { width: 24, height: 44, justifyContent: 'center' },
   backIcon: { width: 24, height: 24 },

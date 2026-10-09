@@ -7,15 +7,12 @@
 
 export * from './createFriendRequest';
 export * from './friendInviteeResponse';
-export * from './friendInviteeResponseRelationshipStatus';
 export * from './friendInviteResponse';
 export * from './friendListUserResponse';
-export * from './friendListUserResponseRelationshipStatus';
 export * from './friendReceivedRequestResponse';
+export * from './friendRelationshipStatus';
 export * from './friendRequestResponse';
 export * from './friendResponse';
 export * from './friendSearchResponse';
-export * from './friendSearchResponseRelationshipStatus';
 export * from './friendUserResponse';
-export * from './friendUserResponseRelationshipStatus';
 export * from './searchByEmailParams';
