@@ -629,7 +629,6 @@ const styles = StyleSheet.create({
     flex: 1,
     fontFamily: regular,
     fontSize: 16,
-    lineHeight: 24,
     padding: 0,
     color: '#383e49',
     letterSpacing: -0.32,
