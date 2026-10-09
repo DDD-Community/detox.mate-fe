@@ -9,17 +9,6 @@ import type {
 
 export const FRIENDS_MOCK_ORIGIN = 'https://api-dev.detoxmate.co.kr';
 
-// The published Swagger examples include nulls omitted by the generated OpenAPI types.
-type MockUser = Omit<FriendListUserResponse, 'profileImageUrl' | 'requestId'> & {
-  profileImageUrl: string | null;
-  requestId: number | null;
-};
-type MockFriend = Omit<FriendResponse, 'user' | 'friendshipId'> & {
-  friendshipId: number;
-  user: MockUser;
-};
-type MockRequest = Omit<FriendReceivedRequestResponse, 'user'> & { user: MockUser };
-
 // Offline avatars keep the simulator independent of external image hosts.
 const avatar = (background: string, foreground: string) =>
   `data:image/svg+xml,${encodeURIComponent(`<svg xmlns="http://www.w3.org/2000/svg" width="120" height="120" viewBox="0 0 120 120"><rect width="120" height="120" rx="60" fill="${background}"/><circle cx="60" cy="44" r="22" fill="${foreground}"/><ellipse cx="60" cy="104" rx="40" ry="34" fill="${foreground}"/></svg>`)}`;
@@ -40,12 +29,12 @@ const requestSeeds = [
   ['백지훈', 'B8JH4', null],
 ] as const;
 
-let friends: MockFriend[] = [];
-let requests: MockRequest[] = [];
+let friends: FriendResponse[] = [];
+let requests: FriendReceivedRequestResponse[] = [];
 let acceptedRequests = new Map<number, number>();
 let nextFriendshipId = 2101;
 let latencyMs = 280;
-let users: MockUser[] = [];
+let users: FriendListUserResponse[] = [];
 let sentRequests = new Map<number, number>();
 let nextRequestId = 4002;
 const mutualConnections = new Map<number, number[]>([
@@ -293,6 +282,7 @@ export const friendsHandlers = [
         user: {
           userId: user.userId,
           displayName: user.displayName,
+          userCode: user.userCode,
           profileImageUrl: user.profileImageUrl,
           relationshipStatus: 'PENDING_SENT',
           requestId,
@@ -316,7 +306,7 @@ export const friendsHandlers = [
     if (acceptedRequests.has(requestId)) return errorResponse(409);
     const request = requests.find((item) => item.requestId === requestId);
     if (!request) return errorResponse(404);
-    const friend: MockFriend = {
+    const friend: FriendResponse = {
       friendshipId: nextFriendshipId++,
       user: { ...request.user, relationshipStatus: 'FRIEND', requestId: null },
       acceptedAt: new Date().toISOString(),

@@ -6,7 +6,7 @@ import type {
 export interface FriendListUser {
   userId: number;
   displayName: string;
-  profileImageUrl?: string;
+  profileImageUrl: string | null;
   userCode: string;
 }
 
@@ -29,10 +29,10 @@ export function requireId(value: number | undefined): number {
 
 function toUser(user: FriendResponse['user']): FriendListUser {
   return {
-    userId: requireId(user?.userId),
-    displayName: user?.displayName ?? '이름 없음',
-    profileImageUrl: user?.profileImageUrl,
-    userCode: user!.userCode,
+    userId: requireId(user.userId),
+    displayName: user.displayName,
+    profileImageUrl: user.profileImageUrl,
+    userCode: user.userCode,
   };
 }
 

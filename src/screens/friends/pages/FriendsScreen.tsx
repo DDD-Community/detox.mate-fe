@@ -48,7 +48,7 @@ import shareIcon from '@assets/icons/share.svg';
 const { regular, medium, bold } = fontFamily.primary;
 const green = '#5a8974';
 
-function Avatar({ uri, small = false }: { uri?: string; small?: boolean }) {
+function Avatar({ uri, small = false }: { uri?: string | null; small?: boolean }) {
   const [failed, setFailed] = useState(false);
   useEffect(() => setFailed(false), [uri]);
   return (

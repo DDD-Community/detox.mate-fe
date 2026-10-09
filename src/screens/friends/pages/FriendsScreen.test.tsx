@@ -95,11 +95,27 @@ Object.assign(globalThis, { IS_REACT_ACT_ENVIRONMENT: true });
 
 const friend: FriendResponse = {
   friendshipId: 41,
-  user: { userId: 8, displayName: '복구된 친구', userCode: 'ABCDE' },
+  user: {
+    userId: 8,
+    displayName: '복구된 친구',
+    userCode: 'ABCDE',
+    profileImageUrl: null,
+    relationshipStatus: 'FRIEND',
+    requestId: null,
+  },
+  acceptedAt: '2026-10-09T10:00:00',
 };
 const request = {
   requestId: 72,
-  user: { userId: 9, displayName: '유지할 요청', userCode: 'FGHJK' },
+  user: {
+    ...friend.user,
+    userId: 9,
+    displayName: '유지할 요청',
+    userCode: 'FGHJK',
+    relationshipStatus: 'PENDING_RECEIVED' as const,
+    requestId: 72,
+  },
+  createdAt: '2026-10-09T09:00:00',
 };
 const cleanups: (() => void)[] = [];
 const server = setupServer(...friendsHandlers);
@@ -171,6 +187,8 @@ describe('친구 화면 새로고침으로 오류 복구', () => {
     const refreshedRequest = { ...request, user: { ...request.user, displayName: '갱신된 요청' } };
     api.requests.mockResolvedValue([refreshedRequest]);
     await act(async () => {
+      // 필수 ID가 누락된 외부 응답을 의도적으로 주입해 복구를 검증한다.
+      // @ts-expect-error 잘못된 서버 응답
       retryRead.resolve([{ user: friend.user }]);
     });
     expect(screen.retryButton()).toBeDefined();

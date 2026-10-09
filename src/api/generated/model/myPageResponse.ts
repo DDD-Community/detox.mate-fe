@@ -6,9 +6,10 @@
  */
 
 export interface MyPageResponse {
-  displayName?: string;
-  userCode?: string;
-  profileImageUrl?: string;
-  id?: number;
-  pushNotificationEnabled?: boolean;
+  id: number;
+  displayName: string;
+  userCode: string;
+  /** @nullable */
+  profileImageUrl: string | null;
+  pushNotificationEnabled: boolean;
 }

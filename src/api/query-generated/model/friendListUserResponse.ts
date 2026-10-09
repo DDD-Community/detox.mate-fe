@@ -7,14 +7,12 @@
 import type { FriendRelationshipStatus } from './friendRelationshipStatus';
 
 export interface FriendListUserResponse {
-  userId?: number;
-  displayName?: string;
-  profileImageUrl?: string;
-  relationshipStatus?: FriendRelationshipStatus;
-  requestId?: number;
-  /**
-   * @minLength 5
-   * @maxLength 5
-   */
+  userId: number;
+  displayName: string;
+  /** @nullable */
+  profileImageUrl: string | null;
+  relationshipStatus: FriendRelationshipStatus;
+  /** @nullable */
+  requestId: string | number | null;
   userCode: string;
 }
