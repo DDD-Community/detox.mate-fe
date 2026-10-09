@@ -30,7 +30,7 @@ import type {
   FriendRequestResponse,
   FriendResponse,
   FriendSearchResponse,
-  SearchByEmailParams,
+  SearchByUserCodeParams,
 } from './model';
 
 import { friendAxios } from '../friendMutator';
@@ -332,7 +332,7 @@ export function useGetFriendsSuspense<
   return { ...query, queryKey: queryOptions.queryKey };
 }
 
-export const searchByEmail = (params: SearchByEmailParams, signal?: AbortSignal) => {
+export const searchByUserCode = (params?: SearchByUserCodeParams, signal?: AbortSignal) => {
   return friendAxios<FriendSearchResponse>({
     url: `/friends/search`,
     method: 'GET',
@@ -341,94 +341,94 @@ export const searchByEmail = (params: SearchByEmailParams, signal?: AbortSignal)
   });
 };
 
-export const getSearchByEmailQueryKey = (params?: SearchByEmailParams) => {
+export const getSearchByUserCodeQueryKey = (params?: SearchByUserCodeParams) => {
   return ['friends', 'search', ...(params ? [params] : [])] as const;
 };
 
-export const getSearchByEmailQueryOptions = <
-  TData = Awaited<ReturnType<typeof searchByEmail>>,
+export const getSearchByUserCodeQueryOptions = <
+  TData = Awaited<ReturnType<typeof searchByUserCode>>,
   TError = ErrorType<unknown>,
 >(
-  params: SearchByEmailParams,
+  params?: SearchByUserCodeParams,
   options?: {
-    query?: Partial<UseQueryOptions<Awaited<ReturnType<typeof searchByEmail>>, TError, TData>>;
+    query?: Partial<UseQueryOptions<Awaited<ReturnType<typeof searchByUserCode>>, TError, TData>>;
   }
 ) => {
   const { query: queryOptions } = options ?? {};
 
-  const queryKey = queryOptions?.queryKey ?? getSearchByEmailQueryKey(params);
+  const queryKey = queryOptions?.queryKey ?? getSearchByUserCodeQueryKey(params);
 
-  const queryFn: QueryFunction<Awaited<ReturnType<typeof searchByEmail>>> = ({ signal }) =>
-    searchByEmail(params, signal);
+  const queryFn: QueryFunction<Awaited<ReturnType<typeof searchByUserCode>>> = ({ signal }) =>
+    searchByUserCode(params, signal);
 
   return { queryKey, queryFn, ...queryOptions } as UseQueryOptions<
-    Awaited<ReturnType<typeof searchByEmail>>,
+    Awaited<ReturnType<typeof searchByUserCode>>,
     TError,
     TData
   > & { queryKey: DataTag<QueryKey, TData, TError> };
 };
 
-export type SearchByEmailQueryResult = NonNullable<Awaited<ReturnType<typeof searchByEmail>>>;
-export type SearchByEmailQueryError = ErrorType<unknown>;
+export type SearchByUserCodeQueryResult = NonNullable<Awaited<ReturnType<typeof searchByUserCode>>>;
+export type SearchByUserCodeQueryError = ErrorType<unknown>;
 
-export function useSearchByEmail<
-  TData = Awaited<ReturnType<typeof searchByEmail>>,
+export function useSearchByUserCode<
+  TData = Awaited<ReturnType<typeof searchByUserCode>>,
   TError = ErrorType<unknown>,
 >(
-  params: SearchByEmailParams,
+  params: undefined | SearchByUserCodeParams,
   options: {
-    query: Partial<UseQueryOptions<Awaited<ReturnType<typeof searchByEmail>>, TError, TData>> &
+    query: Partial<UseQueryOptions<Awaited<ReturnType<typeof searchByUserCode>>, TError, TData>> &
       Pick<
         DefinedInitialDataOptions<
-          Awaited<ReturnType<typeof searchByEmail>>,
+          Awaited<ReturnType<typeof searchByUserCode>>,
           TError,
-          Awaited<ReturnType<typeof searchByEmail>>
+          Awaited<ReturnType<typeof searchByUserCode>>
         >,
         'initialData'
       >;
   },
   queryClient?: QueryClient
 ): DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
-export function useSearchByEmail<
-  TData = Awaited<ReturnType<typeof searchByEmail>>,
+export function useSearchByUserCode<
+  TData = Awaited<ReturnType<typeof searchByUserCode>>,
   TError = ErrorType<unknown>,
 >(
-  params: SearchByEmailParams,
+  params?: SearchByUserCodeParams,
   options?: {
-    query?: Partial<UseQueryOptions<Awaited<ReturnType<typeof searchByEmail>>, TError, TData>> &
+    query?: Partial<UseQueryOptions<Awaited<ReturnType<typeof searchByUserCode>>, TError, TData>> &
       Pick<
         UndefinedInitialDataOptions<
-          Awaited<ReturnType<typeof searchByEmail>>,
+          Awaited<ReturnType<typeof searchByUserCode>>,
           TError,
-          Awaited<ReturnType<typeof searchByEmail>>
+          Awaited<ReturnType<typeof searchByUserCode>>
         >,
         'initialData'
       >;
   },
   queryClient?: QueryClient
 ): UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
-export function useSearchByEmail<
-  TData = Awaited<ReturnType<typeof searchByEmail>>,
+export function useSearchByUserCode<
+  TData = Awaited<ReturnType<typeof searchByUserCode>>,
   TError = ErrorType<unknown>,
 >(
-  params: SearchByEmailParams,
+  params?: SearchByUserCodeParams,
   options?: {
-    query?: Partial<UseQueryOptions<Awaited<ReturnType<typeof searchByEmail>>, TError, TData>>;
+    query?: Partial<UseQueryOptions<Awaited<ReturnType<typeof searchByUserCode>>, TError, TData>>;
   },
   queryClient?: QueryClient
 ): UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
 
-export function useSearchByEmail<
-  TData = Awaited<ReturnType<typeof searchByEmail>>,
+export function useSearchByUserCode<
+  TData = Awaited<ReturnType<typeof searchByUserCode>>,
   TError = ErrorType<unknown>,
 >(
-  params: SearchByEmailParams,
+  params?: SearchByUserCodeParams,
   options?: {
-    query?: Partial<UseQueryOptions<Awaited<ReturnType<typeof searchByEmail>>, TError, TData>>;
+    query?: Partial<UseQueryOptions<Awaited<ReturnType<typeof searchByUserCode>>, TError, TData>>;
   },
   queryClient?: QueryClient
 ): UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
-  const queryOptions = getSearchByEmailQueryOptions(params, options);
+  const queryOptions = getSearchByUserCodeQueryOptions(params, options);
 
   const query = useQuery(queryOptions, queryClient) as UseQueryResult<TData, TError> & {
     queryKey: DataTag<QueryKey, TData, TError>;
@@ -437,86 +437,86 @@ export function useSearchByEmail<
   return { ...query, queryKey: queryOptions.queryKey };
 }
 
-export const getSearchByEmailSuspenseQueryOptions = <
-  TData = Awaited<ReturnType<typeof searchByEmail>>,
+export const getSearchByUserCodeSuspenseQueryOptions = <
+  TData = Awaited<ReturnType<typeof searchByUserCode>>,
   TError = ErrorType<unknown>,
 >(
-  params: SearchByEmailParams,
+  params?: SearchByUserCodeParams,
   options?: {
     query?: Partial<
-      UseSuspenseQueryOptions<Awaited<ReturnType<typeof searchByEmail>>, TError, TData>
+      UseSuspenseQueryOptions<Awaited<ReturnType<typeof searchByUserCode>>, TError, TData>
     >;
   }
 ) => {
   const { query: queryOptions } = options ?? {};
 
-  const queryKey = queryOptions?.queryKey ?? getSearchByEmailQueryKey(params);
+  const queryKey = queryOptions?.queryKey ?? getSearchByUserCodeQueryKey(params);
 
-  const queryFn: QueryFunction<Awaited<ReturnType<typeof searchByEmail>>> = ({ signal }) =>
-    searchByEmail(params, signal);
+  const queryFn: QueryFunction<Awaited<ReturnType<typeof searchByUserCode>>> = ({ signal }) =>
+    searchByUserCode(params, signal);
 
   return { queryKey, queryFn, ...queryOptions } as UseSuspenseQueryOptions<
-    Awaited<ReturnType<typeof searchByEmail>>,
+    Awaited<ReturnType<typeof searchByUserCode>>,
     TError,
     TData
   > & { queryKey: DataTag<QueryKey, TData, TError> };
 };
 
-export type SearchByEmailSuspenseQueryResult = NonNullable<
-  Awaited<ReturnType<typeof searchByEmail>>
+export type SearchByUserCodeSuspenseQueryResult = NonNullable<
+  Awaited<ReturnType<typeof searchByUserCode>>
 >;
-export type SearchByEmailSuspenseQueryError = ErrorType<unknown>;
+export type SearchByUserCodeSuspenseQueryError = ErrorType<unknown>;
 
-export function useSearchByEmailSuspense<
-  TData = Awaited<ReturnType<typeof searchByEmail>>,
+export function useSearchByUserCodeSuspense<
+  TData = Awaited<ReturnType<typeof searchByUserCode>>,
   TError = ErrorType<unknown>,
 >(
-  params: SearchByEmailParams,
+  params: undefined | SearchByUserCodeParams,
   options: {
     query: Partial<
-      UseSuspenseQueryOptions<Awaited<ReturnType<typeof searchByEmail>>, TError, TData>
+      UseSuspenseQueryOptions<Awaited<ReturnType<typeof searchByUserCode>>, TError, TData>
     >;
   },
   queryClient?: QueryClient
 ): UseSuspenseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
-export function useSearchByEmailSuspense<
-  TData = Awaited<ReturnType<typeof searchByEmail>>,
+export function useSearchByUserCodeSuspense<
+  TData = Awaited<ReturnType<typeof searchByUserCode>>,
   TError = ErrorType<unknown>,
 >(
-  params: SearchByEmailParams,
+  params?: SearchByUserCodeParams,
   options?: {
     query?: Partial<
-      UseSuspenseQueryOptions<Awaited<ReturnType<typeof searchByEmail>>, TError, TData>
+      UseSuspenseQueryOptions<Awaited<ReturnType<typeof searchByUserCode>>, TError, TData>
     >;
   },
   queryClient?: QueryClient
 ): UseSuspenseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
-export function useSearchByEmailSuspense<
-  TData = Awaited<ReturnType<typeof searchByEmail>>,
+export function useSearchByUserCodeSuspense<
+  TData = Awaited<ReturnType<typeof searchByUserCode>>,
   TError = ErrorType<unknown>,
 >(
-  params: SearchByEmailParams,
+  params?: SearchByUserCodeParams,
   options?: {
     query?: Partial<
-      UseSuspenseQueryOptions<Awaited<ReturnType<typeof searchByEmail>>, TError, TData>
+      UseSuspenseQueryOptions<Awaited<ReturnType<typeof searchByUserCode>>, TError, TData>
     >;
   },
   queryClient?: QueryClient
 ): UseSuspenseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
 
-export function useSearchByEmailSuspense<
-  TData = Awaited<ReturnType<typeof searchByEmail>>,
+export function useSearchByUserCodeSuspense<
+  TData = Awaited<ReturnType<typeof searchByUserCode>>,
   TError = ErrorType<unknown>,
 >(
-  params: SearchByEmailParams,
+  params?: SearchByUserCodeParams,
   options?: {
     query?: Partial<
-      UseSuspenseQueryOptions<Awaited<ReturnType<typeof searchByEmail>>, TError, TData>
+      UseSuspenseQueryOptions<Awaited<ReturnType<typeof searchByUserCode>>, TError, TData>
     >;
   },
   queryClient?: QueryClient
 ): UseSuspenseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
-  const queryOptions = getSearchByEmailSuspenseQueryOptions(params, options);
+  const queryOptions = getSearchByUserCodeSuspenseQueryOptions(params, options);
 
   const query = useSuspenseQuery(queryOptions, queryClient) as UseSuspenseQueryResult<
     TData,

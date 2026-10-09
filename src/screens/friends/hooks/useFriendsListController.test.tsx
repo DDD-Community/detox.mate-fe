@@ -7,6 +7,7 @@ import {
 } from '@tanstack/react-query';
 import { act, createElement, Suspense } from 'react';
 import { createRoot } from 'react-dom/client';
+import { useFocusEffect } from 'expo-router';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import type {
@@ -17,7 +18,7 @@ import type {
 import {
   getGetFriendsSuspenseQueryOptions,
   getGetReceivedRequestsSuspenseQueryOptions,
-  getSearchByEmailQueryOptions,
+  getSearchByUserCodeQueryOptions,
 } from '../../../api/query-generated/friend';
 import { useFriendsListController } from './useFriendsListController';
 
@@ -30,6 +31,7 @@ const api = vi.hoisted(() => ({
   track: vi.fn(),
 }));
 vi.mock('../../../lib/analytics', () => ({ trackEvent: api.track }));
+vi.mock('expo-router', () => ({ useFocusEffect: vi.fn() }));
 vi.mock('../../../api/errors/logger', () => ({ logError: vi.fn() }));
 vi.mock('../../../api/friendMutator', () => ({
   friendAxios: ({ url, method }: { url: string; method: string }) => {
@@ -42,8 +44,29 @@ vi.mock('../../../api/friendMutator', () => ({
   },
 }));
 Object.assign(globalThis, { IS_REACT_ACT_ENVIRONMENT: true });
-const friend: FriendResponse = { friendshipId: 41, user: { userId: 8, displayName: '홍길동' } };
-const request = { requestId: 72, user: { userId: 9, displayName: '친구' } };
+const friend: FriendResponse = {
+  friendshipId: 41,
+  user: {
+    userCode: 'ABCDE',
+    userId: 8,
+    displayName: '홍길동',
+    profileImageUrl: null,
+    relationshipStatus: 'FRIEND',
+    requestId: null,
+  },
+  acceptedAt: '2026-10-09T10:00:00',
+};
+const request: FriendReceivedRequestResponse = {
+  requestId: 72,
+  user: {
+    ...friend.user,
+    userId: 9,
+    displayName: '친구',
+    relationshipStatus: 'PENDING_RECEIVED',
+    requestId: 72,
+  },
+  createdAt: '2026-10-09T09:00:00',
+};
 const cleanups: (() => void)[] = [];
 
 function deferred<T>() {
@@ -61,7 +84,7 @@ beforeEach(() => {
 
   api.friends.mockResolvedValue([friend]);
   api.received.mockResolvedValue([request]);
-  api.accept.mockResolvedValue({ friendshipId: 42, user: request.user });
+  api.accept.mockResolvedValue({ ...friend, friendshipId: 42, user: request.user });
   api.reject.mockImplementation(async () => {
     api.received.mockResolvedValue([]);
   });
@@ -137,9 +160,23 @@ async function remove(screen: Awaited<ReturnType<typeof setup>>) {
 }
 
 describe('친구 목록 조회와 변경 액션', () => {
+  it('화면을 유지한 채 다시 진입하면 외부에서 변경된 친구와 새 받은 요청을 반영한다', async () => {
+    const screen = await setup();
+    const newRequest = { ...request, requestId: 73 };
+    api.friends.mockResolvedValue([]);
+    api.received.mockResolvedValue([request, newRequest]);
+
+    await act(() => {
+      vi.mocked(useFocusEffect).mock.lastCall![0]();
+    });
+
+    await expect.poll(() => screen.rows).toEqual([]);
+    await expect.poll(() => screen.requests).toEqual([request, newRequest]);
+  });
+
   it('검색 갱신 중에는 목록을 갱신하거나 친구 삭제를 시작해도 검색 응답을 취소하지 않고 목록 갱신 표시도 켜지 않는다', async () => {
     const screen = await setup();
-    const options = getSearchByEmailQueryOptions({ email: 'search@example.com' });
+    const options = getSearchByUserCodeQueryOptions({ userCode: 'ABCDE' });
     const user = { userId: 8, displayName: '검색한 친구' };
     const searchRead = deferred<typeof user>();
     const writeStarted = deferred<void>();
@@ -224,7 +261,7 @@ describe('친구 목록 조회와 변경 액션', () => {
       screen.client.removeQueries({ queryKey: requestsOptions.queryKey, exact: true });
       await screen.client.fetchQuery(requestsOptions);
     });
-    const accepted = { friendshipId: 42, user: request.user };
+    const accepted = { ...friend, friendshipId: 42, user: request.user };
     api.accept.mockImplementationOnce(async () => {
       api.friends.mockResolvedValue([friend, accepted]);
       api.received.mockResolvedValue([]);
@@ -335,8 +372,16 @@ describe('친구 목록 조회와 변경 액션', () => {
         writing = screen.state.acceptRequest(72);
       });
 
-      const nextFriend = { friendshipId: 99, user: { userId: 10, displayName: '새 계정 친구' } };
-      const nextRequest = { requestId: 72, user: { userId: 11, displayName: '새 계정 요청' } };
+      const nextFriend = {
+        ...friend,
+        friendshipId: 99,
+        user: { ...friend.user, userId: 10, displayName: '새 계정 친구' },
+      };
+      const nextRequest = {
+        ...request,
+        requestId: 72,
+        user: { ...request.user, userId: 11, displayName: '새 계정 요청' },
+      };
       api.friends.mockResolvedValue([nextFriend]);
       api.received.mockResolvedValue([nextRequest]);
       await act(() => {
@@ -361,7 +406,8 @@ describe('친구 목록 조회와 변경 액션', () => {
         await nextReadStarted.promise;
       });
       await act(async () => {
-        if (outcome === '성공') oldWrite.resolve({ friendshipId: 42, user: request.user });
+        if (outcome === '성공')
+          oldWrite.resolve({ ...friend, friendshipId: 42, user: request.user });
         else oldWrite.reject(new Error('offline'));
         expect(await writing).toBe(false);
       });

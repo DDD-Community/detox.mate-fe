@@ -15,4 +15,4 @@ export * from './friendRequestResponse';
 export * from './friendResponse';
 export * from './friendSearchResponse';
 export * from './friendUserResponse';
-export * from './searchByEmailParams';
+export * from './searchByUserCodeParams';

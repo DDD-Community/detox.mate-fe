@@ -15,10 +15,9 @@ export function useMyProfile() {
   const profile = useSuspenseQuery(getMyProfileQueryOptions()).data;
 
   return {
-    displayName: profile.displayName ?? '',
-    profileImageUrl: profile.profileImageUrl ?? null,
-    // 5자 코드이며 영문자는 대문자로 표시한다(마이페이지 정책). 미발급 기존 계정은 null이다.
-    userCode: (profile.userCode ?? '').toUpperCase(),
+    displayName: profile.displayName,
+    profileImageUrl: profile.profileImageUrl,
+    userCode: profile.userCode,
   };
 }
 

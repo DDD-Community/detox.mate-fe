@@ -24,7 +24,6 @@ import {
   TERMS_ACCEPTED_KEY,
 } from '@/screens/auth/authStorageKeys';
 import { LogoutConfirmAlert } from './LogoutConfirmAlert';
-import type { LegacyMyProfile } from './legacyMyProfile';
 import { NotificationPermissionAlert } from './NotificationPermissionAlert';
 import { WithdrawConfirmAlert } from './WithdrawConfirmAlert';
 
@@ -126,11 +125,11 @@ export default function SettingsScreen() {
   useEffect(() => {
     let cancelled = false;
     (async () => {
-      const me: LegacyMyProfile = await getUser().getMe();
+      const me = await getUser().getMe();
       if (cancelled) return;
-      updateUserPushPreference(me.pushNotificationEnabled ?? true);
+      updateUserPushPreference(me.pushNotificationEnabled);
       setAnalyticsUserProperties({
-        push_notification_enabled: me.pushNotificationEnabled ?? true,
+        push_notification_enabled: me.pushNotificationEnabled,
       });
     })();
     return () => {

@@ -21,8 +21,8 @@ import {
   getGetFriendsSuspenseQueryOptions,
   getGetReceivedRequestsSuspenseQueryOptions,
 } from '../../../api/query-generated/friend';
-import { useDebouncedEmail } from '../hooks/useDebouncedEmail';
-import { FriendEmailSearch } from '../components/FriendEmailSearch';
+import { useDebouncedUserCode } from '../hooks/useDebouncedUserCode';
+import { FriendCodeSearch } from '../components/FriendCodeSearch';
 import { FriendsErrorFeedback } from '../components/FriendsErrorFeedback';
 import { ErrorBoundary } from '../../../components/AppErrorBoundary/AppErrorBoundary';
 import { useFriendsListController } from '../hooks/useFriendsListController';
@@ -47,7 +47,7 @@ import shareIcon from '@assets/icons/share.svg';
 const { regular, medium, bold } = fontFamily.primary;
 const green = '#5a8974';
 
-function Avatar({ uri, small = false }: { uri?: string; small?: boolean }) {
+function Avatar({ uri, small = false }: { uri?: string | null; small?: boolean }) {
   const [failed, setFailed] = useState(false);
   useEffect(() => setFailed(false), [uri]);
   return (
@@ -82,9 +82,9 @@ function UserLabel({ user }: { user: FriendsListItem['user'] }) {
       <Text numberOfLines={1} style={styles.userName}>
         {user.displayName}
       </Text>
-      {user.email ? (
-        <Text numberOfLines={1} style={styles.email}>
-          {user.email}
+      {user.userCode ? (
+        <Text numberOfLines={1} style={styles.userCode}>
+          {user.userCode}
         </Text>
       ) : null}
     </View>
@@ -254,7 +254,7 @@ function FriendsSection({
         <View style={styles.searchEmpty}>
           <Text style={styles.emptyTitle}>일치하는 친구가 없어요.</Text>
           <Text style={styles.emptyDescription}>
-            프로필을 공유하거나,{'\n'}친구의 메일을 입력해 친구를 추가해보세요.
+            프로필을 공유하거나,{'\n'}친구의 초대코드를 입력해 친구를 추가해보세요.
           </Text>
           <ShareButton onPress={onShare} sharing={sharing} />
         </View>
@@ -265,6 +265,76 @@ function FriendsSection({
         </View>
       ) : null}
     </>
+  );
+}
+
+function FriendSearchResults({
+  query,
+  pendingActionId,
+  onSelectDelete,
+  onShare,
+  sharing,
+  onRefresh,
+  onReceived,
+}: {
+  query: string;
+  pendingActionId: string | null;
+  onSelectDelete: (friend: FriendsListItem) => void;
+  onShare: () => void;
+  sharing: boolean;
+  onRefresh: () => Promise<void>;
+  onReceived: () => void;
+}) {
+  const { userCode, ready } = useDebouncedUserCode(query);
+  const { data } = useSuspenseQuery(getGetFriendsSuspenseQueryOptions());
+  const nameMatches = filterFriendsByName(data.map(toFriendListItem), query);
+  const codeSearch = nameMatches.length === 0 && /[a-z0-9]/i.test(query);
+  if (!codeSearch) {
+    return (
+      <FriendsSection
+        query={query}
+        pendingActionId={pendingActionId}
+        onSelectDelete={onSelectDelete}
+        onShare={onShare}
+        sharing={sharing}
+      />
+    );
+  }
+  if (!userCode) {
+    return ready ? (
+      <ActivityIndicator
+        style={{ padding: 24 }}
+        color={green}
+        accessibilityLabel="초대코드 검색 중"
+      />
+    ) : (
+      <Text style={styles.codeHint}>친구의 5자리 초대코드를 입력해주세요.</Text>
+    );
+  }
+  return (
+    <FriendCodeSearch
+      key={userCode}
+      userCode={userCode}
+      onRefresh={onRefresh}
+      onReceived={onReceived}
+      renderFriend={(userId) => (
+        <FriendsSection
+          userId={userId}
+          query={query}
+          pendingActionId={pendingActionId}
+          onSelectDelete={onSelectDelete}
+          onShare={onShare}
+          sharing={sharing}
+        />
+      )}
+      empty={
+        <View style={styles.searchEmpty}>
+          <Text style={styles.emptyTitle}>일치하는 초대코드가 없어요.</Text>
+          <Text style={styles.emptyDescription}>프로필을 공유해서 초대해보세요.</Text>
+          <ShareButton onPress={onShare} sharing={sharing} />
+        </View>
+      }
+    />
   );
 }
 
@@ -291,8 +361,6 @@ function FriendsContent() {
   const [query, setQuery] = useState('');
   const [deleteTarget, setDeleteTarget] = useState<FriendsListItem | null>(null);
   const searching = query.trim().length > 0;
-  const emailSearch = query.includes('@');
-  const { email, valid } = useDebouncedEmail(query);
   const busy = pendingActionId !== null;
   const deleting =
     deleteTarget !== null && pendingActionId === `friend:${deleteTarget.friendshipId}`;
@@ -313,7 +381,7 @@ function FriendsContent() {
         <View style={styles.searchBox}>
           <Image source={searchIcon} style={styles.searchIcon} contentFit="contain" />
           <TextInput
-            accessibilityLabel="친구 이름 또는 이메일 검색"
+            accessibilityLabel="친구 이름 또는 초대코드 검색"
             placeholder="친구 추가 또는 검색"
             placeholderTextColor="#989fad"
             value={query}
@@ -407,59 +475,23 @@ function FriendsContent() {
                   />
                 ) : null}
 
-                {emailSearch ? (
-                  email ? (
-                    <FriendEmailSearch
-                      key={email}
-                      email={email}
-                      onRefresh={refresh}
-                      onReceived={() => {
-                        trackButtonClick(
-                          'Friends Received Requests Open Clicked',
-                          'Friends',
-                          '받은 요청 확인'
-                        );
-                        setQuery('');
-                        Keyboard.dismiss();
-                      }}
-                      renderFriend={(userId) => (
-                        <FriendsSection
-                          userId={userId}
-                          query={query}
-                          pendingActionId={pendingActionId}
-                          onSelectDelete={setDeleteTarget}
-                          onShare={() => void share()}
-                          sharing={sharing}
-                        />
-                      )}
-                      empty={
-                        <View style={styles.searchEmpty}>
-                          <Text style={styles.emptyTitle}>일치하는 메일이 없어요.</Text>
-                          <Text style={styles.emptyDescription}>
-                            프로필을 공유해서 초대해보세요.
-                          </Text>
-                          <ShareButton onPress={() => void share()} sharing={sharing} />
-                        </View>
-                      }
-                    />
-                  ) : valid ? (
-                    <ActivityIndicator
-                      style={{ padding: 24 }}
-                      color={green}
-                      accessibilityLabel="이메일 검색 중"
-                    />
-                  ) : (
-                    <Text style={styles.emailHint}>친구의 전체 이메일 주소를 입력해주세요.</Text>
-                  )
-                ) : (
-                  <FriendsSection
-                    query={query}
-                    pendingActionId={pendingActionId}
-                    onSelectDelete={setDeleteTarget}
-                    onShare={() => void share()}
-                    sharing={sharing}
-                  />
-                )}
+                <FriendSearchResults
+                  query={query}
+                  pendingActionId={pendingActionId}
+                  onSelectDelete={setDeleteTarget}
+                  onShare={() => void share()}
+                  sharing={sharing}
+                  onRefresh={refresh}
+                  onReceived={() => {
+                    trackButtonClick(
+                      'Friends Received Requests Open Clicked',
+                      'Friends',
+                      '받은 요청 확인'
+                    );
+                    setQuery('');
+                    Keyboard.dismiss();
+                  }}
+                />
               </Suspense>
             </ErrorBoundary>
           )}
@@ -547,7 +579,7 @@ function FriendsContent() {
 
 const styles = StyleSheet.create({
   root: { flex: 1, backgroundColor: 'white' },
-  emailHint: {
+  codeHint: {
     fontFamily: regular,
     fontSize: 14,
     lineHeight: 20,
@@ -615,7 +647,7 @@ const styles = StyleSheet.create({
   row: { minHeight: 60, marginHorizontal: 16, flexDirection: 'row', alignItems: 'center', gap: 8 },
   userLabel: { flex: 1, minWidth: 0 },
   userName: { fontFamily: medium, fontSize: 16, lineHeight: 26, color: '#2b2f38' },
-  email: { fontFamily: regular, fontSize: 16, lineHeight: 26, color: '#989fad', marginTop: -4 },
+  userCode: { fontFamily: regular, fontSize: 16, lineHeight: 26, color: '#989fad', marginTop: -4 },
   closeButton: { width: 22, height: 44, alignItems: 'flex-end', justifyContent: 'center' },
   receivedCloseButton: { marginLeft: 5 },
   closeIcon: { width: 22, height: 22 },

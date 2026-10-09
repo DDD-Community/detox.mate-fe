@@ -9,8 +9,8 @@ import {
   getUserUsageGoalTime,
   type GroupMemberProfileResponse,
   type GroupResponse,
+  type MyPageResponse,
 } from '@/api';
-import type { LegacyMyProfile } from './legacyMyProfile';
 import type { MyPageParams } from './useMyPageParams';
 
 interface UseMyPageDataOptions {
@@ -23,7 +23,7 @@ export function useMyPageData({ params, onProfileImageUriChange }: UseMyPageData
   const memberId = isFriend ? params.memberId : undefined;
   const friendGroupId = isFriend ? params.friendGroupId : undefined;
 
-  const [profile, setProfile] = useState<LegacyMyProfile | null>(null);
+  const [profile, setProfile] = useState<MyPageResponse | null>(null);
   const [hasGoalSet, setHasGoalSet] = useState(false);
   const [groups, setGroups] = useState<GroupResponse[]>([]);
   const [memberProfile, setMemberProfile] = useState<GroupMemberProfileResponse | null>(null);
@@ -48,7 +48,7 @@ export function useMyPageData({ params, onProfileImageUriChange }: UseMyPageData
           }
 
           const [me, goalsResponse, myGroups] = await Promise.all([
-            getUser().getMe() as Promise<LegacyMyProfile>,
+            getUser().getMe(),
             getUserUsageGoalTime().getCurrentGoalTimes(),
             getGroup().getMyGroups(),
           ]);

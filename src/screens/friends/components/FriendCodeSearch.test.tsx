@@ -5,8 +5,8 @@ import { createRoot } from 'react-dom/client';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { AppError } from '../../../api/errors/normalizeError';
-import { getSearchByEmailSuspenseQueryOptions } from '../../../api/query-generated/friend';
-import { FriendEmailSearch } from './FriendEmailSearch';
+import { getSearchByUserCodeSuspenseQueryOptions } from '../../../api/query-generated/friend';
+import { FriendCodeSearch } from './FriendCodeSearch';
 
 const mocks = vi.hoisted(() => ({ search: vi.fn(), send: vi.fn(), log: vi.fn() }));
 vi.mock('../../../api/friendMutator', () => ({
@@ -46,7 +46,7 @@ afterEach(async () => {
   await act(() => cleanups.splice(0).forEach((cleanup) => cleanup()));
 });
 
-async function mount(client: QueryClient, strict = false, email = 'search@example.com') {
+async function mount(client: QueryClient, strict = false, userCode = 'ABCDE') {
   const element = document.createElement('div');
   const caught = vi.fn();
   const root = createRoot(element, { onCaughtError: caught });
@@ -67,12 +67,12 @@ async function mount(client: QueryClient, strict = false, email = 'search@exampl
         createElement(
           QueryClientProvider,
           { client },
-          createElement(FriendEmailSearch, {
-            email,
+          createElement(FriendCodeSearch, {
+            userCode,
             onRefresh: async () => {},
             onReceived: vi.fn(),
             renderFriend: () => createElement('span', {}, '서버 친구 관계'),
-            empty: createElement('span', {}, '일치하는 메일이 없어요.'),
+            empty: createElement('span', {}, '일치하는 초대코드가 없어요.'),
           })
         )
       )
@@ -96,13 +96,13 @@ const newClient = () =>
     defaultOptions: { queries: { retry: false } },
   });
 
-describe('이메일 검색 실패의 정상 화면 복구', () => {
+describe('초대코드 검색 실패의 정상 화면 복구', () => {
   it.each([
     ['검색 없음', false],
     ['서버 오류', false],
     ['검색 없음', true],
   ] as const)(
-    '초기 %s 뒤 같은 이메일에 다시 진입하면 새 결과로 복구한다 (StrictMode: %s)',
+    '초기 %s 뒤 같은 초대코드에 다시 진입하면 새 결과로 복구한다 (StrictMode: %s)',
     async (outcome, strict) => {
       const client = newClient();
       const missing =
@@ -111,7 +111,7 @@ describe('이메일 검색 실패의 정상 화면 복구', () => {
           : AppError({ type: 'server', status: 500 });
       const first = deferred<unknown>();
       mocks.search.mockReturnValue(first.promise);
-      const options = getSearchByEmailSuspenseQueryOptions({ email: 'search@example.com' });
+      const options = getSearchByUserCodeSuspenseQueryOptions({ userCode: 'ABCDE' });
       const screen = await mount(client, strict);
       expect(screen.element.querySelector('[role="status"]')).not.toBeNull();
       await act(async () => {
@@ -121,7 +121,7 @@ describe('이메일 검색 실패의 정상 화면 복구', () => {
       await vi.waitFor(async () => {
         await act(async () => {});
         expect(screen.element.textContent).toContain(
-          outcome === '검색 없음' ? '일치하는 메일이 없어요.' : '다시 시도'
+          outcome === '검색 없음' ? '일치하는 초대코드가 없어요.' : '다시 시도'
         );
       });
       expect(screen.caught).toHaveBeenCalled();
@@ -241,7 +241,7 @@ describe('이메일 검색 실패의 정상 화면 복구', () => {
 
   it('확정 요청의 재조회가 실패하면 요청됨을 유지하면서 재시도와 오류 기록을 제공한다', async () => {
     const client = newClient();
-    const options = getSearchByEmailSuspenseQueryOptions({ email: 'search@example.com' });
+    const options = getSearchByUserCodeSuspenseQueryOptions({ userCode: 'ABCDE' });
     mocks.search.mockResolvedValue({
       userId: 2,
       displayName: '친구',
@@ -285,7 +285,7 @@ describe('이메일 검색 실패의 정상 화면 복구', () => {
 
   it('전송 중 재조회가 먼저 실패해도 전송 성공은 재시도 없이 요청됨 카드로 복구한다', async () => {
     const client = newClient();
-    const options = getSearchByEmailSuspenseQueryOptions({ email: 'search@example.com' });
+    const options = getSearchByUserCodeSuspenseQueryOptions({ userCode: 'ABCDE' });
     const user = { userId: 2, displayName: '친구', relationshipStatus: 'NONE' as const };
     client.setQueryData(options.queryKey, user);
     const reading = deferred<unknown>();
@@ -311,7 +311,7 @@ describe('이메일 검색 실패의 정상 화면 복구', () => {
     expect(mocks.log).toHaveBeenCalledTimes(1);
     expect(mocks.log).toHaveBeenCalledWith(expect.objectContaining({ status: 500 }), {
       scope: 'api',
-      operation: 'searchFriendByEmail',
+      operation: 'searchFriendByUserCode',
     });
     await act(async () => {
       sending.resolve({ requestId: 10, user: { ...user, relationshipStatus: 'PENDING_SENT' } });
@@ -331,7 +331,7 @@ describe('이메일 검색 실패의 정상 화면 복구', () => {
     '전송 성공 뒤 늦은 GET %s는 현재 완료를 되돌리지 않고 재진입 시 서버 관계를 확인한다',
     async (outcome) => {
       const client = newClient();
-      const options = getSearchByEmailSuspenseQueryOptions({ email: 'search@example.com' });
+      const options = getSearchByUserCodeSuspenseQueryOptions({ userCode: 'ABCDE' });
       client.setQueryData(options.queryKey, {
         userId: 2,
         displayName: '친구',
@@ -400,7 +400,7 @@ describe('이메일 검색 실패의 정상 화면 복구', () => {
       displayName: '친구 B',
       relationshipStatus: 'NONE',
     });
-    const next = await mount(client, false, 'next@example.com');
+    const next = await mount(client, false, 'FGHJK');
     await act(async () => {
       sending.resolve({ requestId: 10 });
       await sending.promise;

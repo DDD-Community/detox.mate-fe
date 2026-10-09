@@ -9,43 +9,32 @@ import type {
 
 export const FRIENDS_MOCK_ORIGIN = 'https://api-dev.detoxmate.co.kr';
 
-// The published Swagger examples include nulls omitted by the generated OpenAPI types.
-type MockUser = Omit<FriendListUserResponse, 'profileImageUrl' | 'requestId'> & {
-  profileImageUrl: string | null;
-  requestId: number | null;
-};
-type MockFriend = Omit<FriendResponse, 'user' | 'friendshipId'> & {
-  friendshipId: number;
-  user: MockUser;
-};
-type MockRequest = Omit<FriendReceivedRequestResponse, 'user'> & { user: MockUser };
-
 // Offline avatars keep the simulator independent of external image hosts.
 const avatar = (background: string, foreground: string) =>
   `data:image/svg+xml,${encodeURIComponent(`<svg xmlns="http://www.w3.org/2000/svg" width="120" height="120" viewBox="0 0 120 120"><rect width="120" height="120" rx="60" fill="${background}"/><circle cx="60" cy="44" r="22" fill="${foreground}"/><ellipse cx="60" cy="104" rx="40" ry="34" fill="${foreground}"/></svg>`)}`;
 
 const friendSeeds = [
-  ['김서연', 'seoyeon.kim', avatar('#E7DCD0', '#A77B62')],
-  ['이준호', 'junho.lee', null],
-  ['박민지', 'minji.park', avatar('#D8E8E3', '#5B8C7B')],
-  ['최도윤', 'doyoon.choi', null],
-  ['정수빈', 'subin.jeong', null],
-  ['한지우', 'jiwoo.han', avatar('#DDE3EF', '#7A89A8')],
-  ['윤하린', 'harin.yoon', null],
-  ['강현우', 'hyunwoo.kang', null],
+  ['김서연', 'F4JH8', avatar('#E7DCD0', '#A77B62')],
+  ['이준호', 'J7HN2', null],
+  ['박민지', 'M9PJ3', avatar('#D8E8E3', '#5B8C7B')],
+  ['최도윤', 'D6YC4', null],
+  ['정수빈', 'S5BJ7', null],
+  ['한지우', 'H8JW6', avatar('#DDE3EF', '#7A89A8')],
+  ['윤하린', 'Y3HR9', null],
+  ['강현우', 'K2HW5', null],
 ] as const;
 const requestSeeds = [
-  ['오유진', 'yujin.oh', avatar('#F0E2E5', '#B58391')],
-  ['임수아', 'sua.lim', null],
-  ['백지훈', 'jihoon.baek', null],
+  ['오유진', 'R6YN2', avatar('#F0E2E5', '#B58391')],
+  ['임수아', 'L7SA3', null],
+  ['백지훈', 'B8JH4', null],
 ] as const;
 
-let friends: MockFriend[] = [];
-let requests: MockRequest[] = [];
+let friends: FriendResponse[] = [];
+let requests: FriendReceivedRequestResponse[] = [];
 let acceptedRequests = new Map<number, number>();
 let nextFriendshipId = 2101;
 let latencyMs = 280;
-let users: MockUser[] = [];
+let users: FriendListUserResponse[] = [];
 let sentRequests = new Map<number, number>();
 let nextRequestId = 4002;
 const mutualConnections = new Map<number, number[]>([
@@ -58,12 +47,12 @@ const mutualConnections = new Map<number, number[]>([
 let inviteReadFailures = 1;
 
 export const FRIEND_INVITE_MOCK_CODES = {
-  NONE: 'n7Kp2Rt9Xc4V',
-  PENDING_SENT: 's9Mq5Ba3Ld8H',
-  PENDING_RECEIVED: 'r6Yn1Ce8Wk3P',
-  FRIEND: 'f4Jh8Ds2Uv7N',
-  SELF: 'k8Vt4Nz2Qp7R',
-  RETRY: 'x5Qa9Lp2Tc7M',
+  NONE: 'a2b3c'.repeat(12) + 'a2b3',
+  PENDING_SENT: 'b9c5d'.repeat(12) + 'b9c5',
+  PENDING_RECEIVED: 'c6d2e'.repeat(12) + 'c6d2',
+  FRIEND: 'f4a8b'.repeat(12) + 'f4a8',
+  SELF: 'd8e4f'.repeat(12) + 'd8e4',
+  RETRY: 'e5a9b'.repeat(12) + 'e5a9',
 } as const;
 
 const inviteUsers: Record<string, FriendInviteeResponse> = {
@@ -123,24 +112,24 @@ function currentInvitee(seed: FriendInviteeResponse): FriendInviteeResponse {
 /** Restore this fictional account; state otherwise persists across reads and navigation. */
 export function resetFriendsMockData(options: { latencyMs?: number } = {}) {
   latencyMs = options.latencyMs ?? 280;
-  friends = friendSeeds.map(([displayName, email, profileImageUrl], index) => ({
+  friends = friendSeeds.map(([displayName, userCode, profileImageUrl], index) => ({
     friendshipId: 2001 + index,
     user: {
       userId: 1001 + index,
       displayName,
-      email: `${email}@example.com`,
+      userCode,
       profileImageUrl,
       relationshipStatus: 'FRIEND',
       requestId: null,
     },
     acceptedAt: `2026-09-${String(24 - index).padStart(2, '0')}T18:30:00`,
   }));
-  requests = requestSeeds.map(([displayName, email, profileImageUrl], index) => ({
+  requests = requestSeeds.map(([displayName, userCode, profileImageUrl], index) => ({
     requestId: 3001 + index,
     user: {
       userId: 1101 + index,
       displayName,
-      email: `${email}@example.com`,
+      userCode,
       profileImageUrl,
       relationshipStatus: 'PENDING_RECEIVED',
       requestId: 3001 + index,
@@ -157,17 +146,17 @@ export function resetFriendsMockData(options: { latencyMs?: number } = {}) {
     ...requests.map((request) => request.user),
     ...(
       [
-        [9001, '희정', 'self', 'SELF'],
-        [1201, '홍길동', 'add', 'NONE'],
-        [1202, '김다은', 'solo', 'NONE'],
-        [1203, '이서진', 'one', 'NONE'],
-        [1204, '정예린', 'sent', 'PENDING_SENT'],
-        [1205, '송유나', 'conflict', 'NONE'],
+        [9001, '희정', 'K8VT4', 'SELF'],
+        [1201, '홍길동', 'A2B3C', 'NONE'],
+        [1202, '김다은', 'N4DA7', 'NONE'],
+        [1203, '이서진', 'X5QA9', 'NONE'],
+        [1204, '정예린', 'S9MQ5', 'PENDING_SENT'],
+        [1205, '송유나', 'C7YN8', 'NONE'],
       ] as const
-    ).map(([userId, displayName, email, relationshipStatus]) => ({
+    ).map(([userId, displayName, userCode, relationshipStatus]) => ({
       userId,
       displayName,
-      email: `${email}@example.com`,
+      userCode,
       profileImageUrl: null,
       relationshipStatus,
       requestId: null,
@@ -203,13 +192,16 @@ const errorResponse = (status: 400 | 404 | 409 | 500) =>
     },
     status
   );
-const respondAfterLatency = () => new Promise<void>((resolve) => setTimeout(resolve, latencyMs));
+const respondAfterLatency = () =>
+  latencyMs === 0
+    ? Promise.resolve()
+    : new Promise<void>((resolve) => setTimeout(resolve, latencyMs));
 
 // Explicit development origin: never intercept another backend or production origin.
 export const friendsHandlers = [
   http.get(`${FRIENDS_MOCK_ORIGIN}/friends/invite`, async () => {
     await respondAfterLatency();
-    return jsonResponse({ code: FRIEND_INVITE_MOCK_CODES.SELF, email: 'heejeong@example.com' });
+    return jsonResponse({ code: FRIEND_INVITE_MOCK_CODES.SELF, userCode: 'K8VT4' });
   }),
   http.get(`${FRIENDS_MOCK_ORIGIN}/friends/invite/:code`, async ({ params }) => {
     await respondAfterLatency();
@@ -225,10 +217,20 @@ export const friendsHandlers = [
   }),
 
   http.get(`${FRIENDS_MOCK_ORIGIN}/friends/search`, async ({ request }) => {
-    const email = new URL(request.url).searchParams.get('email')?.trim().toLowerCase();
+    const input = new URL(request.url).searchParams.get('userCode');
+    const userCode = input?.trim().toUpperCase();
     await respondAfterLatency();
-    if (email === 'error@example.com') return errorResponse(500);
-    const user = users.find((candidate) => candidate.email === email);
+    if (!userCode || !/^[ABCDEFGHJKLMNPQRSTUVWXYZ23456789]{5}$/.test(userCode))
+      return jsonResponse(
+        {
+          code: input === null ? 'USER_CODE_REQUIRED' : 'INVALID_USER_CODE',
+          message: '올바른 사용자 코드를 입력해주세요.',
+          status: 400,
+        },
+        400
+      );
+    if (userCode === 'ERRRR') return errorResponse(500);
+    const user = users.find((candidate) => candidate.userCode === userCode);
     if (!user) return errorResponse(404);
     const friend = friends.find((item) => item.user.userId === user.userId);
     const received = requests.find((item) => item.user.userId === user.userId);
@@ -303,7 +305,7 @@ export const friendsHandlers = [
     if (acceptedRequests.has(requestId)) return errorResponse(409);
     const request = requests.find((item) => item.requestId === requestId);
     if (!request) return errorResponse(404);
-    const friend: MockFriend = {
+    const friend: FriendResponse = {
       friendshipId: nextFriendshipId++,
       user: { ...request.user, relationshipStatus: 'FRIEND', requestId: null },
       acceptedAt: new Date().toISOString(),

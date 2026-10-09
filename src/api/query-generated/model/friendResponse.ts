@@ -7,7 +7,7 @@
 import type { FriendListUserResponse } from './friendListUserResponse';
 
 export interface FriendResponse {
-  friendshipId?: number;
-  user?: FriendListUserResponse;
-  acceptedAt?: string;
+  friendshipId: number;
+  user: FriendListUserResponse;
+  acceptedAt: string;
 }

@@ -6,6 +6,6 @@
  */
 
 export interface FriendInviteResponse {
-  code?: string;
-  email?: string;
+  code: string;
+  userCode: string;
 }

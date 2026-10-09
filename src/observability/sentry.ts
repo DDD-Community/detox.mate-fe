@@ -29,6 +29,7 @@ const SENSITIVE_CONTEXT_KEYS = new Set([
   'identityToken',
   'authorizationCode',
   'inviteCode',
+  'userCode',
   'commentBody',
 ]);
 
