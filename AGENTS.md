@@ -1,129 +1,19 @@
 @Codex.local.md
 
-<!-- OMC:START -->
+# 개발 원칙
 
-<!-- OMC:VERSION:4.9.0 -->
+Marcos Hernanz의 [AGENTS.md](https://x.com/MarcosHernanz/status/2083954734487212511)를 바탕으로 한다.
 
-# oh-my-Codex - Intelligent Multi-Agent Orchestration
-
-You are running with oh-my-Codex (OMC), a multi-agent orchestration layer for Codex.
-Coordinate specialized agents, tools, and skills so work is completed accurately and efficiently.
-
-<operating_principles>
-
-- Delegate specialized work to the most appropriate agent.
-- Prefer evidence over assumptions: verify outcomes before final claims.
-- Choose the lightest-weight path that preserves quality.
-- Consult official docs before implementing with SDKs/frameworks/APIs.
-  </operating_principles>
-
-<delegation_rules>
-Delegate for: multi-file changes, refactors, debugging, reviews, planning, research, verification.
-Work directly for: trivial ops, small clarifications, single commands.
-Route code to `executor` (use `model=opus` for complex work). Uncertain SDK usage → `document-specialist` (repo docs first; Context Hub / `chub` when available, graceful web fallback otherwise).
-</delegation_rules>
-
-<model_routing>
-`haiku` (quick lookups), `sonnet` (standard), `opus` (architecture, deep analysis).
-Direct writes OK for: `~/.Codex/**`, `.omc/**`, `.Codex/**`, `AGENTS.md`, `AGENTS.md`.
-</model_routing>
-
-<agent_catalog>
-Prefix: `oh-my-Codex:`. See `agents/*.md` for full prompts.
-
-explore (haiku), analyst (opus), planner (opus), architect (opus), debugger (sonnet), executor (sonnet), verifier (sonnet), tracer (sonnet), security-reviewer (sonnet), code-reviewer (opus), test-engineer (sonnet), designer (sonnet), writer (haiku), qa-tester (sonnet), scientist (sonnet), document-specialist (sonnet), git-master (sonnet), code-simplifier (opus), critic (opus)
-</agent_catalog>
-
-<tools>
-External AI: `/team N:executor "task"`, `omc team N:codex|gemini "..."`, `omc ask <Codex|codex|gemini>`, `/ccg`
-OMC State: `state_read`, `state_write`, `state_clear`, `state_list_active`, `state_get_status`
-Teams: `TeamCreate`, `TeamDelete`, `SendMessage`, `TaskCreate`, `TaskList`, `TaskGet`, `TaskUpdate`
-Notepad: `notepad_read`, `notepad_write_priority`, `notepad_write_working`, `notepad_write_manual`
-Project Memory: `project_memory_read`, `project_memory_write`, `project_memory_add_note`, `project_memory_add_directive`
-Code Intel: LSP (`lsp_hover`, `lsp_goto_definition`, `lsp_find_references`, `lsp_diagnostics`, etc.), AST (`ast_grep_search`, `ast_grep_replace`), `python_repl`
-</tools>
-
-<skills>
-Invoke via `/oh-my-Codex:<name>`. Trigger patterns auto-detect keywords.
-
-Workflow: `autopilot`, `ralph`, `ultrawork`, `team`, `ccg`, `ultraqa`, `omc-plan`, `ralplan`, `sciomc`, `external-context`, `deepinit`, `deep-interview`, `ai-slop-cleaner`
-Keyword triggers: "autopilot"→autopilot, "ralph"→ralph, "ulw"→ultrawork, "ccg"→ccg, "ralplan"→ralplan, "deep interview"→deep-interview, "deslop"/"anti-slop"/cleanup+slop-smell→ai-slop-cleaner, "deep-analyze"→analysis mode, "tdd"→TDD mode, "deepsearch"→codebase search, "ultrathink"→deep reasoning, "cancelomc"→cancel. Team orchestration is explicit via `/team`.
-Utilities: `ask-codex`, `ask-gemini`, `cancel`, `note`, `learner`, `omc-setup`, `mcp-setup`, `hud`, `omc-doctor`, `omc-help`, `trace`, `release`, `project-session-manager`, `skill`, `writer-memory`, `ralph-init`, `configure-notifications`, `learn-about-omc` (`trace` is the evidence-driven tracing lane)
-</skills>
-
-<team_pipeline>
-Stages: `team-plan` → `team-prd` → `team-exec` → `team-verify` → `team-fix` (loop).
-Fix loop bounded by max attempts. `team ralph` links both modes.
-</team_pipeline>
-
-<verification>
-Verify before claiming completion. Size appropriately: small→haiku, standard→sonnet, large/security→opus.
-If verification fails, keep iterating.
-</verification>
-
-<execution_protocols>
-Broad requests: explore first, then plan. 2+ independent tasks in parallel. `run_in_background` for builds/tests.
-Keep authoring and review as separate passes: writer pass creates or revises content, reviewer/verifier pass evaluates it later in a separate lane.
-Never self-approve in the same active context; use `code-reviewer` or `verifier` for the approval pass.
-Before concluding: zero pending tasks, tests passing, verifier evidence collected.
-</execution_protocols>
-
-<commit_protocol>
-Use git trailers to preserve decision context in every commit message.
-Format: conventional commit subject line, optional body, then structured trailers.
-
-Trailers (include when applicable — skip for trivial commits like typos or formatting):
-
-- `Constraint:` active constraint that shaped this decision
-- `Rejected:` alternative considered | reason for rejection
-- `Directive:` warning or instruction for future modifiers of this code
-- `Confidence:` high | medium | low
-- `Scope-risk:` narrow | moderate | broad
-- `Not-tested:` edge case or scenario not covered by tests
-
-Example:
-
-```
-fix(auth): prevent silent session drops during long-running ops
-
-Auth service returns inconsistent status codes on token expiry,
-so the interceptor catches all 4xx and triggers inline refresh.
-
-Constraint: Auth service does not support token introspection
-Constraint: Must not add latency to non-expired-token paths
-Rejected: Extend token TTL to 24h | security policy violation
-Rejected: Background refresh on timer | race condition with concurrent requests
-Confidence: high
-Scope-risk: narrow
-Directive: Error handling is intentionally broad (all 4xx) — do not narrow without verifying upstream behavior
-Not-tested: Auth service cold-start latency >500ms
-```
-
-</commit_protocol>
-
-<hooks_and_context>
-Hooks inject `<system-reminder>` tags. Key patterns: `hook success: Success` (proceed), `[MAGIC KEYWORD: ...]` (invoke skill), `The boulder never stops` (ralph/ultrawork active).
-Persistence: `<remember>` (7 days), `<remember priority>` (permanent).
-Kill switches: `DISABLE_OMC`, `OMC_SKIP_HOOKS` (comma-separated).
-</hooks_and_context>
-
-<cancellation>
-`/oh-my-Codex:cancel` ends execution modes. Cancel when done+verified or blocked. Don't cancel if work incomplete.
-</cancellation>
-
-<worktree_paths>
-State: `.omc/state/`, `.omc/state/sessions/{sessionId}/`, `.omc/notepad.md`, `.omc/project-memory.json`, `.omc/plans/`, `.omc/research/`, `.omc/logs/`
-</worktree_paths>
-
-## Setup
-
-Say "setup omc" or run `/oh-my-Codex:omc-setup`.
-
-<!-- OMC:END -->
+1. 불필요한 하위 호환을 유지하지 않는다. 낡은 경로는 호환 계층, fallback, migration을 덧붙이는 대신 제거한다. 운영 중인 앱·서버가 사용하는 계약은 현재 요구사항으로 취급한다.
+2. 현재 요구사항을 완전히 충족하는 가장 단순한 구현을 선택한다. 가상의 미래 요구사항을 위한 추상화, 설정, 간접 계층을 만들지 않는다.
+3. 처음부터 끝까지 동작하는 가장 작은 버전부터 만든다. 동작하는 제품 위에 기능을 단계적으로 추가하고, 미완성된 복잡한 구조로 동작하는 제품을 대체하지 않는다.
+4. 컴포넌트를 모듈화하고 관심사를 명확히 분리한다.
+5. 전체 복잡도를 줄이거나 신뢰성을 높이는 검증되고 유지보수되는 라이브러리를 활용한다. 명확한 이유 없이 흔한 기능을 직접 다시 구현하지 않는다.
+6. 직접 구현하거나 패키지를 추가하기 전에 프로젝트의 기존 의존성을 활용한다. 문서와 타입을 확인하기 전에는 라이브러리에 필요한 기능이 없다고 가정하지 않는다.
+7. 아키텍처는 장기적으로 사용할 구조로 결정한다. 나중에 교체할 것을 전제로 한 임시방편을 채택하지 않는다.
+8. 해결책을 설계하기 전에 기존 제품이 같은 문제를 어떻게 해결하는지 조사한다. 처음부터 새 방식을 발명하기보다 검증된 패턴과 관례를 따른다.
 
 # 변경 범위와 복잡성
-
-[Anthropic의 과도한 설계 방지 지침](https://platform.claude.com/docs/en/build-with-claude/prompt-engineering/claude-prompting-best-practices#overeagerness)을 적용한다.
 
 - 요청했거나 요청을 완료하는 데 명백히 필요한 부분만 변경한다. 버그 수정에 주변 코드 정리·리팩터링을 끼워 넣거나, 단순한 기능에 요청하지 않은 설정을 추가하지 않는다.
 - 내부 코드와 프레임워크가 보장하는 계약을 신뢰한다. 사용자 입력·외부 API 등 시스템 경계에서 필요한 검증을 하고, 이미 보장된 조건을 중복 검사하거나 발생할 수 없는 상황을 위한 오류 처리·fallback을 추가하지 않는다.
