@@ -5,7 +5,12 @@ import * as SplashScreen from 'expo-splash-screen';
 import { useEffect, type ComponentType } from 'react';
 import * as ReactNativeDeviceActivity from 'react-native-device-activity';
 import { getGroup } from '../src/api/generated/group/group';
-import { registerAppShield, SHIELD_ACTIONS, SHIELD_CONFIGURATION } from '../src/lib/shieldConfig';
+import {
+  ensureShieldIcon,
+  registerAppShield,
+  SHIELD_ACTIONS,
+  SHIELD_CONFIGURATION,
+} from '../src/lib/shieldConfig';
 import { APP_UNLOCK_REQUEST_NOTIFICATION_TYPE } from '../src/lib/notificationTypes';
 import { ensureDailyUsageMonitoring } from '../src/lib/screenTimeMonitoring';
 import { syncScreenTimeHistory } from '../src/lib/screenTimeHistory';
@@ -39,7 +44,9 @@ export default function RootLayout() {
     initAirbridge();
     // 쉴드 문구/버튼 설정은 전역이라, 언제 앱을 등록했든 항상 최신 상태가 적용되도록
     // 앱 실행 시마다 다시 밀어넣는다.
-    ReactNativeDeviceActivity.updateShield(SHIELD_CONFIGURATION, SHIELD_ACTIONS, 'app-launch');
+    ensureShieldIcon().finally(() => {
+      ReactNativeDeviceActivity.updateShield(SHIELD_CONFIGURATION, SHIELD_ACTIONS, 'app-launch');
+    });
 
     // 최근 7일 평균 계산용 일일 사용량 모니터링을 보장하고, 어제까지의 기록을 로컬에 반영한다.
     const { lockedApps, familyActivitySelectionsByAppId, targetMinutes } = useLockStore.getState();

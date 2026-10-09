@@ -53,7 +53,7 @@ export default function AppShieldScreen() {
 
           <View style={styles.actions}>
             <Button
-              label="아니요, 안해도 괜찮아요ㅎㅎ"
+              label="아니요, 안 해도 괜찮아요"
               variant="solid"
               color="primary"
               size="lg"
