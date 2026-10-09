@@ -50,13 +50,20 @@ function logShareClick() {
   }
 }
 
-export function useShareFriendInvite() {
+interface UseShareFriendInviteOptions {
+  // 초대 링크 생성은 Airbridge 트래킹 링크를 새로 만들고 앱당 개수 제한이 있다.
+  // URL을 화면에 보여주지 않는 곳은 false로 두어 공유를 누를 때만 만든다.
+  prepareOnMount?: boolean;
+}
+
+export function useShareFriendInvite({ prepareOnMount = true }: UseShareFriendInviteOptions = {}) {
   // SDK preparation includes the message so display and sharing use the same prepared content.
   // Failure must not suspend or hide the friends list.
   const content = useQuery({
     queryKey: ['friendInviteShareUrl'],
     queryFn: ({ signal }) => prepareShareContent(signal),
     staleTime: Infinity,
+    enabled: prepareOnMount,
   });
   const lock = useRef(false);
   const mounted = useRef(true);

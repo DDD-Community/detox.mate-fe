@@ -61,7 +61,7 @@ export default function MyProfileScreen() {
 
 function MyProfileContent() {
   const { displayName, profileImageUrl, userCode, recentFriends } = useMyProfilePageData();
-  const { share, sharing } = useShareFriendInvite();
+  const { share, sharing } = useShareFriendInvite({ prepareOnMount: false });
   const hasFriends = recentFriends.length > 0;
 
   return (
