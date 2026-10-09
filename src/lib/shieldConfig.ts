@@ -57,7 +57,11 @@ const buildUnlockNotificationAction = (appId?: string): Action => ({
     title: 'Detox mate',
     body: '앱을 사용하려면, 이 알림을 클릭해주세요!',
     // userInfo는 쉴드 쪽에서 치환되지 않고 그대로 전달된다 — 앱별 설정에 appId를 고정해 넣는다.
-    userInfo: { type: APP_UNLOCK_REQUEST_NOTIFICATION_TYPE, ...(appId ? { appId } : {}) },
+    userInfo: {
+      type: APP_UNLOCK_REQUEST_NOTIFICATION_TYPE,
+      targetType: 'APP_UNLOCK_TIMER',
+      ...(appId ? { appId } : {}),
+    },
   },
 });
 
