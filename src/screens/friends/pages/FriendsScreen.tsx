@@ -33,13 +33,12 @@ import {
   toReceivedRequest,
   type FriendsListItem,
 } from '../utils/friendsListData';
-import { goBackOrReplace } from '@/lib/navigation';
+import { BrandHeader } from '@/components/BrandHeader/BrandHeader';
 import { LoggingPage } from '@/components/LoggingPage';
 import { trackButtonClick } from '@/lib/analytics';
 import { fontFamily } from '@/lib/token/primitive/fonts';
 import defaultSmallAvatar from '@assets/avatars/default-small.svg';
 import defaultAvatar from '@assets/avatars/default.svg';
-import backIcon from '@assets/icons/back.svg';
 import closeIcon from '@assets/icons/close.svg';
 import exportIcon from '@assets/icons/export.svg';
 import searchIcon from '@assets/icons/search.svg';
@@ -310,18 +309,7 @@ function FriendsContent() {
       behavior={Platform.OS === 'ios' ? 'padding' : undefined}
     >
       <View style={{ paddingTop: insets.top }}>
-        <View style={styles.header}>
-          <Pressable
-            accessibilityRole="button"
-            accessibilityLabel="뒤로 가기"
-            onPress={() => goBackOrReplace('/(tabs)/mypage')}
-            style={styles.backButton}
-            hitSlop={{ left: 10, right: 10 }}
-          >
-            <Image source={backIcon} style={styles.backIcon} contentFit="contain" />
-          </Pressable>
-          <Text style={styles.headerTitle}>친구 목록</Text>
-        </View>
+        <BrandHeader />
         <View style={styles.searchBox}>
           <Image source={searchIcon} style={styles.searchIcon} contentFit="contain" />
           <TextInput
@@ -567,12 +555,8 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     padding: 24,
   },
-  header: { height: 54, flexDirection: 'row', alignItems: 'center', paddingHorizontal: 16, gap: 8 },
-  backButton: { width: 24, height: 44, justifyContent: 'center' },
-  backIcon: { width: 24, height: 24 },
-  headerTitle: { fontFamily: medium, fontSize: 20, lineHeight: 28, color: '#383e49' },
   searchBox: {
-    marginTop: 16,
+    marginTop: 13,
     marginHorizontal: 17,
     marginBottom: 23,
     height: 40,
