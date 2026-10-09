@@ -1,17 +1,21 @@
 import { Fragment } from 'react';
-import { StyleSheet, Text, View } from 'react-native';
+import { Image, StyleSheet, Text, View } from 'react-native';
 import Svg, { Circle } from 'react-native-svg';
 
+import DETOXMATE_LOGO from '@assets/detoxmate-logo.png';
 import { Button } from '../../components/Button';
-import { primitiveColors, radius, spacing, typography } from '../../lib/token';
+import { fontFamily, primitiveColors, spacing, typography } from '../../lib/token';
 import { useCountdown } from './useCountdown';
 
 const { gray, green, system } = primitiveColors;
 
 const COUNTDOWN_START_SECONDS = 10;
 const RING_SIZE = 250;
-const RING_STROKE = 16;
+const RING_STROKE = 8;
 const RING_RADIUS = (RING_SIZE - RING_STROKE) / 2;
+// 피그마: 제목→안내 36, 안내 문구→알림 카드 8, 위 블록→타이머 링 64.
+const NOTIFY_BLOCK_TOP_GAP = 36;
+const RING_TOP_GAP = 64;
 const RING_CIRCUMFERENCE = 2 * Math.PI * RING_RADIUS;
 
 const formatSeconds = (seconds: number) => `00 : ${String(seconds).padStart(2, '0')}`;
@@ -59,7 +63,7 @@ export function TenSecondCountdownScreen({
         ) : null}
         {notificationPreview ? (
           <View style={styles.previewCard}>
-            <View style={styles.previewIcon} />
+            <Image source={DETOXMATE_LOGO} style={styles.previewIcon} />
             <View style={styles.previewTexts}>
               <Text style={styles.previewTitle}>Detox mate</Text>
               <Text style={styles.previewBody}>{notificationPreview}</Text>
@@ -67,13 +71,13 @@ export function TenSecondCountdownScreen({
           </View>
         ) : null}
 
-        <View style={{ width: RING_SIZE, height: RING_SIZE, marginTop: spacing[24] }}>
+        <View style={{ width: RING_SIZE, height: RING_SIZE, marginTop: RING_TOP_GAP }}>
           <Svg width={RING_SIZE} height={RING_SIZE}>
             <Circle
               cx={RING_SIZE / 2}
               cy={RING_SIZE / 2}
               r={RING_RADIUS}
-              stroke={gray[100]}
+              stroke={gray[50]}
               strokeWidth={RING_STROKE}
               fill="none"
             />
@@ -114,55 +118,68 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
+  // 피그마 title3/Medium: 24/32.
   title: {
-    ...typography.primary.title2B,
+    ...typography.primary.h3,
+    fontFamily: fontFamily.primary.medium,
+    fontWeight: '500',
     color: gray[800],
     textAlign: 'center',
   },
   notifyText: {
-    ...typography.primary.caption,
+    ...typography.primary.body3R,
     color: gray[800],
     textAlign: 'center',
-    marginTop: spacing[8],
+    marginTop: NOTIFY_BLOCK_TOP_GAP,
   },
   notifyTextHighlight: {
     color: system.green.opacity100,
   },
+  // 피그마 "Notification - Collapsed": iOS 푸시 알림 목업(SF 폰트, 10.38/13.84).
   previewCard: {
     alignSelf: 'stretch',
     flexDirection: 'row',
     alignItems: 'center',
-    gap: spacing[12],
-    marginTop: spacing[16],
-    padding: spacing[12],
-    borderRadius: radius[16],
+    gap: 9.3,
+    marginTop: spacing[8],
+    paddingHorizontal: 13,
+    paddingTop: 13,
+    paddingBottom: 11,
+    borderRadius: 24,
     backgroundColor: gray[50],
   },
   previewIcon: {
-    width: 36,
-    height: 36,
-    borderRadius: radius[8],
-    backgroundColor: gray[100],
+    width: 35.34,
+    height: 35.34,
+    borderRadius: 8.5,
   },
   previewTexts: {
     flex: 1,
   },
   previewTitle: {
-    ...typography.primary.caption,
-    color: gray[800],
-    fontWeight: '700',
+    fontSize: 10.38,
+    lineHeight: 13.84,
+    letterSpacing: -0.21,
+    fontWeight: '600',
+    color: '#000000',
   },
   previewBody: {
-    ...typography.primary.caption,
-    color: gray[800],
+    fontSize: 10.38,
+    lineHeight: 13.84,
+    letterSpacing: -0.21,
+    color: '#000000',
   },
   ringCenter: {
     ...StyleSheet.absoluteFill,
     alignItems: 'center',
     justifyContent: 'center',
   },
+  // 피그마: Pretendard Regular 32/44, 자간 -0.64.
   ringValue: {
-    ...typography.accent.h3,
+    fontFamily: fontFamily.primary.regular,
+    fontSize: 32,
+    lineHeight: 44,
+    letterSpacing: -0.64,
     color: '#000000',
   },
   cancelButton: {
