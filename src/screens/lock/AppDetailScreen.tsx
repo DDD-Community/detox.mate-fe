@@ -1,15 +1,15 @@
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useEffect, useState } from 'react';
 import { Modal, Pressable, StyleSheet, Text, View } from 'react-native';
-import * as ReactNativeDeviceActivity from 'react-native-device-activity';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { ScreenTimeReportView } from '../../../modules/screen-time-report';
 import { Icon } from '../../components/Icon';
+import { releaseAppLock } from '../../lib/lockRegistration';
+import { getSevenDayAverageMinutes } from '../../lib/screenTimeHistory';
+import { syncTargetMinutes } from '../../lib/sharedDisplayConfig';
+import { unregisterAppShield } from '../../lib/shieldConfig';
 import { primitiveColors, radius, spacing, typography } from '../../lib/token';
 import { useLockStore } from '../../stores/lockStore';
-import { getSevenDayAverageMinutes } from '../../lib/screenTimeHistory';
-import { unregisterAppShield } from '../../lib/shieldConfig';
-import { syncTargetMinutes } from '../../lib/sharedDisplayConfig';
-import { ScreenTimeReportView } from '../../../modules/screen-time-report';
 
 const { gray, brown, system, green } = primitiveColors;
 
@@ -69,18 +69,10 @@ export default function AppDetailScreen() {
     // 애초에 실제로 잠긴 적이 없어서 건너뛴다.
     const token = familyActivitySelectionsByAppId[app.id];
     if (token) {
-      ReactNativeDeviceActivity.unblockSelection(
-        { activitySelectionToken: token },
-        'app-unregistered'
-      );
-      // 잠깐 해제 중이던 앱이면 화이트리스트에도 남아있으니 같이 정리한다.
-      ReactNativeDeviceActivity.removeSelectionFromWhitelistAndUpdateBlock(
-        { activitySelectionToken: token },
-        'app-unregistered'
-      );
+      releaseAppLock(app.id, token);
+    } else {
+      unregisterAppShield(app.id);
     }
-
-    unregisterAppShield(app.id);
     unregisterApp(app.id);
     setUnregisterStep(null);
     router.back();
