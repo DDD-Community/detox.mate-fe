@@ -1,3 +1,4 @@
+import { QueryProvider } from '../src/lib/query/QueryProvider';
 import { useFonts } from 'expo-font';
 import * as Notifications from 'expo-notifications';
 import { router, Stack } from 'expo-router';
@@ -24,6 +25,13 @@ import { AppErrorBoundary } from '../src/components/AppErrorBoundary';
 import { initSentry } from '../src/observability/sentry';
 import { initAirbridge } from '../src/lib/airbridge';
 import { initAnalytics } from '../src/lib/analytics';
+import { logError, normalizeError } from '../src/api/errors';
+
+if (__DEV__ && process.env.EXPO_PUBLIC_MSW_ENABLED === 'true') {
+  // Load native polyfills and install interception before mounting any routes.
+  // eslint-disable-next-line @typescript-eslint/no-require-imports
+  require('../src/mocks/native').startNativeMocking();
+}
 
 initSentry();
 SplashScreen.preventAutoHideAsync();
@@ -36,12 +44,8 @@ const StorybookUIRoot = STORYBOOK_ENABLED
 export default function RootLayout() {
   const [fontsLoaded, fontError] = useFonts(fontSources);
 
-  // hideAsync()는 SplashScreen 컴포넌트(app/index.tsx)에서 호출한다.
-  // app/index.tsx는 항상 초기 라우트로 마운트되므로 여기서 호출할 필요가 없다.
-
   useEffect(() => {
     initAnalytics();
-    initAirbridge();
     // 쉴드 문구/버튼 설정은 전역이라, 언제 앱을 등록했든 항상 최신 상태가 적용되도록
     // 앱 실행 시마다 다시 밀어넣는다.
     ensureShieldIcon().finally(() => {
@@ -61,6 +65,16 @@ export default function RootLayout() {
     // 서버에 저장된 제한 시간을 불러와 로컬 값에 반영한다(없거나 실패하면 로컬 값 유지).
     syncTimeLimitFromServer();
   }, []);
+
+  useEffect(() => {
+    // SDK에 캐시된 초대가 즉시 전달될 수 있으므로 Stack이 준비된 뒤 구독한다.
+    if (!fontsLoaded && !fontError) return;
+    // 딥링크는 index를 거치지 않을 수도 있으므로 네이티브 스플래시 종료는 루트에서 맡는다.
+    void SplashScreen.hideAsync().catch((error) => {
+      logError(normalizeError(error), { scope: 'app.bootstrap', operation: 'hideNativeSplash' });
+    });
+    initAirbridge();
+  }, [fontsLoaded, fontError]);
 
   // FCM registration token 갱신 감지 → 서버에 새 토큰 재등록
   useEffect(() => {
@@ -101,15 +115,19 @@ export default function RootLayout() {
   if (!fontsLoaded && !fontError) return null;
 
   if (StorybookUIRoot) {
-    return <StorybookUIRoot />;
+    return (
+      <QueryProvider>
+        <StorybookUIRoot />
+      </QueryProvider>
+    );
   }
 
   return (
-    <>
+    <QueryProvider>
       <AppErrorBoundary>
         <Stack screenOptions={{ headerShown: false }} />
       </AppErrorBoundary>
       <NetworkErrorToast />
-    </>
+    </QueryProvider>
   );
 }

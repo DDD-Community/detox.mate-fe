@@ -1,9 +1,15 @@
+import { CanceledError, isCancel } from 'axios';
 import { KakaoOAuthToken, login } from '@react-native-seoul/kakao-login';
 import * as AppleAuthentication from 'expo-apple-authentication';
 import { sha256 } from '@noble/hashes/sha256';
 import { bytesToHex } from '@noble/hashes/utils';
 import * as SecureStore from 'expo-secure-store';
-import apiClient from './client';
+import { queryClient } from '../lib/query/queryClient';
+import apiClient, {
+  cancelAuthenticatedRequests,
+  getAuthenticatedRequestSignal,
+  resumeAuthenticatedRequests,
+} from './client';
 import { AppError, normalizeError } from './errors';
 import { getDevAuth } from './generated/dev-auth/dev-auth';
 import type { AuthLoginResponse } from './generated/model';
@@ -38,6 +44,8 @@ const persistLoginResponse = async (
     throw new Error('로그인 응답이 올바르지 않습니다.');
   }
 
+  cancelAuthenticatedRequests();
+  queryClient.clear();
   await SecureStore.setItemAsync('accessTokenKey', data.accessToken);
   await SecureStore.setItemAsync('refreshTokenKey', data.refreshToken);
   await SecureStore.setItemAsync('currentUserId', String(data.id));
@@ -49,6 +57,9 @@ const persistLoginResponse = async (
   } else {
     await SecureStore.deleteItemAsync(IS_TEST_ACCOUNT_KEY);
   }
+
+  queryClient.clear();
+  resumeAuthenticatedRequests();
 
   return {
     id: data.id,
@@ -127,7 +138,13 @@ export async function loginWithTestUser(testUserKey: string): Promise<OAuthLogin
 }
 
 export async function refreshAccessToken(): Promise<ServerResponseTokens> {
+  const signal = getAuthenticatedRequestSignal();
+  const assertCurrentSession = () => {
+    if (signal.aborted) throw new CanceledError('The authentication session ended.');
+  };
+  assertCurrentSession();
   const refreshToken = await SecureStore.getItemAsync('refreshTokenKey');
+  assertCurrentSession();
   if (!refreshToken) {
     await clearAuthSession();
     throw AppError({ type: 'auth', message: '다시 로그인해 주세요.' });
@@ -142,19 +159,26 @@ export async function refreshAccessToken(): Promise<ServerResponseTokens> {
       {
         skipAuth: true,
         skipAuthRefresh: true,
+        signal,
       }
     );
 
+    assertCurrentSession();
     const { accessToken, refreshToken: updatedRefreshToken } = data;
     if (!accessToken || !updatedRefreshToken) {
       throw AppError({ type: 'auth', message: '토큰 재발급 응답이 올바르지 않습니다.' });
     }
 
     await SecureStore.setItemAsync('accessTokenKey', accessToken);
+    assertCurrentSession();
     await SecureStore.setItemAsync('refreshTokenKey', updatedRefreshToken);
+    assertCurrentSession();
 
     return data;
   } catch (error) {
+    if (isCancel(error) || signal.aborted) {
+      throw new CanceledError('The authentication session ended.');
+    }
     await clearAuthSession();
     const appError = normalizeError(error);
     throw AppError({
@@ -166,10 +190,18 @@ export async function refreshAccessToken(): Promise<ServerResponseTokens> {
 }
 
 export async function clearAuthSession(): Promise<void> {
-  await SecureStore.deleteItemAsync('refreshTokenKey');
-  await SecureStore.deleteItemAsync('accessTokenKey');
-  await SecureStore.deleteItemAsync('currentUserId');
-  await SecureStore.deleteItemAsync(IS_TEST_ACCOUNT_KEY);
+  cancelAuthenticatedRequests();
+  const endedSignal = getAuthenticatedRequestSignal();
+  queryClient.clear();
+  try {
+    await SecureStore.deleteItemAsync('refreshTokenKey');
+    await SecureStore.deleteItemAsync('accessTokenKey');
+    await SecureStore.deleteItemAsync('currentUserId');
+    await SecureStore.deleteItemAsync(IS_TEST_ACCOUNT_KEY);
+  } finally {
+    // 비동기 토큰 삭제 중 다시 시작된 조회도 이전 세션 캐시에 남기지 않는다.
+    if (endedSignal === getAuthenticatedRequestSignal()) queryClient.clear();
+  }
 }
 
 // 현재 로그인 세션이 테스트 계정인지 여부. 스크린타임 OCR 검증 우회 등
@@ -180,9 +212,12 @@ export async function isTestAccountSession(): Promise<boolean> {
 }
 
 export async function logout(): Promise<void> {
-  const refreshToken = await SecureStore.getItemAsync('refreshTokenKey');
-
+  cancelAuthenticatedRequests();
+  const endedSignal = getAuthenticatedRequestSignal();
+  queryClient.clear();
   try {
+    const refreshToken = await SecureStore.getItemAsync('refreshTokenKey');
+    if (endedSignal !== getAuthenticatedRequestSignal()) return;
     if (refreshToken) {
       await apiClient.post(
         '/auth/logout',
@@ -196,8 +231,8 @@ export async function logout(): Promise<void> {
       );
     }
   } catch {
-    // 서버 로그아웃 실패와 무관하게 기기 내 세션은 정리한다.
+    // 토큰 조회·서버 로그아웃 실패와 무관하게 기기 내 세션은 정리한다.
   } finally {
-    await clearAuthSession();
+    if (endedSignal === getAuthenticatedRequestSignal()) await clearAuthSession();
   }
 }

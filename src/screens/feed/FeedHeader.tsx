@@ -1,7 +1,7 @@
 import { router } from 'expo-router';
 import { Image, Pressable, StyleSheet, Text, View } from 'react-native';
 import { LoggingButton } from '../../components';
-import { primitiveColors, spacing, typography } from '../../lib/token';
+import { fontFamily, primitiveColors, spacing, typography } from '../../lib/token';
 import { Icon } from '../../components/Icon';
 
 const { gray, brown } = primitiveColors;
@@ -116,6 +116,7 @@ const styles = StyleSheet.create({
     height: 16,
   },
   streakText: {
+    fontFamily: fontFamily.primary.semibold,
     fontSize: 14,
     lineHeight: 20,
     fontWeight: '600',

@@ -1,7 +1,7 @@
 import { useRouter } from 'expo-router';
 import * as ImagePicker from 'expo-image-picker';
 import * as Notifications from 'expo-notifications';
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import * as SecureStore from 'expo-secure-store';
 
 import {
@@ -14,7 +14,7 @@ import { logError, normalizeError } from '@/api/errors';
 import type { AppError } from '@/api/errors/types';
 import { registerDevicePushToken } from '@/lib/fcmToken';
 import { setAnalyticsUserId, trackEvent } from '@/lib/analytics';
-import { consumePendingInviteCode } from '@/lib/pendingInvite';
+import { navigateAuthenticated } from '@/lib/inviteDestination';
 import { APP_ACCESS_PERMISSION_GUIDE_SEEN_KEY, TERMS_ACCEPTED_KEY } from './authStorageKeys';
 
 export type LoginProvider = 'kakao' | 'apple' | 'test';
@@ -45,16 +45,22 @@ export function useAuthLogin({ onLoginFailure }: UseAuthLoginOptions = {}) {
   const [pendingProvider, setPendingProvider] = useState<LoginProvider | null>(null);
   const [permissionGuideVisible, setPermissionGuideVisible] = useState(false);
   const [permissionGuideConfirming, setPermissionGuideConfirming] = useState(false);
+  const active = useRef(true);
+  useEffect(() => {
+    active.current = true;
+    return () => {
+      active.current = false;
+    };
+  }, []);
 
   // 로그인 완료 후, 딥링크로 들어온 대기 초대 코드가 있으면 초대 화면으로,
   // 없으면 기본 그룹 홈으로 이동한다.
   const navigateAfterLogin = async () => {
-    const inviteCode = await consumePendingInviteCode();
-    if (inviteCode) {
-      router.replace({ pathname: '/(group)/join', params: { inviteCode } });
-    } else {
-      router.replace('/(group)/home');
-    }
+    await navigateAuthenticated({
+      replace: (destination) => router.replace(destination),
+      isActive: () => active.current,
+      resolveDefault: async () => '/(group)/home',
+    });
   };
 
   const completeLogin = async (provider: LoginProvider, login: LoginAction) => {
@@ -63,6 +69,7 @@ export function useAuthLogin({ onLoginFailure }: UseAuthLoginOptions = {}) {
     setPendingProvider(provider);
     try {
       const user = await login();
+      if (!active.current) return;
       setAnalyticsUserId(user.id);
       trackEvent('Login Completed', { is_new_user: user.isNewUser });
 
@@ -76,6 +83,7 @@ export function useAuthLogin({ onLoginFailure }: UseAuthLoginOptions = {}) {
       const hasSeenPermissionGuide = await SecureStore.getItemAsync(
         APP_ACCESS_PERMISSION_GUIDE_SEEN_KEY
       );
+      if (!active.current) return;
       if (hasSeenPermissionGuide === 'true') {
         await navigateAfterLogin();
       } else {
@@ -118,10 +126,21 @@ export function useAuthLogin({ onLoginFailure }: UseAuthLoginOptions = {}) {
       } catch {
         // 권한 허용 후 토큰 등록 실패는 다음 로그인/설정 진입 시 재시도됨
       }
+    } catch (error) {
+      const appError = normalizeError(error);
+      logError(appError, { scope: 'auth.login', operation: 'requestPermissions' });
+      onLoginFailure?.(appError);
     } finally {
-      await SecureStore.setItemAsync(APP_ACCESS_PERMISSION_GUIDE_SEEN_KEY, 'true');
-      setPermissionGuideConfirming(false);
-      await navigateAfterLogin();
+      try {
+        await SecureStore.setItemAsync(APP_ACCESS_PERMISSION_GUIDE_SEEN_KEY, 'true');
+        await navigateAfterLogin();
+      } catch (error) {
+        const appError = normalizeError(error);
+        logError(appError, { scope: 'app.bootstrap', operation: 'navigateAfterLogin' });
+        onLoginFailure?.(appError);
+      } finally {
+        setPermissionGuideConfirming(false);
+      }
     }
   };
 
