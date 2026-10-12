@@ -1,6 +1,6 @@
-import { useRouter } from 'expo-router';
+import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useEffect, useRef, useState } from 'react';
-import { Pressable, StyleSheet, Text, useColorScheme, View } from 'react-native';
+import { Alert, Pressable, StyleSheet, Text, useColorScheme, View } from 'react-native';
 import * as ReactNativeDeviceActivity from 'react-native-device-activity';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { differenceTokens, tokensOverlap, unionTokens } from '../../lib/familyActivitySelections';
@@ -10,6 +10,9 @@ import { SHIELD_ACTIONS, SHIELD_CONFIGURATION } from '../../lib/shieldConfig';
 import { splitSelection } from '../../../modules/screen-time-report';
 import { primitiveColors, radius, spacing, typography } from '../../lib/token';
 import { useLockStore } from '../../stores/lockStore';
+
+import { getUserErrorMessage, logError, normalizeError } from '@/api/errors';
+import { LoggingPage } from '@/components';
 
 const { gray, green } = primitiveColors;
 
@@ -32,6 +35,9 @@ const EMPTY_EVENT_GRACE_MS = 1000;
  */
 export default function SelectAppsScreen() {
   const router = useRouter();
+  const { onboarding } = useLocalSearchParams<{ onboarding?: string }>();
+  const isOnboarding = onboarding === '1';
+  const saving = useRef(false);
   const { selectedAppIds, familyActivitySelectionsByAppId, registerAppSelection, unregisterApp } =
     useLockStore();
   const isDark = useColorScheme() !== 'light';
@@ -54,7 +60,8 @@ export default function SelectAppsScreen() {
         try {
           await ReactNativeDeviceActivity.requestAuthorization('individual');
         } catch {
-          router.back();
+          if (isOnboarding) router.replace('/onboarding');
+          else router.back();
           return;
         }
       }
@@ -62,7 +69,7 @@ export default function SelectAppsScreen() {
     };
 
     openPicker();
-  }, [router]);
+  }, [router, isOnboarding]);
 
   const latestCountRef = useRef(0);
 
@@ -90,83 +97,105 @@ export default function SelectAppsScreen() {
   // 시점의 마지막 선택(ref)을 바로 처리한다.
   const handleDone = () => {
     const newToken = latestTokenRef.current;
-    // [임시 디버그] 앱 선택이 반영되지 않는 원인 확인용 — 원인 확인 후 제거.
-    console.log('[select-apps-debug] done', {
-      hasToken: !!newToken,
-      count: latestCountRef.current,
-      hasInitial: !!initialUnionToken,
-    });
+    if (saving.current || (isOnboarding && !newToken)) return;
+    saving.current = true;
+    try {
+      // 체크를 해제한 기존 앱은 등록 해제한다(차단 해제 + 앱별 쉴드 제거 + 목록에서 제거).
+      const deselectedAppIds = findDeselectedAppIds(
+        familyActivitySelectionsByAppId,
+        newToken,
+        tokensOverlap
+      );
+      deselectedAppIds.forEach((deselectedAppId) => {
+        releaseAppLock(deselectedAppId, familyActivitySelectionsByAppId[deselectedAppId]);
+        unregisterApp(deselectedAppId);
+      });
 
-    // 체크를 해제한 기존 앱은 등록 해제한다(차단 해제 + 앱별 쉴드 제거 + 목록에서 제거).
-    const deselectedAppIds = findDeselectedAppIds(
-      familyActivitySelectionsByAppId,
-      newToken,
-      tokensOverlap
-    );
-    deselectedAppIds.forEach((deselectedAppId) => {
-      releaseAppLock(deselectedAppId, familyActivitySelectionsByAppId[deselectedAppId]);
-      unregisterApp(deselectedAppId);
-    });
+      // 선택이 비었으면 새로 추가할 게 없다.
+      if (!newToken) {
+        router.back();
+        return;
+      }
 
-    // 선택이 비었으면 새로 추가할 게 없다.
-    if (!newToken) {
-      router.back();
-      return;
+      // 새로 추가된 부분(이전엔 없었는데 이번에 체크된 것)만 새 그룹으로 등록한다.
+      const addedToken = initialUnionToken
+        ? differenceTokens(newToken, initialUnionToken)
+        : newToken;
+
+      if (!addedToken) {
+        if (isOnboarding) router.replace('/onboarding-goal');
+        else router.back();
+        return;
+      }
+
+      // 한 번에 여러 앱을 골랐으면 앱 하나짜리 토큰들로 쪼개서(카테고리/웹사이트는 묶음 하나로)
+      // 각각 따로 등록한다 — 그래야 앱별 상세/사용 시간/해제가 앱 단위로 동작한다.
+      const addedTokens = splitSelection(addedToken);
+      const registeredAt = Date.now();
+      addedTokens.forEach((token, index) => {
+        const appId = `app-${registeredAt}-${index}`;
+        lockApp(appId, token);
+        registerAppSelection(appId, token, `잠긴 앱 ${selectedAppIds.length + index + 1}`);
+      });
+
+      // 쉴드 화면 문구/버튼 설정과, DeviceActivityReport 데이터는 애플 쪽 집계 주기 때문에 등록
+      // 직후엔 비어있을 수 있다 — 강제 새로고침 API는 아니지만 모니터링 파이프라인은 바로 돌게 시도한다.
+      ReactNativeDeviceActivity.updateShield(
+        SHIELD_CONFIGURATION,
+        SHIELD_ACTIONS,
+        'app-registered'
+      );
+      ReactNativeDeviceActivity.reloadDeviceActivityCenter();
+      router.replace(isOnboarding ? '/onboarding-goal' : '/(lock)/goal-time');
+    } catch (error) {
+      const appError = normalizeError(error);
+      logError(appError, { scope: 'api', operation: 'registerLockedApps' });
+      Alert.alert('앱을 잠글 수 없어요', getUserErrorMessage(appError));
+    } finally {
+      saving.current = false;
     }
-
-    // 새로 추가된 부분(이전엔 없었는데 이번에 체크된 것)만 새 그룹으로 등록한다.
-    const addedToken = initialUnionToken ? differenceTokens(newToken, initialUnionToken) : newToken;
-
-    if (!addedToken) {
-      router.back();
-      return;
-    }
-
-    // 한 번에 여러 앱을 골랐으면 앱 하나짜리 토큰들로 쪼개서(카테고리/웹사이트는 묶음 하나로)
-    // 각각 따로 등록한다 — 그래야 앱별 상세/사용 시간/해제가 앱 단위로 동작한다.
-    const addedTokens = splitSelection(addedToken);
-    const registeredAt = Date.now();
-    addedTokens.forEach((token, index) => {
-      const appId = `app-${registeredAt}-${index}`;
-      lockApp(appId, token);
-      registerAppSelection(appId, token, `잠긴 앱 ${selectedAppIds.length + index + 1}`);
-    });
-
-    // 쉴드 화면 문구/버튼 설정과, DeviceActivityReport 데이터는 애플 쪽 집계 주기 때문에 등록
-    // 직후엔 비어있을 수 있다 — 강제 새로고침 API는 아니지만 모니터링 파이프라인은 바로 돌게 시도한다.
-    ReactNativeDeviceActivity.updateShield(SHIELD_CONFIGURATION, SHIELD_ACTIONS, 'app-registered');
-    ReactNativeDeviceActivity.reloadDeviceActivityCenter();
-    router.replace('/(lock)/goal-time');
   };
 
   const titleColor = isDark ? '#FFFFFF' : gray[800];
 
   return (
-    <View style={[styles.root, !isDark && styles.rootLight]}>
-      <SafeAreaView edges={['top']} style={styles.safeArea}>
-        <View style={styles.header}>
-          <View style={styles.headerTexts}>
-            <Text style={[styles.title, { color: titleColor }]}>잠글 앱을 선택해 주세요.</Text>
-            <Text style={styles.subtitle}>언제든 변경 가능해요.</Text>
+    <LoggingPage
+      eventName="Onboarding Viewed"
+      properties={{ pageName: 'Onboarding', step: 'apps' }}
+      enabled={isOnboarding}
+    >
+      <View style={[styles.root, !isDark && styles.rootLight]}>
+        <SafeAreaView edges={['top']} style={styles.safeArea}>
+          <View style={styles.header}>
+            <View style={styles.headerTexts}>
+              <Text style={[styles.title, { color: titleColor }]}>잠글 앱을 선택해 주세요.</Text>
+              {!isOnboarding && <Text style={styles.subtitle}>언제든 변경 가능해요.</Text>}
+            </View>
+            <Pressable
+              accessibilityRole="button"
+              accessibilityState={{ disabled: isOnboarding && !pendingToken }}
+              disabled={isOnboarding && !pendingToken}
+              hitSlop={12}
+              onPress={handleDone}
+            >
+              <Text style={styles.doneText}>Done</Text>
+            </Pressable>
           </View>
-          <Pressable hitSlop={12} onPress={handleDone}>
-            <Text style={styles.doneText}>Done</Text>
-          </Pressable>
-        </View>
 
-        <View style={styles.pickerWrap}>
-          {isAuthorized ? (
-            <ReactNativeDeviceActivity.DeviceActivitySelectionView
-              style={styles.picker}
-              familyActivitySelection={pendingToken}
-              onSelectionChange={(event) => handleSelectionChange(event.nativeEvent)}
-            />
-          ) : (
-            <Text style={styles.hint}>앱 선택 화면을 불러오는 중이에요…</Text>
-          )}
-        </View>
-      </SafeAreaView>
-    </View>
+          <View style={styles.pickerWrap}>
+            {isAuthorized ? (
+              <ReactNativeDeviceActivity.DeviceActivitySelectionView
+                style={styles.picker}
+                familyActivitySelection={pendingToken}
+                onSelectionChange={(event) => handleSelectionChange(event.nativeEvent)}
+              />
+            ) : (
+              <Text style={styles.hint}>앱 선택 화면을 불러오는 중이에요…</Text>
+            )}
+          </View>
+        </SafeAreaView>
+      </View>
+    </LoggingPage>
   );
 }
 
