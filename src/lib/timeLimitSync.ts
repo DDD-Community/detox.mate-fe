@@ -1,4 +1,4 @@
-import * as SecureStore from 'expo-secure-store';
+import { getAuthStatus } from '../api/auth';
 
 import { getTimeLimit } from '../api/generated/time-limit/time-limit';
 import { useLockStore } from '../stores/lockStore';
@@ -8,8 +8,7 @@ import { useLockStore } from '../stores/lockStore';
  * 서버에 아직 설정이 없거나(404), 네트워크가 실패하면 로컬 값을 그대로 둔다.
  */
 export const syncTimeLimitFromServer = async () => {
-  const accessToken = await SecureStore.getItemAsync('accessTokenKey');
-  if (!accessToken) return;
+  if (getAuthStatus() !== 'signedIn') return;
 
   try {
     const { totalLockMinutes } = await getTimeLimit().get();

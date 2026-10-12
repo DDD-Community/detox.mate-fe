@@ -8,6 +8,7 @@ import * as Notifications from 'expo-notifications';
 import * as SecureStore from 'expo-secure-store';
 import { Platform } from 'react-native';
 
+import { getAuthStatus } from '../api/auth';
 import { getFcmToken } from '../api/generated/fcm-token/fcm-token';
 import { RegisterFcmTokenRequestPlatform } from '../api/generated/model';
 import { logError, normalizeError } from '../api/errors';
@@ -124,8 +125,7 @@ export async function ensureDevicePushTokenRegistered(): Promise<void> {
  */
 export async function handleNewDevicePushToken(token: string): Promise<void> {
   if (!token) return;
-  const accessToken = await SecureStore.getItemAsync('accessTokenKey');
-  if (!accessToken) return;
+  if (getAuthStatus() !== 'signedIn') return;
 
   const { status } = await Notifications.getPermissionsAsync();
   if (status !== 'granted') return;

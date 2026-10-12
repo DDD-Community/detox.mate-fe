@@ -3,26 +3,18 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { getItemAsync, deleteItemAsync } from 'expo-secure-store';
 
 import { queryClient } from '../lib/query/queryClient';
-import { loginWithTestUser, logout } from './auth';
+import apiClient from './client';
+import { clearAuthSession, getAuthStatus, loginWithTestUser, logout } from './auth';
 import { getGetFriendsQueryOptions } from './query-generated/friend';
 
 const mocks = vi.hoisted(() => ({
-  post: vi.fn(),
   friends: vi.fn(),
-  requests: new AbortController(),
 }));
 
-vi.mock('@react-native-seoul/kakao-login', () => ({ login: vi.fn() }));
-vi.mock('expo-apple-authentication', () => ({}));
+vi.mock('@react-native-seoul/kakao-login');
+vi.mock('expo-apple-authentication');
 vi.mock('expo-secure-store');
-vi.mock('./client', () => ({
-  default: { post: mocks.post },
-  getAuthenticatedRequestSignal: () => mocks.requests.signal,
-  cancelAuthenticatedRequests: () => mocks.requests.abort(),
-  resumeAuthenticatedRequests: () => {
-    mocks.requests = new AbortController();
-  },
-}));
+vi.mock('./client');
 vi.mock('./errors', async () => import('./errors/normalizeError'));
 vi.mock('./friendMutator', () => ({ friendAxios: mocks.friends }));
 vi.mock('./generated/dev-auth/dev-auth', () => ({
@@ -37,10 +29,11 @@ vi.mock('./generated/dev-auth/dev-auth', () => ({
 
 const aFriends = [{ friendshipId: 41, user: { userId: 8, displayName: '이전 계정 친구' } }];
 
-beforeEach(() => {
+beforeEach(async () => {
   queryClient.clear();
+  await clearAuthSession();
   vi.resetAllMocks();
-  mocks.post.mockResolvedValue({});
+  vi.mocked(apiClient.post).mockResolvedValue({});
   mocks.friends.mockResolvedValue(aFriends);
 });
 
@@ -78,7 +71,7 @@ describe('로그아웃 후 이전 계정의 서버 상태 격리', () => {
     credentials.resolve('fixture-refresh-B');
     await signingOut;
 
-    expect(mocks.post).not.toHaveBeenCalled();
+    expect(vi.mocked(apiClient.post)).not.toHaveBeenCalled();
     expect(await getItemAsync('accessTokenKey')).toBe('fixture-B');
   });
 
@@ -86,7 +79,7 @@ describe('로그아웃 후 이전 계정의 서버 상태 격리', () => {
     await loginWithTestUser('A');
     const loggingOut = Promise.withResolvers<unknown>();
     const started = Promise.withResolvers<void>();
-    mocks.post.mockImplementationOnce(() => {
+    vi.mocked(apiClient.post).mockImplementationOnce(() => {
       started.resolve();
       return loggingOut.promise;
     });
@@ -124,7 +117,7 @@ describe('로그아웃 후 이전 계정의 서버 상태 격리', () => {
     await loginWithTestUser('A');
     const options = getGetFriendsQueryOptions();
     await queryClient.fetchQuery(options);
-    mocks.post.mockRejectedValueOnce(new Error('서버 로그아웃 실패'));
+    vi.mocked(apiClient.post).mockRejectedValueOnce(new Error('서버 로그아웃 실패'));
 
     await logout();
 
@@ -175,4 +168,46 @@ describe('로그아웃 후 이전 계정의 서버 상태 격리', () => {
       expect(queryClient.getQueryData(options.queryKey)).toBeUndefined();
     }
   );
+});
+
+describe('인증 상태와 화면 접근 차단', () => {
+  it('토큰 삭제가 지연되어도 세션 종료 즉시 화면 접근을 차단한다', async () => {
+    await loginWithTestUser('A');
+    expect(getAuthStatus()).toBe('signedIn');
+    const deletion = Promise.withResolvers<void>();
+    vi.mocked(deleteItemAsync).mockReturnValueOnce(deletion.promise);
+    const clearing = clearAuthSession();
+    expect(getAuthStatus()).toBe('signedOut');
+    deletion.resolve();
+    await clearing;
+  });
+
+  it('앱 시작 시 읽은 이전 토큰이 늦게 돌아와도 종료된 세션을 복구하지 않는다', async () => {
+    vi.resetModules();
+    const freshAuth = await import('./auth');
+    const storedToken = Promise.withResolvers<string>();
+    vi.mocked(getItemAsync).mockReturnValueOnce(storedToken.promise);
+    const restoring = freshAuth.restoreAuthSession();
+    await freshAuth.clearAuthSession();
+    storedToken.resolve('fixture-old-token');
+    await restoring;
+    expect(freshAuth.getAuthStatus()).toBe('signedOut');
+  });
+});
+
+it('탈퇴 정리 중 다시 로그인해도 늦은 토큰 삭제가 새 계정을 지우지 않는다', async () => {
+  await loginWithTestUser('A');
+  const deletion = Promise.withResolvers<void>();
+  const removeStoredValue = vi.mocked(deleteItemAsync).getMockImplementation()!;
+  vi.mocked(deleteItemAsync).mockImplementationOnce((key, options) =>
+    deletion.promise.then(() => removeStoredValue(key, options))
+  );
+  const clearing = clearAuthSession();
+  const signingIn = loginWithTestUser('B');
+  expect(getAuthStatus()).toBe('signedOut');
+  deletion.resolve();
+  await Promise.all([clearing, signingIn]);
+  expect(await getItemAsync('refreshTokenKey')).toBe('fixture-refresh-B');
+  expect(await getItemAsync('accessTokenKey')).toBe('fixture-B');
+  expect(getAuthStatus()).toBe('signedIn');
 });
