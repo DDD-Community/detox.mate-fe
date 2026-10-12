@@ -13,7 +13,8 @@ export interface LockedAppUsage {
 
 interface LockState {
   selectedAppIds: string[];
-  targetMinutes: number;
+  // 사용자가 제한 시간을 정하기 전에는 null — 기본값을 임의로 두지 않는다.
+  targetMinutes: number | null;
   lockedApps: LockedAppUsage[];
   // 앱 하나를 등록할 때마다 그 앱 전용으로 연 FamilyActivityPicker의 결과 토큰을
   // 표시용 id에 매핑해서 저장한다. 이 토큰이 있어야 그 앱만 골라서 실제로
@@ -25,8 +26,6 @@ interface LockState {
   registerAppSelection: (appId: string, token: string, name: string) => void;
   extendUsage: (id: string) => void;
 }
-
-const DEFAULT_TARGET_MINUTES = 120;
 
 const formatRegisteredDate = (date: Date) => {
   const year = date.getFullYear();
@@ -42,7 +41,7 @@ export const useLockStore = create<LockState>()(
   persist(
     (set) => ({
       selectedAppIds: [],
-      targetMinutes: DEFAULT_TARGET_MINUTES,
+      targetMinutes: null,
       lockedApps: [],
       familyActivitySelectionsByAppId: {},
       setSelectedAppIds: (ids) => set({ selectedAppIds: ids }),

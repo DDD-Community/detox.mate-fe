@@ -20,8 +20,11 @@ export default function GoalTimeScreen() {
   const router = useRouter();
   const { mode } = useLocalSearchParams<{ mode?: string }>();
   const { targetMinutes } = useLockStore();
+  // 아직 제한 시간을 정한 적 없으면 스테퍼는 최소값에서 시작한다.
   const [hours, setHours] = useState(() =>
-    Math.min(Math.max(Math.round(targetMinutes / 60), MIN_HOURS), MAX_HOURS)
+    targetMinutes === null
+      ? MIN_HOURS
+      : Math.min(Math.max(Math.round(targetMinutes / 60), MIN_HOURS), MAX_HOURS)
   );
 
   const isChangeMode = mode === 'change';

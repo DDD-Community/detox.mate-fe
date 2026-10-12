@@ -45,7 +45,7 @@ export default function AppDetailScreen() {
 
   // 오늘 사용 비율(%)은 사용 시간을 아는 리포트 익스텐션이 계산해 그린다 — 제한 시간만 넘겨준다.
   useEffect(() => {
-    syncTargetMinutes(targetMinutes);
+    if (targetMinutes !== null) syncTargetMinutes(targetMinutes);
   }, [targetMinutes]);
 
   // 10초 재고 타이머 → 사유 선택 화면(각각 별도 라우트)을 거쳐 돌아오면
