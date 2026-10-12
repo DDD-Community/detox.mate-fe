@@ -303,7 +303,7 @@ export default function SettingsScreen() {
       await SecureStore.deleteItemAsync('isNewUser');
       await SecureStore.deleteItemAsync(TERMS_ACCEPTED_KEY);
       setIsWithdrawAlertOpen(false);
-      router.replace('/(auth)/onboarding');
+      router.replace('/');
     } finally {
       setIsWithdrawing(false);
     }
