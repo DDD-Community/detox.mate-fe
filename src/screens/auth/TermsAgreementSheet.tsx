@@ -1,8 +1,8 @@
+import { Button, Checkbox, LoggingButton, LoggingPage } from '@/components';
+import { trackButtonClick } from '@/lib/analytics';
+import { fontFamily, primitiveColors } from '@/lib/token';
 import { Modal, Pressable, StyleSheet, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { Button, Checkbox, LoggingButton, LoggingPage } from '@/components';
-import { fontFamily, primitiveColors } from '@/lib/token';
-import { trackButtonClick } from '@/lib/analytics';
 import { TermsAgreementRow } from './TermsAgreementRow';
 import { useTermsAgreement } from './useTermsAgreement';
 
@@ -32,6 +32,10 @@ export function TermsAgreementSheet({
 function TermsContent({ onConfirm, onClose }: { onConfirm: () => void; onClose: () => void }) {
   const agreement = useTermsAgreement();
   const insets = useSafeAreaInsets();
+  const handleAllAgreePress = () => {
+    trackButtonClick('Terms Agreement Agree All Clicked', 'TermsAgreement', '전체 동의');
+    agreement.handleAllAgree();
+  };
   return (
     <LoggingPage eventName="Terms Agreement Viewed" properties={{ pageName: 'TermsAgreement' }}>
       <View style={styles.root}>
@@ -47,21 +51,19 @@ function TermsContent({ onConfirm, onClose }: { onConfirm: () => void; onClose: 
             <Text style={styles.subtitle}>디톡스메이트 이용을 위해 꼭 필요해요.</Text>
           </View>
           <View style={styles.list}>
-            <View style={styles.all}>
+            <Pressable
+              style={styles.all}
+              onPress={handleAllAgreePress}
+              accessibilityRole="button"
+              accessibilityLabel="전체 동의"
+            >
               <Checkbox
                 checked={agreement.allAgreed}
                 label="전체 동의"
                 labelStyle={styles.allLabel}
-                onChange={() => {
-                  trackButtonClick(
-                    'Terms Agreement Agree All Clicked',
-                    'TermsAgreement',
-                    '전체 동의'
-                  );
-                  agreement.handleAllAgree();
-                }}
+                onChange={handleAllAgreePress}
               />
-            </View>
+            </Pressable>
             <TermsAgreementRow
               checked={agreement.privacyAgreed}
               label="개인정보처리방침 동의"

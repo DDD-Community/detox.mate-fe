@@ -70,7 +70,7 @@ export function TenSecondCountdownScreen({
           <View style={styles.previewCard}>
             <Image source={DETOXMATE_LOGO} style={styles.previewIcon} />
             <View style={styles.previewTexts}>
-              <Text style={styles.previewTitle}>Detox mate</Text>
+              <Text style={styles.previewTitle}>Detoxmate</Text>
               <Text style={styles.previewBody}>{notificationPreview}</Text>
             </View>
           </View>
