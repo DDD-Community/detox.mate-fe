@@ -1,5 +1,5 @@
 import { useLocalSearchParams } from 'expo-router';
-import { useEffect, useEffectEvent } from 'react';
+import { useEffect, useRef } from 'react';
 import { Image, StyleSheet, Text, View, useWindowDimensions } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import LOGO_APPLE_LOGIN from '@assets/logo-apple-login.png';
@@ -21,11 +21,10 @@ export default function LoginScreen() {
   const pending = Boolean(auth.pendingProvider);
   const insets = useSafeAreaInsets();
   const { width } = useWindowDimensions();
-  const showSessionExpired = useEffectEvent(() =>
-    toast.showWithMessage('로그인 세션이 만료되었습니다.')
-  );
+  const showSessionExpired = useRef(toast.showWithMessage);
+  showSessionExpired.current = toast.showWithMessage;
   useEffect(() => {
-    if (reason === 'sessionExpired') showSessionExpired();
+    if (reason === 'sessionExpired') showSessionExpired.current('로그인 세션이 만료되었습니다.');
   }, [reason]);
   return (
     <LoggingPage eventName="Login Viewed" properties={{ pageName: 'Login' }}>

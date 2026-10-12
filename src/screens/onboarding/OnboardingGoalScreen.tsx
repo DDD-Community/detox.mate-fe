@@ -22,7 +22,15 @@ export default function OnboardingGoalScreen() {
       properties={{ pageName: 'Onboarding', step: 'goal' }}
     >
       <OnboardingLayout
-        footer={<Button label="완료" disabled={pending} onPress={complete} style={styles.button} />}
+        footer={
+          <Button
+            label="완료"
+            disabled={pending}
+            onPress={complete}
+            style={styles.button}
+            labelStyle={styles.buttonLabel}
+          />
+        }
       >
         <View style={[styles.body, { paddingTop: Math.max(122 - insets.top, 16) }]}>
           <Image source={require('@assets/onboarding/goal.png')} style={styles.image} />
@@ -43,6 +51,7 @@ const styles = StyleSheet.create({
   body: { paddingHorizontal: 16, paddingBottom: 24 },
   image: { width: 330, height: 347, alignSelf: 'center', marginLeft: -7 },
   card: { marginTop: -113 },
+  buttonLabel: { fontSize: 17.62, lineHeight: 26.423, letterSpacing: -0.3524 },
   button: { width: '100%', borderRadius: 999, height: 52.46, minHeight: 52.46 },
   error: {
     marginTop: 12,

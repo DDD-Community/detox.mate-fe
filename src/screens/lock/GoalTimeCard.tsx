@@ -81,6 +81,7 @@ const styles = StyleSheet.create({
     fontSize: 48,
     lineHeight: 52,
     letterSpacing: -0.96,
+    transform: [{ translateY: 2 }],
     color: '#000000',
   },
 });

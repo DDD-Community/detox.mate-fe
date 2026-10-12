@@ -53,6 +53,7 @@ function TermsContent({
               <Checkbox
                 checked={agreement.allAgreed}
                 label="전체 동의"
+                labelStyle={styles.allLabel}
                 onChange={() => {
                   trackButtonClick(
                     'Terms Agreement Agree All Clicked',
@@ -132,6 +133,7 @@ const styles = StyleSheet.create({
     color: primitiveColors.gray[400],
   },
   list: { gap: 16 },
+  allLabel: { fontFamily: fontFamily.primary.medium, fontSize: 16, lineHeight: 24 },
   all: {
     backgroundColor: primitiveColors.gray[50],
     borderRadius: 12,

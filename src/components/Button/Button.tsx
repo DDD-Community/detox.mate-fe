@@ -1,5 +1,13 @@
 import type { ReactNode } from 'react';
-import { Pressable, StyleSheet, Text, View, type StyleProp, type ViewStyle } from 'react-native';
+import {
+  Pressable,
+  StyleSheet,
+  Text,
+  View,
+  type StyleProp,
+  type ViewStyle,
+  type TextStyle,
+} from 'react-native';
 
 import { primitiveColors, spacing, typography } from '../../lib/token';
 
@@ -23,6 +31,7 @@ export interface ButtonProps {
   disabled?: boolean;
   onPress?: () => void;
   style?: StyleProp<ViewStyle>;
+  labelStyle?: StyleProp<TextStyle>;
 }
 
 interface ButtonColors {
@@ -126,6 +135,7 @@ export function Button({
   disabled = false,
   onPress,
   style,
+  labelStyle,
 }: ButtonProps) {
   const sizes = getSizes(size);
   const isIconOnly = iconOnly !== false;
@@ -157,13 +167,14 @@ export function Button({
                 opacity: colors.opacity ?? 1,
               },
               style,
+              labelStyle,
             ]}
           >
             {leadingIcon ? (
               <View style={{ width: sizes.iconSize, height: sizes.iconSize }}>{leadingIcon}</View>
             ) : null}
             {!isIconOnly && label ? (
-              <Text style={[sizes.textStyle, { color: colors.fg }]} numberOfLines={1}>
+              <Text style={[sizes.textStyle, { color: colors.fg }, labelStyle]} numberOfLines={1}>
                 {label}
               </Text>
             ) : null}

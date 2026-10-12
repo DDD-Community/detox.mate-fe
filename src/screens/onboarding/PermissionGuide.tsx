@@ -21,13 +21,14 @@ export function PermissionGuide({ title, image, notification, pending, onContinu
           disabled={pending}
           onPress={onContinue}
           style={styles.button}
+          labelStyle={styles.buttonLabel}
         />
       }
     >
       <View style={[styles.body, { paddingTop: Math.max(230 - insets.top, 24) }]}>
         <Text style={styles.title}>{title}</Text>
         <Text style={styles.description}>
-          다음 화면에서 <Text style={styles.highlight}>‘허용’</Text>을 눌러주세요.
+          다음 화면에서 <Text style={styles.highlight}>‘허용&apos;</Text>을 눌러주세요.
         </Text>
         {notification && (
           <View style={styles.bubble}>
@@ -89,5 +90,6 @@ const styles = StyleSheet.create({
     left: -0.3,
     top: -371.23,
   },
+  buttonLabel: { fontSize: 17.62, lineHeight: 26.423, letterSpacing: -0.3524 },
   button: { width: '100%', borderRadius: 999, height: 52.46, minHeight: 52.46 },
 });
