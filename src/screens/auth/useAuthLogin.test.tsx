@@ -5,7 +5,6 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { peekPendingInvite, setPendingInvite } from '../../lib/pendingInvite';
 import { queryClient } from '../../lib/query/queryClient';
-import { TERMS_ACCEPTED_KEY } from './authStorageKeys';
 import { useAuthLogin } from './useAuthLogin';
 
 const mocks = vi.hoisted(() => ({
@@ -122,8 +121,8 @@ async function setup() {
   };
 }
 
-describe('로그인 약관과 신규 가입 분기', () => {
-  it('동의 전에는 인증하지 않고 동의 후 신규 가입이면 초대를 보존한 채 온보딩으로 이동한다', async () => {
+describe('인증 후 신규 가입 분기', () => {
+  it('신규 가입이면 초대를 보존한 채 온보딩으로 이동한다', async () => {
     const invite = { kind: 'friend' as const, code: 'random-friend-code' };
     await setPendingInvite(invite);
     mocks.authHttp.mockResolvedValueOnce({
@@ -136,15 +135,10 @@ describe('로그인 약관과 신규 가입 분기', () => {
     });
     const screen = await setup();
     await act(() => screen.state.handleKakaoLogin());
-    expect(mocks.kakao).not.toHaveBeenCalled();
-    expect(screen.state.termsVisible).toBe(true);
-    await act(() => screen.state.confirmTerms());
     expect(mocks.replace).toHaveBeenLastCalledWith('/onboarding');
     expect(await peekPendingInvite()).toEqual(invite);
-    expect(mocks.storage.get(TERMS_ACCEPTED_KEY)).toBe('true');
   });
   it('재로그인은 새 온보딩으로 복귀하지 않고 대기 초대로 이동한다', async () => {
-    mocks.storage.set(TERMS_ACCEPTED_KEY, 'true');
     const invite = { kind: 'friend' as const, code: 'random-friend-code' };
     await setPendingInvite(invite);
     const screen = await setup();
@@ -156,7 +150,6 @@ describe('로그인 약관과 신규 가입 분기', () => {
     expect(await peekPendingInvite()).toBeNull();
   });
   it('동시 로그인은 한 번만 인증하고 기존 사용자의 기본 목적지는 제한 앱이다', async () => {
-    mocks.storage.set(TERMS_ACCEPTED_KEY, 'true');
     const oauth = Promise.withResolvers<{ accessToken: string }>();
     mocks.kakao.mockReturnValueOnce(oauth.promise);
     const screen = await setup();

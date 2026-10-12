@@ -8,30 +8,28 @@ import { useTermsAgreement } from './useTermsAgreement';
 
 export function TermsAgreementSheet({
   visible,
-  pending,
   onConfirm,
   onClose,
+  onDismiss,
 }: {
   visible: boolean;
-  pending: boolean;
   onConfirm: () => void;
   onClose: () => void;
+  onDismiss: () => void;
 }) {
   return (
-    <Modal visible={visible} transparent animationType="slide" onRequestClose={onClose}>
-      <TermsContent pending={pending} onConfirm={onConfirm} onClose={onClose} />
+    <Modal
+      visible={visible}
+      transparent
+      animationType="slide"
+      onRequestClose={onClose}
+      onDismiss={onDismiss}
+    >
+      <TermsContent onConfirm={onConfirm} onClose={onClose} />
     </Modal>
   );
 }
-function TermsContent({
-  pending,
-  onConfirm,
-  onClose,
-}: {
-  pending: boolean;
-  onConfirm: () => void;
-  onClose: () => void;
-}) {
+function TermsContent({ onConfirm, onClose }: { onConfirm: () => void; onClose: () => void }) {
   const agreement = useTermsAgreement();
   const insets = useSafeAreaInsets();
   return (
@@ -91,7 +89,7 @@ function TermsContent({
           >
             <Button
               label="동의하고 넘어가기"
-              disabled={!agreement.allAgreed || pending}
+              disabled={!agreement.allAgreed}
               onPress={onConfirm}
               style={styles.button}
             />

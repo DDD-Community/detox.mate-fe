@@ -9,7 +9,7 @@ import { fontFamily, primitiveColors } from '@/lib/token';
 import { OnboardingLayout } from '../onboarding/OnboardingLayout';
 import { AuthLoginButton } from './AuthLoginButton';
 import { TestLoginTrigger } from './TestLoginTrigger';
-import { TermsAgreementSheet } from './TermsAgreementSheet';
+import { useTermsConsent } from './useTermsConsent';
 import { useAuthLogin } from './useAuthLogin';
 
 export default function LoginScreen() {
@@ -18,7 +18,13 @@ export default function LoginScreen() {
   const auth = useAuthLogin({
     onLoginFailure: () => toast.showWithMessage('로그인에 실패했어요. 잠시 후 다시 시도해 주세요.'),
   });
-  const pending = Boolean(auth.pendingProvider);
+  const terms = useTermsConsent({
+    onFailure: () => toast.showWithMessage('약관 동의를 처리하지 못했어요. 다시 시도해 주세요.'),
+  });
+  const loginAfterConsent = async (login: () => Promise<void>) => {
+    if (await terms.requestConsent()) await login();
+  };
+  const pending = terms.pending || Boolean(auth.pendingProvider);
   const insets = useSafeAreaInsets();
   const { width } = useWindowDimensions();
   const showSessionExpired = useRef(toast.showWithMessage);
@@ -36,7 +42,7 @@ export default function LoginScreen() {
               label="카카오로 시작하기"
               pendingLabel="카카오 로그인 중..."
               iconSource={LOGO_KAKAO_LOGIN}
-              onPress={auth.handleKakaoLogin}
+              onPress={() => loginAfterConsent(auth.handleKakaoLogin)}
               pending={auth.pendingProvider === 'kakao'}
               disabled={pending}
             />
@@ -45,7 +51,7 @@ export default function LoginScreen() {
               label="애플로 시작하기"
               pendingLabel="애플 로그인 중..."
               iconSource={LOGO_APPLE_LOGIN}
-              onPress={auth.handleAppleLogin}
+              onPress={() => loginAfterConsent(auth.handleAppleLogin)}
               pending={auth.pendingProvider === 'apple'}
               disabled={pending}
             />
@@ -54,7 +60,10 @@ export default function LoginScreen() {
       >
         <View style={{ height: 593 - insets.top }}>
           <View style={[styles.hero, { top: 261 - insets.top, height: (width * 332) / 393 }]}>
-            <TestLoginTrigger disabled={pending} onSelectAccount={auth.handleTestLogin}>
+            <TestLoginTrigger
+              disabled={pending}
+              onSelectAccount={(key) => loginAfterConsent(() => auth.handleTestLogin(key))}
+            >
               <Image source={require('@assets/onboarding/login.png')} style={styles.image} />
             </TestLoginTrigger>
           </View>
@@ -67,12 +76,6 @@ export default function LoginScreen() {
         </View>
       </OnboardingLayout>
       <Toast visible={toast.visible} message={toast.message} bottomOffset={204} />
-      <TermsAgreementSheet
-        visible={auth.termsVisible}
-        pending={pending}
-        onConfirm={auth.confirmTerms}
-        onClose={auth.closeTerms}
-      />
     </LoggingPage>
   );
 }

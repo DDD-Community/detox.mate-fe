@@ -5,6 +5,7 @@ import { router, Stack } from 'expo-router';
 import * as SplashScreen from 'expo-splash-screen';
 import { useEffect, type ComponentType } from 'react';
 import { Platform } from 'react-native';
+import { OverlayProvider } from 'overlay-kit';
 import * as ReactNativeDeviceActivity from 'react-native-device-activity';
 import {
   ensureShieldIcon,
@@ -111,7 +112,9 @@ export default function RootLayout() {
   return (
     <QueryProvider>
       <AppErrorBoundary>
-        <Stack screenOptions={{ headerShown: false }} />
+        <OverlayProvider>
+          <Stack screenOptions={{ headerShown: false }} />
+        </OverlayProvider>
       </AppErrorBoundary>
       <NetworkErrorToast />
     </QueryProvider>
