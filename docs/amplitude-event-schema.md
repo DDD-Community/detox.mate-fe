@@ -62,9 +62,6 @@
 
 | page_name                       | 버튼/상호작용               | button_name                   | eventName                                                         | properties                                                |
 | ------------------------------- | --------------------------- | ----------------------------- | ----------------------------------------------------------------- | --------------------------------------------------------- |
-| `Onboarding`                    | 이전                        | `이전`                        | `Onboarding Previous Clicked`                                     | `event_type`, `page_name`, `button_name`, `step`          |
-| `Onboarding`                    | 다음                        | `다음`                        | `Onboarding Next Clicked`                                         | `event_type`, `page_name`, `button_name`, `step`          |
-| `Onboarding`                    | 시작하기                    | `시작하기`                    | `Onboarding Start Clicked`                                        | `event_type`, `page_name`, `button_name`, `step`          |
 | `TermsAgreement`                | 전체 동의                   | `전체 동의`                   | `Terms Agreement Agree All Clicked`                               | `event_type`, `page_name`, `button_name`                  |
 | `TermsAgreement`                | 개인정보처리 방침 동의 토글 | `개인정보처리 방침 동의 토글` | `Terms Agreement Privacy Agree Toggle Clicked`                    | `event_type`, `page_name`, `button_name`                  |
 | `TermsAgreement`                | 서비스 이용 약관 동의 토글  | `서비스 이용 약관 동의 토글`  | `Terms Agreement Terms Agree Toggle Clicked`                      | `event_type`, `page_name`, `button_name`                  |
@@ -227,3 +224,5 @@
 | 그룹 나가기/로그아웃/탈퇴 | `{Page Name} {Button Name} Clicked` |
 
 또한 문서에는 코호트/퍼널 목적에 필요한 최소 property만 넣었다. 서버 id, 초대 코드 원문, 사용자 이름, 댓글/회고 본문은 분석에 직접 필요하지 않으므로 1차 로그에는 넣지 않는다.
+
+온보딩 `step`은 `screen-time`, `notifications`, `apps`, `goal`, `invite`로 구분한다. 권한 단계는 실제 승인 뒤 전환하며 별도 클릭 로그를 중복 기록하지 않는다.
