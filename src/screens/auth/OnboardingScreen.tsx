@@ -16,7 +16,7 @@ export default function OnboardingScreen() {
       permission={permission}
       onGranted={() => {
         if (permission === 'screen-time') setPermission('notifications');
-        else router.replace({ pathname: '/(lock)/select-apps', params: { mode: 'onboarding' } });
+        else router.replace('/onboarding-apps');
       }}
     />
   );
