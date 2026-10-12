@@ -133,7 +133,7 @@ export default function LockStatusScreen() {
                       style={styles.appRowView}
                     />
                   ) : null}
-                  {/* 앱 이름 아래 자리는 네이티브 행(AppRowView)이 비워둔다 — 그 위에 얹는다. */}
+                  {/* 앱 이름 아래 자리는 메인 앱의 네이티브 행이 비워둔다 — 그 위에 얹는다. */}
                   <Text style={styles.appUnlockCount} pointerEvents="none">
                     {app.unlockCount}회 해제
                   </Text>
@@ -260,7 +260,7 @@ const styles = StyleSheet.create({
     marginRight: spacing[16],
     backgroundColor: '#E6E6E6',
   },
-  // AppRowView: 이름(22) + 이 자리(20)가 68 높이 안에서 세로 가운데 → 이름 끝이 y=35.
+  // 네이티브 행: 이름(22) + 이 자리(20)가 68 높이 안에서 세로 가운데 → 이름 끝이 y=35.
   appUnlockCount: {
     ...typography.primary.body2R,
     lineHeight: 20,

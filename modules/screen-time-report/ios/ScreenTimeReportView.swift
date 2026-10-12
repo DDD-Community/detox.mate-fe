@@ -25,7 +25,6 @@ extension DeviceActivityReport.Context {
   static let usageSummary = Self("DetoxUsageSummary")
   static let appRow = Self("DetoxAppRow")
   static let appBreakdown = Self("DetoxAppBreakdown")
-  static let appHeaderLabel = Self("DetoxAppHeaderLabel")
   static let appHero = Self("DetoxAppHero")
   static let appPercent = Self("DetoxAppPercent")
   static let usageBar = Self("DetoxUsageBar")
@@ -45,18 +44,15 @@ enum ReportStyle: String {
   case usageBar
   case overLimitNotice
 
-  /// nameCenter는 익스텐션을 거치지 않고 메인 앱에서 직접 그린다(nil).
+  /// 앱 표시용 스타일은 메인 앱에서 라벨과 사용량 리포트를 조합한다(nil).
   @available(iOS 16.0, *)
   var context: DeviceActivityReport.Context? {
     switch self {
     case .total: return .totalActivity
     case .summary: return .usageSummary
-    case .appRow: return .appRow
     case .breakdown: return .appBreakdown
-    case .headerLabel: return .appHeaderLabel
-    case .hero: return .appHero
     case .percent: return .appPercent
-    case .nameCenter: return nil
+    case .appRow, .headerLabel, .hero, .nameCenter: return nil
     case .usageBar: return .usageBar
     case .overLimitNotice: return .overLimitNotice
     }
@@ -81,79 +77,184 @@ private func decodeSelection(from tokens: [String]) -> FamilyActivitySelection {
   return combined
 }
 
-/// 해제 시간 설정 화면 제목 첫 줄 앱 이름(피그마 title3 24/Regular). 앱 이름은
-/// Label(token)으로만 그릴 수 있는데, 메인 앱에서도 그릴 수 있어서 리포트 익스텐션(사용 기록
-/// 집계가 끝나야 뜨고, 오늘 기록이 없는 앱은 안 뜬다)을 거치지 않고 바로 그린다.
+/// 선택 토큰으로 앱 정보를 표시한다. 사용 기록의 유무와 집계를 기다리지 않는다.
 @available(iOS 16.0, *)
-struct HostAppNameView: View {
-  let token: ApplicationToken
+private struct SelectedActivityLabel: View {
+  let selection: FamilyActivitySelection
 
   var body: some View {
-    // 가운데 정렬: Label(token)의 제목 뷰는 글자 폭을 레이아웃에 알려주지 않아서(fixedSize()를 걸면
-    // 폭이 실제보다 작게 잡혀 글자가 잘렸다) 폭을 줄이는 방식은 못 쓴다. 대신 뷰 전체 폭을 유지한 채
-    // 텍스트 정렬만 가운데로 지정한다 — 이 속성이 이 뷰에 먹히지 않으면 왼쪽 정렬로 보일 뿐 잘리진 않는다.
-    Label(token)
-      .labelStyle(.titleOnly)
-      .font(.system(size: 24))
-      .foregroundColor(Color(red: 0x38 / 255, green: 0x3E / 255, blue: 0x49 / 255))
-      .multilineTextAlignment(.center)
-      .frame(maxWidth: .infinity, alignment: .center)
+    if let token = selection.applicationTokens.first {
+      Label(token)
+    } else if let token = selection.categoryTokens.first {
+      Label(token)
+    } else if let token = selection.webDomainTokens.first {
+      Label(token)
+    }
+  }
+}
+
+@available(iOS 16.0, *)
+private struct SelectedActivityIcon: View {
+  let selection: FamilyActivitySelection
+  let size: CGFloat
+
+  var body: some View {
+    SelectedActivityLabel(selection: selection)
+      .labelStyle(.iconOnly)
+      .scaleEffect(size / 28)
+      .frame(width: size, height: size)
+      .clipShape(RoundedRectangle(cornerRadius: size * 0.25, style: .continuous))
+  }
+}
+
+@available(iOS 16.0, *)
+private struct ScreenTimeContentView: View {
+  let selection: FamilyActivitySelection
+  let reportStyle: ReportStyle
+  let filter: DeviceActivityFilter
+
+  private let gray800 = Color(red: 0x38 / 255, green: 0x3E / 255, blue: 0x49 / 255)
+
+  var body: some View {
+    switch reportStyle {
+    case .appRow:
+      HStack(spacing: 8) {
+        SelectedActivityIcon(selection: selection, size: 44)
+        VStack(alignment: .leading, spacing: 0) {
+          SelectedActivityLabel(selection: selection)
+            .labelStyle(.titleOnly)
+            .font(.system(size: 16))
+            .foregroundColor(.black)
+            .frame(height: 22, alignment: .leading)
+          // 이름 아래 해제 횟수는 React Native가 그린다.
+          Color.clear.frame(height: 20)
+        }
+        Spacer(minLength: 0)
+        DeviceActivityReport(.appRow, filter: filter)
+          .frame(width: 120, height: 22)
+        Image(systemName: "chevron.right")
+          .font(.system(size: 14, weight: .semibold))
+          .foregroundColor(Color(red: 0x3C / 255, green: 0x3C / 255, blue: 0x43 / 255).opacity(0.3))
+          .padding(.leading, 8)
+      }
+      .padding(.horizontal, 16)
+    case .headerLabel:
+      HStack {
+        SelectedActivityLabel(selection: selection)
+          .labelStyle(.titleAndIcon)
+          .font(.system(size: 20, weight: .medium))
+          .foregroundColor(gray800)
+        Spacer()
+      }
+      .padding(.leading, 8)
+    case .hero:
+      VStack(spacing: 0) {
+        SelectedActivityIcon(selection: selection, size: 83)
+        SelectedActivityLabel(selection: selection)
+          .labelStyle(.titleOnly)
+          .font(.system(size: 16, weight: .medium))
+          .foregroundColor(gray800)
+          .frame(maxWidth: .infinity, alignment: .leading)
+          .frame(height: 26)
+          .padding(.top, 12)
+        DeviceActivityReport(.appHero, filter: filter)
+          .frame(height: 32)
+          .padding(.top, 4)
+      }
+      .frame(maxWidth: .infinity)
+    case .nameCenter:
+      SelectedActivityLabel(selection: selection)
+        .labelStyle(.titleOnly)
+        .font(.system(size: 24))
+        .foregroundColor(gray800)
+        .multilineTextAlignment(.center)
+        .frame(maxWidth: .infinity, alignment: .center)
+    default:
+      if let context = reportStyle.context {
+        DeviceActivityReport(context, filter: filter)
+      }
+    }
   }
 }
 
 class ScreenTimeReportNativeView: ExpoView {
   private var hostingController: UIViewController?
+  private var renderedTokens: [String]?
+  private var renderedStyle: ReportStyle?
+  private var renderedDay: Date?
 
-  var selectionTokens: [String] = [] {
-    didSet { updateReport() }
-  }
-
-  var reportStyle: ReportStyle = .total {
-    didSet { updateReport() }
-  }
+  var selectionTokens: [String] = []
+  var reportStyle: ReportStyle = .total
 
   required init(appContext: AppContext? = nil) {
     super.init(appContext: appContext)
-    // DeviceActivityReport 내부 콘텐츠가 우리가 RN에서 잡아준 높이보다 커지면(시스템이
-    // 자체적으로 여백/리스트 스타일을 덧붙이는 경우가 있다), 잘라내지 않으면 바로 위/아래
-    // RN 요소 위로 글자가 번져 보인다. 무조건 이 뷰 경계 안으로만 그리게 강제한다.
     clipsToBounds = true
   }
 
-  private func updateReport() {
+  // Expo가 모든 prop을 적용한 뒤 한 번만 반영한다. 같은 입력이면 시스템 라벨도 유지한다.
+  func updateReport() {
     guard #available(iOS 16.0, *) else { return }
-
-    hostingController?.view.removeFromSuperview()
+    let day = Calendar.current.startOfDay(for: .now)
+    guard selectionTokens != renderedTokens || reportStyle != renderedStyle || day != renderedDay
+    else { return }
 
     let selection = decodeSelection(from: selectionTokens)
     let filter = DeviceActivityFilter(
-      segment: .daily(during: Calendar.current.dateInterval(of: .day, for: .now)!),
+      segment: .daily(during: Calendar.current.dateInterval(of: .day, for: day)!),
       users: .all,
       devices: .init([.iPhone]),
       applications: selection.applicationTokens,
       categories: selection.categoryTokens,
       webDomains: selection.webDomainTokens
     )
-    let controller: UIHostingController<AnyView>
-    if let context = reportStyle.context {
-      controller = UIHostingController(
-        rootView: AnyView(DeviceActivityReport(context, filter: filter)))
-    } else if let token = selection.applicationTokens.first {
-      controller = UIHostingController(rootView: AnyView(HostAppNameView(token: token)))
+    let content = ScreenTimeContentView(
+      selection: selection, reportStyle: reportStyle, filter: filter)
+
+    if let controller = hostingController as? UIHostingController<ScreenTimeContentView> {
+      controller.rootView = content
     } else {
+      let controller = UIHostingController(rootView: content)
+      controller.view.translatesAutoresizingMaskIntoConstraints = false
+      controller.view.backgroundColor = .clear
+      controller.view.clipsToBounds = true
+      hostingController = controller
+      addSubview(controller.view)
+      NSLayoutConstraint.activate([
+        controller.view.topAnchor.constraint(equalTo: topAnchor),
+        controller.view.bottomAnchor.constraint(equalTo: bottomAnchor),
+        controller.view.leadingAnchor.constraint(equalTo: leadingAnchor),
+        controller.view.trailingAnchor.constraint(equalTo: trailingAnchor),
+      ])
+      attachHostingController()
+    }
+    renderedTokens = selectionTokens
+    renderedStyle = reportStyle
+    renderedDay = day
+  }
+
+  override func didMoveToWindow() {
+    super.didMoveToWindow()
+    if window != nil {
+      if renderedTokens != nil { updateReport() }
+      attachHostingController()
+    } else if let controller = hostingController, controller.parent != nil {
+      controller.willMove(toParent: nil)
+      controller.removeFromParent()
+    }
+  }
+
+  private func attachHostingController() {
+    guard window != nil, let controller = hostingController, controller.parent == nil else {
       return
     }
-
-    controller.view.translatesAutoresizingMaskIntoConstraints = false
-    controller.view.backgroundColor = .clear
-    controller.view.clipsToBounds = true
-    addSubview(controller.view)
-    NSLayoutConstraint.activate([
-      controller.view.topAnchor.constraint(equalTo: topAnchor),
-      controller.view.bottomAnchor.constraint(equalTo: bottomAnchor),
-      controller.view.leadingAnchor.constraint(equalTo: leadingAnchor),
-      controller.view.trailingAnchor.constraint(equalTo: trailingAnchor),
-    ])
-    hostingController = controller
+    var responder: UIResponder? = next
+    while let current = responder {
+      if let parent = current as? UIViewController {
+        parent.addChild(controller)
+        controller.didMove(toParent: parent)
+        return
+      }
+      responder = current.next
+    }
   }
 }
