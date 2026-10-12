@@ -2,17 +2,7 @@ import { QueryErrorResetBoundary } from '@tanstack/react-query';
 import * as Clipboard from 'expo-clipboard';
 import { useRouter, type Href } from 'expo-router';
 import { Suspense, useEffect, useRef, useState } from 'react';
-import {
-  ActivityIndicator,
-  Alert,
-  Image,
-  Pressable,
-  StyleSheet,
-  Text,
-  View,
-  useWindowDimensions,
-} from 'react-native';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { ActivityIndicator, Alert, Image, Pressable, StyleSheet, Text, View } from 'react-native';
 import { getUserErrorMessage, logError, normalizeError } from '@/api/errors';
 import {
   Button,
@@ -24,16 +14,13 @@ import {
 import { ErrorBoundary } from '@/components/AppErrorBoundary/AppErrorBoundary';
 import { trackEvent } from '@/lib/analytics';
 import { navigateAuthenticated } from '@/lib/inviteDestination';
-import { fontFamily, primitiveColors } from '@/lib/token';
+import { fontFamily, primitiveColors, spacing } from '@/lib/token';
 import { useShareFriendInvite } from '../friends/hooks/useShareFriendInvite';
 import { useMyProfile } from '../mypage/hooks/useMyProfilePageData';
 import { OnboardingLayout } from './OnboardingLayout';
 
 export default function OnboardingInviteScreen() {
   const router = useRouter();
-  const insets = useSafeAreaInsets();
-  const { height } = useWindowDimensions();
-  const compact = height < 740;
   const { share, sharing } = useShareFriendInvite({
     prepareOnMount: false,
     pageName: 'Onboarding',
@@ -115,27 +102,19 @@ export default function OnboardingInviteScreen() {
             </Pressable>
           </LoggingButton>
         </View>
-        <View
-          style={[
-            styles.body,
-            { paddingTop: Math.max((compact ? 60 : 126) - insets.top - 24, 16) },
-          ]}
-        >
+        <View style={styles.body}>
           <Text style={styles.title}>친구를 초대하고{'\n'}함께 시작해 보세요</Text>
           <Text style={styles.subtitle}>
             친구가 내 초대 코드로 나를 찾아{'\n'}친구 요청을 보낼 수 있어요
           </Text>
-          <View style={[styles.artwork, compact && styles.compactArtwork]}>
-            <Image
-              source={require('@assets/onboarding/invite.png')}
-              style={[styles.image, compact && styles.compactImage]}
-            />
+          <View style={styles.artwork}>
+            <Image source={require('@assets/onboarding/invite.png')} style={styles.image} />
           </View>
           <QueryErrorResetBoundary>
             {({ reset }) => (
               <ErrorBoundary onReset={reset}>
                 <Suspense fallback={<ActivityIndicator style={styles.loading} />}>
-                  <InviteCode compact={compact} />
+                  <InviteCode />
                 </Suspense>
               </ErrorBoundary>
             )}
@@ -145,7 +124,7 @@ export default function OnboardingInviteScreen() {
     </LoggingPage>
   );
 }
-function InviteCode({ compact }: { compact: boolean }) {
+function InviteCode() {
   const { userCode } = useMyProfile();
   const { copyToastVisible, showCopyToast } = useClipboardCopyToast();
   const copy = async () => {
@@ -165,7 +144,7 @@ function InviteCode({ compact }: { compact: boolean }) {
         accessibilityRole="button"
         accessibilityLabel="내 초대 코드 복사"
         onPress={copy}
-        style={[styles.codeArea, compact && styles.compactCodeArea]}
+        style={styles.codeArea}
       >
         <Text style={styles.codeLabel}>내 초대 코드 복사</Text>
         <Text style={styles.code}>{userCode}</Text>
@@ -182,7 +161,7 @@ const styles = StyleSheet.create({
     lineHeight: 20,
     color: primitiveColors.gray[500],
   },
-  body: { alignItems: 'center', paddingHorizontal: 16, paddingBottom: 24 },
+  body: { alignItems: 'center', paddingHorizontal: spacing[16], paddingVertical: spacing[24] },
   title: {
     fontFamily: fontFamily.primary.bold,
     fontSize: 24,
@@ -200,9 +179,6 @@ const styles = StyleSheet.create({
   },
   artwork: { width: 259, height: 205, marginTop: 24, overflow: 'hidden' },
   image: { position: 'absolute', width: 260.3, height: 261.15, left: -0.65, top: -27.43 },
-  compactArtwork: { height: 169, marginTop: 12 },
-  compactImage: { width: 214, height: 215, left: 22.5, top: -23 },
-  compactCodeArea: { marginTop: 16 },
   codeArea: { alignItems: 'center', marginTop: 24, gap: 8 },
   codeLabel: {
     fontFamily: fontFamily.primary.regular,
