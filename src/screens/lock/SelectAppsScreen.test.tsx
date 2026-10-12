@@ -23,7 +23,7 @@ const mocks = vi.hoisted(() => ({
 vi.mock('../../lib/token/icons', () => ({ iconNames: [] }));
 vi.mock('expo-router', () => ({
   useRouter: () => ({ replace: mocks.replace }),
-  useLocalSearchParams: () => ({ onboarding: '1' }),
+  useLocalSearchParams: () => ({ mode: 'onboarding' }),
 }));
 vi.mock('react-native', () => ({
   View: ({ children }: PropsWithChildren) => createElement('div', null, children),

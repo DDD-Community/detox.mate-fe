@@ -35,8 +35,8 @@ const EMPTY_EVENT_GRACE_MS = 1000;
  */
 export default function SelectAppsScreen() {
   const router = useRouter();
-  const { onboarding } = useLocalSearchParams<{ onboarding?: string }>();
-  const isOnboarding = onboarding === '1';
+  const { mode } = useLocalSearchParams<{ mode?: 'onboarding' }>();
+  const isOnboarding = mode === 'onboarding';
   const saving = useRef(false);
   const { selectedAppIds, familyActivitySelectionsByAppId, registerAppSelection, unregisterApp } =
     useLockStore();
