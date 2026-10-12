@@ -1,8 +1,8 @@
 import { Image, StyleSheet, Text, View, type ImageSourcePropType } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { Button } from '@/components';
 import { fontFamily, primitiveColors } from '@/lib/token';
 import { OnboardingLayout } from './OnboardingLayout';
+import { OnboardingContinueButton } from './OnboardingContinueButton';
 
 type Props = {
   title: string;
@@ -16,12 +16,10 @@ export function PermissionGuide({ title, image, notification, pending, onContinu
   return (
     <OnboardingLayout
       footer={
-        <Button
+        <OnboardingContinueButton
           label={notification ? '시작하기' : '다음'}
           disabled={pending}
           onPress={onContinue}
-          style={styles.button}
-          labelStyle={styles.buttonLabel}
         />
       }
     >
@@ -90,6 +88,4 @@ const styles = StyleSheet.create({
     left: -0.3,
     top: -371.23,
   },
-  buttonLabel: { fontSize: 17.62, lineHeight: 26.423, letterSpacing: -0.3524 },
-  button: { width: '100%', borderRadius: 999, height: 52.46, minHeight: 52.46 },
 });

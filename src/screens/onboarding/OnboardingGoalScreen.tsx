@@ -2,21 +2,41 @@ import { useRouter } from 'expo-router';
 import { useState } from 'react';
 import { Image, StyleSheet, Text, View, useWindowDimensions } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { Button, LoggingPage } from '@/components';
-import { fontFamily, primitiveColors } from '@/lib/token';
+import { LoggingPage } from '@/components';
+import { fontFamily, primitiveColors, spacing } from '@/lib/token';
 import { GoalTimeCard } from '../lock/GoalTimeCard';
 import { useSaveGoalTime } from '../lock/useSaveGoalTime';
 import { OnboardingLayout } from './OnboardingLayout';
+import { OnboardingContinueButton } from './OnboardingContinueButton';
+
+const INITIAL_GOAL_HOURS = 0;
+const MINUTES_PER_HOUR = 60;
+
+// Figma 목표 시간 시안 A의 배치 기준. 작은 화면에서는 상단 여백부터 줄인다.
+const GOAL_ARTWORK_LAYOUT = {
+  referenceScreenHeight: 852,
+  topFromScreen: 122,
+  width: 330,
+  height: 347,
+  horizontalOpticalOffset: -7,
+  cardOverlap: 113,
+} as const;
 
 export default function OnboardingGoalScreen() {
-  const [hours, setHours] = useState(0);
+  const [hours, setHours] = useState(INITIAL_GOAL_HOURS);
   const { save, pending, errorMessage } = useSaveGoalTime('onboarding');
   const router = useRouter();
   const insets = useSafeAreaInsets();
-  const { height } = useWindowDimensions();
-  const artworkTop = Math.max(122 - Math.max(852 - height, 0) - insets.top, 16);
+  const { height: screenHeight } = useWindowDimensions();
+  const screenHeightShortfall = Math.max(
+    GOAL_ARTWORK_LAYOUT.referenceScreenHeight - screenHeight,
+    0
+  );
+  const artworkTopWithinSafeArea =
+    GOAL_ARTWORK_LAYOUT.topFromScreen - screenHeightShortfall - insets.top;
+  const artworkTopPadding = Math.max(artworkTopWithinSafeArea, spacing[16]);
   const complete = async () => {
-    if (await save(hours * 60)) router.replace('/onboarding-invite');
+    if (await save(hours * MINUTES_PER_HOUR)) router.replace('/onboarding-invite');
   };
   return (
     <LoggingPage
@@ -24,17 +44,9 @@ export default function OnboardingGoalScreen() {
       properties={{ pageName: 'Onboarding', step: 'goal' }}
     >
       <OnboardingLayout
-        footer={
-          <Button
-            label="완료"
-            disabled={pending}
-            onPress={complete}
-            style={styles.button}
-            labelStyle={styles.buttonLabel}
-          />
-        }
+        footer={<OnboardingContinueButton label="완료" disabled={pending} onPress={complete} />}
       >
-        <View style={[styles.body, { paddingTop: artworkTop }]}>
+        <View style={[styles.body, { paddingTop: artworkTopPadding }]}>
           <Image source={require('@assets/onboarding/goal.png')} style={styles.image} />
           <View style={styles.card}>
             <GoalTimeCard hours={hours} onChange={setHours} showChangeHint />
@@ -50,13 +62,16 @@ export default function OnboardingGoalScreen() {
   );
 }
 const styles = StyleSheet.create({
-  body: { paddingHorizontal: 16, paddingBottom: 24 },
-  image: { width: 330, height: 347, alignSelf: 'center', marginLeft: -7 },
-  card: { marginTop: -113 },
-  buttonLabel: { fontSize: 17.62, lineHeight: 26.423, letterSpacing: -0.3524 },
-  button: { width: '100%', borderRadius: 999, height: 52.46, minHeight: 52.46 },
+  body: { paddingHorizontal: spacing[16], paddingBottom: spacing[24] },
+  image: {
+    width: GOAL_ARTWORK_LAYOUT.width,
+    height: GOAL_ARTWORK_LAYOUT.height,
+    alignSelf: 'center',
+    marginLeft: GOAL_ARTWORK_LAYOUT.horizontalOpticalOffset,
+  },
+  card: { marginTop: -GOAL_ARTWORK_LAYOUT.cardOverlap },
   error: {
-    marginTop: 12,
+    marginTop: spacing[12],
     fontFamily: fontFamily.primary.medium,
     color: primitiveColors.system.red.opacity100,
     textAlign: 'center',
