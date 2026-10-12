@@ -1,5 +1,5 @@
 import { useLocalSearchParams, useRouter } from 'expo-router';
-import { useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { Alert, Pressable, StyleSheet, Text, useColorScheme, View } from 'react-native';
 import * as ReactNativeDeviceActivity from 'react-native-device-activity';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -51,27 +51,27 @@ export default function SelectAppsScreen() {
   const latestTokenRef = useRef<string | null>(initialUnionToken);
   const mountedAtRef = useRef(Date.now());
 
-  useEffect(() => {
-    const openPicker = async () => {
-      if (
-        ReactNativeDeviceActivity.getAuthorizationStatus() !==
-        ReactNativeDeviceActivity.AuthorizationStatus.approved
-      ) {
-        try {
-          await ReactNativeDeviceActivity.requestAuthorization('individual');
-        } catch {
-          if (isOnboarding) router.replace('/onboarding');
-          else router.back();
-          return;
-        }
+  const [permissionError, setPermissionError] = useState(false);
+  const openPicker = useCallback(async () => {
+    setPermissionError(false);
+    if (
+      ReactNativeDeviceActivity.getAuthorizationStatus() !==
+      ReactNativeDeviceActivity.AuthorizationStatus.approved
+    ) {
+      try {
+        await ReactNativeDeviceActivity.requestAuthorization('individual');
+      } catch {
+        if (isOnboarding) setPermissionError(true);
+        else router.back();
+        return;
       }
-      setIsAuthorized(true);
-    };
-
-    openPicker();
+    }
+    setIsAuthorized(true);
   }, [router, isOnboarding]);
 
-  const latestCountRef = useRef(0);
+  useEffect(() => {
+    void openPicker();
+  }, [openPicker]);
 
   const handleSelectionChange = (event: {
     familyActivitySelection: string | null;
@@ -84,13 +84,11 @@ export default function SelectAppsScreen() {
     const count = event.applicationCount + event.categoryCount + event.webDomainCount;
     if (token && count > 0) {
       latestTokenRef.current = token;
-      latestCountRef.current = count;
     } else if (Date.now() - mountedAtRef.current > EMPTY_EVENT_GRACE_MS) {
       // 피커가 막 뜰 때 들어오는 초기 빈 이벤트는 무시하고, 그 뒤의 빈 선택은 "전부 해제"로 본다.
       latestTokenRef.current = null;
-      latestCountRef.current = 0;
     }
-    setPendingToken(token);
+    setPendingToken(latestTokenRef.current);
   };
 
   // 시트가 아니라 화면 안에 끼운 피커라서 닫힘 이벤트/애니메이션을 기다리지 않고, "완료"를 누른
@@ -150,9 +148,8 @@ export default function SelectAppsScreen() {
     } catch (error) {
       const appError = normalizeError(error);
       logError(appError, { scope: 'api', operation: 'registerLockedApps' });
-      Alert.alert('앱을 잠글 수 없어요', getUserErrorMessage(appError));
-    } finally {
       saving.current = false;
+      Alert.alert('앱을 잠글 수 없어요', getUserErrorMessage(appError));
     }
   };
 
@@ -166,12 +163,13 @@ export default function SelectAppsScreen() {
     >
       <View style={[styles.root, !isDark && styles.rootLight]}>
         <SafeAreaView edges={['top']} style={styles.safeArea}>
-          <View style={styles.header}>
+          <View style={[styles.header, isOnboarding && styles.onboardingHeader]}>
             <View style={styles.headerTexts}>
               <Text style={[styles.title, { color: titleColor }]}>잠글 앱을 선택해 주세요.</Text>
               {!isOnboarding && <Text style={styles.subtitle}>언제든 변경 가능해요.</Text>}
             </View>
             <Pressable
+              style={isOnboarding ? styles.onboardingDone : undefined}
               accessibilityRole="button"
               accessibilityState={{ disabled: isOnboarding && !pendingToken }}
               disabled={isOnboarding && !pendingToken}
@@ -189,6 +187,11 @@ export default function SelectAppsScreen() {
                 familyActivitySelection={pendingToken}
                 onSelectionChange={(event) => handleSelectionChange(event.nativeEvent)}
               />
+            ) : permissionError ? (
+              <Pressable accessibilityRole="button" onPress={openPicker}>
+                <Text style={styles.hint}>스크린타임 권한을 확인한 뒤 다시 시도해 주세요.</Text>
+                <Text style={styles.doneText}>다시 시도</Text>
+              </Pressable>
             ) : (
               <Text style={styles.hint}>앱 선택 화면을 불러오는 중이에요…</Text>
             )}
@@ -218,6 +221,13 @@ const styles = StyleSheet.create({
     paddingTop: spacing[24],
     paddingBottom: spacing[16],
   },
+  onboardingHeader: {
+    height: 129,
+    paddingTop: 66,
+    paddingBottom: 31,
+    paddingHorizontal: 19,
+  },
+  onboardingDone: { position: 'absolute', right: 19, top: 18 },
   headerTexts: {
     flex: 1,
     gap: spacing[8],

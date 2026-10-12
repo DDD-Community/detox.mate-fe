@@ -70,6 +70,17 @@ export function useOnboardingPermission(permission: OnboardingPermission, onGran
     logError(appError, { scope: 'auth.login', operation: 'requestOnboardingPermission' });
     if (active.current) Alert.alert('권한을 확인해 주세요', getUserErrorMessage(appError));
   }
+  function showSettings() {
+    Alert.alert('권한 허용이 필요해요', '설정에서 권한을 허용한 뒤 다시 돌아와 주세요.', [
+      { text: '취소', style: 'cancel' },
+      {
+        text: '설정으로 가기',
+        onPress: () => {
+          void Linking.openSettings().catch(showError);
+        },
+      },
+    ]);
+  }
   const request = async () => {
     if (busy.current || completed.current) return;
     busy.current = true;
@@ -79,24 +90,26 @@ export function useOnboardingPermission(permission: OnboardingPermission, onGran
         await proceed();
         return;
       }
-      if (permission === 'screen-time') await DeviceActivity.requestAuthorization('individual');
-      else if ((await Notifications.getPermissionsAsync()).canAskAgain)
+      if (permission === 'screen-time') {
+        if (DeviceActivity.getAuthorizationStatus() === DeviceActivity.AuthorizationStatus.denied) {
+          showSettings();
+          return;
+        }
+        await DeviceActivity.requestAuthorization('individual');
+      } else if ((await Notifications.getPermissionsAsync()).canAskAgain)
         await Notifications.requestPermissionsAsync();
       if (await isGranted()) {
         await proceed();
         return;
       }
-      Alert.alert('권한 허용이 필요해요', '설정에서 권한을 허용한 뒤 다시 돌아와 주세요.', [
-        { text: '취소', style: 'cancel' },
-        {
-          text: '설정으로 가기',
-          onPress: () => {
-            void Linking.openSettings().catch(showError);
-          },
-        },
-      ]);
+      showSettings();
     } catch (error) {
-      showError(error);
+      if (
+        permission === 'screen-time' &&
+        DeviceActivity.getAuthorizationStatus() === DeviceActivity.AuthorizationStatus.denied
+      )
+        showSettings();
+      else showError(error);
     } finally {
       busy.current = false;
       if (active.current) setPending(false);

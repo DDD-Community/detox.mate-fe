@@ -6,6 +6,7 @@ import { useOnboardingPermission } from './useOnboardingPermission';
 
 const mocks = vi.hoisted(() => ({
   granted: false,
+  screenTimeStatus: 1,
   request: vi.fn(),
   push: vi.fn(),
   listener: undefined as undefined | ((state: string) => void),
@@ -15,7 +16,11 @@ vi.mock('expo-notifications', () => ({
   getPermissionsAsync: async () => ({ granted: mocks.granted, canAskAgain: true }),
   requestPermissionsAsync: mocks.request,
 }));
-vi.mock('react-native-device-activity', () => ({}));
+vi.mock('react-native-device-activity', () => ({
+  AuthorizationStatus: { denied: 1, approved: 2 },
+  getAuthorizationStatus: () => mocks.screenTimeStatus,
+  requestAuthorization: mocks.request,
+}));
 vi.mock('react-native', () => ({
   Alert: { alert: mocks.alert },
   Linking: { openSettings: vi.fn() },
@@ -45,11 +50,11 @@ beforeEach(() => {
 afterEach(async () => {
   await act(() => cleanups.splice(0).forEach((cleanup) => cleanup()));
 });
-async function setup() {
+async function setup(permission: 'screen-time' | 'notifications' = 'notifications') {
   let state!: ReturnType<typeof useOnboardingPermission>;
   const next = vi.fn();
   function Harness() {
-    state = useOnboardingPermission('notifications', next);
+    state = useOnboardingPermission(permission, next);
     return null;
   }
   const root = createRoot(document.createElement('div'));
@@ -92,5 +97,21 @@ it('시스템 요청과 복귀 이벤트가 겹쳐도 요청과 이동이 중복
     request.resolve();
     await pending;
   });
+  expect(screen.next).toHaveBeenCalledTimes(1);
+});
+
+it('이미 거절한 스크린타임 권한은 시스템 요청을 반복하지 않고 설정을 안내한다', async () => {
+  mocks.screenTimeStatus = 1;
+  const screen = await setup('screen-time');
+  await act(() => screen.state.request());
+  expect(mocks.request).not.toHaveBeenCalled();
+  expect(mocks.alert).toHaveBeenCalledWith(
+    '권한 허용이 필요해요',
+    expect.any(String),
+    expect.arrayContaining([expect.objectContaining({ text: '설정으로 가기' })])
+  );
+  expect(screen.next).not.toHaveBeenCalled();
+  mocks.screenTimeStatus = 2;
+  await act(() => mocks.listener?.('active'));
   expect(screen.next).toHaveBeenCalledTimes(1);
 });
