@@ -349,6 +349,7 @@ export default function FriendsScreen() {
 
 function FriendsContent() {
   const { search } = useLocalSearchParams<{ search?: string }>();
+  const shouldAutoFocusSearchInput = search === '1';
   const { share, sharing, inviteUrl, preparing } = useShareFriendInvite();
   const {
     refreshing,
@@ -395,7 +396,7 @@ function FriendsContent() {
             onSubmitEditing={Keyboard.dismiss}
             clearButtonMode="while-editing"
             testID="friends-search"
-            autoFocus={search === '1'}
+            autoFocus={shouldAutoFocusSearchInput}
           />
         </View>
       </View>
