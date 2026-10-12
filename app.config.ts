@@ -163,6 +163,7 @@ const config: ExpoConfig = {
       },
     ],
     './plugins/with-sdk55-app-delegate-fixes',
+    './plugins/with-extension-embed-order',
     [
       'react-native-device-activity',
       {
