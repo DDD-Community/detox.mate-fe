@@ -5,10 +5,11 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { Button } from '../../components/Button';
 import { Icon } from '../../components/Icon';
 import { Toast } from '../../components/Toast';
-import { fontFamily, primitiveColors, radius, spacing, typography } from '../../lib/token';
+import { primitiveColors, spacing, typography } from '../../lib/token';
+import { GoalTimeCard } from './GoalTimeCard';
 import { useLockStore } from '../../stores/lockStore';
 
-const { gray, green, system } = primitiveColors;
+const { gray, system } = primitiveColors;
 
 const MIN_HOURS = 0;
 const MAX_HOURS = 4;
@@ -44,41 +45,7 @@ export default function GoalTimeScreen() {
           {isChangeMode ? <Text style={styles.headerTitle}>제한 시간 변경</Text> : null}
         </View>
 
-        <View style={styles.card}>
-          <Text style={styles.title}>목표 제한 시간을 설정해주세요.</Text>
-          <Text style={styles.subtitle}>
-            하루에 몇 시간으로 제한하고 싶나요?{'\n'}제한 시간 보다 더 사용하면 친구에게 알림이
-            가요.
-          </Text>
-
-          <View style={styles.stepperRow}>
-            <Pressable
-              hitSlop={8}
-              disabled={hours <= MIN_HOURS}
-              onPress={() => setHours((prev) => Math.max(prev - 1, MIN_HOURS))}
-            >
-              <Icon
-                name="minusCircle"
-                size={52}
-                weight="fill"
-                color={hours <= MIN_HOURS ? gray[100] : green[300]}
-              />
-            </Pressable>
-            <Text style={styles.stepperValue}>{hours} 시간</Text>
-            <Pressable
-              hitSlop={8}
-              disabled={hours >= MAX_HOURS}
-              onPress={() => setHours((prev) => Math.min(prev + 1, MAX_HOURS))}
-            >
-              <Icon
-                name="plusCircle"
-                size={52}
-                weight="fill"
-                color={hours >= MAX_HOURS ? gray[100] : green[300]}
-              />
-            </Pressable>
-          </View>
-        </View>
+        <GoalTimeCard hours={hours} onChange={setHours} />
 
         <Toast
           visible={isUnchanged}
@@ -121,40 +88,6 @@ const styles = StyleSheet.create({
   headerTitle: {
     ...typography.primary.title1M,
     color: gray[800],
-  },
-  card: {
-    backgroundColor: green[50],
-    borderRadius: radius[16],
-    paddingVertical: spacing[32],
-    paddingHorizontal: spacing[16],
-    alignItems: 'center',
-    gap: spacing[32],
-    marginTop: spacing[32],
-  },
-  title: {
-    ...typography.primary.h3,
-    color: gray[800],
-    textAlign: 'center',
-  },
-  subtitle: {
-    ...typography.primary.body2R,
-    color: '#000000',
-    textAlign: 'center',
-    marginTop: spacing[16],
-  },
-  stepperRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: spacing[24],
-  },
-  stepperValue: {
-    fontFamily: fontFamily.primary.regular,
-    fontSize: 48,
-    fontWeight: '400',
-    lineHeight: 66,
-    color: '#000000',
-    minWidth: 140,
-    textAlign: 'center',
   },
   confirmButton: {
     width: '100%',

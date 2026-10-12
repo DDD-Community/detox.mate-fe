@@ -2,31 +2,22 @@
 import { act, createElement } from 'react';
 import { createRoot } from 'react-dom/client';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { router } from 'expo-router';
 
 import { peekPendingInvite, setPendingInvite } from '../../lib/pendingInvite';
 import { queryClient } from '../../lib/query/queryClient';
-import { APP_ACCESS_PERMISSION_GUIDE_SEEN_KEY } from './authStorageKeys';
 import { useAuthLogin } from './useAuthLogin';
 
+const routerMock = vi.mocked(router);
 const mocks = vi.hoisted(() => ({
-  storage: new Map<string, string>(),
-  replace: vi.fn(),
   kakao: vi.fn(),
   authHttp: vi.fn(),
   requests: new AbortController(),
   mediaPermission: vi.fn(),
   notificationPermission: vi.fn(),
 }));
-vi.mock('expo-secure-store', () => ({
-  getItemAsync: async (key: string) => mocks.storage.get(key) ?? null,
-  setItemAsync: async (key: string, value: string) => {
-    mocks.storage.set(key, value);
-  },
-  deleteItemAsync: async (key: string) => {
-    mocks.storage.delete(key);
-  },
-}));
-vi.mock('expo-router', () => ({ useRouter: () => ({ replace: mocks.replace }) }));
+vi.mock('expo-secure-store');
+vi.mock('expo-router');
 vi.mock('@react-native-seoul/kakao-login', () => ({ login: mocks.kakao }));
 vi.mock('expo-apple-authentication', () => ({}));
 vi.mock('../../api/client', () => ({
@@ -56,14 +47,7 @@ vi.mock('@react-native-firebase/messaging', () => ({
   onTokenRefresh: vi.fn(),
 }));
 vi.mock('react-native', () => ({ Platform: { OS: 'ios' } }));
-vi.mock('@amplitude/analytics-react-native', () => ({
-  setUserId: vi.fn(),
-  track: vi.fn(),
-  Identify: vi.fn(),
-  identify: vi.fn(),
-  init: vi.fn(),
-  Types: {},
-}));
+vi.mock('@/lib/analytics');
 vi.mock('@sentry/react-native', () => ({}));
 vi.mock('expo-constants', () => ({
   default: {
@@ -83,7 +67,6 @@ const cleanups: (() => void)[] = [];
 
 beforeEach(() => {
   vi.resetAllMocks();
-  mocks.storage.clear();
   mocks.requests = new AbortController();
   queryClient.clear();
   mocks.kakao.mockResolvedValue({ accessToken: 'provider-token' });
@@ -103,7 +86,6 @@ afterEach(async () => {
   await act(() => cleanups.splice(0).forEach((cleanup) => cleanup()));
   queryClient.clear();
   vi.useRealTimers();
-  mocks.storage.clear();
 });
 
 async function setup() {
@@ -122,52 +104,48 @@ async function setup() {
   };
 }
 
-describe('초대 링크의 카카오 로그인과 권한 안내 복귀', () => {
-  it('로그인과 권한 안내 동안 친구 초대를 보존하고 안내 완료 뒤 정확한 초대 화면으로 이동한다', async () => {
-    vi.useFakeTimers();
+describe('인증 후 신규 가입 분기', () => {
+  it('신규 가입이면 초대를 보존한 채 온보딩으로 이동한다', async () => {
     const invite = { kind: 'friend' as const, code: 'random-friend-code' };
     await setPendingInvite(invite);
-    const oauth = Promise.withResolvers<{ accessToken: string }>();
-    mocks.kakao.mockReturnValueOnce(oauth.promise);
+    mocks.authHttp.mockResolvedValueOnce({
+      data: {
+        id: 21,
+        accessToken: 'session-token',
+        refreshToken: 'refresh-token',
+        isNewUser: true,
+      },
+    });
     const screen = await setup();
-
     await act(() => screen.state.handleKakaoLogin());
-    expect(screen.state.pendingProvider).toBe('kakao');
+    expect(routerMock.replace).toHaveBeenLastCalledWith('/onboarding');
     expect(await peekPendingInvite()).toEqual(invite);
-    expect(mocks.replace).not.toHaveBeenCalled();
-
-    await act(async () => {
-      oauth.resolve({ accessToken: 'provider-token' });
-    });
-    expect(screen.state.permissionGuideVisible).toBe(true);
-    expect(await peekPendingInvite()).toEqual(invite);
-    expect(mocks.replace).not.toHaveBeenCalled();
-
-    await act(async () => {
-      const confirming = screen.state.handleConfirmPermissionGuide();
-      await vi.advanceTimersByTimeAsync(350);
-      await confirming;
-    });
-    expect(mocks.replace).toHaveBeenLastCalledWith({
+  });
+  it('재로그인은 새 온보딩으로 복귀하지 않고 대기 초대로 이동한다', async () => {
+    const invite = { kind: 'friend' as const, code: 'random-friend-code' };
+    await setPendingInvite(invite);
+    const screen = await setup();
+    await act(() => screen.state.handleKakaoLogin());
+    expect(routerMock.replace).toHaveBeenLastCalledWith({
       pathname: '/friend-invite',
       params: { code: invite.code },
     });
     expect(await peekPendingInvite()).toBeNull();
-    expect(screen.state.permissionGuideConfirming).toBe(false);
   });
-
-  it('권한 안내를 마친 사용자가 기존 그룹 초대로 로그인하면 그룹 참여로 복귀한다', async () => {
-    mocks.storage.set('pendingInviteCode', 'ABCDE');
-    mocks.storage.set(APP_ACCESS_PERMISSION_GUIDE_SEEN_KEY, 'true');
+  it('동시 로그인은 한 번만 인증하고 기존 사용자의 기본 목적지는 제한 앱이다', async () => {
+    const oauth = Promise.withResolvers<{ accessToken: string }>();
+    mocks.kakao.mockReturnValueOnce(oauth.promise);
     const screen = await setup();
-
-    await act(() => screen.state.handleKakaoLogin());
-
-    expect(screen.state.permissionGuideVisible).toBe(false);
-    expect(mocks.replace).toHaveBeenLastCalledWith({
-      pathname: '/(group)/join',
-      params: { inviteCode: 'ABCDE' },
+    let login!: Promise<void>;
+    await act(() => {
+      login = screen.state.handleKakaoLogin();
+      void screen.state.handleKakaoLogin();
     });
-    expect(await peekPendingInvite()).toBeNull();
+    expect(mocks.kakao).toHaveBeenCalledTimes(1);
+    await act(async () => {
+      oauth.resolve({ accessToken: 'provider-token' });
+      await login;
+    });
+    expect(routerMock.replace).toHaveBeenLastCalledWith('/(tabs)/restricted-apps');
   });
 });

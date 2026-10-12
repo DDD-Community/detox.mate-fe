@@ -4,14 +4,17 @@ import { act, createElement } from 'react';
 import { createRoot } from 'react-dom/client';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
+import { trackEvent } from '@/lib/analytics';
+import { logError } from '@/api/errors/logger';
+
 import { useShareFriendInvite } from './useShareFriendInvite';
 
+const trackEventMock = vi.mocked(trackEvent);
+const logErrorMock = vi.mocked(logError);
 const actions = vi.hoisted(() => ({
   env: { friendInviteBaseUrl: undefined as string | undefined },
   share: vi.fn(),
   alert: vi.fn(),
-  log: vi.fn(),
-  track: vi.fn(),
   request: vi.fn(),
   platform: { OS: 'ios' },
   auth: new AbortController(),
@@ -25,12 +28,12 @@ vi.mock('react-native', () => ({
   Platform: actions.platform,
 }));
 vi.mock('../../../config/env', () => ({ env: actions.env }));
-vi.mock('../../../api/errors/logger', () => ({ logError: actions.log }));
+vi.mock('../../../api/errors/logger');
 vi.mock('../../../api/friendMutator', () => ({
   friendAxios: actions.request,
 }));
 
-vi.mock('../../../lib/analytics', () => ({ trackEvent: actions.track }));
+vi.mock('../../../lib/analytics');
 
 Object.assign(globalThis, { IS_REACT_ACT_ENVIRONMENT: true });
 const cleanups: (() => void)[] = [];
@@ -126,7 +129,7 @@ describe('친구 초대 공유의 비동기 보호', () => {
     const pending = deferred<{ code: string; userCode: string }>();
     actions.request.mockReturnValueOnce(pending.promise);
     const screen = await setup();
-    expect(actions.track).not.toHaveBeenCalled();
+    expect(trackEventMock).not.toHaveBeenCalled();
     expect(actions.share).not.toHaveBeenCalled();
 
     await act(async () => {
@@ -140,7 +143,7 @@ describe('친구 초대 공유의 비동기 보호', () => {
     await act(async () => {
       await screen.state.share();
     });
-    expect(actions.track).toHaveBeenCalledTimes(2);
+    expect(trackEventMock).toHaveBeenCalledTimes(2);
   });
 
   it('미리 준비하지 않는 화면은 진입 시 조회하지 않고 공유 클릭 후 링크와 코드를 전달한다', async () => {
@@ -181,8 +184,8 @@ describe('친구 초대 공유의 비동기 보호', () => {
       const screen = await setup();
       expect(screen.state.inviteUrl).toBeUndefined();
       expect(actions.alert).not.toHaveBeenCalled();
-      expect(actions.track).not.toHaveBeenCalled();
-      expect(actions.log).toHaveBeenCalledWith(expect.anything(), {
+      expect(trackEventMock).not.toHaveBeenCalled();
+      expect(logErrorMock).toHaveBeenCalledWith(expect.anything(), {
         scope: 'api',
         operation: 'friends.invite.prepare',
       });
@@ -220,7 +223,7 @@ describe('친구 초대 공유의 비동기 보호', () => {
   });
 
   it('분석 로그가 실패해도 연속 공유를 막고 공유 실패 후 재시도와 취소가 정상 종료된다', async () => {
-    actions.track.mockImplementationOnce(() => {
+    trackEventMock.mockImplementationOnce(() => {
       throw new Error('분석 기록 실패');
     });
     const pending = deferred<{ action: string }>();
@@ -232,11 +235,11 @@ describe('친구 초대 공유의 비동기 보호', () => {
       await screen.state.share();
     });
     expect(actions.share).toHaveBeenCalledTimes(1);
-    expect(actions.log).toHaveBeenCalledWith(expect.anything(), {
+    expect(logErrorMock).toHaveBeenCalledWith(expect.anything(), {
       scope: 'api',
       operation: 'logFriendInviteShareClick',
     });
-    expect(actions.track).toHaveBeenCalledExactlyOnceWith('Invite Share Button Clicked', {
+    expect(trackEventMock).toHaveBeenCalledExactlyOnceWith('Invite Share Button Clicked', {
       page_name: 'FriendsList',
     });
     await act(async () => {
@@ -245,7 +248,7 @@ describe('친구 초대 공유의 비동기 보호', () => {
     });
     expect(screen.state.sharing).toBe(false);
     expect(actions.alert).toHaveBeenCalledTimes(1);
-    expect(actions.log.mock.calls.map(([, context]) => context.operation)).toEqual([
+    expect(logErrorMock.mock.calls.map(([, context]) => context?.operation)).toEqual([
       'logFriendInviteShareClick',
       'friends.invite.share',
     ]);
@@ -254,7 +257,7 @@ describe('친구 초대 공유의 비동기 보호', () => {
       await screen.state.share();
     });
     expect(actions.share).toHaveBeenCalledTimes(2);
-    expect(actions.track).toHaveBeenCalledTimes(2);
+    expect(trackEventMock).toHaveBeenCalledTimes(2);
     expect(actions.alert).toHaveBeenCalledTimes(1);
     expect(screen.state.sharing).toBe(false);
   });
@@ -288,7 +291,7 @@ describe('친구 초대 공유의 비동기 보호', () => {
       await screen.state.share();
     });
     expect(actions.alert).toHaveBeenCalledTimes(1);
-    expect(actions.log).toHaveBeenCalledExactlyOnceWith(expect.anything(), {
+    expect(logErrorMock).toHaveBeenCalledExactlyOnceWith(expect.anything(), {
       scope: 'api',
       operation: 'friends.invite.share',
     });

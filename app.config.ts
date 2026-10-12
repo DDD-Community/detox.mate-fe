@@ -49,10 +49,10 @@ const config: ExpoConfig = {
   icon: './assets/icon.png',
   userInterfaceStyle: 'light',
   splash: {
-    image: './assets/splash_logo.png',
+    image: './assets/onboarding/splash.png',
     resizeMode: 'contain',
-    backgroundColor: '#1D9E75',
-    imageWidth: 152,
+    backgroundColor: '#5A8974',
+    imageWidth: 179,
   },
   ios: {
     bundleIdentifier: isProduction ? 'com.detoxmate.app' : 'com.detoxmate.app.dev2',
@@ -156,13 +156,14 @@ const config: ExpoConfig = {
     [
       'expo-splash-screen',
       {
-        image: './assets/splash_logo.png',
+        image: './assets/onboarding/splash.png',
         resizeMode: 'contain',
-        backgroundColor: '#1D9E75',
-        imageWidth: 152,
+        backgroundColor: '#5A8974',
+        imageWidth: 179,
       },
     ],
     './plugins/with-sdk55-app-delegate-fixes',
+    './plugins/with-extension-embed-order',
     [
       'react-native-device-activity',
       {

@@ -1,9 +1,7 @@
-import * as SecureStore from 'expo-secure-store';
-import { useRouter } from 'expo-router';
 import { useEffect, useRef, useState } from 'react';
-import { AppState, Linking } from 'react-native';
+import { Alert, AppState, Linking } from 'react-native';
 
-import { TERMS_ACCEPTED_KEY } from './authStorageKeys';
+import { getUserErrorMessage, logError, normalizeError } from '@/api/errors';
 
 type AgreementKey = 'privacy' | 'terms';
 
@@ -13,7 +11,6 @@ export const agreementUrls = {
 } as const satisfies Record<AgreementKey, string>;
 
 export function useTermsAgreement() {
-  const router = useRouter();
   const [privacyAgreed, setPrivacyAgreed] = useState(false);
   const [termsAgreed, setTermsAgreed] = useState(false);
 
@@ -49,22 +46,16 @@ export function useTermsAgreement() {
 
   const openAgreementUrl = (agreement: AgreementKey) => {
     openedAgreementRef.current = agreement;
-    Linking.openURL(agreementUrls[agreement]);
-  };
-
-  const confirmAgreements = async () => {
-    const accessToken = await SecureStore.getItemAsync('accessTokenKey');
-    if (accessToken) {
-      await SecureStore.setItemAsync(TERMS_ACCEPTED_KEY, 'true');
-      router.replace('/(group)/home');
-    } else {
-      router.replace('/login');
-    }
+    void Linking.openURL(agreementUrls[agreement]).catch((error) => {
+      openedAgreementRef.current = null;
+      const appError = normalizeError(error);
+      logError(appError, { scope: 'auth.login', operation: 'openAgreement' });
+      Alert.alert('약관을 열 수 없어요', getUserErrorMessage(appError));
+    });
   };
 
   return {
     allAgreed,
-    confirmAgreements,
     handleAllAgree,
     openAgreementUrl,
     privacyAgreed,

@@ -1,22 +1,16 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { getItemAsync, setItemAsync, deleteItemAsync } from 'expo-secure-store';
 
 import { cancelAuthenticatedRequests, resumeAuthenticatedRequests } from './client';
 import { refreshAccessToken } from './auth';
 
 const mocks = vi.hoisted(() => ({
-  read: vi.fn(),
-  write: vi.fn(),
-  remove: vi.fn(),
   post: vi.fn(),
   requests: new AbortController(),
 }));
 vi.mock('@react-native-seoul/kakao-login', () => ({ login: vi.fn() }));
 vi.mock('expo-apple-authentication', () => ({}));
-vi.mock('expo-secure-store', () => ({
-  getItemAsync: mocks.read,
-  setItemAsync: mocks.write,
-  deleteItemAsync: mocks.remove,
-}));
+vi.mock('expo-secure-store');
 vi.mock('./client', () => ({
   default: { post: mocks.post },
   getAuthenticatedRequestSignal: () => mocks.requests.signal,
@@ -32,7 +26,7 @@ vi.mock('./errors', async () => {
 
 beforeEach(() => {
   vi.resetAllMocks();
-  mocks.read.mockResolvedValue('fictional-refresh-credential');
+  vi.mocked(getItemAsync).mockResolvedValue('fictional-refresh-credential');
   resumeAuthenticatedRequests();
 });
 
@@ -57,8 +51,8 @@ describe('토큰 갱신과 계정 변경의 경합', () => {
         reply.resolve({ data: { accessToken: 'old-access', refreshToken: 'old-refresh' } });
       else reply.reject(new Error('offline'));
       await rejected;
-      expect(mocks.write).not.toHaveBeenCalled();
-      expect(mocks.remove).not.toHaveBeenCalled();
+      expect(setItemAsync).not.toHaveBeenCalled();
+      expect(deleteItemAsync).not.toHaveBeenCalled();
     }
   );
 });

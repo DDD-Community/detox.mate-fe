@@ -4,19 +4,22 @@ import { act, createElement, Fragment, StrictMode, type ReactNode } from 'react'
 import { createRoot } from 'react-dom/client';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
+import { logError } from '@/api/errors/logger';
+
 import { AppError } from '../../../api/errors/normalizeError';
 import { getSearchByUserCodeSuspenseQueryOptions } from '../../../api/query-generated/friend';
 import { FriendCodeSearch } from './FriendCodeSearch';
 
-const mocks = vi.hoisted(() => ({ search: vi.fn(), send: vi.fn(), log: vi.fn() }));
+const logErrorMock = vi.mocked(logError);
+const mocks = vi.hoisted(() => ({ search: vi.fn(), send: vi.fn() }));
 vi.mock('../../../api/friendMutator', () => ({
   friendAxios: (config: { method: string }) =>
     config.method === 'POST' ? mocks.send(config) : mocks.search(config),
 }));
-vi.mock('../../../api/errors/logger', () => ({ logError: mocks.log }));
-vi.mock('../../../lib/analytics', () => ({ trackEvent: vi.fn() }));
+vi.mock('../../../api/errors/logger');
+vi.mock('../../../lib/analytics');
 vi.mock('../../../lib/token/icons', () => ({ iconNames: [] }));
-vi.mock('expo-router', () => ({ router: { replace: vi.fn() } }));
+vi.mock('expo-router');
 vi.mock('expo-image', () => ({ Image: () => null }));
 vi.mock('react-native-svg', () => ({
   default: () => null,
@@ -125,7 +128,7 @@ describe('초대코드 검색 실패의 정상 화면 복구', () => {
         );
       });
       expect(screen.caught).toHaveBeenCalled();
-      expect(mocks.log).toHaveBeenCalledTimes(outcome === '검색 없음' ? 0 : 1);
+      expect(logErrorMock).toHaveBeenCalledTimes(outcome === '검색 없음' ? 0 : 1);
       expect(client.getQueryState(options.queryKey)?.error).toBe(missing);
 
       // 실패 캐시가 남아 있어도 검색에 다시 진입하면 새 조회를 기다린다.
@@ -144,7 +147,7 @@ describe('초대코드 검색 실패의 정상 화면 복구', () => {
       });
       expect(reentered.element.querySelector('[role="status"]')).toBeNull();
       expect(reentered.caught).not.toHaveBeenCalled();
-      expect(mocks.log).toHaveBeenCalledTimes(outcome === '검색 없음' ? 0 : 1);
+      expect(logErrorMock).toHaveBeenCalledTimes(outcome === '검색 없음' ? 0 : 1);
     }
   );
 
@@ -162,7 +165,7 @@ describe('초대코드 검색 실패의 정상 화면 복구', () => {
       expect(screen.element.textContent).toContain('다시 시도');
     });
     expect(screen.caught).toHaveBeenCalled();
-    expect(mocks.log).toHaveBeenCalledWith(
+    expect(logErrorMock).toHaveBeenCalledWith(
       expect.objectContaining({ status: 500 }),
       expect.objectContaining({
         scope: 'render',
@@ -190,7 +193,7 @@ describe('초대코드 검색 실패의 정상 화면 복구', () => {
       expect(screen.element.textContent).toContain('친구 요청 보내기');
     });
     expect(screen.element.querySelector('[role="status"]')).toBeNull();
-    expect(mocks.log).toHaveBeenCalledTimes(1);
+    expect(logErrorMock).toHaveBeenCalledTimes(1);
   });
 
   it.each([false, true])(
@@ -216,7 +219,7 @@ describe('초대코드 검색 실패의 정상 화면 복구', () => {
         expect(reentered.element.textContent).toContain('친구 요청 보내기');
       });
       expect(reentered.caught).not.toHaveBeenCalled();
-      expect(mocks.log).not.toHaveBeenCalled();
+      expect(logErrorMock).not.toHaveBeenCalled();
     }
   );
 
@@ -229,8 +232,8 @@ describe('초대코드 검색 실패의 정상 화면 복구', () => {
       expect(screen.element.textContent).toContain('다시 시도');
     });
     expect(screen.caught).toHaveBeenCalled();
-    expect(mocks.log).toHaveBeenCalledTimes(1);
-    expect(mocks.log).toHaveBeenCalledWith(
+    expect(logErrorMock).toHaveBeenCalledTimes(1);
+    expect(logErrorMock).toHaveBeenCalledWith(
       expect.anything(),
       expect.objectContaining({
         scope: 'render',
@@ -260,7 +263,7 @@ describe('초대코드 검색 실패의 정상 화면 복구', () => {
       expect(screen.element.textContent).toContain('다시 시도');
     });
     expect(screen.caught).not.toHaveBeenCalled();
-    expect(mocks.log).toHaveBeenCalledTimes(1);
+    expect(logErrorMock).toHaveBeenCalledTimes(1);
 
     const retry = deferred<unknown>();
     mocks.search.mockReturnValue(retry.promise);
@@ -280,7 +283,7 @@ describe('초대코드 검색 실패의 정상 화면 복구', () => {
       expect(screen.element.textContent).not.toContain('다시 시도');
     });
     expect(screen.element.textContent).toContain('요청됨');
-    expect(mocks.log).toHaveBeenCalledTimes(1);
+    expect(logErrorMock).toHaveBeenCalledTimes(1);
   });
 
   it('전송 중 재조회가 먼저 실패해도 전송 성공은 재시도 없이 요청됨 카드로 복구한다', async () => {
@@ -308,8 +311,8 @@ describe('초대코드 검색 실패의 정상 화면 복구', () => {
       expect(screen.element.textContent).toContain('다시 시도');
     });
     expect(screen.caught).not.toHaveBeenCalled();
-    expect(mocks.log).toHaveBeenCalledTimes(1);
-    expect(mocks.log).toHaveBeenCalledWith(expect.objectContaining({ status: 500 }), {
+    expect(logErrorMock).toHaveBeenCalledTimes(1);
+    expect(logErrorMock).toHaveBeenCalledWith(expect.objectContaining({ status: 500 }), {
       scope: 'api',
       operation: 'searchFriendByUserCode',
     });
@@ -323,7 +326,7 @@ describe('초대코드 검색 실패의 정상 화면 복구', () => {
       expect(screen.element.textContent).toContain('다시 시도');
     });
     expect(screen.caught).not.toHaveBeenCalled();
-    expect(mocks.log).toHaveBeenCalledTimes(1);
+    expect(logErrorMock).toHaveBeenCalledTimes(1);
     expect(mocks.send).toHaveBeenCalledTimes(1);
   });
 

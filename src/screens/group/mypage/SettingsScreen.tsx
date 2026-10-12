@@ -19,10 +19,7 @@ import { env } from '@/config/env';
 import { setAnalyticsUserProperties, trackEvent } from '@/lib/analytics';
 import { goBackOrReplace } from '@/lib/navigation';
 import { primitiveColors, radius, spacing, typography } from '@/lib/token';
-import {
-  APP_ACCESS_PERMISSION_GUIDE_SEEN_KEY,
-  TERMS_ACCEPTED_KEY,
-} from '@/screens/auth/authStorageKeys';
+import { TERMS_ACCEPTED_KEY } from '@/screens/auth/authStorageKeys';
 import { LogoutConfirmAlert } from './LogoutConfirmAlert';
 import { NotificationPermissionAlert } from './NotificationPermissionAlert';
 import { WithdrawConfirmAlert } from './WithdrawConfirmAlert';
@@ -305,7 +302,6 @@ export default function SettingsScreen() {
       await clearAuthSession();
       await SecureStore.deleteItemAsync('isNewUser');
       await SecureStore.deleteItemAsync(TERMS_ACCEPTED_KEY);
-      await SecureStore.deleteItemAsync(APP_ACCESS_PERMISSION_GUIDE_SEEN_KEY);
       setIsWithdrawAlertOpen(false);
       router.replace('/(auth)/onboarding');
     } finally {

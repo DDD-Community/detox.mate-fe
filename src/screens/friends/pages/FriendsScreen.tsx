@@ -1,3 +1,4 @@
+import { useLocalSearchParams } from 'expo-router';
 import { QueryErrorResetBoundary, useSuspenseQuery } from '@tanstack/react-query';
 import { Image } from 'expo-image';
 import { Suspense, useEffect, useState } from 'react';
@@ -347,6 +348,8 @@ export default function FriendsScreen() {
 }
 
 function FriendsContent() {
+  const { search } = useLocalSearchParams<{ search?: string }>();
+  const shouldAutoFocusSearchInput = search === '1';
   const { share, sharing, inviteUrl, preparing } = useShareFriendInvite();
   const {
     refreshing,
@@ -393,6 +396,7 @@ function FriendsContent() {
             onSubmitEditing={Keyboard.dismiss}
             clearButtonMode="while-editing"
             testID="friends-search"
+            autoFocus={shouldAutoFocusSearchInput}
           />
         </View>
       </View>

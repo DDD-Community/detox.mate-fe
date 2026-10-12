@@ -3,13 +3,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { getVerifyExitRoute, goBackOrReplace } from './navigation';
 
-vi.mock('expo-router', () => ({
-  router: {
-    back: vi.fn(),
-    canGoBack: vi.fn(),
-    replace: vi.fn(),
-  },
-}));
+vi.mock('expo-router');
 
 const mockedRouter = vi.mocked(router);
 
