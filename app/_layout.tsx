@@ -58,7 +58,7 @@ export default function RootLayout() {
 
     // 최근 7일 평균 계산용 일일 사용량 모니터링을 보장하고, 어제까지의 기록을 로컬에 반영한다.
     const { lockedApps, familyActivitySelectionsByAppId, targetMinutes } = useLockStore.getState();
-    syncTargetMinutes(targetMinutes);
+    if (targetMinutes !== null) syncTargetMinutes(targetMinutes);
     // 앱별 쉴드 설정(어떤 앱의 해제 요청인지 알림에 담기)도 이미 등록된 앱 전부에 다시 보장한다.
     for (const app of lockedApps) {
       const token = familyActivitySelectionsByAppId[app.id];

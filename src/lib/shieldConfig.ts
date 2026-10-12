@@ -54,7 +54,7 @@ export const ensureShieldIcon = async () => {
 const buildUnlockNotificationAction = (appId?: string): Action => ({
   type: 'sendNotification',
   payload: {
-    title: 'Detox mate',
+    title: 'Detoxmate',
     body: '앱을 사용하려면, 이 알림을 클릭해주세요!',
     // userInfo는 쉴드 쪽에서 치환되지 않고 그대로 전달된다 — 앱별 설정에 appId를 고정해 넣는다.
     userInfo: {
