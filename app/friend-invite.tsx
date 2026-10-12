@@ -3,7 +3,7 @@ import { useEffect, useState } from 'react';
 import { ActivityIndicator, View } from 'react-native';
 
 import { AuthGuard } from '@/components/AuthGuard/AuthGuard';
-import { useAuthSessionStore } from '@/stores/authSessionStore';
+import { useAuthStatus } from '@/api/auth';
 import { logError, normalizeError } from '@/api/errors';
 import { ErrorBoundary } from '@/components/AppErrorBoundary/AppErrorBoundary';
 import { LoggingPage } from '@/components/LoggingPage/LoggingPage';
@@ -13,13 +13,13 @@ import FriendInviteScreen, {
 } from '@/screens/friends/pages/FriendInviteScreen';
 
 function AuthenticatedInvite({ code }: { code: string }) {
-  const isAuthenticated = useAuthSessionStore((state) => state.status === 'authenticated');
+  const isSignedIn = useAuthStatus() === 'signedIn';
   const [error, setError] = useState<Error | null>(null);
   useEffect(() => {
     let active = true;
     const restore = async () => {
       try {
-        if (!isAuthenticated) {
+        if (!isSignedIn) {
           await setPendingInvite({ kind: 'friend', code });
           if (active) router.replace('/');
         }
@@ -33,9 +33,9 @@ function AuthenticatedInvite({ code }: { code: string }) {
     return () => {
       active = false;
     };
-  }, [code, isAuthenticated]);
+  }, [code, isSignedIn]);
   if (error) throw error;
-  if (!isAuthenticated) {
+  if (!isSignedIn) {
     return (
       <View style={{ flex: 1, backgroundColor: 'white', justifyContent: 'center' }}>
         <ActivityIndicator color="#5a8974" accessibilityLabel="로그인 정보 확인 중" />

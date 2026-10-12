@@ -6,12 +6,12 @@ import { Image, StyleSheet, View } from 'react-native';
 import { logError, normalizeError } from '../api/errors';
 import { LoggingPage } from '../components';
 import { setAnalyticsUserId, trackEvent } from '../lib/analytics';
-import { useAuthSessionStore } from '../stores/authSessionStore';
+import { useAuthStatus } from '../api/auth';
 import { navigateAuthenticated } from '../lib/inviteDestination';
 
 export default function SplashScreen() {
   const router = useRouter();
-  const isAuthenticated = useAuthSessionStore((state) => state.status === 'authenticated');
+  const isSignedIn = useAuthStatus() === 'signedIn';
 
   useEffect(() => {
     let cancelled = false;
@@ -20,12 +20,12 @@ export default function SplashScreen() {
       const currentUserId = await SecureStore.getItemAsync('currentUserId');
       if (cancelled) return;
 
-      if (isAuthenticated && currentUserId) {
+      if (isSignedIn && currentUserId) {
         setAnalyticsUserId(currentUserId);
       }
 
       trackEvent('App Opened');
-      if (!isAuthenticated) {
+      if (!isSignedIn) {
         router.replace('/login');
         return;
       }
@@ -45,7 +45,7 @@ export default function SplashScreen() {
     return () => {
       cancelled = true;
     };
-  }, [router, isAuthenticated]);
+  }, [router, isSignedIn]);
 
   return (
     <LoggingPage eventName="Splash Viewed" properties={{ pageName: 'Splash' }}>

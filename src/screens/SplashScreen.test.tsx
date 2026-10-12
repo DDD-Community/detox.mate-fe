@@ -9,12 +9,17 @@ import { logError } from '@/api/errors/logger';
 import { setAnalyticsUserId, trackEvent } from '@/lib/analytics';
 import { peekPendingInvite, setPendingInvite } from '@/lib/pendingInvite';
 import { TERMS_ACCEPTED_KEY } from './auth/authStorageKeys';
-import { useAuthSessionStore } from '@/stores/authSessionStore';
+import { customAxios } from '@/api/mutator';
+import { clearAuthSession, loginWithTestUser } from '@/api/auth';
 import SplashScreen from './SplashScreen';
 
 const notifications = vi.hoisted(() => ({ response: null as NotificationResponse | null }));
 vi.mock('expo-router');
 vi.mock('expo-secure-store');
+vi.mock('@react-native-seoul/kakao-login');
+vi.mock('expo-apple-authentication');
+vi.mock('@/api/client');
+vi.mock('@/api/mutator');
 vi.mock('@/lib/analytics');
 vi.mock('@/api/errors/logger');
 vi.mock('expo-notifications', () => ({
@@ -38,9 +43,9 @@ Object.assign(globalThis, { IS_REACT_ACT_ENVIRONMENT: true });
 let root: ReturnType<typeof createRoot>;
 const invite = { kind: 'friend' as const, code: 'fixture-invite' };
 
-beforeEach(() => {
+beforeEach(async () => {
   vi.resetAllMocks();
-  useAuthSessionStore.setState({ status: 'unauthenticated' });
+  await clearAuthSession();
   notifications.response = null;
   // Metro의 이미지 require만 대체하고 화면 effect와 이동 로직은 실제 구현을 사용한다.
   vi.stubGlobal('require', () => 1);
@@ -70,7 +75,13 @@ describe('스플래시의 인증 복원과 최초 진입', () => {
   it.each(['알림과 초대', '초대', '기본'] as const)(
     '로그인 상태에서 %s가 있으면 알림 → 초대 → 제한 앱 우선순위로 이동한다',
     async (destination) => {
-      useAuthSessionStore.setState({ status: 'authenticated' });
+      vi.mocked(customAxios).mockResolvedValueOnce({
+        id: 21,
+        accessToken: 'fixture-token',
+        refreshToken: 'fixture-refresh',
+      });
+      await loginWithTestUser('fixture');
+      vi.mocked(customAxios).mockClear();
       await setItemAsync('accessTokenKey', 'fixture-token');
       await setItemAsync('currentUserId', '21');
       if (destination !== '기본') await setPendingInvite(invite);
@@ -114,7 +125,13 @@ describe('스플래시의 인증 복원과 최초 진입', () => {
   it.each(['currentUserId', 'pendingInviteCode'])(
     '%s 복원 도중 스플래시를 떠나면 늦은 완료가 이동하거나 초대를 소비하지 않는다',
     async (keyToDelay) => {
-      useAuthSessionStore.setState({ status: 'authenticated' });
+      vi.mocked(customAxios).mockResolvedValueOnce({
+        id: 21,
+        accessToken: 'fixture-token',
+        refreshToken: 'fixture-refresh',
+      });
+      await loginWithTestUser('fixture');
+      vi.mocked(customAxios).mockClear();
       await setItemAsync('accessTokenKey', 'fixture-token');
       await setPendingInvite(invite);
       const readStoredValue = vi.mocked(getItemAsync).getMockImplementation()!;

@@ -1,24 +1,13 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { getItemAsync, setItemAsync, deleteItemAsync } from 'expo-secure-store';
 
-import { cancelAuthenticatedRequests, resumeAuthenticatedRequests } from './client';
+import apiClient, { cancelAuthenticatedRequests, resumeAuthenticatedRequests } from './client';
 import { refreshAccessToken } from './auth';
 
-const mocks = vi.hoisted(() => ({
-  post: vi.fn(),
-  requests: new AbortController(),
-}));
-vi.mock('@react-native-seoul/kakao-login', () => ({ login: vi.fn() }));
-vi.mock('expo-apple-authentication', () => ({}));
+vi.mock('@react-native-seoul/kakao-login');
+vi.mock('expo-apple-authentication');
 vi.mock('expo-secure-store');
-vi.mock('./client', () => ({
-  default: { post: mocks.post },
-  getAuthenticatedRequestSignal: () => mocks.requests.signal,
-  cancelAuthenticatedRequests: () => mocks.requests.abort(),
-  resumeAuthenticatedRequests: () => {
-    mocks.requests = new AbortController();
-  },
-}));
+vi.mock('./client');
 vi.mock('./errors', async () => {
   const { AppError, normalizeError } = await import('./errors/normalizeError');
   return { AppError, normalizeError };
@@ -38,7 +27,7 @@ describe('토큰 갱신과 계정 변경의 경합', () => {
         data: { accessToken: string; refreshToken: string };
       }>();
       const started = Promise.withResolvers<void>();
-      mocks.post.mockImplementation(() => {
+      vi.mocked(apiClient.post).mockImplementation(() => {
         started.resolve();
         return reply.promise;
       });

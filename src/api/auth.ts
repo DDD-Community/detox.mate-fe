@@ -4,7 +4,7 @@ import * as AppleAuthentication from 'expo-apple-authentication';
 import { sha256 } from '@noble/hashes/sha256';
 import { bytesToHex } from '@noble/hashes/utils';
 import * as SecureStore from 'expo-secure-store';
-import { useAuthSessionStore } from '../stores/authSessionStore';
+import { create } from 'zustand';
 import { queryClient } from '../lib/query/queryClient';
 import apiClient, {
   cancelAuthenticatedRequests,
@@ -19,6 +19,27 @@ import type { AuthLoginResponse } from './generated/model';
 // 토큰과 같은 SecureStore에 두어 앱 재시작 후에도 세션과 수명을 함께한다.
 const IS_TEST_ACCOUNT_KEY = 'isTestAccount';
 let pendingSessionCleanup: Promise<void> | undefined;
+
+type AuthStatus = 'restoring' | 'signedIn' | 'signedOut';
+
+// 로컬 세션의 존재 여부다. 서버에서 계정이 유효한지는 AuthGuard의 내 정보 조회로 확인한다.
+const useAuthState = create<{ status: AuthStatus }>(() => ({ status: 'restoring' }));
+
+export function useAuthStatus(): AuthStatus {
+  return useAuthState((state) => state.status);
+}
+
+export function getAuthStatus(): AuthStatus {
+  return useAuthState.getState().status;
+}
+
+export async function restoreAuthSession(): Promise<void> {
+  if (getAuthStatus() !== 'restoring') return;
+  const token = await SecureStore.getItemAsync('accessTokenKey');
+  // 복원 중 로그인/로그아웃이 일어났다면 오래된 저장소 응답을 적용하지 않는다.
+  if (getAuthStatus() !== 'restoring') return;
+  useAuthState.setState({ status: token ? 'signedIn' : 'signedOut' });
+}
 
 export type OAuthLoginResponse = {
   id: number;
@@ -64,7 +85,7 @@ const persistLoginResponse = async (
 
   queryClient.clear();
   resumeAuthenticatedRequests();
-  useAuthSessionStore.setState({ status: 'authenticated' });
+  useAuthState.setState({ status: 'signedIn' });
 
   return {
     id: data.id,
@@ -196,7 +217,7 @@ export async function refreshAccessToken(): Promise<ServerResponseTokens> {
 
 export function clearAuthSession(): Promise<void> {
   if (pendingSessionCleanup) return pendingSessionCleanup;
-  useAuthSessionStore.setState({ status: 'unauthenticated' });
+  useAuthState.setState({ status: 'signedOut' });
   cancelAuthenticatedRequests();
   const endedSignal = getAuthenticatedRequestSignal();
   queryClient.clear();
@@ -226,7 +247,7 @@ export async function isTestAccountSession(): Promise<boolean> {
 }
 
 export async function logout(): Promise<void> {
-  useAuthSessionStore.setState({ status: 'unauthenticated' });
+  useAuthState.setState({ status: 'signedOut' });
   cancelAuthenticatedRequests();
   const endedSignal = getAuthenticatedRequestSignal();
   queryClient.clear();

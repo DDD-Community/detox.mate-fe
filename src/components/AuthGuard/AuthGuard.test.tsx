@@ -6,11 +6,15 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { customAxios } from '@/api/mutator';
 import { getMyProfileQueryOptions } from '@/api/userQueries';
-import { useAuthSessionStore } from '@/stores/authSessionStore';
+import { clearAuthSession, loginWithTestUser } from '@/api/auth';
 import { AuthGuard } from './AuthGuard';
 
 vi.mock('@/api/mutator');
 vi.mock('expo-secure-store');
+vi.mock('@react-native-seoul/kakao-login');
+vi.mock('expo-apple-authentication');
+vi.mock('@/api/client');
+vi.mock('@/api/errors/logger');
 vi.mock('../AppErrorBoundary/AppErrorBoundary', () => ({
   ErrorBoundary: ({ children }: PropsWithChildren) => children,
 }));
@@ -37,12 +41,18 @@ const mount = () =>
     );
   });
 
-beforeEach(() => {
+beforeEach(async () => {
   vi.resetAllMocks();
   container = document.createElement('div');
   root = createRoot(container);
   client = new QueryClient({ defaultOptions: { queries: { retry: false, staleTime: Infinity } } });
-  useAuthSessionStore.setState({ status: 'authenticated' });
+  vi.mocked(customAxios).mockResolvedValueOnce({
+    id: 21,
+    accessToken: 'fixture-token',
+    refreshToken: 'fixture-refresh',
+  });
+  await loginWithTestUser('fixture');
+  vi.mocked(customAxios).mockClear();
 });
 afterEach(async () => {
   await act(() => root.unmount());
@@ -66,7 +76,7 @@ describe('계정 화면의 접근 Guard', () => {
     vi.mocked(customAxios).mockResolvedValue(profile);
     await mount();
     expect(container.textContent).toBe('계정 화면');
-    await act(() => useAuthSessionStore.setState({ status: 'unauthenticated' }));
+    await act(() => clearAuthSession());
     expect(container.textContent).toBe('');
     await act(() => root.render(null));
     await mount();

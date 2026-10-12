@@ -18,7 +18,7 @@ import { ensureDailyUsageMonitoring } from '../src/lib/screenTimeMonitoring';
 import { syncScreenTimeHistory } from '../src/lib/screenTimeHistory';
 import { syncTimeLimitFromServer } from '../src/lib/timeLimitSync';
 import { syncTargetMinutes } from '../src/lib/sharedDisplayConfig';
-import { restoreAuthSession, useAuthSessionStore } from '../src/stores/authSessionStore';
+import { restoreAuthSession, useAuthStatus } from '../src/api/auth';
 import { useLockStore } from '../src/stores/lockStore';
 import { fontSources } from '../src/lib/token/primitive/fonts';
 import { NetworkErrorToast } from '../src/components/NetworkErrorToast';
@@ -45,7 +45,8 @@ const StorybookUIRoot = STORYBOOK_ENABLED
 
 export default function RootLayout() {
   const [fontsLoaded, fontError] = useFonts(fontSources);
-  const isAuthReady = useAuthSessionStore((state) => state.status !== 'restoring');
+  const authStatus = useAuthStatus();
+  const isAuthReady = authStatus !== 'restoring';
 
   useEffect(() => {
     initAnalytics();
@@ -65,9 +66,11 @@ export default function RootLayout() {
     }
     ensureDailyUsageMonitoring(lockedApps, familyActivitySelectionsByAppId);
     syncScreenTimeHistory(lockedApps.map((app) => app.id));
-    // 서버에 저장된 제한 시간을 불러와 로컬 값에 반영한다(없거나 실패하면 로컬 값 유지).
-    syncTimeLimitFromServer();
   }, []);
+
+  useEffect(() => {
+    if (authStatus === 'signedIn') void syncTimeLimitFromServer();
+  }, [authStatus]);
 
   useEffect(() => {
     // SDK에 캐시된 초대가 즉시 전달될 수 있으므로 Stack이 준비된 뒤 구독한다.
@@ -125,7 +128,7 @@ export default function RootLayout() {
 }
 
 function RootNavigator() {
-  const status = useAuthSessionStore((state) => state.status);
+  const status = useAuthStatus();
   const [error, setError] = useState<Error | null>(null);
   useEffect(() => {
     void restoreAuthSession().catch((failure) => setError(normalizeError(failure)));
@@ -138,7 +141,7 @@ function RootNavigator() {
       <Stack.Screen name="index" />
       <Stack.Screen name="(auth)" />
       <Stack.Screen name="friend-invite" />
-      <Stack.Protected guard={status === 'authenticated'}>
+      <Stack.Protected guard={status === 'signedIn'}>
         <Stack.Screen name="(tabs)" />
         <Stack.Screen name="(group)" />
         <Stack.Screen name="(feed)" />

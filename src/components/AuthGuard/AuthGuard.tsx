@@ -3,7 +3,7 @@ import { Suspense, type PropsWithChildren } from 'react';
 import { ActivityIndicator, View } from 'react-native';
 
 import { getMyProfileQueryOptions } from '@/api/userQueries';
-import { useAuthSessionStore } from '@/stores/authSessionStore';
+import { useAuthStatus } from '@/api/auth';
 import { ErrorBoundary } from '../AppErrorBoundary/AppErrorBoundary';
 
 function VerifiedAccount({ children }: PropsWithChildren) {
@@ -13,8 +13,8 @@ function VerifiedAccount({ children }: PropsWithChildren) {
 }
 
 export function AuthGuard({ children }: PropsWithChildren) {
-  const status = useAuthSessionStore((state) => state.status);
-  if (status !== 'authenticated') return null;
+  const status = useAuthStatus();
+  if (status !== 'signedIn') return null;
 
   return (
     <QueryErrorResetBoundary>

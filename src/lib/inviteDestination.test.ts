@@ -2,6 +2,8 @@ import { router } from 'expo-router';
 import { getItemAsync, setItemAsync, deleteItemAsync } from 'expo-secure-store';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
+import { clearAuthSession, loginWithTestUser } from '../api/auth';
+import { customAxios } from '../api/mutator';
 import { redirectSystemPath } from '../../app/+native-intent';
 import { handleInviteDeeplink } from './airbridge';
 import { navigateAuthenticated, parseInviteDeeplink } from './inviteDestination';
@@ -21,6 +23,10 @@ vi.mock('expo-notifications', () => ({
   },
 }));
 vi.mock('expo-secure-store');
+vi.mock('@react-native-seoul/kakao-login');
+vi.mock('expo-apple-authentication');
+vi.mock('../api/client');
+vi.mock('../api/mutator');
 vi.mock('expo-router');
 vi.mock('react-native', () => ({ Platform: { OS: 'ios' } }));
 vi.mock('airbridge-react-native-sdk', () => ({ Airbridge: { setOnDeeplinkReceived: vi.fn() } }));
@@ -41,7 +47,12 @@ function deferred<T>() {
 beforeEach(async () => {
   mocks.notification = null;
   vi.resetAllMocks();
-  await setItemAsync('accessTokenKey', 'session');
+  vi.mocked(customAxios).mockResolvedValue({
+    id: 21,
+    accessToken: 'fixture-token',
+    refreshToken: 'fixture-refresh',
+  });
+  await loginWithTestUser('fixture');
 });
 
 const navigate = (options: Partial<Parameters<typeof navigateAuthenticated>[0]> = {}) =>
@@ -61,12 +72,12 @@ function tapNotification(data: Record<string, unknown>) {
 describe('인증과 비동기 시작 과정에서 알림 복귀', () => {
   it('미로그인 알림은 보존하고 로그인 후 목적지로 한 번만 이동한다', async () => {
     tapNotification({ targetType: 'FRIEND_REQUESTS' });
-    await deleteItemAsync('accessTokenKey');
+    await clearAuthSession();
     await navigate();
     expect(routerMock.replace).toHaveBeenLastCalledWith('/login');
     expect(mocks.notification).not.toBeNull();
 
-    await setItemAsync('accessTokenKey', 'session');
+    await loginWithTestUser('fixture');
     await navigate();
     expect(routerMock.replace).toHaveBeenLastCalledWith('/friends');
     expect(mocks.notification).toBeNull();
@@ -108,12 +119,12 @@ describe('인증과 비동기 시작 과정에서 알림 복귀', () => {
 describe('인증과 비동기 시작 과정에서 초대 복귀', () => {
   it('미로그인 초대는 로그인 중 보존하고 인증 후 친구 초대로 복귀한다', async () => {
     await setPendingInvite(friend);
-    await deleteItemAsync('accessTokenKey');
+    await clearAuthSession();
     await navigate();
     expect(routerMock.replace).toHaveBeenLastCalledWith('/login');
     expect(await peekPendingInvite()).toEqual(friend);
 
-    await setItemAsync('accessTokenKey', 'logged-in');
+    await loginWithTestUser('fixture');
     await navigate();
     expect(routerMock.replace).toHaveBeenLastCalledWith({
       pathname: '/friend-invite',
@@ -124,18 +135,40 @@ describe('인증과 비동기 시작 과정에서 초대 복귀', () => {
 
   it('시작 화면이 읽기 도중 취소되면 라우팅하거나 초대를 소비하지 않는다', async () => {
     await setPendingInvite(friend);
-    const token = deferred<string>();
+    const pendingInvite = deferred<string>();
     const readStoredValue = vi.mocked(getItemAsync).getMockImplementation()!;
     vi.mocked(getItemAsync).mockImplementation((key, options) =>
-      key === 'accessTokenKey' ? token.promise : readStoredValue(key, options)
+      key === 'pendingInviteCode' ? pendingInvite.promise : readStoredValue(key, options)
     );
     let active = true;
     const navigation = navigate({ isActive: () => active });
     active = false;
-    token.resolve('session');
+    pendingInvite.resolve(JSON.stringify(friend));
     await navigation;
     expect(routerMock.replace).not.toHaveBeenCalled();
     expect(await peekPendingInvite()).toEqual(friend);
+  });
+
+  it('토큰 삭제가 지연되어도 종료된 세션은 초대를 소비하지 않고 로그인으로 돌아간다', async () => {
+    await setPendingInvite(friend);
+    const deletion = Promise.withResolvers<void>();
+    const removeStoredValue = vi.mocked(deleteItemAsync).getMockImplementation()!;
+    vi.mocked(deleteItemAsync).mockImplementation((key, options) =>
+      key === 'accessTokenKey'
+        ? deletion.promise.then(() => removeStoredValue(key, options))
+        : removeStoredValue(key, options)
+    );
+    const clearing = clearAuthSession();
+    expect(await getItemAsync('accessTokenKey')).toBe('fixture-token');
+
+    try {
+      await navigate();
+      expect(routerMock.replace).toHaveBeenLastCalledWith('/login');
+      expect(await peekPendingInvite()).toEqual(friend);
+    } finally {
+      deletion.resolve();
+      await clearing;
+    }
   });
 
   it('기본 피드 조회 중 도착한 초대를 늦은 피드 응답이 덮어쓰지 않는다', async () => {
@@ -169,7 +202,7 @@ describe('인증과 비동기 시작 과정에서 초대 복귀', () => {
     });
     await started.promise;
     await setPendingInvite(friend);
-    await deleteItemAsync('accessTokenKey');
+    await clearAuthSession();
     feed.resolve('/(feed)/home');
     await navigation;
     expect(routerMock.replace).toHaveBeenLastCalledWith('/login');

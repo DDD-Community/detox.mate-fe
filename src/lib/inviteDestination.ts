@@ -1,5 +1,5 @@
 import type { router } from 'expo-router';
-import * as SecureStore from 'expo-secure-store';
+import { getAuthStatus } from '../api/auth';
 import * as Notifications from 'expo-notifications';
 import { Platform } from 'react-native';
 
@@ -55,9 +55,8 @@ export async function navigateAuthenticated({
 }): Promise<void> {
   const navigatePending = async (): Promise<boolean> => {
     const pending = await peekPendingInvite();
-    const accessToken = await SecureStore.getItemAsync('accessTokenKey');
     if (!isActive()) return true;
-    if (!accessToken) {
+    if (getAuthStatus() !== 'signedIn') {
       replace('/login');
       return true;
     }
