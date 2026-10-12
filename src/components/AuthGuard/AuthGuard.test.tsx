@@ -9,7 +9,7 @@ import { getMyProfileQueryOptions } from '@/api/userQueries';
 import { useAuthSessionStore } from '@/stores/authSessionStore';
 import { AuthGuard } from './AuthGuard';
 
-vi.mock('@/api/mutator', () => ({ customAxios: vi.fn<typeof customAxios>() }));
+vi.mock('@/api/mutator');
 vi.mock('expo-secure-store');
 vi.mock('../AppErrorBoundary/AppErrorBoundary', () => ({
   ErrorBoundary: ({ children }: PropsWithChildren) => children,
