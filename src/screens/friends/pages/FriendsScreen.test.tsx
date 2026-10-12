@@ -44,7 +44,11 @@ vi.mock('../../../components/LoggingPage', () => ({
   LoggingPage: ({ children }: { children: ReactNode }) => children,
 }));
 vi.mock('../../../lib/token/icons', () => ({ iconNames: [] }));
-vi.mock('expo-router', () => ({ router: { replace: vi.fn() }, useFocusEffect: vi.fn() }));
+vi.mock('expo-router', () => ({
+  useLocalSearchParams: () => ({}),
+  router: { replace: vi.fn() },
+  useFocusEffect: vi.fn(),
+}));
 vi.mock('expo-image', () => ({ Image: () => null }));
 vi.mock('expo-secure-store', () => ({ getItemAsync: vi.fn() }));
 vi.mock('react-native-safe-area-context', () => ({

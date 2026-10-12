@@ -224,3 +224,13 @@
 또한 문서에는 코호트/퍼널 목적에 필요한 최소 property만 넣었다. 서버 id, 초대 코드 원문, 사용자 이름, 댓글/회고 본문은 분석에 직접 필요하지 않으므로 1차 로그에는 넣지 않는다.
 
 온보딩 `step`은 `screen-time`, `notifications`, `apps`, `goal`, `invite`로 구분한다. 권한 단계는 실제 승인 뒤 전환하며 별도 클릭 로그를 중복 기록하지 않는다.
+
+### 온보딩 종료 상호작용
+
+| 이벤트                                | 시점                   | 속성                                     |
+| ------------------------------------- | ---------------------- | ---------------------------------------- |
+| `Onboarding Skip Clicked`             | 친구 초대 건너뛰기     | `event_type`, `page_name`, `button_name` |
+| `Onboarding Friends Search Clicked`   | 친구 코드로 추가하기   | `event_type`, `page_name`, `button_name` |
+| `Onboarding Invite Code Copy Clicked` | 내 초대 코드 복사 성공 | `page_name`                              |
+
+`Invite Share Button Clicked`는 온보딩에서 `page_name=Onboarding`으로 기존 공유 처리를 사용한다. 코드 원문은 수집하지 않는다.

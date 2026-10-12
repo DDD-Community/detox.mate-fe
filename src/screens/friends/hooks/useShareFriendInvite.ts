@@ -31,9 +31,9 @@ async function prepareShareContent(signal: AbortSignal) {
   return { url, message };
 }
 
-function logShareClick() {
+function logShareClick(pageName: string) {
   try {
-    trackEvent('Invite Share Button Clicked', { page_name: 'FriendsList' });
+    trackEvent('Invite Share Button Clicked', { page_name: pageName });
   } catch (failure) {
     logError(normalizeError(failure), { scope: 'api', operation: 'logFriendInviteShareClick' });
   }
@@ -42,9 +42,13 @@ function logShareClick() {
 interface UseShareFriendInviteOptions {
   // URL을 표시하지 않는 화면은 공유를 누를 때만 초대 정보를 조회한다.
   prepareOnMount?: boolean;
+  pageName?: string;
 }
 
-export function useShareFriendInvite({ prepareOnMount = true }: UseShareFriendInviteOptions = {}) {
+export function useShareFriendInvite({
+  prepareOnMount = true,
+  pageName = 'FriendsList',
+}: UseShareFriendInviteOptions = {}) {
   // Prepare the message and URL together so display and sharing use the same content.
   // Failure must not suspend or hide the friends list.
   const content = useQuery({
@@ -68,7 +72,7 @@ export function useShareFriendInvite({ prepareOnMount = true }: UseShareFriendIn
     if (lock.current) return;
     lock.current = true;
     setSharing(true);
-    logShareClick();
+    logShareClick(pageName);
     const signal = getAuthenticatedRequestSignal();
     const active = () => mounted.current && !signal.aborted;
     try {

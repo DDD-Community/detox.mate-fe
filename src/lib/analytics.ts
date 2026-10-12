@@ -11,6 +11,9 @@ import { env } from '@/config/env';
 export const ANALYTICS_EVENT_NAMES = [
   'Splash Viewed',
   'Onboarding Viewed',
+  'Onboarding Skip Clicked',
+  'Onboarding Friends Search Clicked',
+  'Onboarding Invite Code Copy Clicked',
   'Terms Agreement Viewed',
   'Login Viewed',
   'Group Home Viewed',
