@@ -1,5 +1,10 @@
+import { AuthGuard } from '@/components/AuthGuard/AuthGuard';
 import { Stack } from 'expo-router';
 
 export default function LockLayout() {
-  return <Stack screenOptions={{ headerShown: false }} />;
+  return (
+    <AuthGuard>
+      <Stack screenOptions={{ headerShown: false }} />
+    </AuthGuard>
+  );
 }

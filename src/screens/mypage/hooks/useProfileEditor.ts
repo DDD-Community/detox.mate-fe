@@ -14,7 +14,7 @@ import {
 } from '@/lib/uploadImage';
 import { useNetworkErrorToastStore } from '@/stores/networkErrorToastStore';
 import { sanitizeProfileName } from '../utils/profileRules';
-import { getMyProfileQueryOptions } from './useMyProfilePageData';
+import { getMyProfileQueryOptions } from '@/api/userQueries';
 
 // iOS Modal이 닫히는 애니메이션 중에 네이티브 picker를 열면 즉시 닫히는 문제가 있어 잠시 기다린다.
 const PICKER_OPEN_DELAY_MS = 300;

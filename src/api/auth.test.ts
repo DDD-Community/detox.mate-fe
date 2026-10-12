@@ -3,7 +3,8 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { getItemAsync, deleteItemAsync } from 'expo-secure-store';
 
 import { queryClient } from '../lib/query/queryClient';
-import { loginWithTestUser, logout } from './auth';
+import { useAuthSessionStore, restoreAuthSession } from '../stores/authSessionStore';
+import { clearAuthSession, loginWithTestUser, logout } from './auth';
 import { getGetFriendsQueryOptions } from './query-generated/friend';
 
 const mocks = vi.hoisted(() => ({
@@ -39,6 +40,7 @@ const aFriends = [{ friendshipId: 41, user: { userId: 8, displayName: '이전 �
 
 beforeEach(() => {
   queryClient.clear();
+  useAuthSessionStore.setState({ status: 'restoring' });
   vi.resetAllMocks();
   mocks.post.mockResolvedValue({});
   mocks.friends.mockResolvedValue(aFriends);
@@ -175,4 +177,44 @@ describe('로그아웃 후 이전 계정의 서버 상태 격리', () => {
       expect(queryClient.getQueryData(options.queryKey)).toBeUndefined();
     }
   );
+});
+
+describe('인증 상태와 화면 접근 차단', () => {
+  it('토큰 삭제가 지연되어도 세션 종료 즉시 화면 접근을 차단한다', async () => {
+    await loginWithTestUser('A');
+    expect(useAuthSessionStore.getState().status).toBe('authenticated');
+    const deletion = Promise.withResolvers<void>();
+    vi.mocked(deleteItemAsync).mockReturnValueOnce(deletion.promise);
+    const clearing = clearAuthSession();
+    expect(useAuthSessionStore.getState().status).toBe('unauthenticated');
+    deletion.resolve();
+    await clearing;
+  });
+
+  it('앱 시작 시 읽은 이전 토큰이 늦게 돌아와도 종료된 세션을 복구하지 않는다', async () => {
+    const storedToken = Promise.withResolvers<string>();
+    vi.mocked(getItemAsync).mockReturnValueOnce(storedToken.promise);
+    const restoring = restoreAuthSession();
+    await clearAuthSession();
+    storedToken.resolve('fixture-old-token');
+    await restoring;
+    expect(useAuthSessionStore.getState().status).toBe('unauthenticated');
+  });
+});
+
+it('탈퇴 정리 중 다시 로그인해도 늦은 토큰 삭제가 새 계정을 지우지 않는다', async () => {
+  await loginWithTestUser('A');
+  const deletion = Promise.withResolvers<void>();
+  const removeStoredValue = vi.mocked(deleteItemAsync).getMockImplementation()!;
+  vi.mocked(deleteItemAsync).mockImplementationOnce((key, options) =>
+    deletion.promise.then(() => removeStoredValue(key, options))
+  );
+  const clearing = clearAuthSession();
+  const signingIn = loginWithTestUser('B');
+  expect(useAuthSessionStore.getState().status).toBe('unauthenticated');
+  deletion.resolve();
+  await Promise.all([clearing, signingIn]);
+  expect(await getItemAsync('refreshTokenKey')).toBe('fixture-refresh-B');
+  expect(await getItemAsync('accessTokenKey')).toBe('fixture-B');
+  expect(useAuthSessionStore.getState().status).toBe('authenticated');
 });

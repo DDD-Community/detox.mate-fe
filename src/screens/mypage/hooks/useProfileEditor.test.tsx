@@ -6,7 +6,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { trackEvent } from '@/lib/analytics';
 
-import { getMyProfileQueryOptions } from './useMyProfilePageData';
+import { getMyProfileQueryOptions } from '@/api/userQueries';
 import { useProfileEditor } from './useProfileEditor';
 
 const trackEventMock = vi.mocked(trackEvent);
@@ -23,6 +23,9 @@ const mocks = vi.hoisted(() => ({
   showToast: vi.fn(),
 }));
 
+vi.mock('@/api/generated/user/user', () => ({
+  getUser: () => ({ updateMe: mocks.updateMe }),
+}));
 vi.mock('@/api', () => ({
   getUser: () => ({ updateMe: mocks.updateMe }),
   getGetFriendsSuspenseQueryOptions: vi.fn(),

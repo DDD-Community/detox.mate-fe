@@ -1,15 +1,8 @@
-import { queryOptions, usePrefetchQuery, useSuspenseQuery } from '@tanstack/react-query';
+import { usePrefetchQuery, useSuspenseQuery } from '@tanstack/react-query';
 
-import { getGetFriendsSuspenseQueryOptions, getUser, type MyPageResponse } from '@/api';
-import type { AppError } from '@/api/errors/types';
+import { getGetFriendsSuspenseQueryOptions } from '@/api';
+import { getMyProfileQueryOptions } from '@/api/userQueries';
 import { pickRecentFriends } from '../utils/profileRules';
-
-// 사용자 태그는 Orval query 출력에 포함되어 있지 않아 기존 Axios factory를 queryFn으로 조합한다.
-export const getMyProfileQueryOptions = () =>
-  queryOptions<MyPageResponse, AppError>({
-    queryKey: ['users', 'me'],
-    queryFn: () => getUser().getMe(),
-  });
 
 export function useMyProfile() {
   const profile = useSuspenseQuery(getMyProfileQueryOptions()).data;

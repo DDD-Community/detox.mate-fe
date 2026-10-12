@@ -3,7 +3,7 @@ import { useFonts } from 'expo-font';
 import * as Notifications from 'expo-notifications';
 import { router, Stack } from 'expo-router';
 import * as SplashScreen from 'expo-splash-screen';
-import { useEffect, type ComponentType } from 'react';
+import { useEffect, useState, type ComponentType } from 'react';
 import { Platform } from 'react-native';
 import { OverlayProvider } from 'overlay-kit';
 import * as ReactNativeDeviceActivity from 'react-native-device-activity';
@@ -18,6 +18,7 @@ import { ensureDailyUsageMonitoring } from '../src/lib/screenTimeMonitoring';
 import { syncScreenTimeHistory } from '../src/lib/screenTimeHistory';
 import { syncTimeLimitFromServer } from '../src/lib/timeLimitSync';
 import { syncTargetMinutes } from '../src/lib/sharedDisplayConfig';
+import { restoreAuthSession, useAuthSessionStore } from '../src/stores/authSessionStore';
 import { useLockStore } from '../src/stores/lockStore';
 import { fontSources } from '../src/lib/token/primitive/fonts';
 import { NetworkErrorToast } from '../src/components/NetworkErrorToast';
@@ -44,6 +45,7 @@ const StorybookUIRoot = STORYBOOK_ENABLED
 
 export default function RootLayout() {
   const [fontsLoaded, fontError] = useFonts(fontSources);
+  const isAuthReady = useAuthSessionStore((state) => state.status !== 'restoring');
 
   useEffect(() => {
     initAnalytics();
@@ -74,8 +76,8 @@ export default function RootLayout() {
     void SplashScreen.hideAsync().catch((error) => {
       logError(normalizeError(error), { scope: 'app.bootstrap', operation: 'hideNativeSplash' });
     });
-    initAirbridge();
-  }, [fontsLoaded, fontError]);
+    if (isAuthReady) initAirbridge();
+  }, [fontsLoaded, fontError, isAuthReady]);
 
   // FCM registration token 갱신 감지 → 서버에 새 토큰 재등록
   useEffect(() => {
@@ -83,7 +85,8 @@ export default function RootLayout() {
   }, []);
 
   useEffect(() => {
-    if ((!fontsLoaded && !fontError) || STORYBOOK_ENABLED || Platform.OS === 'web') return;
+    if ((!fontsLoaded && !fontError) || !isAuthReady || STORYBOOK_ENABLED || Platform.OS === 'web')
+      return;
     const openNotification = (response: Notifications.NotificationResponse) => {
       if (
         response.actionIdentifier === Notifications.DEFAULT_ACTION_IDENTIFIER &&
@@ -97,7 +100,7 @@ export default function RootLayout() {
     const response = Notifications.getLastNotificationResponse();
     if (response) openNotification(response);
     return () => subscription.remove();
-  }, [fontsLoaded, fontError]);
+  }, [fontsLoaded, fontError, isAuthReady]);
 
   if (!fontsLoaded && !fontError) return null;
 
@@ -113,10 +116,34 @@ export default function RootLayout() {
     <QueryProvider>
       <AppErrorBoundary>
         <OverlayProvider>
-          <Stack screenOptions={{ headerShown: false }} />
+          <RootNavigator />
         </OverlayProvider>
       </AppErrorBoundary>
       <NetworkErrorToast />
     </QueryProvider>
+  );
+}
+
+function RootNavigator() {
+  const status = useAuthSessionStore((state) => state.status);
+  const [error, setError] = useState<Error | null>(null);
+  useEffect(() => {
+    void restoreAuthSession().catch((failure) => setError(normalizeError(failure)));
+  }, []);
+  if (error) throw error;
+  if (status === 'restoring') return null;
+
+  return (
+    <Stack screenOptions={{ headerShown: false }}>
+      <Stack.Screen name="index" />
+      <Stack.Screen name="(auth)" />
+      <Stack.Screen name="friend-invite" />
+      <Stack.Protected guard={status === 'authenticated'}>
+        <Stack.Screen name="(tabs)" />
+        <Stack.Screen name="(group)" />
+        <Stack.Screen name="(feed)" />
+        <Stack.Screen name="(lock)" />
+      </Stack.Protected>
+    </Stack>
   );
 }
