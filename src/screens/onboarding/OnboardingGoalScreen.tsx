@@ -1,6 +1,6 @@
 import { useRouter } from 'expo-router';
 import { useState } from 'react';
-import { Image, StyleSheet, Text, View } from 'react-native';
+import { Image, StyleSheet, Text, View, useWindowDimensions } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Button, LoggingPage } from '@/components';
 import { fontFamily, primitiveColors } from '@/lib/token';
@@ -13,6 +13,8 @@ export default function OnboardingGoalScreen() {
   const { save, pending, errorMessage } = useSaveGoalTime('onboarding');
   const router = useRouter();
   const insets = useSafeAreaInsets();
+  const { height } = useWindowDimensions();
+  const artworkTop = Math.max(122 - Math.max(852 - height, 0) - insets.top, 16);
   const complete = async () => {
     if (await save(hours * 60)) router.replace('/onboarding-invite');
   };
@@ -32,7 +34,7 @@ export default function OnboardingGoalScreen() {
           />
         }
       >
-        <View style={[styles.body, { paddingTop: Math.max(122 - insets.top, 16) }]}>
+        <View style={[styles.body, { paddingTop: artworkTop }]}>
           <Image source={require('@assets/onboarding/goal.png')} style={styles.image} />
           <View style={styles.card}>
             <GoalTimeCard hours={hours} onChange={setHours} showChangeHint />
