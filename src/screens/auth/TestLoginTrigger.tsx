@@ -1,17 +1,16 @@
-import { useRef } from 'react';
-import { Alert, Image, Pressable, StyleSheet } from 'react-native';
-
-import TURTLE_HI_IMAGE from '@assets/turtle-hi.png';
+import { useRef, type ReactNode } from 'react';
+import { Alert, Pressable, StyleSheet } from 'react-native';
 
 const TAP_WINDOW_MS = 5000;
 const TAP_COUNT = 5;
 
 interface TestLoginTriggerProps {
+  children: ReactNode;
   disabled: boolean;
   onSelectAccount: (testUserKey: string) => void;
 }
 
-export function TestLoginTrigger({ disabled, onSelectAccount }: TestLoginTriggerProps) {
+export function TestLoginTrigger({ children, disabled, onSelectAccount }: TestLoginTriggerProps) {
   const gesture = useRef({ startedAt: 0, count: 0 });
 
   const handlePress = () => {
@@ -40,9 +39,9 @@ export function TestLoginTrigger({ disabled, onSelectAccount }: TestLoginTrigger
       onPress={handlePress}
       disabled={disabled}
       accessibilityRole="button"
-      accessibilityLabel="거북이"
+      accessibilityLabel="디톡스메이트 소개"
     >
-      <Image source={TURTLE_HI_IMAGE} style={styles.image} resizeMode="contain" />
+      {children}
     </Pressable>
   );
 }
