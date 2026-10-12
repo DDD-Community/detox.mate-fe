@@ -5,12 +5,17 @@ import { act, createElement } from 'react';
 import { createRoot } from 'react-dom/client';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
+import { trackEvent } from '@/lib/analytics';
+import { logError } from '@/api/errors/logger';
+
 import { useSendFriendRequest } from './useSendFriendRequest';
 
-const api = vi.hoisted(() => ({ send: vi.fn(), track: vi.fn(), log: vi.fn() }));
-vi.mock('../../../lib/analytics', () => ({ trackEvent: api.track }));
+const trackEventMock = vi.mocked(trackEvent);
+const logErrorMock = vi.mocked(logError);
+const api = vi.hoisted(() => ({ send: vi.fn() }));
+vi.mock('../../../lib/analytics');
 vi.mock('../../../api/friendMutator', () => ({ friendAxios: () => api.send() }));
-vi.mock('../../../api/errors/logger', () => ({ logError: api.log }));
+vi.mock('../../../api/errors/logger');
 Object.assign(globalThis, { IS_REACT_ACT_ENVIRONMENT: true });
 const cleanups: (() => void)[] = [];
 beforeEach(() => vi.resetAllMocks());
@@ -60,23 +65,23 @@ describe('현재 방문의 친구 요청 전송 결과', () => {
         if (outcome === '취소') expect(screen.state.error).toBeNull();
         else expect(screen.state.error).not.toBeNull();
       });
-      expect(api.track).not.toHaveBeenCalled();
+      expect(trackEventMock).not.toHaveBeenCalled();
       // POST 오류 기록은 공통 API 계층에서 처리해 훅에서 중복하지 않는다.
-      expect(api.log).not.toHaveBeenCalled();
+      expect(logErrorMock).not.toHaveBeenCalled();
       api.send.mockResolvedValueOnce({ requestId: 10 });
       await act(() => screen.state.send());
       await waitForResult(() => {
         expect(screen.state.completed).toBe(true);
         expect(screen.state.error).toBeNull();
       });
-      expect(api.track.mock.calls).toEqual([['Friend Request Sent']]);
+      expect(trackEventMock.mock.calls).toEqual([['Friend Request Sent']]);
     }
   );
 
   it('분석 기록이 실패해도 성공한 전송은 완료로 유지된다', async () => {
     const screen = await setup();
     api.send.mockResolvedValueOnce({ requestId: 10 });
-    api.track.mockImplementationOnce(() => {
+    trackEventMock.mockImplementationOnce(() => {
       throw new Error('analytics unavailable');
     });
     await act(() => screen.state.send());
@@ -85,8 +90,8 @@ describe('현재 방문의 친구 요청 전송 결과', () => {
       expect(screen.state.pending).toBe(false);
       expect(screen.state.error).toBeNull();
     });
-    expect(api.track.mock.calls).toEqual([['Friend Request Sent']]);
-    expect(api.log).toHaveBeenCalledWith(expect.anything(), {
+    expect(trackEventMock.mock.calls).toEqual([['Friend Request Sent']]);
+    expect(logErrorMock).toHaveBeenCalledWith(expect.anything(), {
       scope: 'api',
       operation: 'logFriendRequestSent',
     });

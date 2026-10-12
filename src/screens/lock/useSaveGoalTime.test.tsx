@@ -10,7 +10,7 @@ vi.mock('@/api/generated/time-limit/time-limit', () => ({
 vi.mock('@/stores/lockStore', () => ({
   useLockStore: { getState: () => ({ confirmTargetMinutes: mocks.confirm }) },
 }));
-vi.mock('@/lib/analytics', () => ({ trackEvent: vi.fn() }));
+vi.mock('@/lib/analytics');
 vi.mock('@/api/errors', () => ({
   handleRequestError: (error: unknown) => ({
     error,

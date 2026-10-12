@@ -2,12 +2,12 @@
 import { act, createElement, type PropsWithChildren } from 'react';
 import { createRoot } from 'react-dom/client';
 import { afterEach, beforeEach, expect, it, vi } from 'vitest';
+import { router } from 'expo-router';
 import SelectAppsScreen from './SelectAppsScreen';
 import OnboardingSelectAppsScreen from '../onboarding/OnboardingSelectAppsScreen';
 
+const routerMock = vi.mocked(router);
 const mocks = vi.hoisted(() => ({
-  replace: vi.fn(),
-  back: vi.fn(),
   release: vi.fn(),
   unregister: vi.fn(),
   initialToken: null as string | null,
@@ -31,9 +31,7 @@ const mocks = vi.hoisted(() => ({
   done: undefined as undefined | (() => void),
 }));
 vi.mock('../../lib/token/icons', () => ({ iconNames: [] }));
-vi.mock('expo-router', () => ({
-  useRouter: () => ({ replace: mocks.replace, back: mocks.back }),
-}));
+vi.mock('expo-router');
 vi.mock('react-native', () => ({
   View: ({ children }: PropsWithChildren) => createElement('div', null, children),
   Text: ({ children }: PropsWithChildren) => createElement('span', null, children),
@@ -112,7 +110,7 @@ it('빈 선택을 막고 선택된 앱을 즉시 잠근 뒤 목표 화면으로 
     await act(() => root.render(createElement(OnboardingSelectAppsScreen)));
     expect(element.querySelector('button')?.disabled).toBe(true);
     await act(() => mocks.done?.());
-    expect(mocks.replace).not.toHaveBeenCalled();
+    expect(routerMock.replace).not.toHaveBeenCalled();
     expect(mocks.lock).not.toHaveBeenCalled();
     vi.spyOn(Date, 'now').mockReturnValue(Date.now() + 2000);
     await act(() =>
@@ -143,9 +141,9 @@ it('빈 선택을 막고 선택된 앱을 즉시 잠근 뒤 목표 화면으로 
     });
     expect(mocks.lock).toHaveBeenCalledTimes(2);
     expect(mocks.register).toHaveBeenCalledTimes(2);
-    expect(mocks.replace).toHaveBeenCalledExactlyOnceWith('/onboarding-goal');
+    expect(routerMock.replace).toHaveBeenCalledExactlyOnceWith('/onboarding-goal');
     expect(mocks.lock.mock.invocationCallOrder[1]).toBeLessThan(
-      mocks.replace.mock.invocationCallOrder[0]
+      routerMock.replace.mock.invocationCallOrder[0]
     );
   } finally {
     await act(() => root.unmount());
@@ -171,9 +169,9 @@ it('일반 앱 선택은 새 앱을 잠근 뒤 기존 목표 시간 화면으로
       mocks.done?.();
     });
     expect(mocks.lock).toHaveBeenCalledTimes(2);
-    expect(mocks.replace).toHaveBeenCalledExactlyOnceWith('/(lock)/goal-time');
+    expect(routerMock.replace).toHaveBeenCalledExactlyOnceWith('/(lock)/goal-time');
     expect(mocks.lock.mock.invocationCallOrder[1]).toBeLessThan(
-      mocks.replace.mock.invocationCallOrder[0]
+      routerMock.replace.mock.invocationCallOrder[0]
     );
   } finally {
     await act(() => root.unmount());
@@ -192,8 +190,8 @@ it.each([
       await act(() => root.render(createElement(Screen)));
       await act(() => mocks.done?.());
       expect(mocks.lock).not.toHaveBeenCalled();
-      if (destination) expect(mocks.replace).toHaveBeenCalledExactlyOnceWith(destination);
-      else expect(mocks.back).toHaveBeenCalledTimes(1);
+      if (destination) expect(routerMock.replace).toHaveBeenCalledExactlyOnceWith(destination);
+      else expect(routerMock.back).toHaveBeenCalledTimes(1);
     } finally {
       await act(() => root.unmount());
     }
@@ -221,11 +219,11 @@ it('일반 앱 선택에서 전체 해제하면 잠금과 등록을 제거한 �
     await act(() => mocks.done?.());
     expect(mocks.release).toHaveBeenCalledExactlyOnceWith('app-1', 'existing-app');
     expect(mocks.unregister).toHaveBeenCalledExactlyOnceWith('app-1');
-    expect(mocks.back).toHaveBeenCalledTimes(1);
+    expect(routerMock.back).toHaveBeenCalledTimes(1);
     expect(mocks.unregister.mock.invocationCallOrder[0]).toBeLessThan(
-      mocks.back.mock.invocationCallOrder[0]
+      routerMock.back.mock.invocationCallOrder[0]
     );
-    expect(mocks.replace).not.toHaveBeenCalled();
+    expect(routerMock.replace).not.toHaveBeenCalled();
   } finally {
     await act(() => root.unmount());
   }
@@ -243,8 +241,8 @@ it.each([
     const root = createRoot(element);
     try {
       await act(() => root.render(createElement(Screen)));
-      expect(mocks.back).toHaveBeenCalledTimes(goesBack ? 1 : 0);
-      expect(mocks.replace).not.toHaveBeenCalled();
+      expect(routerMock.back).toHaveBeenCalledTimes(goesBack ? 1 : 0);
+      expect(routerMock.replace).not.toHaveBeenCalled();
       if (!goesBack) {
         expect(element.textContent).toContain('다시 시도');
         mocks.authorizationStatus.mockReturnValue(2);

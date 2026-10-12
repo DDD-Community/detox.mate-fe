@@ -4,6 +4,8 @@ import { act, createElement, Suspense } from 'react';
 import { createRoot } from 'react-dom/client';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
+import { trackEvent } from '@/lib/analytics';
+
 import { getGetInviteeSuspenseQueryOptions } from '../../../api/query-generated/friend';
 import type {
   FriendInviteeResponse,
@@ -11,12 +13,13 @@ import type {
 } from '../../../api/query-generated/model';
 import { useFriendInvite } from './useFriendInvite';
 
-const api = vi.hoisted(() => ({ read: vi.fn(), send: vi.fn(), log: vi.fn(), track: vi.fn() }));
+const trackEventMock = vi.mocked(trackEvent);
+const api = vi.hoisted(() => ({ read: vi.fn(), send: vi.fn() }));
 vi.mock('../../../api/friendMutator', () => ({
   friendAxios: ({ method }: { method: string }) => (method === 'POST' ? api.send() : api.read()),
 }));
-vi.mock('../../../api/errors/logger', () => ({ logError: api.log }));
-vi.mock('../../../lib/analytics', () => ({ trackEvent: api.track }));
+vi.mock('../../../api/errors/logger');
+vi.mock('../../../lib/analytics');
 Object.assign(globalThis, { IS_REACT_ACT_ENVIRONMENT: true });
 
 const invitee: FriendInviteeResponse = {
@@ -95,12 +98,12 @@ describe('초대 화면의 친구 요청', () => {
     });
     expect(screen.state.sending).toBe(false);
     expect(screen.state.sendError).not.toBeNull();
-    expect(api.track).not.toHaveBeenCalled();
+    expect(trackEventMock).not.toHaveBeenCalled();
     await act(async () => {
       await screen.state.sendRequest();
     });
     expect(screen.state.invitee.relationshipStatus).toBe('PENDING_SENT');
-    expect(api.track).toHaveBeenCalledExactlyOnceWith('Friend Request Sent', {
+    expect(trackEventMock).toHaveBeenCalledExactlyOnceWith('Friend Request Sent', {
       entry_point: 'invite_link',
     });
   });
@@ -131,7 +134,7 @@ describe('초대 화면의 친구 요청', () => {
       await screen.state.sendRequest();
     });
     expect(api.send).toHaveBeenCalledTimes(1);
-    expect(api.track).toHaveBeenCalledTimes(1);
+    expect(trackEventMock).toHaveBeenCalledTimes(1);
   });
 
   it.each(['성공', '실패'] as const)(
@@ -159,7 +162,7 @@ describe('초대 화면의 친구 요청', () => {
       expect(screen.state.invitee).toEqual(nextUser);
       expect(screen.state.sendError).toBeNull();
       expect(screen.state.sending).toBe(false);
-      expect(api.track).not.toHaveBeenCalled();
+      expect(trackEventMock).not.toHaveBeenCalled();
     }
   );
 });

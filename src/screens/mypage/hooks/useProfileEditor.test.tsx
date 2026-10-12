@@ -4,9 +4,12 @@ import { act, createElement } from 'react';
 import { createRoot } from 'react-dom/client';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
+import { trackEvent } from '@/lib/analytics';
+
 import { getMyProfileQueryOptions } from './useMyProfilePageData';
 import { useProfileEditor } from './useProfileEditor';
 
+const trackEventMock = vi.mocked(trackEvent);
 const mocks = vi.hoisted(() => ({
   UnsupportedImageFormatError: class UnsupportedImageFormatError extends Error {},
   updateMe: vi.fn(),
@@ -16,7 +19,6 @@ const mocks = vi.hoisted(() => ({
   alert: vi.fn(),
   openSettings: vi.fn(),
   goBack: vi.fn(),
-  track: vi.fn(),
   logError: vi.fn(),
   showToast: vi.fn(),
 }));
@@ -39,7 +41,7 @@ vi.mock('@/lib/uploadImage', () => ({
   UnsupportedImageFormatError: mocks.UnsupportedImageFormatError,
   uploadImage: mocks.uploadImage,
 }));
-vi.mock('@/lib/analytics', () => ({ trackEvent: mocks.track }));
+vi.mock('@/lib/analytics');
 vi.mock('@/lib/navigation', () => ({ goBackOrReplace: mocks.goBack }));
 vi.mock('@/stores/networkErrorToastStore', () => ({
   useNetworkErrorToastStore: { getState: () => ({ showMessage: mocks.showToast }) },
@@ -134,7 +136,7 @@ describe('프로필 편집 저장', () => {
       await screen.editor.save();
     });
     expect(mocks.updateMe).not.toHaveBeenCalled();
-    expect(mocks.track).not.toHaveBeenCalled();
+    expect(trackEventMock).not.toHaveBeenCalled();
     expect(mocks.goBack).toHaveBeenCalledTimes(1);
   });
 
@@ -147,7 +149,7 @@ describe('프로필 편집 저장', () => {
       await screen.editor.save();
     });
     expect(mocks.updateMe).toHaveBeenCalledWith({ displayName: '가나다라마' });
-    expect(mocks.track).toHaveBeenCalledWith('My Profile Updated', {
+    expect(trackEventMock).toHaveBeenCalledWith('My Profile Updated', {
       changed_name: true,
       changed_image: false,
     });
@@ -181,7 +183,7 @@ describe('프로필 편집 저장', () => {
     expect(mocks.updateMe).toHaveBeenCalledWith({
       profileImageObjectKey: 'profile-images/1/new.png',
     });
-    expect(mocks.track).toHaveBeenCalledWith('My Profile Updated', {
+    expect(trackEventMock).toHaveBeenCalledWith('My Profile Updated', {
       changed_name: false,
       changed_image: true,
     });
@@ -231,7 +233,7 @@ describe('프로필 편집 저장', () => {
       await screen.editor.save();
     });
     expect(mocks.goBack).not.toHaveBeenCalled();
-    expect(mocks.track).not.toHaveBeenCalled();
+    expect(trackEventMock).not.toHaveBeenCalled();
     expect(mocks.showToast).toHaveBeenCalledWith('잠시 후 다시');
     expect(screen.editor.saving).toBe(false);
 

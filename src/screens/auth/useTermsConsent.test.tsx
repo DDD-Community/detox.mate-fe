@@ -3,16 +3,15 @@ import { act, type ComponentProps } from 'react';
 import { createRoot } from 'react-dom/client';
 import { OverlayProvider } from 'overlay-kit';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { getItemAsync, setItemAsync } from 'expo-secure-store';
 import type { TermsAgreementSheet } from './TermsAgreementSheet';
 import { useTermsConsent } from './useTermsConsent';
 
 const mocks = vi.hoisted(() => ({
-  read: vi.fn(),
-  save: vi.fn(),
   logError: vi.fn(),
   sheet: vi.fn(),
 }));
-vi.mock('expo-secure-store', () => ({ getItemAsync: mocks.read, setItemAsync: mocks.save }));
+vi.mock('expo-secure-store');
 vi.mock('react-native', () => ({ Platform: { OS: 'ios' } }));
 vi.mock('../../api/errors', () => ({
   logError: mocks.logError,
@@ -31,8 +30,8 @@ let frames: FrameRequestCallback[];
 
 beforeEach(() => {
   vi.resetAllMocks();
-  mocks.read.mockResolvedValue(null);
-  mocks.save.mockResolvedValue(undefined);
+  vi.mocked(getItemAsync).mockResolvedValue(null);
+  vi.mocked(setItemAsync).mockResolvedValue(undefined);
   frames = [];
   vi.stubGlobal('requestAnimationFrame', (callback: FrameRequestCallback) => frames.push(callback));
 });
@@ -78,10 +77,10 @@ describe('인증 전 약관 동의', () => {
     await act(() => sheet().onClose());
     await act(() => sheet().onDismiss());
     expect(await cancelled.result).toBe(false);
-    expect(mocks.save).not.toHaveBeenCalled();
+    expect(setItemAsync).not.toHaveBeenCalled();
 
     const saving = Promise.withResolvers<void>();
-    mocks.save.mockReturnValueOnce(saving.promise);
+    vi.mocked(setItemAsync).mockReturnValueOnce(saving.promise);
     const accepted = await open(screen);
     const login = vi.fn();
     const continuation = accepted.result.then((agreed) => {
@@ -89,7 +88,7 @@ describe('인증 전 약관 동의', () => {
     });
     await act(() => sheet().onConfirm());
     expect(sheet().visible).toBe(false);
-    expect(mocks.save).not.toHaveBeenCalled();
+    expect(setItemAsync).not.toHaveBeenCalled();
     expect(login).not.toHaveBeenCalled();
     await act(() => sheet().onDismiss());
     expect(login).not.toHaveBeenCalled();
@@ -101,7 +100,7 @@ describe('인증 전 약관 동의', () => {
   });
 
   it('이미 동의했다면 시트를 열지 않고 인증을 허용한다', async () => {
-    mocks.read.mockResolvedValue('true');
+    vi.mocked(getItemAsync).mockResolvedValue('true');
     const screen = await setup();
     let agreed!: boolean;
     await act(async () => {
@@ -112,7 +111,7 @@ describe('인증 전 약관 동의', () => {
   });
 
   it('동의 저장 실패는 인증을 허용하지 않고 오류 안내 후 재시도할 수 있다', async () => {
-    mocks.save.mockRejectedValueOnce(new Error('storage failure'));
+    vi.mocked(setItemAsync).mockRejectedValueOnce(new Error('storage failure'));
     const screen = await setup();
     const failed = await open(screen);
     await act(() => sheet().onConfirm());
@@ -136,6 +135,6 @@ describe('인증 전 약관 동의', () => {
     expect(duplicate).toBe(false);
     await screen.unmount();
     expect(await first.result).toBe(false);
-    expect(mocks.save).not.toHaveBeenCalled();
+    expect(setItemAsync).not.toHaveBeenCalled();
   });
 });

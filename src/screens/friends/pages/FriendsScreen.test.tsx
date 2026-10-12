@@ -37,20 +37,16 @@ vi.mock('../../../api/friendMutator', () => ({
 vi.mock('../hooks/useShareFriendInvite', () => ({
   useShareFriendInvite: () => ({ share: vi.fn(), sharing: false }),
 }));
-vi.mock('../../../api/errors/logger', () => ({ logError: vi.fn() }));
-vi.mock('../../../lib/analytics', () => ({ trackEvent: vi.fn(), trackButtonClick: vi.fn() }));
+vi.mock('../../../api/errors/logger');
+vi.mock('../../../lib/analytics');
 vi.mock('../../../lib/navigation', () => ({ goBackOrReplace: vi.fn() }));
 vi.mock('../../../components/LoggingPage', () => ({
   LoggingPage: ({ children }: { children: ReactNode }) => children,
 }));
 vi.mock('../../../lib/token/icons', () => ({ iconNames: [] }));
-vi.mock('expo-router', () => ({
-  useLocalSearchParams: () => ({}),
-  router: { replace: vi.fn() },
-  useFocusEffect: vi.fn(),
-}));
+vi.mock('expo-router');
 vi.mock('expo-image', () => ({ Image: () => null }));
-vi.mock('expo-secure-store', () => ({ getItemAsync: vi.fn() }));
+vi.mock('expo-secure-store');
 vi.mock('react-native-safe-area-context', () => ({
   useSafeAreaInsets: () => ({ top: 0, right: 0, bottom: 0, left: 0 }),
 }));

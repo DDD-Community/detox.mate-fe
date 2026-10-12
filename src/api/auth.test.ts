@@ -1,14 +1,12 @@
 import { QueryObserver } from '@tanstack/react-query';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { getItemAsync, deleteItemAsync } from 'expo-secure-store';
 
 import { queryClient } from '../lib/query/queryClient';
 import { loginWithTestUser, logout } from './auth';
 import { getGetFriendsQueryOptions } from './query-generated/friend';
 
 const mocks = vi.hoisted(() => ({
-  storage: new Map<string, string>(),
-  getItemAsync: vi.fn(),
-  deleteItemAsync: vi.fn(),
   post: vi.fn(),
   friends: vi.fn(),
   requests: new AbortController(),
@@ -16,13 +14,7 @@ const mocks = vi.hoisted(() => ({
 
 vi.mock('@react-native-seoul/kakao-login', () => ({ login: vi.fn() }));
 vi.mock('expo-apple-authentication', () => ({}));
-vi.mock('expo-secure-store', () => ({
-  getItemAsync: mocks.getItemAsync,
-  deleteItemAsync: mocks.deleteItemAsync,
-  setItemAsync: async (key: string, value: string) => {
-    mocks.storage.set(key, value);
-  },
-}));
+vi.mock('expo-secure-store');
 vi.mock('./client', () => ({
   default: { post: mocks.post },
   getAuthenticatedRequestSignal: () => mocks.requests.signal,
@@ -47,19 +39,13 @@ const aFriends = [{ friendshipId: 41, user: { userId: 8, displayName: '이전 �
 
 beforeEach(() => {
   queryClient.clear();
-  mocks.storage.clear();
   vi.resetAllMocks();
-  mocks.getItemAsync.mockImplementation(async (key: string) => mocks.storage.get(key) ?? null);
-  mocks.deleteItemAsync.mockImplementation(async (key: string) => {
-    mocks.storage.delete(key);
-  });
   mocks.post.mockResolvedValue({});
   mocks.friends.mockResolvedValue(aFriends);
 });
 
 afterEach(() => {
   queryClient.clear();
-  mocks.storage.clear();
 });
 
 describe('로그아웃 후 이전 계정의 서버 상태 격리', () => {
@@ -85,7 +71,7 @@ describe('로그아웃 후 이전 계정의 서버 상태 격리', () => {
   it('로그아웃의 토큰 조회가 늦게 끝나도 새로 로그인한 토큰을 서버에 보내지 않는다', async () => {
     await loginWithTestUser('A');
     const credentials = Promise.withResolvers<string>();
-    mocks.getItemAsync.mockReturnValueOnce(credentials.promise);
+    vi.mocked(getItemAsync).mockReturnValueOnce(credentials.promise);
     const signingOut = logout();
     await loginWithTestUser('B');
 
@@ -93,7 +79,7 @@ describe('로그아웃 후 이전 계정의 서버 상태 격리', () => {
     await signingOut;
 
     expect(mocks.post).not.toHaveBeenCalled();
-    expect(mocks.storage.get('accessTokenKey')).toBe('fixture-B');
+    expect(await getItemAsync('accessTokenKey')).toBe('fixture-B');
   });
 
   it('서버 로그아웃 응답이 늦게 돌아와도 다시 로그인한 계정과 캐시를 지우지 않는다', async () => {
@@ -115,7 +101,7 @@ describe('로그아웃 후 이전 계정의 서버 상태 격리', () => {
     loggingOut.resolve({});
     await signingOut;
 
-    expect(mocks.storage.get('accessTokenKey')).toBe('fixture-B');
+    expect(await getItemAsync('accessTokenKey')).toBe('fixture-B');
     expect(queryClient.getQueryData(options.queryKey)).toEqual(bFriends);
   });
 
@@ -143,7 +129,7 @@ describe('로그아웃 후 이전 계정의 서버 상태 격리', () => {
     await logout();
 
     expect(queryClient.getQueryData(options.queryKey)).toBeUndefined();
-    expect(mocks.storage.has('accessTokenKey')).toBe(false);
+    expect(await getItemAsync('accessTokenKey')).toBeNull();
   });
 
   it.each(['조회', '삭제'])(
@@ -153,10 +139,10 @@ describe('로그아웃 후 이전 계정의 서버 상태 격리', () => {
       const options = getGetFriendsQueryOptions();
       await queryClient.fetchQuery(options);
       if (operation === '조회') {
-        mocks.getItemAsync.mockRejectedValueOnce(new Error('기기 토큰 조회 실패'));
+        vi.mocked(getItemAsync).mockRejectedValueOnce(new Error('기기 토큰 조회 실패'));
         await logout();
       } else {
-        mocks.deleteItemAsync.mockRejectedValueOnce(new Error('기기 토큰 삭제 실패'));
+        vi.mocked(deleteItemAsync).mockRejectedValueOnce(new Error('기기 토큰 삭제 실패'));
         await expect(logout()).rejects.toThrow('기기 토큰 삭제 실패');
       }
 
@@ -172,7 +158,7 @@ describe('로그아웃 후 이전 계정의 서버 상태 격리', () => {
       await queryClient.fetchQuery(options);
       const deleting = Promise.withResolvers<void>();
       const deletionStarted = Promise.withResolvers<void>();
-      mocks.deleteItemAsync.mockImplementationOnce(() => {
+      vi.mocked(deleteItemAsync).mockImplementationOnce(() => {
         deletionStarted.resolve();
         return deleting.promise;
       });

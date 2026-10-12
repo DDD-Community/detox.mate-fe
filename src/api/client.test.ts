@@ -1,20 +1,21 @@
 import { AxiosError, CanceledError, type InternalAxiosRequestConfig } from 'axios';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { getItemAsync } from 'expo-secure-store';
+import { router } from 'expo-router';
 
 import apiClient, { cancelAuthenticatedRequests, resumeAuthenticatedRequests } from './client';
 import { friendAxios } from './friendMutator';
 
+const routerMock = vi.mocked(router);
 const mocks = vi.hoisted(() => ({
-  getItemAsync: vi.fn(),
   refreshAccessToken: vi.fn(),
   clearAuthSession: vi.fn(),
-  replace: vi.fn(),
   enqueueNetworkRetryRequest: vi.fn(),
   showMessage: vi.fn(),
 }));
 
-vi.mock('expo-secure-store', () => ({ getItemAsync: mocks.getItemAsync }));
-vi.mock('expo-router', () => ({ router: { replace: mocks.replace } }));
+vi.mock('expo-secure-store');
+vi.mock('expo-router');
 vi.mock('../config/env', () => ({
   env: { apiBaseUrl: 'https://api.example.com', appEnv: 'production' },
 }));
@@ -45,7 +46,7 @@ beforeEach(() => {
   vi.resetAllMocks();
   cancelAuthenticatedRequests();
   resumeAuthenticatedRequests();
-  mocks.getItemAsync.mockResolvedValue('fixture-access-token');
+  vi.mocked(getItemAsync).mockResolvedValue('fixture-access-token');
 });
 
 afterEach(() => {
@@ -56,7 +57,7 @@ describe('공통 API 클라이언트의 인증 경합과 오류 처리', () => {
   it('친구 요청의 인증 값 복원 중 로그아웃하면 이전 쓰기를 서버에 보내지 않는다', async () => {
     const credentials = Promise.withResolvers<string>();
     const started = Promise.withResolvers<void>();
-    mocks.getItemAsync.mockImplementation(() => {
+    vi.mocked(getItemAsync).mockImplementation(() => {
       started.resolve();
       return credentials.promise;
     });
@@ -134,7 +135,7 @@ describe('공통 API 클라이언트의 인증 경합과 오류 처리', () => {
     refreshed.reject(new CanceledError('The authentication session ended.'));
     await rejected;
     expect(mocks.clearAuthSession).not.toHaveBeenCalled();
-    expect(mocks.replace).not.toHaveBeenCalled();
+    expect(routerMock.replace).not.toHaveBeenCalled();
   });
 
   it('두 요청이 동시에 인증에 실패하면 토큰을 한 번 갱신하고 두 요청을 완료한다', async () => {
@@ -143,7 +144,7 @@ describe('공통 API 클라이언트의 인증 경합과 오류 처리', () => {
     let dispatched = 0;
     mocks.refreshAccessToken.mockImplementation(async () => {
       await refreshing.promise;
-      mocks.getItemAsync.mockResolvedValue('fixture-refreshed-token');
+      vi.mocked(getItemAsync).mockResolvedValue('fixture-refreshed-token');
     });
     apiClient.defaults.adapter = async (config) => {
       if (!config._retry) {
@@ -172,7 +173,7 @@ describe('공통 API 클라이언트의 인증 경합과 오류 처리', () => {
     expect(responses.map(({ data }) => data)).toEqual(['완료', '완료']);
     expect(mocks.refreshAccessToken).toHaveBeenCalledOnce();
     expect(mocks.clearAuthSession).not.toHaveBeenCalled();
-    expect(mocks.replace).not.toHaveBeenCalled();
+    expect(routerMock.replace).not.toHaveBeenCalled();
   });
 
   it('현재 세션의 토큰 갱신이 실패하면 세션을 정리하고 로그인으로 이동한다', async () => {
@@ -191,7 +192,7 @@ describe('공통 API 클라이언트의 인증 경합과 오류 처리', () => {
     await expect(apiClient.get('/private/resource')).rejects.toBeDefined();
 
     expect(mocks.clearAuthSession).toHaveBeenCalledOnce();
-    expect(mocks.replace).toHaveBeenCalledWith({
+    expect(routerMock.replace).toHaveBeenCalledWith({
       pathname: '/login',
       params: { reason: 'sessionExpired' },
     });

@@ -2,30 +2,22 @@
 import { act, createElement } from 'react';
 import { createRoot } from 'react-dom/client';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { router } from 'expo-router';
 
 import { peekPendingInvite, setPendingInvite } from '../../lib/pendingInvite';
 import { queryClient } from '../../lib/query/queryClient';
 import { useAuthLogin } from './useAuthLogin';
 
+const routerMock = vi.mocked(router);
 const mocks = vi.hoisted(() => ({
-  storage: new Map<string, string>(),
-  replace: vi.fn(),
   kakao: vi.fn(),
   authHttp: vi.fn(),
   requests: new AbortController(),
   mediaPermission: vi.fn(),
   notificationPermission: vi.fn(),
 }));
-vi.mock('expo-secure-store', () => ({
-  getItemAsync: async (key: string) => mocks.storage.get(key) ?? null,
-  setItemAsync: async (key: string, value: string) => {
-    mocks.storage.set(key, value);
-  },
-  deleteItemAsync: async (key: string) => {
-    mocks.storage.delete(key);
-  },
-}));
-vi.mock('expo-router', () => ({ useRouter: () => ({ replace: mocks.replace }) }));
+vi.mock('expo-secure-store');
+vi.mock('expo-router');
 vi.mock('@react-native-seoul/kakao-login', () => ({ login: mocks.kakao }));
 vi.mock('expo-apple-authentication', () => ({}));
 vi.mock('../../api/client', () => ({
@@ -55,14 +47,7 @@ vi.mock('@react-native-firebase/messaging', () => ({
   onTokenRefresh: vi.fn(),
 }));
 vi.mock('react-native', () => ({ Platform: { OS: 'ios' } }));
-vi.mock('@amplitude/analytics-react-native', () => ({
-  setUserId: vi.fn(),
-  track: vi.fn(),
-  Identify: vi.fn(),
-  identify: vi.fn(),
-  init: vi.fn(),
-  Types: {},
-}));
+vi.mock('@/lib/analytics');
 vi.mock('@sentry/react-native', () => ({}));
 vi.mock('expo-constants', () => ({
   default: {
@@ -82,7 +67,6 @@ const cleanups: (() => void)[] = [];
 
 beforeEach(() => {
   vi.resetAllMocks();
-  mocks.storage.clear();
   mocks.requests = new AbortController();
   queryClient.clear();
   mocks.kakao.mockResolvedValue({ accessToken: 'provider-token' });
@@ -102,7 +86,6 @@ afterEach(async () => {
   await act(() => cleanups.splice(0).forEach((cleanup) => cleanup()));
   queryClient.clear();
   vi.useRealTimers();
-  mocks.storage.clear();
 });
 
 async function setup() {
@@ -135,7 +118,7 @@ describe('인증 후 신규 가입 분기', () => {
     });
     const screen = await setup();
     await act(() => screen.state.handleKakaoLogin());
-    expect(mocks.replace).toHaveBeenLastCalledWith('/onboarding');
+    expect(routerMock.replace).toHaveBeenLastCalledWith('/onboarding');
     expect(await peekPendingInvite()).toEqual(invite);
   });
   it('재로그인은 새 온보딩으로 복귀하지 않고 대기 초대로 이동한다', async () => {
@@ -143,7 +126,7 @@ describe('인증 후 신규 가입 분기', () => {
     await setPendingInvite(invite);
     const screen = await setup();
     await act(() => screen.state.handleKakaoLogin());
-    expect(mocks.replace).toHaveBeenLastCalledWith({
+    expect(routerMock.replace).toHaveBeenLastCalledWith({
       pathname: '/friend-invite',
       params: { code: invite.code },
     });
@@ -163,6 +146,6 @@ describe('인증 후 신규 가입 분기', () => {
       oauth.resolve({ accessToken: 'provider-token' });
       await login;
     });
-    expect(mocks.replace).toHaveBeenLastCalledWith('/(tabs)/restricted-apps');
+    expect(routerMock.replace).toHaveBeenLastCalledWith('/(tabs)/restricted-apps');
   });
 });
