@@ -7,6 +7,13 @@ async function getCurrentUserId(): Promise<string | null> {
   return SecureStore.getItemAsync(CURRENT_USER_ID_KEY);
 }
 
+/** 현재 계정의 "인증 방법 숨김" 설정을 지운다. currentUserId가 지워지기 전에 호출해야 한다. */
+export async function clearVerifyHowToHidden(): Promise<void> {
+  const userId = await getCurrentUserId();
+  if (!userId) return;
+  await SecureStore.deleteItemAsync(`${HIDE_VERIFY_HOW_TO_PREFIX}${userId}`);
+}
+
 export async function isVerifyHowToHidden(): Promise<boolean> {
   const userId = await getCurrentUserId();
   if (!userId) return false;

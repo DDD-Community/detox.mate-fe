@@ -18,6 +18,12 @@ const todayDateKey = () => {
   return `${year}-${month}-${day}`;
 };
 
+/** 저장된 모든 앱의 사용 기록을 지운다(탈퇴 등). */
+export const clearAllScreenTimeHistory = async () => {
+  const keys = await AsyncStorage.getAllKeys();
+  await AsyncStorage.removeMany(keys.filter((key) => key.startsWith(STORAGE_KEY_PREFIX)));
+};
+
 const loadHistory = async (appId: string): Promise<DailyHistory> => {
   const raw = await AsyncStorage.getItem(storageKeyForApp(appId));
   if (!raw) return {};

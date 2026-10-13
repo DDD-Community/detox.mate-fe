@@ -52,3 +52,8 @@ export function clearPendingInvite(invite: PendingInvite): Promise<void> {
     }
   });
 }
+
+/** 계정 정리(탈퇴 등) 시 대기 중인 초대를 코드와 무관하게 모두 버린다. */
+export function discardPendingInvite(): Promise<void> {
+  return serialize(() => SecureStore.deleteItemAsync(PENDING_INVITE_KEY));
+}
