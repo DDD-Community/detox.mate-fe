@@ -15,7 +15,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Svg, { Defs, LinearGradient, Rect, Stop } from 'react-native-svg';
 
 import { normalizeError } from '../../../api/errors';
-import { getGetInviteeSuspenseQueryOptions } from '../../../api/query-generated/friend';
+import { getSearchByUserCodeSuspenseQueryOptions } from '../../../api/query-generated/friend';
 import { BrandHeader } from '../../../components/BrandHeader/BrandHeader';
 import { ErrorBoundary } from '../../../components/AppErrorBoundary/AppErrorBoundary';
 import { LoggingButton } from '../../../components/LoggingButton/LoggingButton';
@@ -195,7 +195,7 @@ function InviteProfile({ code }: { code: string }) {
 
 export default function FriendInviteScreen({ code }: { code: string }) {
   const client = useQueryClient();
-  const options = getGetInviteeSuspenseQueryOptions(code);
+  const options = getSearchByUserCodeSuspenseQueryOptions({ userCode: code });
   return (
     <QueryErrorResetBoundary>
       {({ reset }) => (
