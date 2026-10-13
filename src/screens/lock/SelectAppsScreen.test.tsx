@@ -13,7 +13,6 @@ const mocks = vi.hoisted(() => ({
   initialToken: null as string | null,
   storedSelections: {} as Record<string, string>,
   difference: vi.fn(),
-  deselected: vi.fn(),
   authorizationStatus: vi.fn(),
   requestAuthorization: vi.fn(),
   lock: vi.fn(),
@@ -68,13 +67,11 @@ vi.mock('react-native-device-activity', () => ({
 vi.mock('../../lib/familyActivitySelections', () => ({
   unionTokens: () => mocks.initialToken,
   differenceTokens: mocks.difference,
-  tokensOverlap: vi.fn(),
 }));
 vi.mock('../../lib/lockRegistration', () => ({
   lockApp: mocks.lock,
   releaseAppLock: mocks.release,
 }));
-vi.mock('../../lib/lockSelectionDiff', () => ({ findDeselectedAppIds: mocks.deselected }));
 vi.mock('../../lib/shieldConfig', () => ({ SHIELD_ACTIONS: {}, SHIELD_CONFIGURATION: {} }));
 vi.mock('../../../modules/screen-time-report', () => ({
   splitSelection: () => ['app-one', 'app-two'],
@@ -99,7 +96,6 @@ beforeEach(() => {
   mocks.initialToken = null;
   mocks.storedSelections = {};
   mocks.difference.mockReturnValue(null);
-  mocks.deselected.mockReturnValue([]);
   mocks.authorizationStatus.mockReturnValue(2);
 });
 afterEach(() => vi.restoreAllMocks());
@@ -150,7 +146,7 @@ it('빈 선택을 막고 선택된 앱을 즉시 잠근 뒤 목표 화면으로 
   }
 });
 
-it('일반 앱 선택은 새 앱을 잠근 뒤 기존 목표 시간 화면으로 이동한다', async () => {
+it('일반 앱 선택은 새 앱을 잠근 뒤 목표 설정 화면 없이 이전 화면으로 돌아간다', async () => {
   const root = createRoot(document.createElement('div'));
   try {
     await act(() => root.render(createElement(SelectAppsScreen)));
@@ -169,9 +165,10 @@ it('일반 앱 선택은 새 앱을 잠근 뒤 기존 목표 시간 화면으로
       mocks.done?.();
     });
     expect(mocks.lock).toHaveBeenCalledTimes(2);
-    expect(routerMock.replace).toHaveBeenCalledExactlyOnceWith('/(lock)/goal-time');
+    expect(routerMock.back).toHaveBeenCalledTimes(1);
+    expect(routerMock.replace).not.toHaveBeenCalled();
     expect(mocks.lock.mock.invocationCallOrder[1]).toBeLessThan(
-      routerMock.replace.mock.invocationCallOrder[0]
+      routerMock.back.mock.invocationCallOrder[0]
     );
   } finally {
     await act(() => root.unmount());
@@ -198,36 +195,38 @@ it.each([
   }
 );
 
-it('일반 앱 선택에서 전체 해제하면 잠금과 등록을 제거한 뒤 이전 화면으로 돌아간다', async () => {
-  mocks.initialToken = 'existing-app';
-  mocks.storedSelections = { 'app-1': 'existing-app' };
-  mocks.deselected.mockReturnValue(['app-1']);
-  const root = createRoot(document.createElement('div'));
-  try {
-    await act(() => root.render(createElement(SelectAppsScreen)));
-    vi.spyOn(Date, 'now').mockReturnValue(Date.now() + 2000);
-    await act(() =>
-      mocks.selection?.({
-        nativeEvent: {
-          familyActivitySelection: null,
-          applicationCount: 0,
-          categoryCount: 0,
-          webDomainCount: 0,
-        },
-      })
-    );
-    await act(() => mocks.done?.());
-    expect(mocks.release).toHaveBeenCalledExactlyOnceWith('app-1', 'existing-app');
-    expect(mocks.unregister).toHaveBeenCalledExactlyOnceWith('app-1');
-    expect(routerMock.back).toHaveBeenCalledTimes(1);
-    expect(mocks.unregister.mock.invocationCallOrder[0]).toBeLessThan(
-      routerMock.back.mock.invocationCallOrder[0]
-    );
-    expect(routerMock.replace).not.toHaveBeenCalled();
-  } finally {
-    await act(() => root.unmount());
+it.each([
+  ['전체 해제', null, 0],
+  ['일부 해제', 'other-app', 1],
+] as const)(
+  '일반 앱 선택에서 기존 앱을 %s해도 등록 해제하지 않고 이전 화면으로 돌아간다',
+  async (_, token, applicationCount) => {
+    mocks.initialToken = 'existing-app';
+    mocks.storedSelections = { 'app-1': 'existing-app' };
+    const root = createRoot(document.createElement('div'));
+    try {
+      await act(() => root.render(createElement(SelectAppsScreen)));
+      vi.spyOn(Date, 'now').mockReturnValue(Date.now() + 2000);
+      await act(() =>
+        mocks.selection?.({
+          nativeEvent: {
+            familyActivitySelection: token,
+            applicationCount,
+            categoryCount: 0,
+            webDomainCount: 0,
+          },
+        })
+      );
+      await act(() => mocks.done?.());
+      expect(mocks.release).not.toHaveBeenCalled();
+      expect(mocks.unregister).not.toHaveBeenCalled();
+      expect(routerMock.back).toHaveBeenCalledTimes(1);
+      expect(routerMock.replace).not.toHaveBeenCalled();
+    } finally {
+      await act(() => root.unmount());
+    }
   }
-});
+);
 
 it.each([
   ['온보딩', OnboardingSelectAppsScreen, false],

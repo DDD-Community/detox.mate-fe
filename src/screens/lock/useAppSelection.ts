@@ -1,9 +1,8 @@
 import { useRef, useState } from 'react';
 import { Alert } from 'react-native';
 import * as ReactNativeDeviceActivity from 'react-native-device-activity';
-import { differenceTokens, tokensOverlap, unionTokens } from '../../lib/familyActivitySelections';
-import { lockApp, releaseAppLock } from '../../lib/lockRegistration';
-import { findDeselectedAppIds } from '../../lib/lockSelectionDiff';
+import { differenceTokens, unionTokens } from '../../lib/familyActivitySelections';
+import { lockApp } from '../../lib/lockRegistration';
 import { SHIELD_ACTIONS, SHIELD_CONFIGURATION } from '../../lib/shieldConfig';
 import { splitSelection } from '../../../modules/screen-time-report';
 import { useLockStore } from '../../stores/lockStore';
@@ -14,8 +13,7 @@ const EMPTY_EVENT_GRACE_MS = 1000;
 
 export function useAppSelection({ requireSelection }: { requireSelection: boolean }) {
   const saving = useRef(false);
-  const { selectedAppIds, familyActivitySelectionsByAppId, registerAppSelection, unregisterApp } =
-    useLockStore();
+  const { selectedAppIds, familyActivitySelectionsByAppId, registerAppSelection } = useLockStore();
   const [initialUnionToken] = useState(() =>
     unionTokens(Object.values(familyActivitySelectionsByAppId))
   );
@@ -50,17 +48,8 @@ export function useAppSelection({ requireSelection }: { requireSelection: boolea
     if (saving.current || (requireSelection && !newToken)) return;
     saving.current = true;
     try {
-      // 체크를 해제한 기존 앱은 등록 해제한다(차단 해제 + 앱별 쉴드 제거 + 목록에서 제거).
-      const deselectedAppIds = findDeselectedAppIds(
-        familyActivitySelectionsByAppId,
-        newToken,
-        tokensOverlap
-      );
-      deselectedAppIds.forEach((deselectedAppId) => {
-        releaseAppLock(deselectedAppId, familyActivitySelectionsByAppId[deselectedAppId]);
-        unregisterApp(deselectedAppId);
-      });
-
+      // 이 화면에서는 새로 잠글 앱만 추가한다. 이미 잠근 앱의 체크를 해제해도 등록 해제하지 않는다 —
+      // 등록 해제는 앱별 리포트의 [등록 해제](10초 타이머 → 사유 선택 → 확인 모달)로만 한다.
       // 선택이 비었으면 새로 추가할 게 없다.
       if (!newToken) {
         return { addedAppCount: 0 };
