@@ -1,4 +1,5 @@
 // @vitest-environment jsdom
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { act, createElement } from 'react';
 import { createRoot } from 'react-dom/client';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
@@ -9,8 +10,15 @@ const mocks = vi.hoisted(() => ({
   deleteFriend: vi.fn(),
   acceptRequest: vi.fn(),
   send: vi.fn(),
+  read: vi.fn(),
+  recover: undefined as (() => Promise<boolean>) | undefined,
   sender: { pending: false, completed: false, error: null as string | null },
   controller: { pendingActionId: null as string | null, error: null as string | null },
+}));
+
+vi.mock('@/api/client');
+vi.mock('@/api/friendMutator', () => ({
+  friendAxios: (config: { url: string }) => mocks.read(config.url),
 }));
 
 vi.mock('@/screens/friends/hooks/useFriendsListController', () => ({
@@ -21,7 +29,10 @@ vi.mock('@/screens/friends/hooks/useFriendsListController', () => ({
   }),
 }));
 vi.mock('@/screens/friends/hooks/useSendFriendRequest', () => ({
-  useSendFriendRequest: () => ({ ...mocks.sender, send: mocks.send }),
+  useSendFriendRequest: (_userId: number, onConflict: () => Promise<boolean>) => {
+    mocks.recover = onConflict;
+    return { ...mocks.sender, send: mocks.send };
+  },
 }));
 
 Object.assign(globalThis, { IS_REACT_ACT_ENVIRONMENT: true });
@@ -39,12 +50,14 @@ afterEach(async () => {
 async function setup(options: Parameters<typeof useFriendRelationship>[0]) {
   let current!: ReturnType<typeof useFriendRelationship>;
   let rerender!: () => void;
+  const client = new QueryClient();
   const root = createRoot(document.createElement('div'));
   function Harness() {
     current = useFriendRelationship(options);
     return null;
   }
-  rerender = () => root.render(createElement(Harness));
+  rerender = () =>
+    root.render(createElement(QueryClientProvider, { client }, createElement(Harness)));
   cleanups.push(() => root.unmount());
   await act(() => rerender());
   return {
@@ -103,6 +116,22 @@ describe('친구 페이지 관계 상태', () => {
       expect(await screen.state.accept()).toBe(true);
     });
     expect(mocks.acceptRequest).toHaveBeenCalledWith(9);
+    expect(screen.state.relationship).toBe('FRIEND');
+  });
+
+  it('충돌 후 받은 요청을 확인하면 최신 요청 ID로 수락하고 친구로 전환한다', async () => {
+    const screen = await setup({ userId: 7, relationship: 'NONE' });
+    mocks.read.mockImplementation(async (url: string) =>
+      url === '/friends/requests/received' ? [{ requestId: 92, user: { userId: 7 } }] : []
+    );
+    await act(async () => {
+      expect(await mocks.recover!()).toBe(true);
+    });
+    expect(screen.state.relationship).toBe('PENDING_RECEIVED');
+    expect(mocks.acceptRequest).not.toHaveBeenCalled();
+    mocks.acceptRequest.mockResolvedValue(true);
+    await act(() => screen.state.accept());
+    expect(mocks.acceptRequest).toHaveBeenCalledWith(92);
     expect(screen.state.relationship).toBe('FRIEND');
   });
 
