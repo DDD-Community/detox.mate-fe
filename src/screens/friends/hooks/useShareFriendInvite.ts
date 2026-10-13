@@ -3,33 +3,29 @@ import { useEffect, useRef, useState } from 'react';
 import { Alert, Share } from 'react-native';
 
 import { getAuthenticatedRequestSignal } from '../../../api/client';
-import { getUserErrorMessage, logError, normalizeError } from '../../../api/errors';
+import { AppError, getUserErrorMessage, logError, normalizeError } from '../../../api/errors';
 import { getMyInvite } from '../../../api/query-generated/friend';
 import { trackEvent } from '../../../lib/analytics';
-import { createFriendInviteShareUrl } from '../../../lib/friendInviteShare';
 
 async function prepareShareContent(signal: AbortSignal) {
   const authSignal = getAuthenticatedRequestSignal();
   const invite = await getMyInvite(signal);
   if (signal.aborted || authSignal.aborted) throw new Error('Invitation preparation canceled.');
-  let url: string;
-  try {
-    url = createFriendInviteShareUrl(invite.userCode);
-  } catch (failure) {
-    const error = normalizeError(failure);
+  if (!invite.userCode.trim()) {
+    const error = AppError({ type: 'unknown', message: '친구 초대 코드를 받지 못했어요.' });
     if (!signal.aborted && !authSignal.aborted) {
       logError(error, { scope: 'api', operation: 'friends.invite.prepare' });
     }
     throw error;
   }
+  // 링크 없이 초대 코드만 공유한다. 받는 사람은 친구 목록 검색창에 코드를 입력한다.
   const message = [
     '디톡스메이트에서 함께 스크린타임을 줄여봐요.',
-    `초대 링크: ${url}`,
     `초대 코드: ${invite.userCode}`,
-    '링크가 열리지 않으면 친구 목록 검색창에 초대 코드를 입력해주세요.',
+    '친구 목록 검색창에 초대 코드를 입력해주세요.',
   ].join('\n');
-  // 카드에는 전체 URL 대신 Figma의 `detoxmate/{invite_code}` 형태로 보여준다.
-  return { url, message, label: `detoxmate/${invite.userCode}` };
+  // 카드에는 Figma의 `detoxmate/{invite_code}` 형태로 보여준다.
+  return { message, label: `detoxmate/${invite.userCode}` };
 }
 
 function logShareClick(pageName: string) {
@@ -84,7 +80,6 @@ export function useShareFriendInvite({
         Alert.alert('친구 초대 공유', getUserErrorMessage(normalizeError(prepared.error)));
         return;
       }
-      // 링크는 message 안에 이미 있다. iOS에서 url을 따로 넘기면 공유 대상에 링크가 두 번 붙는다.
       await Share.share({ message: prepared.data.message });
     } catch (failure) {
       if (!active()) return;
@@ -100,7 +95,6 @@ export function useShareFriendInvite({
   return {
     share,
     sharing,
-    inviteUrl: content.data?.url,
     inviteLabel: content.data?.label,
     preparing: content.isFetching,
   };

@@ -83,7 +83,7 @@ async function setup(options?: Parameters<typeof useShareFriendInvite>[0]) {
 
 describe('친구 초대 공유의 비동기 보호', () => {
   it.each(['ios', 'android'])(
-    '%s에서 링크에는 초대 토큰을, 검색 안내에는 사용자 코드를 전달하고 이메일은 제외한다',
+    '%s에서 링크 없이 사용자 코드만 전달하고 내부 초대 토큰과 이메일은 제외한다',
     async (os) => {
       actions.platform.OS = os;
       actions.request.mockResolvedValue({
@@ -101,25 +101,13 @@ describe('친구 초대 공유의 비동기 보호', () => {
       expect(content.message).toContain('친구 목록 검색창에 초대 코드를 입력해주세요.');
       expect(content.message).not.toContain('이메일');
       expect(content.message).not.toContain('my@example.com');
-      expect(content.message).toContain(screen.state.inviteUrl);
       expect(content).not.toHaveProperty('url');
-      expect(content.message).toContain('https://detoxmate.airbridge.io/friend-invite?code=ABCDE');
+      expect(content.message).not.toMatch(/https?:\/\//);
+      expect(content.message).not.toContain('초대 링크');
     }
   );
 
-  it('초대 코드에 쿼리 문자가 있어도 현재 코드만 안전하게 전달한다', async () => {
-    const code = 'invite+/=& 한글';
-    actions.request.mockResolvedValue({ code: 'internal-code', userCode: code });
-    const screen = await setup();
-    await act(async () => {
-      await screen.state.share();
-    });
-    const url = new URL(/https:\/\/\S+/.exec(actions.share.mock.calls[0][0].message)![0]);
-    expect(url.pathname).toBe('/friend-invite');
-    expect(url.searchParams.getAll('code')).toEqual([code]);
-  });
-
-  it('자동으로 준비한 URL을 표시하고 공유에 재사용하며 실제 클릭만 기록한다', async () => {
+  it('자동으로 준비한 카드 문구를 표시하고 공유에 재사용하며 실제 클릭만 기록한다', async () => {
     const pending = deferred<{ code: string; userCode: string }>();
     actions.request.mockReturnValueOnce(pending.promise);
     const screen = await setup();
@@ -130,26 +118,24 @@ describe('친구 초대 공유의 비동기 보호', () => {
       pending.resolve({ code: 'internal-code', userCode: 'PREP1' });
       await screen.state.share();
     });
-    expect(screen.state.inviteUrl).toBe('https://detoxmate.airbridge.io/friend-invite?code=PREP1');
     expect(screen.state.inviteLabel).toBe('detoxmate/PREP1');
-    expect(actions.share.mock.calls[0][0].message).toContain(screen.state.inviteUrl);
+    expect(actions.share.mock.calls[0][0].message).toContain('초대 코드: PREP1');
     await act(async () => {
       await screen.state.share();
     });
     expect(trackEventMock).toHaveBeenCalledTimes(2);
   });
 
-  it('미리 준비하지 않는 화면은 진입 시 조회하지 않고 공유 클릭 후 링크와 코드를 전달한다', async () => {
+  it('미리 준비하지 않는 화면은 진입 시 조회하지 않고 공유 클릭 후 코드를 전달한다', async () => {
     const screen = await setup({ prepareOnMount: false });
     expect(actions.request).not.toHaveBeenCalled();
-    expect(screen.state.inviteUrl).toBeUndefined();
+    expect(screen.state.inviteLabel).toBeUndefined();
     expect(actions.share).not.toHaveBeenCalled();
 
     await act(async () => {
       await screen.state.share();
     });
     expect(actions.share).toHaveBeenCalledTimes(1);
-    expect(actions.share.mock.calls[0][0].message).toContain(screen.state.inviteUrl);
     expect(actions.share.mock.calls[0][0].message).toContain('초대 코드: ABCDE');
   });
 
@@ -173,7 +159,7 @@ describe('친구 초대 공유의 비동기 보호', () => {
   it('초대 코드가 비어 있으면 불완전한 공유를 막고 안내한다', async () => {
     actions.request.mockResolvedValue({ code: 'internal-code', userCode: ' ' });
     const screen = await setup();
-    expect(screen.state.inviteUrl).toBeUndefined();
+    expect(screen.state.inviteLabel).toBeUndefined();
     expect(trackEventMock).not.toHaveBeenCalled();
     expect(logErrorMock).toHaveBeenCalledWith(expect.anything(), {
       scope: 'api',
@@ -263,7 +249,6 @@ describe('친구 초대 공유의 비동기 보호', () => {
     await act(async () => {
       await screen.state.share();
     });
-    expect(actions.share.mock.calls[0][0].message).toContain(screen.state.inviteUrl);
     expect(actions.share.mock.calls[0][0].message).toContain('초대 코드: ABCDE');
   });
 
