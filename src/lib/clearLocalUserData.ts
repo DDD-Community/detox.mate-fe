@@ -1,3 +1,4 @@
+import { Image } from 'expo-image';
 import * as SecureStore from 'expo-secure-store';
 import * as ReactNativeDeviceActivity from 'react-native-device-activity';
 
@@ -52,6 +53,10 @@ export const clearLocalUserData = async () => {
   await attempt(clearVerifyHowToHidden);
   await attempt(discardPendingInvite);
   await attempt(() => SecureStore.deleteItemAsync('needsGoalReset'));
+
+  // 프로필 사진·친구 사진이 expo-image 디스크 캐시에 남아 있으면 다음 로그인 때 이전 사진이 먼저 보인다.
+  await attempt(() => Image.clearDiskCache());
+  await attempt(() => Image.clearMemoryCache());
 
   await attempt(resetAnalyticsUser);
 };
