@@ -73,6 +73,9 @@ function FriendPageContent({ params }: { params: FriendPageParams }) {
             <Text style={styles.name}>{displayName}</Text>
             {friendship.relationship === 'FRIEND' ? <FriendInviteCode userId={userId} /> : null}
           </View>
+          {friendship.relationship === 'PENDING_RECEIVED' ? (
+            <Text style={styles.requestStatus}>친구 요청을 보냈어요.</Text>
+          ) : null}
           {friendship.relationship === 'FRIEND' ? (
             <LoggingButton
               eventName="Friend Page Remove Sheet Open Clicked"
@@ -127,5 +130,6 @@ const styles = StyleSheet.create({
   profile: { alignItems: 'center', paddingTop: spacing[16], gap: spacing[12] },
   identity: { alignItems: 'center', gap: spacing[4] },
   name: { ...typography.primary.h2, lineHeight: 38, color: gray[900] },
+  requestStatus: { ...typography.primary.body2R, color: gray[500] },
   error: { ...typography.primary.body2R, textAlign: 'center', color: '#b42318' },
 });

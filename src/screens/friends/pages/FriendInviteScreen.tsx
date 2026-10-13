@@ -85,7 +85,8 @@ export function UnusableFriendInvite() {
 }
 
 function InviteProfile({ code }: { code: string }) {
-  const { invitee, sending, sendError, readError, sendRequest, refresh } = useFriendInvite(code);
+  const { invitee, sending, sendError, readError, sendRequest, acceptRequest, refresh } =
+    useFriendInvite(code);
   const [imageFailed, setImageFailed] = useState(false);
   useEffect(() => setImageFailed(false), [invitee.profileImageUrl]);
   const status = invitee.relationshipStatus;
@@ -109,7 +110,7 @@ function InviteProfile({ code }: { code: string }) {
     status === 'PENDING_SENT'
       ? '요청됨'
       : status === 'PENDING_RECEIVED'
-        ? '받은 요청 확인'
+        ? '친구 수락'
         : status === 'NONE'
           ? '친구 요청 보내기'
           : '친구 목록으로';
@@ -118,7 +119,13 @@ function InviteProfile({ code }: { code: string }) {
       label={label}
       disabled={sending || status === 'PENDING_SENT'}
       busy={sending}
-      onPress={status === 'NONE' ? confirmSend : friends}
+      onPress={
+        status === 'NONE'
+          ? confirmSend
+          : status === 'PENDING_RECEIVED'
+            ? () => void acceptRequest()
+            : friends
+      }
     />
   );
   return (
@@ -157,9 +164,13 @@ function InviteProfile({ code }: { code: string }) {
             <Text style={styles.invitationText}>{invitee.displayName}님과</Text>
             <Text style={styles.invitationText}>스크린타임을 줄여봐요.</Text>
           </View>
-          {status === 'SELF' || status === 'FRIEND' ? (
+          {status === 'SELF' || status === 'FRIEND' || status === 'PENDING_RECEIVED' ? (
             <Text style={styles.status}>
-              {status === 'SELF' ? '내 초대 링크예요.' : '이미 친구예요.'}
+              {status === 'SELF'
+                ? '내 초대 링크예요.'
+                : status === 'PENDING_RECEIVED'
+                  ? '친구 요청을 보냈어요.'
+                  : '이미 친구예요.'}
             </Text>
           ) : null}
         </View>
@@ -179,7 +190,7 @@ function InviteProfile({ code }: { code: string }) {
           />
         ) : null}
       </View>
-      {status === 'NONE' || status === 'PENDING_SENT' ? (
+      {status === 'NONE' || status === 'PENDING_SENT' || status === 'PENDING_RECEIVED' ? (
         action
       ) : (
         <LoggingButton

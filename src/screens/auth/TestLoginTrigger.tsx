@@ -27,8 +27,8 @@ export function TestLoginTrigger({ children, disabled, onSelectAccount }: TestLo
     gesture.current.count = 0;
     gesture.current.startedAt = 0;
     Alert.alert('테스트 계정 로그인', '로그인할 계정을 선택하세요.', [
-      { text: 'A 로그인', onPress: () => onSelectAccount('front-a') },
-      { text: 'B 로그인', onPress: () => onSelectAccount('front-b') },
+      { text: 'A 로그인', onPress: () => onSelectAccount('test1') },
+      { text: 'B 로그인', onPress: () => onSelectAccount('test2') },
       { text: '취소', style: 'cancel' },
     ]);
   };

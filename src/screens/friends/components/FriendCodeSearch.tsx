@@ -26,19 +26,40 @@ import searchAvatar from '@assets/avatars/friend-search.svg';
 const { regular, bold } = fontFamily.primary;
 const missingCode = (error: unknown) => {
   const normalized = normalizeError(error);
-  return normalized.status === 404 && normalized.code === 'NOT_FOUND';
+  return (
+    (normalized.status === 404 && normalized.code === 'NOT_FOUND') ||
+    (normalized.status === 400 && normalized.code === 'INVALID_USER_CODE')
+  );
 };
 
 function SearchResult({
-  onReceived,
+  onAccept,
+  onConflict,
   renderFriend,
   user,
 }: {
   user: FriendSearchResponse;
-  onReceived: () => void;
+  onAccept: (requestId: number) => Promise<boolean>;
+  onConflict: () => Promise<boolean>;
   renderFriend: (userId: number) => React.ReactNode;
 }) {
-  const { send, pending, completed, error } = useSendFriendRequest(requireId(user.userId));
+  const { send, pending, completed, error } = useSendFriendRequest(
+    requireId(user.userId),
+    onConflict
+  );
+  const [accepting, setAccepting] = useState(false);
+  const acceptLock = useRef(false);
+  const accept = async () => {
+    if (acceptLock.current) return;
+    acceptLock.current = true;
+    setAccepting(true);
+    try {
+      await onAccept(user.requestId!);
+    } finally {
+      acceptLock.current = false;
+      setAccepting(false);
+    }
+  };
   const [imageFailed, setImageFailed] = useState(false);
   useEffect(() => setImageFailed(false), [user.profileImageUrl]);
   const requested = completed || user.relationshipStatus === RelationshipStatus.PENDING_SENT;
@@ -78,19 +99,32 @@ function SearchResult({
           onError={() => setImageFailed(true)}
         />
         <Text style={styles.name}>{user.displayName || '친구'}</Text>
-        {mutual ? <Text style={styles.mutual}>{mutual}</Text> : <View style={{ height: 22 }} />}
+        {received ? (
+          <Text style={styles.mutual}>친구 요청을 보냈어요.</Text>
+        ) : mutual ? (
+          <Text style={styles.mutual}>{mutual}</Text>
+        ) : (
+          <View style={{ height: 22 }} />
+        )}
         <Pressable
           accessibilityRole="button"
-          accessibilityState={{ disabled: requested || pending, busy: pending }}
-          disabled={requested || pending}
-          onPress={received ? onReceived : () => void send()}
-          style={[styles.button, requested && styles.requested, pending && { opacity: 0.5 }]}
+          accessibilityState={{
+            disabled: requested || pending || accepting,
+            busy: pending || accepting,
+          }}
+          disabled={requested || pending || accepting}
+          onPress={() => void (received ? accept() : send())}
+          style={[
+            styles.button,
+            requested && styles.requested,
+            (pending || accepting) && { opacity: 0.5 },
+          ]}
         >
-          {pending ? (
+          {pending || accepting ? (
             <ActivityIndicator color="white" />
           ) : (
             <Text style={styles.buttonText}>
-              {requested ? '요청됨' : received ? '받은 요청 확인' : '친구 요청 보내기'}
+              {requested ? '요청됨' : received ? '친구 수락' : '친구 요청 보내기'}
             </Text>
           )}
         </Pressable>
@@ -106,16 +140,45 @@ function SearchResult({
 
 function SearchQuery({
   userCode,
-  onReceived,
+  onAccept,
   renderFriend,
 }: {
   userCode: string;
-  onReceived: () => void;
+  onAccept: (requestId: number) => Promise<boolean>;
   renderFriend: (userId: number) => React.ReactNode;
 }) {
+  const client = useQueryClient();
+  const options = getSearchByUserCodeSuspenseQueryOptions({ userCode });
   const result = useSuspenseQuery(
     getSearchByUserCodeSuspenseQueryOptions({ userCode }, { query: { refetchOnMount: 'always' } })
   );
+  const accept = async (requestId: number) => {
+    const cache = client.getQueryCache();
+    const query = cache.find({ queryKey: options.queryKey, exact: true });
+    const ownsQuery = () =>
+      query !== undefined && cache.find({ queryKey: options.queryKey, exact: true }) === query;
+    if (!(await onAccept(requestId)) || !ownsQuery()) return false;
+    await client.cancelQueries({ queryKey: options.queryKey, exact: true });
+    if (!ownsQuery()) return false;
+    client.setQueryData(options.queryKey, (previous) =>
+      previous
+        ? {
+            ...previous,
+            relationshipStatus: RelationshipStatus.FRIEND,
+            requestId: undefined,
+          }
+        : undefined
+    );
+    return true;
+  };
+  const recoverConflict = async () => {
+    const { data } = await result.refetch({ throwOnError: true });
+    return (
+      data?.relationshipStatus === RelationshipStatus.PENDING_RECEIVED ||
+      data?.relationshipStatus === RelationshipStatus.PENDING_SENT ||
+      data?.relationshipStatus === RelationshipStatus.FRIEND
+    );
+  };
   const failure =
     result.error && !result.isFetching && !isCancel(result.error) ? result.error : null;
   useEffect(() => {
@@ -131,7 +194,8 @@ function SearchQuery({
       <SearchResult
         key={userCode}
         user={result.data}
-        onReceived={onReceived}
+        onAccept={accept}
+        onConflict={recoverConflict}
         renderFriend={renderFriend}
       />
       {feedback}
@@ -142,13 +206,13 @@ function SearchQuery({
 export function FriendCodeSearch({
   userCode,
   onRefresh,
-  onReceived,
+  onAccept,
   renderFriend,
   empty,
 }: {
   userCode: string;
   onRefresh: () => Promise<void>;
-  onReceived: () => void;
+  onAccept: (requestId: number) => Promise<boolean>;
   renderFriend: (userId: number) => React.ReactNode;
   empty: React.ReactNode;
 }) {
@@ -197,7 +261,7 @@ export function FriendCodeSearch({
               />
             }
           >
-            <SearchQuery userCode={userCode} onReceived={onReceived} renderFriend={renderFriend} />
+            <SearchQuery userCode={userCode} onAccept={onAccept} renderFriend={renderFriend} />
           </Suspense>
         </ErrorBoundary>
       )}

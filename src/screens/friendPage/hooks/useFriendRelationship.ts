@@ -1,5 +1,13 @@
 import { useState } from 'react';
+import { useQueryClient } from '@tanstack/react-query';
+import { CanceledError } from 'axios';
 
+import { getAuthenticatedRequestSignal } from '@/api/client';
+import {
+  getGetFriendsQueryOptions,
+  getGetReceivedRequestsQueryOptions,
+  getGetSentRequestsQueryOptions,
+} from '@/api/query-generated/friend';
 import { useFriendsListController } from '@/screens/friends/hooks/useFriendsListController';
 import { useSendFriendRequest } from '@/screens/friends/hooks/useSendFriendRequest';
 import type { FriendPageParams, FriendPageRelationship } from '../utils/friendPageParams';
@@ -12,25 +20,62 @@ export function useFriendRelationship({
   friendshipId,
   requestId,
 }: Pick<FriendPageParams, 'userId' | 'relationship' | 'friendshipId' | 'requestId'>) {
-  const [local, setLocal] = useState<FriendPageRelationship>(initial);
+  const client = useQueryClient();
+  const [local, setLocal] = useState({ relationship: initial, friendshipId, requestId });
   const controller = useFriendsListController();
-  const sender = useSendFriendRequest(userId);
+  const sender = useSendFriendRequest(userId, async () => {
+    const session = getAuthenticatedRequestSignal();
+    const friendsOptions = getGetFriendsQueryOptions();
+    const receivedOptions = getGetReceivedRequestsQueryOptions();
+    const sentOptions = getGetSentRequestsQueryOptions();
+    await Promise.all(
+      [friendsOptions, receivedOptions, sentOptions].map(({ queryKey }) =>
+        client.cancelQueries({ queryKey, exact: true })
+      )
+    );
+    if (session.aborted) throw new CanceledError();
+    const [friends, received, sent] = await Promise.all([
+      client.fetchQuery({ ...friendsOptions, staleTime: 0 }),
+      client.fetchQuery({ ...receivedOptions, staleTime: 0 }),
+      client.fetchQuery({ ...sentOptions, staleTime: 0 }),
+    ]);
+    if (session.aborted) throw new CanceledError();
+    const friend = friends.find((item) => item.user.userId === userId);
+    const incoming = received.find((item) => item.user.userId === userId);
+    const outgoing = sent.find((item) => item.user?.userId === userId);
+    if (friend)
+      setLocal({ relationship: 'FRIEND', friendshipId: friend.friendshipId, requestId: undefined });
+    else if (incoming)
+      setLocal({
+        relationship: 'PENDING_RECEIVED',
+        requestId: incoming.requestId,
+        friendshipId: undefined,
+      });
+    else if (outgoing)
+      setLocal({
+        relationship: 'PENDING_SENT',
+        requestId: outgoing.requestId,
+        friendshipId: undefined,
+      });
+    return Boolean(friend || incoming || outgoing);
+  });
 
   // 요청은 한 번 성공하면 대기 상태로 유지한다(취소는 MVP에서 제공하지 않는다).
   const relationship: FriendPageRelationship =
-    local === 'NONE' && sender.completed ? 'PENDING_SENT' : local;
+    local.relationship === 'NONE' && sender.completed ? 'PENDING_SENT' : local.relationship;
 
   const remove = async (): Promise<boolean> => {
-    if (friendshipId === undefined) return false;
-    const removed = await controller.deleteFriend(friendshipId);
-    if (removed) setLocal('NONE');
+    if (local.friendshipId === undefined) return false;
+    const removed = await controller.deleteFriend(local.friendshipId);
+    if (removed) setLocal({ relationship: 'NONE', friendshipId: undefined, requestId: undefined });
     return removed;
   };
 
   const accept = async (): Promise<boolean> => {
-    if (requestId === undefined) return false;
-    const accepted = await controller.acceptRequest(requestId);
-    if (accepted) setLocal('FRIEND');
+    if (local.requestId === undefined) return false;
+    const accepted = await controller.acceptRequest(local.requestId);
+    if (accepted)
+      setLocal({ relationship: 'FRIEND', friendshipId: local.requestId, requestId: undefined });
     return accepted;
   };
 

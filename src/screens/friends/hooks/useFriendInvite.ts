@@ -12,6 +12,7 @@ import type { FriendRequestResponse } from '../../../api/query-generated/model';
 
 import { trackEvent } from '../../../lib/analytics';
 import { requireId } from '../utils/friendsListData';
+import { useFriendsListController } from './useFriendsListController';
 
 export function useFriendInvite(code: string) {
   const client = useQueryClient();
@@ -19,6 +20,7 @@ export function useFriendInvite(code: string) {
   const options = getSearchByUserCodeSuspenseQueryOptions({ userCode: code });
   const result = useSuspenseQuery(options);
   const { mutateAsync } = useSendRequest();
+  const controller = useFriendsListController();
   const lock = useRef(false);
   const mounted = useRef(true);
   const [sending, setSending] = useState(false);
@@ -77,9 +79,57 @@ export function useFriendInvite(code: string) {
       await applySentRequest(response, ownsQuery);
     } catch (failure) {
       if (isCancel(failure) || !ownsQuery()) return;
-      const error = normalizeError(failure);
+      let error = normalizeError(failure);
+      if (error.status === 409) {
+        try {
+          await client.refetchQueries(
+            { queryKey: options.queryKey, exact: true },
+            { throwOnError: true }
+          );
+          if (!ownsQuery()) return;
+          const status = client.getQueryData(options.queryKey)?.relationshipStatus;
+          if (status === 'PENDING_RECEIVED' || status === 'PENDING_SENT' || status === 'FRIEND')
+            return;
+        } catch (failure) {
+          if (isCancel(failure) || !ownsQuery()) return;
+          error = normalizeError(failure);
+        }
+      }
       logError(error, { scope: 'api', operation: 'friends.invite.send' });
       setSendError(getUserErrorMessage(error));
+    } finally {
+      lock.current = false;
+      if (mounted.current) setSending(false);
+    }
+  };
+
+  const acceptRequest = async () => {
+    if (lock.current) return;
+    const cache = client.getQueryCache();
+    const query = cache.find({ queryKey: options.queryKey, exact: true });
+    const ownsQuery = () =>
+      mounted.current &&
+      query !== undefined &&
+      cache.find({ queryKey: options.queryKey, exact: true }) === query;
+    const current = client.getQueryData(options.queryKey);
+    if (!ownsQuery() || current?.relationshipStatus !== 'PENDING_RECEIVED') return;
+    lock.current = true;
+    setSending(true);
+    setSendError(null);
+    try {
+      if (!(await controller.acceptRequest(current.requestId!))) return;
+      await client.cancelQueries({ queryKey: options.queryKey, exact: true });
+      if (!ownsQuery()) return;
+      client.setQueryData(options.queryKey, (previous) =>
+        previous
+          ? {
+              ...previous,
+              relationshipStatus: FriendRelationshipStatus.FRIEND,
+              requestId: undefined,
+            }
+          : undefined
+      );
+      void client.invalidateQueries({ queryKey: options.queryKey, exact: true });
     } finally {
       lock.current = false;
       if (mounted.current) setSending(false);
@@ -102,9 +152,10 @@ export function useFriendInvite(code: string) {
   return {
     invitee,
     sending,
-    sendError,
+    sendError: sendError ?? controller.error,
     readError: !result.isFetching ? result.error : null,
     sendRequest,
+    acceptRequest,
     refresh,
   };
 }

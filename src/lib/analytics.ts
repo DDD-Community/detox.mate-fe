@@ -108,7 +108,6 @@ export const ANALYTICS_EVENT_NAMES = [
   'My Page Group Create Start Clicked',
   'My Page Group Join Start Clicked',
   'My Page Group Info Open Clicked',
-  'Friends Received Requests Open Clicked',
   'My Page Goal Time Edit Open Clicked',
   'Profile Image Bottom Sheet Profile Image Default Select Clicked',
   'Profile Image Bottom Sheet Profile Image Gallery Select Clicked',
