@@ -97,5 +97,11 @@ export function useShareFriendInvite({
     }
   };
 
-  return { share, sharing, inviteUrl: content.data?.url, inviteLabel: content.data?.label, preparing: content.isFetching };
+  return {
+    share,
+    sharing,
+    inviteUrl: content.data?.url,
+    inviteLabel: content.data?.label,
+    preparing: content.isFetching,
+  };
 }

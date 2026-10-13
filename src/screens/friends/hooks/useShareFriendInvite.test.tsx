@@ -103,9 +103,7 @@ describe('친구 초대 공유의 비동기 보호', () => {
       expect(content.message).not.toContain('my@example.com');
       expect(content.message).toContain(screen.state.inviteUrl);
       expect(content).not.toHaveProperty('url');
-      expect(content.message).toContain(
-        'https://detoxmate.airbridge.io/friend-invite?code=ABCDE'
-      );
+      expect(content.message).toContain('https://detoxmate.airbridge.io/friend-invite?code=ABCDE');
     }
   );
 
@@ -132,9 +130,7 @@ describe('친구 초대 공유의 비동기 보호', () => {
       pending.resolve({ code: 'internal-code', userCode: 'PREP1' });
       await screen.state.share();
     });
-    expect(screen.state.inviteUrl).toBe(
-      'https://detoxmate.airbridge.io/friend-invite?code=PREP1'
-    );
+    expect(screen.state.inviteUrl).toBe('https://detoxmate.airbridge.io/friend-invite?code=PREP1');
     expect(screen.state.inviteLabel).toBe('detoxmate/PREP1');
     expect(actions.share.mock.calls[0][0].message).toContain(screen.state.inviteUrl);
     await act(async () => {
