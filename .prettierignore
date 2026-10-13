@@ -6,3 +6,5 @@ coverage
 .idea
 .vscode
 pnpm-lock.yaml
+.local/
+docs/local-docs/

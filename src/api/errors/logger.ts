@@ -1,5 +1,6 @@
 import { env } from '../../config/env';
 import { captureObservedError } from '../../observability/sentry';
+import { redactFriendInviteCode } from '../../observability/redactFriendInviteCode';
 import type { AppError } from './types';
 
 export type ErrorLogContext = {
@@ -14,6 +15,11 @@ export type ErrorLogContext = {
 
 export const sanitizeErrorLogContext = (error: AppError, context?: ErrorLogContext) => ({
   ...context,
+  ...(context?.path
+    ? {
+        path: redactFriendInviteCode(context.path),
+      }
+    : {}),
   type: error.type,
   status: context?.status ?? error.status,
   code: context?.code ?? error.code,
@@ -21,11 +27,11 @@ export const sanitizeErrorLogContext = (error: AppError, context?: ErrorLogConte
 });
 
 export function logError(error: AppError, context?: ErrorLogContext) {
-  captureObservedError(error, context);
+  const payload = sanitizeErrorLogContext(error, context);
+  captureObservedError(error, payload);
 
   if (env.appEnv !== 'development') return;
 
-  const payload = sanitizeErrorLogContext(error, context);
   if (error.type === 'server' || error.type === 'unknown') {
     console.error('[AppError]', payload);
     return;

@@ -1,6 +1,8 @@
 import { StatusBar } from 'expo-status-bar';
 import { Image, Pressable, SafeAreaView, ScrollView, StyleSheet, Text, View } from 'react-native';
 
+import { fontFamily } from '@/lib/token';
+
 import { useScreenTimeImageAnalyze } from './useScreenTimeImageAnalyze';
 
 type ScreenTimeAnalyzeTestScreenProps = {
@@ -132,11 +134,13 @@ const styles = StyleSheet.create({
     gap: 16,
   },
   title: {
+    fontFamily: fontFamily.primary.bold,
     color: '#f9fafb',
     fontSize: 28,
     fontWeight: '700',
   },
   subtitle: {
+    fontFamily: fontFamily.primary.regular,
     color: '#9ca3af',
     fontSize: 14,
   },
@@ -147,11 +151,13 @@ const styles = StyleSheet.create({
     gap: 12,
   },
   cardTitle: {
+    fontFamily: fontFamily.primary.bold,
     color: '#f9fafb',
     fontSize: 18,
     fontWeight: '700',
   },
   meta: {
+    fontFamily: fontFamily.primary.regular,
     color: '#d1d5db',
     fontSize: 14,
   },
@@ -187,14 +193,17 @@ const styles = StyleSheet.create({
     backgroundColor: '#4b5563',
   },
   buttonText: {
+    fontFamily: fontFamily.primary.semibold,
     color: '#f9fafb',
     fontWeight: '600',
   },
   helper: {
+    fontFamily: fontFamily.primary.regular,
     color: '#9ca3af',
     fontSize: 13,
   },
   errorText: {
+    fontFamily: fontFamily.primary.regular,
     color: '#fca5a5',
     fontSize: 13,
   },
@@ -205,6 +214,7 @@ const styles = StyleSheet.create({
     gap: 6,
   },
   resultValue: {
+    fontFamily: fontFamily.primary.bold,
     color: '#f9fafb',
     fontSize: 34,
     fontWeight: '700',

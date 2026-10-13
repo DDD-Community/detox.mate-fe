@@ -1,34 +1,43 @@
 import { Modal, Pressable, StyleSheet, Text, View } from 'react-native';
 
 import { LoggingButton } from '@/components';
-import { primitiveColors, spacing, typography } from '@/lib/token';
+import { fontFamily, primitiveColors, spacing, typography } from '@/lib/token';
 
 const { gray, green } = primitiveColors;
 
 interface NotificationPermissionAlertProps {
   visible: boolean;
   onClose: () => void;
+  onDismiss?: () => void;
   onConfirm: () => void;
 }
 
 export function NotificationPermissionAlert({
   visible,
   onClose,
+  onDismiss,
   onConfirm,
 }: NotificationPermissionAlertProps) {
   return (
     <Modal
       visible={visible}
+      onDismiss={onDismiss}
       transparent
       animationType="fade"
       onRequestClose={onClose}
       statusBarTranslucent
     >
-      <Pressable style={styles.backdrop} onPress={onClose}>
-        <Pressable onPress={(event) => event.stopPropagation()} style={styles.card}>
+      <Pressable accessible={false} style={styles.backdrop} onPress={onClose}>
+        <Pressable
+          accessible={false}
+          onPress={(event) => event.stopPropagation()}
+          style={styles.card}
+        >
           <View style={styles.topSection}>
             <Text style={styles.title}>알림 권한 허용이 필요해요</Text>
-            <Text style={styles.description}>팀원 현황, 인증 마감 알림 수신 시 필요해요.</Text>
+            <Text style={styles.description}>
+              알림을 받으려면 기기 설정에서 알림을 허용해 주세요.
+            </Text>
           </View>
 
           <View style={styles.actions}>
@@ -37,6 +46,7 @@ export function NotificationPermissionAlert({
               properties={{ pageName: 'NotificationPermissionAlert', buttonName: '설정으로 가기' }}
             >
               <Pressable
+                accessibilityRole="button"
                 onPress={onConfirm}
                 style={({ pressed }) => [styles.primaryButton, pressed && styles.primaryPressed]}
               >
@@ -48,6 +58,7 @@ export function NotificationPermissionAlert({
               properties={{ pageName: 'NotificationPermissionAlert', buttonName: '취소' }}
             >
               <Pressable
+                accessibilityRole="button"
                 onPress={onClose}
                 style={({ pressed }) => [
                   styles.secondaryButton,
@@ -86,7 +97,7 @@ const styles = StyleSheet.create({
     gap: spacing[20],
   },
   title: {
-    fontFamily: typography.primary.title1B.fontFamily,
+    fontFamily: fontFamily.primary.extraBold,
     fontSize: 20,
     fontWeight: '800',
     lineHeight: 30,

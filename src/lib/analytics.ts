@@ -2,6 +2,7 @@ import {
   Identify,
   identify as amplitudeIdentify,
   init,
+  reset,
   setUserId,
   track,
   Types,
@@ -11,18 +12,25 @@ import { env } from '@/config/env';
 export const ANALYTICS_EVENT_NAMES = [
   'Splash Viewed',
   'Onboarding Viewed',
+  'Onboarding Skip Clicked',
+  'Onboarding Friends Search Clicked',
+  'Onboarding Invite Code Copy Clicked',
   'Terms Agreement Viewed',
   'Login Viewed',
-  'App Access Permission Guide Modal Viewed',
   'Group Home Viewed',
   'Group Create Viewed',
   'Group Join Viewed',
+  'Friend Invite Viewed',
   'Feed Home Viewed',
   'Calendar Viewed',
   'Calendar History Viewed',
   'Feed Post Detail Viewed',
   'Notification List Viewed',
   'My Page Viewed',
+  'My Profile Viewed',
+  'My Profile Edit Viewed',
+  'Friend Page Viewed',
+  'Friends Viewed',
   'Settings Viewed',
   'Group Info Viewed',
   'Edit Nickname Viewed',
@@ -36,9 +44,6 @@ export const ANALYTICS_EVENT_NAMES = [
   'Verify Wrong Time Viewed',
   'Retro Viewed',
   'Verify Complete Viewed',
-  'Onboarding Previous Clicked',
-  'Onboarding Next Clicked',
-  'Onboarding Start Clicked',
   'Terms Agreement Agree All Clicked',
   'Terms Agreement Privacy Agree Toggle Clicked',
   'Terms Agreement Terms Agree Toggle Clicked',
@@ -47,13 +52,13 @@ export const ANALYTICS_EVENT_NAMES = [
   'Terms Agreement Confirm Clicked',
   'Login Test Key Login Open Clicked',
   'Login Test Id Login Open Clicked',
-  'App Access Permission Guide Modal Confirm Clicked',
   'Group Home Mypage Open Clicked',
   'Group Home Group Create Start Clicked',
   'Group Home Group Join Start Clicked',
   'Group Create Previous Clicked',
   'Group Create Invite Code Copy Clicked',
   'Group Create Go Feed Clicked',
+  'Friend Invite Friends Open Clicked',
   'Group Join Previous Clicked',
   'Group Join Invite Code Copy Clicked',
   'Group Join Go Feed Clicked',
@@ -86,8 +91,13 @@ export const ANALYTICS_EVENT_NAMES = [
   'Calendar History Next Date Clicked',
   'Calendar History Feed Card Open Clicked',
   'Calendar History Feed Card Profile Open Clicked',
-  'Notification List Close Clicked',
+  'Notification List Back Clicked',
   'Notification List Notification Item Open Clicked',
+  'My Profile Settings Clicked',
+  'My Profile Edit Clicked',
+  'My Profile Friends List Clicked',
+  'My Profile Photo Edit Clicked',
+  'Friend Page Remove Sheet Open Clicked',
   'My Page Back Clicked',
   'My Page Home Open Clicked',
   'My Page Settings Open Clicked',
@@ -98,10 +108,12 @@ export const ANALYTICS_EVENT_NAMES = [
   'My Page Group Create Start Clicked',
   'My Page Group Join Start Clicked',
   'My Page Group Info Open Clicked',
+  'Friends Received Requests Open Clicked',
   'My Page Goal Time Edit Open Clicked',
   'Profile Image Bottom Sheet Profile Image Default Select Clicked',
   'Profile Image Bottom Sheet Profile Image Gallery Select Clicked',
   'Settings Back Clicked',
+  'Settings Screen Time Permission Open Clicked',
   'Settings Contact Open Clicked',
   'Settings Terms Open Clicked',
   'Settings Privacy Open Clicked',
@@ -145,14 +157,20 @@ export const ANALYTICS_EVENT_NAMES = [
   'Retro Photo Upload Select Clicked',
   'Retro Retro Submit Clicked',
   'Verify Complete Go Home Clicked',
+  'Lock Status Add App Clicked',
   'App Opened',
   'Login Completed',
   'Group Created',
   'Group Joined',
+  'Friend Request Sent',
+  'Friend Request Accepted',
+  'Friend Request Rejected',
+  'Friend Removed',
   'Invite Share Button Clicked',
   'Goal Time Set',
   'Verification Completed',
   'Push Notification Setting Updated',
+  'My Profile Updated',
 ] as const;
 
 export type AnalyticsEventName = (typeof ANALYTICS_EVENT_NAMES)[number];
@@ -192,6 +210,12 @@ export function initAnalytics() {
   });
 
   initialized = true;
+}
+
+/** 로그인 사용자 식별을 끊는다(탈퇴 등). 다음 로그인 전까지 이전 계정 ID로 이벤트가 쌓이지 않게 한다. */
+export function resetAnalyticsUser() {
+  if (!initialized) return;
+  reset();
 }
 
 export function setAnalyticsUserId(userId: number | string) {

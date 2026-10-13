@@ -1,5 +1,13 @@
 import type { ReactNode } from 'react';
-import { Pressable, StyleSheet, Text, View, type StyleProp, type ViewStyle } from 'react-native';
+import {
+  Pressable,
+  StyleSheet,
+  Text,
+  View,
+  type StyleProp,
+  type ViewStyle,
+  type TextStyle,
+} from 'react-native';
 
 import { primitiveColors, spacing, typography } from '../../lib/token';
 
@@ -8,7 +16,7 @@ const WHITE = '#FFFFFF';
 const BUTTON_RADIUS = 18;
 
 export type ButtonVariant = 'solid' | 'outlined' | 'text';
-export type ButtonColor = 'primary' | 'assistive';
+export type ButtonColor = 'primary' | 'assistive' | 'neutral';
 export type ButtonSize = 'sm' | 'md' | 'lg';
 export type ButtonIconOption = false | true | 'circle';
 
@@ -23,6 +31,7 @@ export interface ButtonProps {
   disabled?: boolean;
   onPress?: () => void;
   style?: StyleProp<ViewStyle>;
+  labelStyle?: StyleProp<TextStyle>;
 }
 
 interface ButtonColors {
@@ -40,10 +49,11 @@ interface ButtonSizes {
   textStyle: typeof typography.primary.body1B;
 }
 
-const getColorBase = (color: ButtonColor) =>
-  color === 'primary'
-    ? { normal: green[300], press: green[500], disabledBg: green[400] }
-    : { normal: brown[900], press: brown[600], disabledBg: brown[900] };
+const getColorBase = (color: ButtonColor) => {
+  if (color === 'primary') return { normal: green[300], press: green[500], disabledBg: green[400] };
+  if (color === 'neutral') return { normal: gray[100], press: gray[200], disabledBg: gray[100] };
+  return { normal: brown[900], press: brown[600], disabledBg: brown[900] };
+};
 
 const getColors = ({
   variant,
@@ -57,20 +67,22 @@ const getColors = ({
   pressed: boolean;
 }): ButtonColors => {
   const palette = getColorBase(color);
-  const accent = color === 'primary' ? green : brown;
-  const subtleBg = color === 'primary' ? green[50] : brown[50];
+  const accent = color === 'primary' ? green : color === 'neutral' ? gray : brown;
+  const subtleBg = color === 'primary' ? green[50] : color === 'neutral' ? gray[50] : brown[50];
+  const solidFg = color === 'neutral' ? gray[800] : WHITE;
 
   if (variant === 'solid') {
-    if (disabled) return { bg: palette.disabledBg, border: 'transparent', fg: WHITE, opacity: 0.3 };
-    if (pressed) return { bg: palette.press, border: 'transparent', fg: WHITE };
-    return { bg: palette.normal, border: 'transparent', fg: WHITE };
+    if (disabled)
+      return { bg: palette.disabledBg, border: 'transparent', fg: solidFg, opacity: 0.3 };
+    if (pressed) return { bg: palette.press, border: 'transparent', fg: solidFg };
+    return { bg: palette.normal, border: 'transparent', fg: solidFg };
   }
 
   if (variant === 'outlined') {
     if (disabled) return { bg: subtleBg, border: 'transparent', fg: palette.normal, opacity: 0.4 };
     if (pressed)
       return {
-        bg: color === 'primary' ? accent[100] : brown[100],
+        bg: color === 'primary' ? accent[100] : color === 'neutral' ? gray[200] : brown[100],
         border: 'transparent',
         fg: palette.press,
       };
@@ -123,6 +135,7 @@ export function Button({
   disabled = false,
   onPress,
   style,
+  labelStyle,
 }: ButtonProps) {
   const sizes = getSizes(size);
   const isIconOnly = iconOnly !== false;
@@ -154,13 +167,14 @@ export function Button({
                 opacity: colors.opacity ?? 1,
               },
               style,
+              labelStyle,
             ]}
           >
             {leadingIcon ? (
               <View style={{ width: sizes.iconSize, height: sizes.iconSize }}>{leadingIcon}</View>
             ) : null}
             {!isIconOnly && label ? (
-              <Text style={[sizes.textStyle, { color: colors.fg }]} numberOfLines={1}>
+              <Text style={[sizes.textStyle, { color: colors.fg }, labelStyle]} numberOfLines={1}>
                 {label}
               </Text>
             ) : null}

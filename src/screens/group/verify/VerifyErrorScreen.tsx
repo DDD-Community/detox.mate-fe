@@ -2,7 +2,7 @@ import { router, useLocalSearchParams } from 'expo-router';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 
 import { LoggingButton, LoggingPage } from '@/components';
-import { primitiveColors } from '@/lib/token';
+import { fontFamily, primitiveColors } from '@/lib/token';
 import {
   buildVerifyFlowParams,
   getVerifyPath,
@@ -16,18 +16,21 @@ const ALERT_HEIGHT = 122;
 
 const iosAlertText = {
   title: {
+    fontFamily: fontFamily.primary.semibold,
     fontSize: 17,
     lineHeight: 22,
     fontWeight: '600',
     letterSpacing: -0.43,
   },
   description: {
+    fontFamily: fontFamily.primary.regular,
     fontSize: 13,
     lineHeight: 18,
     fontWeight: '400',
     letterSpacing: -0.08,
   },
   action: {
+    fontFamily: fontFamily.primary.semibold,
     fontSize: 17,
     lineHeight: 22,
     fontWeight: '600',

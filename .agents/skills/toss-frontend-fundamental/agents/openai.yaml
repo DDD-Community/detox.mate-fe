@@ -1,0 +1,7 @@
+interface:
+  display_name: 'Toss Frontend Fundamental'
+  short_description: 'Toss의 네 가지 코드 품질 관점으로 실제 변경 위험과 책임 경계를 판단합니다'
+  default_prompt: '$toss-frontend-fundamental 스킬로 이 FE 코드의 변경 이유와 의존 관계를 확인하고, 필요한 범위에서 구현하거나 리뷰해 주세요.'
+
+policy:
+  allow_implicit_invocation: true

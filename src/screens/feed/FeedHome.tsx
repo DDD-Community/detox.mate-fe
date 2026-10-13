@@ -638,7 +638,7 @@ function ActiveFeed({
   const openMemberProfile = useCallback(
     (item: FeedItem) => {
       if (item.isMe) {
-        router.push('/(group)/mypage');
+        router.push('/(tabs)/mypage');
         return;
       }
 
@@ -646,7 +646,7 @@ function ActiveFeed({
       if (!info) return;
 
       router.push({
-        pathname: '/(group)/mypage',
+        pathname: '/(group)/friend-profile',
         params: {
           memberId: String(info.groupMemberId),
           friendName: info.displayName,

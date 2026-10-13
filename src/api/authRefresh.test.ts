@@ -1,0 +1,47 @@
+import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { getItemAsync, setItemAsync, deleteItemAsync } from 'expo-secure-store';
+
+import apiClient, { cancelAuthenticatedRequests, resumeAuthenticatedRequests } from './client';
+import { refreshAccessToken } from './auth';
+
+vi.mock('@react-native-seoul/kakao-login');
+vi.mock('expo-apple-authentication');
+vi.mock('expo-secure-store');
+vi.mock('./client');
+vi.mock('./errors', async () => {
+  const { AppError, normalizeError } = await import('./errors/normalizeError');
+  return { AppError, normalizeError };
+});
+
+beforeEach(() => {
+  vi.resetAllMocks();
+  vi.mocked(getItemAsync).mockResolvedValue('fictional-refresh-credential');
+  resumeAuthenticatedRequests();
+});
+
+describe('토큰 갱신과 계정 변경의 경합', () => {
+  it.each(['성공', '실패'] as const)(
+    '이전 계정 갱신이 %s해도 새 계정 인증 값을 덮거나 삭제하지 않는다',
+    async (outcome) => {
+      const reply = Promise.withResolvers<{
+        data: { accessToken: string; refreshToken: string };
+      }>();
+      const started = Promise.withResolvers<void>();
+      vi.mocked(apiClient.post).mockImplementation(() => {
+        started.resolve();
+        return reply.promise;
+      });
+      const refreshing = refreshAccessToken();
+      const rejected = expect(refreshing).rejects.toMatchObject({ code: 'ERR_CANCELED' });
+      await started.promise;
+      cancelAuthenticatedRequests();
+      resumeAuthenticatedRequests();
+      if (outcome === '성공')
+        reply.resolve({ data: { accessToken: 'old-access', refreshToken: 'old-refresh' } });
+      else reply.reject(new Error('offline'));
+      await rejected;
+      expect(setItemAsync).not.toHaveBeenCalled();
+      expect(deleteItemAsync).not.toHaveBeenCalled();
+    }
+  );
+});

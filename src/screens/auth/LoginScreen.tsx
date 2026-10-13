@@ -1,142 +1,101 @@
 import { useLocalSearchParams } from 'expo-router';
-import { useEffect } from 'react';
-import { Image, StyleSheet, Text, View } from 'react-native';
-
+import { useEffect, useRef } from 'react';
+import { Image, StyleSheet, Text, View, useWindowDimensions } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import LOGO_APPLE_LOGIN from '@assets/logo-apple-login.png';
-import LOGO_BLACK from '@assets/logo-black.png';
 import LOGO_KAKAO_LOGIN from '@assets/logo-kakao-login.png';
-import TURTLE_HI_IMAGE from '@assets/turtle-hi.png';
-
-import { Icon, LoggingPage, Toast, useToastVisibility } from '@/components';
-import { primitiveColors, typography } from '@/lib/token';
-import { AppAccessPermissionGuideModal } from './AppAccessPermissionGuideModal';
+import { LoggingPage, Toast, useToastVisibility } from '@/components';
+import { fontFamily, primitiveColors } from '@/lib/token';
+import { OnboardingLayout } from '../onboarding/OnboardingLayout';
 import { AuthLoginButton } from './AuthLoginButton';
+import { TestLoginTrigger } from './TestLoginTrigger';
+import { useTermsConsent } from './useTermsConsent';
 import { useAuthLogin } from './useAuthLogin';
-
-const { brown, gray, system } = primitiveColors;
-const LOGIN_FAILURE_MESSAGE = '로그인에 실패했어요. 잠시 후 다시 시도해 주세요.';
-const SESSION_EXPIRED_MESSAGE = '로그인 세션이 만료되었습니다.';
-const LOGIN_TOAST_BOTTOM_OFFSET = 204;
 
 export default function LoginScreen() {
   const { reason } = useLocalSearchParams<{ reason?: string }>();
-  const loginToast = useToastVisibility();
-  const {
-    handleKakaoLogin,
-    handleAppleLogin,
-    handleConfirmPermissionGuide,
-    pendingProvider,
-    permissionGuideConfirming,
-    permissionGuideVisible,
-  } = useAuthLogin({
-    onLoginFailure: () => loginToast.showWithMessage(LOGIN_FAILURE_MESSAGE),
+  const toast = useToastVisibility();
+  const auth = useAuthLogin({
+    onLoginFailure: () => toast.showWithMessage('로그인에 실패했어요. 잠시 후 다시 시도해 주세요.'),
   });
-  const loginPending = Boolean(pendingProvider);
-  const isSessionExpiredToast = loginToast.message === SESSION_EXPIRED_MESSAGE;
-
+  const terms = useTermsConsent({
+    onFailure: () => toast.showWithMessage('약관 동의를 처리하지 못했어요. 다시 시도해 주세요.'),
+  });
+  const loginAfterConsent = async (login: () => Promise<void>) => {
+    if (await terms.requestConsent()) await login();
+  };
+  const pending = terms.pending || Boolean(auth.pendingProvider);
+  const insets = useSafeAreaInsets();
+  const { width } = useWindowDimensions();
+  const showSessionExpired = useRef(toast.showWithMessage);
+  showSessionExpired.current = toast.showWithMessage;
   useEffect(() => {
-    if (reason === 'sessionExpired') {
-      loginToast.showWithMessage(SESSION_EXPIRED_MESSAGE);
-    }
+    if (reason === 'sessionExpired') showSessionExpired.current('로그인 세션이 만료되었습니다.');
   }, [reason]);
-
   return (
     <LoggingPage eventName="Login Viewed" properties={{ pageName: 'Login' }}>
-      <View style={styles.root}>
-        <Image source={LOGO_BLACK} style={styles.logoMark} resizeMode="contain" />
-        <Text style={styles.tagline}>매일 디지털 디톡스를 하며{'\n'}친구들과 함께 성장해요</Text>
-        <View style={styles.turtleArea}>
-          <Image source={TURTLE_HI_IMAGE} style={styles.turtleImage} resizeMode="contain" />
-        </View>
-
-        <View style={styles.buttonSection}>
-          <AuthLoginButton
-            variant="kakao"
-            label="카카오로 시작하기"
-            pendingLabel="카카오 로그인 중..."
-            iconSource={LOGO_KAKAO_LOGIN}
-            onPress={handleKakaoLogin}
-            pending={pendingProvider === 'kakao'}
-            disabled={loginPending}
-          />
-
-          <View style={styles.buttonGap} />
-
-          <AuthLoginButton
-            variant="apple"
-            label="애플로 시작하기"
-            pendingLabel="애플 로그인 중..."
-            iconSource={LOGO_APPLE_LOGIN}
-            onPress={handleAppleLogin}
-            pending={pendingProvider === 'apple'}
-            disabled={loginPending}
-          />
-        </View>
-
-        <Toast
-          visible={loginToast.visible}
-          message={loginToast.message}
-          bottomOffset={LOGIN_TOAST_BOTTOM_OFFSET}
-          icon={
-            <Icon
-              name={isSessionExpiredToast ? 'info' : 'warningCircle'}
-              size={16}
-              weight="fill"
-              color={isSessionExpiredToast ? '#FFFFFF' : system.red.opacity100}
+      <OnboardingLayout
+        footer={
+          <View style={styles.buttons}>
+            <AuthLoginButton
+              variant="kakao"
+              label="카카오로 시작하기"
+              pendingLabel="카카오 로그인 중..."
+              iconSource={LOGO_KAKAO_LOGIN}
+              onPress={() => loginAfterConsent(auth.handleKakaoLogin)}
+              pending={auth.pendingProvider === 'kakao'}
+              disabled={pending}
             />
-          }
-        />
-
-        <AppAccessPermissionGuideModal
-          visible={permissionGuideVisible}
-          onConfirm={handleConfirmPermissionGuide}
-          confirming={permissionGuideConfirming}
-        />
-      </View>
+            <AuthLoginButton
+              variant="apple"
+              label="애플로 시작하기"
+              pendingLabel="애플 로그인 중..."
+              iconSource={LOGO_APPLE_LOGIN}
+              onPress={() => loginAfterConsent(auth.handleAppleLogin)}
+              pending={auth.pendingProvider === 'apple'}
+              disabled={pending}
+            />
+          </View>
+        }
+      >
+        <View style={{ height: 593 - insets.top }}>
+          <View style={[styles.hero, { top: 261 - insets.top, height: (width * 332) / 393 }]}>
+            <TestLoginTrigger
+              disabled={pending}
+              onSelectAccount={(key) => loginAfterConsent(() => auth.handleTestLogin(key))}
+            >
+              <Image source={require('@assets/onboarding/login.png')} style={styles.image} />
+            </TestLoginTrigger>
+          </View>
+          <View style={[styles.heading, { top: 173 - insets.top }]}>
+            <Text style={styles.title}>스마트폰은 멀리, 우리는 가까이!</Text>
+            <Text style={styles.subtitle}>
+              디지털 디톡스도{'\n'}이제 친구와 함께, 재밌게 해봐요.
+            </Text>
+          </View>
+        </View>
+      </OnboardingLayout>
+      <Toast visible={toast.visible} message={toast.message} bottomOffset={204} />
     </LoggingPage>
   );
 }
-
 const styles = StyleSheet.create({
-  root: {
-    flex: 1,
-    backgroundColor: brown[50],
-  },
-  logoMark: {
-    position: 'absolute',
-    top: 151,
-    alignSelf: 'center',
-    width: 26,
-    height: 25,
-  },
-  tagline: {
-    position: 'absolute',
-    top: 196,
-    left: 0,
-    right: 0,
-    ...typography.accent.body1,
-    color: gray[800],
-    letterSpacing: -0.36,
+  heading: { position: 'absolute', left: 16, right: 16, gap: 32, alignItems: 'center' },
+  title: {
+    fontFamily: fontFamily.primary.bold,
+    fontSize: 22,
+    lineHeight: 30,
+    color: primitiveColors.gray[900],
     textAlign: 'center',
   },
-  turtleArea: {
-    position: 'absolute',
-    top: 316,
-    left: 100,
-    width: 175,
-    height: 231,
+  subtitle: {
+    fontFamily: fontFamily.primary.medium,
+    fontSize: 14,
+    lineHeight: 20,
+    color: primitiveColors.gray[900],
+    textAlign: 'center',
   },
-  turtleImage: {
-    width: '100%',
-    height: '100%',
-  },
-  buttonSection: {
-    position: 'absolute',
-    left: 16,
-    right: 16,
-    bottom: 60,
-  },
-  buttonGap: {
-    height: 12,
-  },
+  hero: { position: 'absolute', left: 0, right: 0 },
+  image: { width: '100%', height: '100%' },
+  buttons: { gap: 12, paddingBottom: 25 },
 });

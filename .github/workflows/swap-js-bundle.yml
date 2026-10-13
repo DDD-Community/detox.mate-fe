@@ -67,8 +67,8 @@ jobs:
             exit 1
           fi
 
-          if [ "$TARGET" = "production" ] && [ "$GITHUB_REF_NAME" != "dev" ]; then
-            echo "::error::Production OTA updates must run from dev. Current branch: $GITHUB_REF_NAME"
+          if [ "$TARGET" = "production" ] && [ "$GITHUB_REF_NAME" != "main" ]; then
+            echo "::error::Production OTA updates must run from main. Current branch: $GITHUB_REF_NAME"
             exit 1
           fi
 
@@ -81,19 +81,41 @@ jobs:
         env:
           TARGET: ${{ inputs.target }}
           APP_VERSION: ${{ inputs.app_version }}
+          APP_ENV: ${{ inputs.target }}
         run: |
           set -euo pipefail
 
-          base_ref="$(git tag --list "prd-v${APP_VERSION}-*" --sort=-creatordate | head -n 1)"
+          if [ "$TARGET" = "development" ]; then
+            build_json="$(eas build:list \
+              --platform ios \
+              --build-profile development-store \
+              --channel development \
+              --runtime-version "$APP_VERSION" \
+              --status finished \
+              --limit 1 \
+              --json \
+              --non-interactive)"
+            base_ref="$(jq -r '.[0].gitCommitHash // empty' <<< "$build_json")"
 
-          if [ -z "$base_ref" ] && [ "$TARGET" = "production" ]; then
-            echo "::error::No production release tag found for app_version=$APP_VERSION. Expected tag pattern: prd-v${APP_VERSION}-*"
-            exit 1
+            if [ -z "$base_ref" ]; then
+              echo "::error::No completed development-store iOS build with a Git commit found for runtime=$APP_VERSION. Deploy a Dev TestFlight build first."
+              exit 1
+            fi
+
+            build_id="$(jq -r '.[0].id' <<< "$build_json")"
+            echo "Development build: $build_id ($base_ref)"
+          else
+            base_ref="$(git tag --list "prd-v${APP_VERSION}-*" --sort=-creatordate | sed -n '1p')"
+
+            if [ -z "$base_ref" ]; then
+              echo "::error::No production release tag found for app_version=$APP_VERSION. Expected tag pattern: prd-v${APP_VERSION}-*"
+              exit 1
+            fi
           fi
 
-          if [ -z "$base_ref" ]; then
-            git fetch origin dev --depth=1
-            base_ref="origin/dev"
+          if ! git rev-parse --verify "$base_ref^{commit}" >/dev/null 2>&1; then
+            echo "::error::Build baseline commit $base_ref is not available in this checkout."
+            exit 1
           fi
 
           changed_files="$(git diff --name-only "$base_ref" HEAD)"
@@ -103,7 +125,14 @@ jobs:
             [ -z "$file" ] && continue
 
             case "$file" in
-              app.config.*|eas.json|package.json|pnpm-lock.yaml|package-lock.json|yarn.lock|bun.lockb|metro.config.*|babel.config.*|ios/*|android/*|modules/*|plugins/*|firebase/*|patches/*|assets/icon.png|assets/adaptive-icon.png|assets/splash_logo.png)
+              eas.json)
+                base_config="$(git show "$base_ref:eas.json" | jq -S 'del(.submit)')"
+                current_config="$(jq -S 'del(.submit)' eas.json)"
+                if [ "$base_config" != "$current_config" ]; then
+                  blocked_files+=("$file")
+                fi
+                ;;
+              app.config.*|package.json|pnpm-lock.yaml|package-lock.json|yarn.lock|bun.lockb|metro.config.*|babel.config.*|ios/*|android/*|modules/*|plugins/*|firebase/*|patches/*|assets/icon.png|assets/adaptive-icon.png|assets/splash_logo.png)
                 blocked_files+=("$file")
                 ;;
             esac

@@ -5,7 +5,7 @@ import SCREEN_TIME_REF_IMAGE from '@assets/screen_time_ref.png';
 
 import { Button, LoggingButton, LoggingPage } from '@/components';
 import { getVerifyExitRoute, goBackOrReplace } from '@/lib/navigation';
-import { primitiveColors, typography } from '@/lib/token';
+import { fontFamily, primitiveColors, typography } from '@/lib/token';
 import { useVerifyHowToGate } from './useVerifyHowToGate';
 import type { VerifyMode, VerifyRoot } from './verifyFlowParams';
 
@@ -52,8 +52,8 @@ export default function VerifyHowToScreen() {
                 <Text style={styles.title}>이렇게 찍어주세요</Text>
                 <Text style={styles.description}>
                   [설정 &gt; 스크린 타임] 에서{'\n'}
-                  <Text style={{ fontFamily: 'NanumSquareRoundEB' }}>어제</Text>의 총 스크린 타임이
-                  보이도록 캡쳐해 주세요
+                  <Text style={{ fontFamily: fontFamily.primary.bold }}>어제</Text>의 총 스크린
+                  타임이 보이도록 캡쳐해 주세요
                 </Text>
               </View>
 

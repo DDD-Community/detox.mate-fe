@@ -2,7 +2,7 @@ import { StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 
 import { Checkbox, Icon, LoggingButton } from '@/components';
 import { trackButtonClick, type AnalyticsEventName } from '@/lib/analytics';
-import { primitiveColors, spacing, typography } from '@/lib/token';
+import { fontFamily, primitiveColors, spacing } from '@/lib/token';
 
 const { gray } = primitiveColors;
 
@@ -53,6 +53,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: spacing[8],
+    paddingHorizontal: 4,
   },
   rowRight: {
     flex: 1,
@@ -61,8 +62,9 @@ const styles = StyleSheet.create({
   },
   label: {
     flex: 1,
-    ...typography.accent.title2,
+    fontFamily: fontFamily.primary.medium,
+    fontSize: 16,
+    lineHeight: 24,
     color: gray[800],
-    letterSpacing: -0.4,
   },
 });
