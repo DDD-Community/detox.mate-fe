@@ -78,14 +78,18 @@ EAS Build가 필요한 변경:
 
 workflow도 이 기준을 보수적으로 검사한다. 다음 파일이 대상 변경분에 포함되면 OTA 배포는 실패한다.
 
-- `app.config.*`, `eas.json`
+- `app.config.*`, `eas.json` (`submit`만 바뀐 경우 제외)
 - `package.json`, lockfile
 - `ios/**`, `android/**`
 - `modules/**`, `plugins/**`, `firebase/**`, `patches/**`
 - `metro.config.*`, `babel.config.*`
 - `assets/icon.png`, `assets/adaptive-icon.png`, `assets/splash_logo.png`
 
-production은 `app_version`에 맞는 `prd-v<version>-*` tag부터 현재 HEAD까지 비교한다. development는 같은 tag가 있으면 그 tag를 쓰고, 없으면 `origin/dev`와 현재 HEAD를 비교한다.
+production은 `app_version`에 맞는 `prd-v<version>-*` tag부터 현재 HEAD까지 비교한다. development는 같은 runtime version과 `development` channel을 사용하는 가장 최근의 성공한 iOS `development-store` EAS Build의 Git commit부터 비교한다. 해당 빌드나 커밋을 찾을 수 없으면 OTA를 중단하고 Dev TestFlight 빌드를 먼저 진행한다.
+
+`eas.json`의 `submit` 설정은 업로드 대상과 TestFlight 테스터 그룹 등 제출 단계에만 사용하므로 비교에서 제외한다. `build`, `cli` 등 나머지 설정 변경은 계속 차단한다.
+
+development OTA를 확인할 때는 비교 기준이 된 최신 TestFlight 빌드를 설치한다. 네이티브 구성이 다른 이전 빌드까지 같은 runtime version으로 호환된다는 의미는 아니다.
 
 ### 2. 대상 runtime version 확인
 
