@@ -107,7 +107,7 @@
 | `CalendarHistory`             | 다음 날짜                   | `다음 날짜`                   | `Calendar History Next Date Clicked`                              | `event_type`, `page_name`, `button_name`                  |
 | `CalendarHistory`             | 피드 카드 본문              | `피드 카드 본문`              | `Calendar History Feed Card Open Clicked`                         | `event_type`, `page_name`, `button_name`                  |
 | `CalendarHistory`             | 피드 카드 프로필            | `피드 카드 프로필`            | `Calendar History Feed Card Profile Open Clicked`                 | `event_type`, `page_name`, `button_name`                  |
-| `NotificationList`            | 닫기                        | `닫기`                        | `Notification List Close Clicked`                                 | `event_type`, `page_name`, `button_name`                  |
+| `NotificationList`            | 뒤로가기                    | `뒤로가기`                    | `Notification List Back Clicked`                                  | `event_type`, `page_name`, `button_name`                  |
 | `NotificationList`            | 알림 항목                   | `알림 항목`                   | `Notification List Notification Item Open Clicked`                | `event_type`, `page_name`, `button_name`                  |
 | `MyProfile`                   | 설정 아이콘                 | `설정 아이콘`                 | `My Profile Settings Clicked`                                     | `event_type`, `page_name`, `button_name`                  |
 | `MyProfile`                   | 편집                        | `편집`                        | `My Profile Edit Clicked`                                         | `event_type`, `page_name`, `button_name`                  |

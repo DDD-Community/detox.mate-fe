@@ -90,7 +90,7 @@ export const ANALYTICS_EVENT_NAMES = [
   'Calendar History Next Date Clicked',
   'Calendar History Feed Card Open Clicked',
   'Calendar History Feed Card Profile Open Clicked',
-  'Notification List Close Clicked',
+  'Notification List Back Clicked',
   'Notification List Notification Item Open Clicked',
   'My Profile Settings Clicked',
   'My Profile Edit Clicked',
