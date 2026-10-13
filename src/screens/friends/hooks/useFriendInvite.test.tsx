@@ -6,6 +6,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { trackEvent } from '@/lib/analytics';
 
+import { AppError } from '../../../api/errors/normalizeError';
 import { getSearchByUserCodeSuspenseQueryOptions } from '../../../api/query-generated/friend';
 import type {
   FriendSearchResponse,
@@ -14,11 +15,19 @@ import type {
 import { useFriendInvite } from './useFriendInvite';
 
 const trackEventMock = vi.mocked(trackEvent);
-const api = vi.hoisted(() => ({ read: vi.fn(), send: vi.fn() }));
+const api = vi.hoisted(() => ({ read: vi.fn(), send: vi.fn(), accept: vi.fn() }));
 vi.mock('../../../api/friendMutator', () => ({
-  friendAxios: ({ method }: { method: string }) => (method === 'POST' ? api.send() : api.read()),
+  friendAxios: ({ method, url }: { method: string; url: string }) =>
+    method === 'POST'
+      ? url.endsWith('/accept')
+        ? api.accept()
+        : api.send()
+      : url === '/friends/search'
+        ? api.read()
+        : Promise.resolve([]),
 }));
 vi.mock('../../../api/errors/logger');
+vi.mock('expo-router');
 vi.mock('../../../lib/analytics');
 Object.assign(globalThis, { IS_REACT_ACT_ENVIRONMENT: true });
 
@@ -82,6 +91,32 @@ async function setup() {
 }
 
 describe('초대 화면의 친구 요청', () => {
+  it('전송과 받은 요청이 겹치면 받은 요청으로 복구하고 수락이 확정된 뒤 재조회가 실패해도 친구로 유지한다', async () => {
+    const screen = await setup();
+    api.send.mockRejectedValue(AppError({ type: 'conflict', status: 409 }));
+    api.read.mockResolvedValue({
+      ...invitee,
+      relationshipStatus: 'PENDING_RECEIVED',
+      requestId: 42,
+    });
+    await act(() => screen.state.sendRequest());
+    expect(screen.state.invitee.relationshipStatus).toBe('PENDING_RECEIVED');
+    expect(screen.state.sendError).toBeNull();
+    expect(trackEventMock).not.toHaveBeenCalled();
+    expect(api.accept).not.toHaveBeenCalled();
+    api.accept.mockImplementation(async () => {
+      api.read.mockRejectedValue(new Error('offline'));
+      return { friendshipId: 42, user: { userId: 7 } };
+    });
+    await act(() => screen.state.acceptRequest());
+    expect(screen.state.invitee.relationshipStatus).toBe('FRIEND');
+    expect(screen.state.sendError).toBeNull();
+    expect(screen.state.sending).toBe(false);
+    await act(() => screen.state.acceptRequest());
+    expect(api.accept).toHaveBeenCalledOnce();
+    expect(trackEventMock).toHaveBeenCalledExactlyOnceWith('Friend Request Accepted');
+  });
+
   it('요청 전송 중 연속 액션은 쓰기 한 번만 만들고 실패 후에는 재시도를 허용한다', async () => {
     const screen = await setup();
     const pending = deferred<FriendRequestResponse>();

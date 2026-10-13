@@ -26,7 +26,9 @@ export function PermissionGuide({ title, image, notification, pending, onContinu
       <View style={[styles.body, { paddingTop: Math.max(230 - insets.top, 24) }]}>
         <Text style={styles.title}>{title}</Text>
         <Text style={styles.description}>
-          다음 화면에서 <Text style={styles.highlight}>‘허용&apos;</Text>을 눌러주세요.
+          다음 화면에서{' '}
+          <Text style={styles.highlight}>‘{notification ? '허용' : '계속'}&apos;</Text>을
+          눌러주세요.
         </Text>
         {notification && (
           <View style={styles.bubble}>
@@ -78,9 +80,9 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     color: primitiveColors.green[300],
   },
-  artwork: { marginTop: 36, width: 418, height: 274, overflow: 'hidden' },
+  artwork: { marginTop: 36, width: 396, height: 226, overflow: 'hidden' },
   notificationArtwork: { marginTop: 24, width: 435, height: 272 },
-  screenTimeImage: { position: 'absolute', width: 418.71, height: 626, left: -0.38, top: -352 },
+  screenTimeImage: { position: 'absolute', width: 396, height: 274, left: 0, top: -48 },
   notificationImage: {
     position: 'absolute',
     width: 435.61,

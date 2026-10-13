@@ -11,12 +11,13 @@ import { getSearchByUserCodeSuspenseQueryOptions } from '../../../api/query-gene
 import { FriendCodeSearch } from './FriendCodeSearch';
 
 const logErrorMock = vi.mocked(logError);
-const mocks = vi.hoisted(() => ({ search: vi.fn(), send: vi.fn() }));
+const mocks = vi.hoisted(() => ({ search: vi.fn(), send: vi.fn(), accept: vi.fn() }));
 vi.mock('../../../api/friendMutator', () => ({
   friendAxios: (config: { method: string }) =>
     config.method === 'POST' ? mocks.send(config) : mocks.search(config),
 }));
 vi.mock('../../../api/errors/logger');
+vi.mock('../../../api/client');
 vi.mock('../../../lib/analytics');
 vi.mock('../../../lib/token/icons', () => ({ iconNames: [] }));
 vi.mock('expo-router');
@@ -73,7 +74,7 @@ async function mount(client: QueryClient, strict = false, userCode = 'ABCDE') {
           createElement(FriendCodeSearch, {
             userCode,
             onRefresh: async () => {},
-            onReceived: vi.fn(),
+            onAccept: mocks.accept,
             renderFriend: () => createElement('span', {}, '서버 친구 관계'),
             empty: createElement('span', {}, '일치하는 초대코드가 없어요.'),
           })
@@ -100,18 +101,68 @@ const newClient = () =>
   });
 
 describe('초대코드 검색 실패의 정상 화면 복구', () => {
+  it('검색 직후 상대가 요청하면 충돌 안내 대신 받은 요청을 보여주고 명시적으로 수락한다', async () => {
+    const client = newClient();
+    mocks.search.mockResolvedValue({ userId: 2, displayName: '친구', relationshipStatus: 'NONE' });
+    const screen = await mount(client);
+    await vi.waitFor(async () => {
+      await act(async () => {});
+      expect(screen.element.textContent).toContain('친구 요청 보내기');
+    });
+    mocks.send.mockRejectedValue(AppError({ type: 'conflict', status: 409 }));
+    mocks.search.mockResolvedValue({
+      userId: 2,
+      displayName: '친구',
+      relationshipStatus: 'PENDING_RECEIVED',
+      requestId: 42,
+    });
+    await act(() => screen.element.querySelector('button')!.click());
+    await vi.waitFor(async () => {
+      await act(async () => {});
+      expect(screen.element.textContent).toContain('친구 요청을 보냈어요.');
+      expect(screen.element.textContent).toContain('친구 수락');
+      expect(screen.element.textContent).not.toContain('요청을 완료할 수 없어요');
+    });
+    expect(mocks.accept).not.toHaveBeenCalled();
+    mocks.accept.mockResolvedValue(true);
+    await act(() => screen.element.querySelector('button')!.click());
+    await vi.waitFor(async () => {
+      await act(async () => {});
+      expect(screen.element.textContent).toContain('서버 친구 관계');
+    });
+    expect(mocks.accept).toHaveBeenCalledExactlyOnceWith(42);
+    expect(mocks.send).toHaveBeenCalledOnce();
+    // 같은 검색 화면에서 친구를 삭제하면 서버의 NONE 상태를 다시 따른다.
+    mocks.search.mockResolvedValue({ userId: 2, displayName: '친구', relationshipStatus: 'NONE' });
+    await act(() =>
+      client.refetchQueries({
+        queryKey: getSearchByUserCodeSuspenseQueryOptions({ userCode: 'ABCDE' }).queryKey,
+        exact: true,
+      })
+    );
+    await vi.waitFor(async () => {
+      await act(async () => {});
+      expect(screen.element.textContent).toContain('친구 요청 보내기');
+      expect(screen.element.textContent).not.toContain('서버 친구 관계');
+    });
+  });
+
   it.each([
     ['검색 없음', false],
+    ['잘못된 코드', false],
     ['서버 오류', false],
     ['검색 없음', true],
   ] as const)(
     '초기 %s 뒤 같은 초대코드에 다시 진입하면 새 결과로 복구한다 (StrictMode: %s)',
     async (outcome, strict) => {
       const client = newClient();
+      const expectedEmpty = outcome !== '서버 오류';
       const missing =
-        outcome === '검색 없음'
-          ? AppError({ type: 'notFound', status: 404, code: 'NOT_FOUND' })
-          : AppError({ type: 'server', status: 500 });
+        outcome === '잘못된 코드'
+          ? AppError({ type: 'validation', status: 400, code: 'INVALID_USER_CODE' })
+          : outcome === '검색 없음'
+            ? AppError({ type: 'notFound', status: 404, code: 'NOT_FOUND' })
+            : AppError({ type: 'server', status: 500 });
       const first = deferred<unknown>();
       mocks.search.mockReturnValue(first.promise);
       const options = getSearchByUserCodeSuspenseQueryOptions({ userCode: 'ABCDE' });
@@ -124,11 +175,11 @@ describe('초대코드 검색 실패의 정상 화면 복구', () => {
       await vi.waitFor(async () => {
         await act(async () => {});
         expect(screen.element.textContent).toContain(
-          outcome === '검색 없음' ? '일치하는 초대코드가 없어요.' : '다시 시도'
+          expectedEmpty ? '일치하는 초대코드가 없어요.' : '다시 시도'
         );
       });
       expect(screen.caught).toHaveBeenCalled();
-      expect(logErrorMock).toHaveBeenCalledTimes(outcome === '검색 없음' ? 0 : 1);
+      expect(logErrorMock).toHaveBeenCalledTimes(expectedEmpty ? 0 : 1);
       expect(client.getQueryState(options.queryKey)?.error).toBe(missing);
 
       // 실패 캐시가 남아 있어도 검색에 다시 진입하면 새 조회를 기다린다.
@@ -147,7 +198,7 @@ describe('초대코드 검색 실패의 정상 화면 복구', () => {
       });
       expect(reentered.element.querySelector('[role="status"]')).toBeNull();
       expect(reentered.caught).not.toHaveBeenCalled();
-      expect(logErrorMock).toHaveBeenCalledTimes(outcome === '검색 없음' ? 0 : 1);
+      expect(logErrorMock).toHaveBeenCalledTimes(expectedEmpty ? 0 : 1);
     }
   );
 

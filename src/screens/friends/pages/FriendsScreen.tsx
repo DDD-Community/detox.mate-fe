@@ -36,7 +36,6 @@ import {
 } from '../utils/friendsListData';
 import { BrandHeader } from '@/components/BrandHeader/BrandHeader';
 import { LoggingPage } from '@/components/LoggingPage';
-import { trackButtonClick } from '@/lib/analytics';
 import { fontFamily } from '@/lib/token/primitive/fonts';
 import defaultSmallAvatar from '@assets/avatars/default-small.svg';
 import defaultAvatar from '@assets/avatars/default.svg';
@@ -276,7 +275,7 @@ function FriendSearchResults({
   onShare,
   sharing,
   onRefresh,
-  onReceived,
+  onAccept,
 }: {
   query: string;
   pendingActionId: string | null;
@@ -284,7 +283,7 @@ function FriendSearchResults({
   onShare: () => void;
   sharing: boolean;
   onRefresh: () => Promise<void>;
-  onReceived: () => void;
+  onAccept: (requestId: number) => Promise<boolean>;
 }) {
   const { userCode, ready } = useDebouncedUserCode(query);
   const { data } = useSuspenseQuery(getGetFriendsSuspenseQueryOptions());
@@ -317,7 +316,7 @@ function FriendSearchResults({
       key={userCode}
       userCode={userCode}
       onRefresh={onRefresh}
-      onReceived={onReceived}
+      onAccept={onAccept}
       renderFriend={(userId) => (
         <FriendsSection
           userId={userId}
@@ -330,9 +329,8 @@ function FriendSearchResults({
       )}
       empty={
         <View style={styles.searchEmpty}>
-          <Text style={styles.emptyTitle}>일치하는 초대코드가 없어요.</Text>
-          <Text style={styles.emptyDescription}>프로필을 공유해서 초대해보세요.</Text>
-          <ShareButton onPress={onShare} sharing={sharing} />
+          <Text style={styles.emptyTitle}>일치하는 친구가 없어요.</Text>
+          <Text style={styles.emptyDescription}>초대 코드를 다시 확인해 주세요.</Text>
         </View>
       }
     />
@@ -486,15 +484,7 @@ function FriendsContent() {
                   onShare={() => void share()}
                   sharing={sharing}
                   onRefresh={refresh}
-                  onReceived={() => {
-                    trackButtonClick(
-                      'Friends Received Requests Open Clicked',
-                      'Friends',
-                      '받은 요청 확인'
-                    );
-                    setQuery('');
-                    Keyboard.dismiss();
-                  }}
+                  onAccept={acceptRequest}
                 />
               </Suspense>
             </ErrorBoundary>
