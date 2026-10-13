@@ -11,12 +11,13 @@ import { getSearchByUserCodeSuspenseQueryOptions } from '../../../api/query-gene
 import { FriendCodeSearch } from './FriendCodeSearch';
 
 const logErrorMock = vi.mocked(logError);
-const mocks = vi.hoisted(() => ({ search: vi.fn(), send: vi.fn() }));
+const mocks = vi.hoisted(() => ({ search: vi.fn(), send: vi.fn(), accept: vi.fn() }));
 vi.mock('../../../api/friendMutator', () => ({
   friendAxios: (config: { method: string }) =>
     config.method === 'POST' ? mocks.send(config) : mocks.search(config),
 }));
 vi.mock('../../../api/errors/logger');
+vi.mock('../../../api/client');
 vi.mock('../../../lib/analytics');
 vi.mock('../../../lib/token/icons', () => ({ iconNames: [] }));
 vi.mock('expo-router');
@@ -73,7 +74,7 @@ async function mount(client: QueryClient, strict = false, userCode = 'ABCDE') {
           createElement(FriendCodeSearch, {
             userCode,
             onRefresh: async () => {},
-            onReceived: vi.fn(),
+            onAccept: mocks.accept,
             renderFriend: () => createElement('span', {}, '서버 친구 관계'),
             empty: createElement('span', {}, '일치하는 초대코드가 없어요.'),
           })
@@ -100,6 +101,52 @@ const newClient = () =>
   });
 
 describe('초대코드 검색 실패의 정상 화면 복구', () => {
+  it('검색 직후 상대가 요청하면 충돌 안내 대신 받은 요청을 보여주고 명시적으로 수락한다', async () => {
+    const client = newClient();
+    mocks.search.mockResolvedValue({ userId: 2, displayName: '친구', relationshipStatus: 'NONE' });
+    const screen = await mount(client);
+    await vi.waitFor(async () => {
+      await act(async () => {});
+      expect(screen.element.textContent).toContain('친구 요청 보내기');
+    });
+    mocks.send.mockRejectedValue(AppError({ type: 'conflict', status: 409 }));
+    mocks.search.mockResolvedValue({
+      userId: 2,
+      displayName: '친구',
+      relationshipStatus: 'PENDING_RECEIVED',
+      requestId: 42,
+    });
+    await act(() => screen.element.querySelector('button')!.click());
+    await vi.waitFor(async () => {
+      await act(async () => {});
+      expect(screen.element.textContent).toContain('친구 요청을 보냈어요.');
+      expect(screen.element.textContent).toContain('친구 수락');
+      expect(screen.element.textContent).not.toContain('요청을 완료할 수 없어요');
+    });
+    expect(mocks.accept).not.toHaveBeenCalled();
+    mocks.accept.mockResolvedValue(true);
+    await act(() => screen.element.querySelector('button')!.click());
+    await vi.waitFor(async () => {
+      await act(async () => {});
+      expect(screen.element.textContent).toContain('서버 친구 관계');
+    });
+    expect(mocks.accept).toHaveBeenCalledExactlyOnceWith(42);
+    expect(mocks.send).toHaveBeenCalledOnce();
+    // 같은 검색 화면에서 친구를 삭제하면 서버의 NONE 상태를 다시 따른다.
+    mocks.search.mockResolvedValue({ userId: 2, displayName: '친구', relationshipStatus: 'NONE' });
+    await act(() =>
+      client.refetchQueries({
+        queryKey: getSearchByUserCodeSuspenseQueryOptions({ userCode: 'ABCDE' }).queryKey,
+        exact: true,
+      })
+    );
+    await vi.waitFor(async () => {
+      await act(async () => {});
+      expect(screen.element.textContent).toContain('친구 요청 보내기');
+      expect(screen.element.textContent).not.toContain('서버 친구 관계');
+    });
+  });
+
   it.each([
     ['검색 없음', false],
     ['잘못된 코드', false],

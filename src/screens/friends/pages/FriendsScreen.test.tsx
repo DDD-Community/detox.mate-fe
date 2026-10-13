@@ -38,6 +38,7 @@ vi.mock('../hooks/useShareFriendInvite', () => ({
   useShareFriendInvite: () => ({ share: vi.fn(), sharing: false }),
 }));
 vi.mock('../../../api/errors/logger');
+vi.mock('../../../api/client');
 vi.mock('../../../lib/analytics');
 vi.mock('../../../lib/navigation', () => ({ goBackOrReplace: vi.fn() }));
 vi.mock('../../../components/LoggingPage', () => ({
