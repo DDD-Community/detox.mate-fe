@@ -8,6 +8,7 @@ const { gray, green } = primitiveColors;
 interface LogoutConfirmAlertProps {
   visible: boolean;
   onClose: () => void;
+  onDismiss?: () => void;
   onConfirm: () => void;
   loading?: boolean;
 }
@@ -15,19 +16,25 @@ interface LogoutConfirmAlertProps {
 export function LogoutConfirmAlert({
   visible,
   onClose,
+  onDismiss,
   onConfirm,
   loading,
 }: LogoutConfirmAlertProps) {
   return (
     <Modal
       visible={visible}
+      onDismiss={onDismiss}
       transparent
       animationType="fade"
       onRequestClose={onClose}
       statusBarTranslucent
     >
-      <Pressable style={styles.backdrop} onPress={loading ? undefined : onClose}>
-        <Pressable onPress={(event) => event.stopPropagation()} style={styles.card}>
+      <Pressable accessible={false} style={styles.backdrop} onPress={loading ? undefined : onClose}>
+        <Pressable
+          accessible={false}
+          onPress={(event) => event.stopPropagation()}
+          style={styles.card}
+        >
           <Text style={styles.title}>로그아웃 하시겠어요?</Text>
 
           <View style={styles.actions}>
@@ -36,6 +43,7 @@ export function LogoutConfirmAlert({
               properties={{ pageName: 'LogoutConfirmAlert', buttonName: '취소' }}
             >
               <Pressable
+                accessibilityRole="button"
                 onPress={onClose}
                 disabled={loading}
                 style={({ pressed }) => [
@@ -51,6 +59,7 @@ export function LogoutConfirmAlert({
               properties={{ pageName: 'LogoutConfirmAlert', buttonName: '로그아웃' }}
             >
               <Pressable
+                accessibilityRole="button"
                 onPress={onConfirm}
                 disabled={loading}
                 style={({ pressed }) => [
