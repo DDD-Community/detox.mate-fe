@@ -26,7 +26,10 @@ import searchAvatar from '@assets/avatars/friend-search.svg';
 const { regular, bold } = fontFamily.primary;
 const missingCode = (error: unknown) => {
   const normalized = normalizeError(error);
-  return normalized.status === 404 && normalized.code === 'NOT_FOUND';
+  return (
+    (normalized.status === 404 && normalized.code === 'NOT_FOUND') ||
+    (normalized.status === 400 && normalized.code === 'INVALID_USER_CODE')
+  );
 };
 
 function SearchResult({
