@@ -20,13 +20,18 @@ export default function GoalTimeScreen() {
   const router = useRouter();
   const { mode } = useLocalSearchParams<{ mode?: string }>();
   const { targetMinutes } = useLockStore();
+  // 아직 제한 시간을 정한 적 없으면 스테퍼는 최소값에서 시작한다.
   const [hours, setHours] = useState(() =>
-    Math.min(Math.max(Math.round(targetMinutes / 60), MIN_HOURS), MAX_HOURS)
+    targetMinutes === null
+      ? MIN_HOURS
+      : Math.min(Math.max(Math.round(targetMinutes / 60), MIN_HOURS), MAX_HOURS)
   );
 
   const isChangeMode = mode === 'change';
   // 변경 모드에서 기존 제한 시간과 같은 값이면 "다음"을 막고 안내 토스트를 띄운다.
   const isUnchanged = isChangeMode && hours * 60 === targetMinutes;
+  // 최대(4시간)로 설정하면 사실상 제한이 없어서 다음으로 넘어가지 못하게 막는다.
+  const isMaxHours = hours === MAX_HOURS;
 
   const handleNext = () => {
     router.push({
@@ -59,7 +64,7 @@ export default function GoalTimeScreen() {
           variant="solid"
           color="primary"
           size="lg"
-          disabled={isUnchanged}
+          disabled={isUnchanged || isMaxHours}
           onPress={handleNext}
           style={styles.confirmButton}
         />

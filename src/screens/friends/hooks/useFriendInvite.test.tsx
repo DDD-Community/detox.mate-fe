@@ -6,9 +6,9 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { trackEvent } from '@/lib/analytics';
 
-import { getGetInviteeSuspenseQueryOptions } from '../../../api/query-generated/friend';
+import { getSearchByUserCodeSuspenseQueryOptions } from '../../../api/query-generated/friend';
 import type {
-  FriendInviteeResponse,
+  FriendSearchResponse,
   FriendRequestResponse,
 } from '../../../api/query-generated/model';
 import { useFriendInvite } from './useFriendInvite';
@@ -22,7 +22,7 @@ vi.mock('../../../api/errors/logger');
 vi.mock('../../../lib/analytics');
 Object.assign(globalThis, { IS_REACT_ACT_ENVIRONMENT: true });
 
-const invitee: FriendInviteeResponse = {
+const invitee: FriendSearchResponse = {
   userId: 7,
   displayName: '홍길동',
   relationshipStatus: 'NONE',
@@ -110,7 +110,7 @@ describe('초대 화면의 친구 요청', () => {
 
   it('전송이 확정되면 이전 조회가 늦게 도착하거나 후속 조회가 실패해도 요청됨을 유지한다', async () => {
     const screen = await setup();
-    const oldRead = deferred<FriendInviteeResponse>();
+    const oldRead = deferred<FriendSearchResponse>();
     api.read.mockReturnValueOnce(oldRead.promise);
     let reading!: Promise<void>;
     await act(() => {
@@ -148,7 +148,7 @@ describe('초대 화면의 친구 요청', () => {
         writing = screen.state.sendRequest();
       });
       const nextUser = { ...invitee, userId: 9, displayName: '새 계정 초대' };
-      const options = getGetInviteeSuspenseQueryOptions('testCode');
+      const options = getSearchByUserCodeSuspenseQueryOptions({ userCode: 'testCode' });
       api.read.mockResolvedValue(nextUser);
       await act(() => {
         screen.client.clear();

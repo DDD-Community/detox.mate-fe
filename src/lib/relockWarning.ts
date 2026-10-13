@@ -31,7 +31,7 @@ export const scheduleRelockWarning = async (appId: string, relockAt: Date) => {
     await Notifications.scheduleNotificationAsync({
       identifier: identifierFor(appId),
       content: {
-        title: 'Detox mate',
+        title: 'Detoxmate',
         body: WARNING_MESSAGE,
         data: { type: 'APP_RELOCK_REMINDER', targetType: 'NONE' },
       },

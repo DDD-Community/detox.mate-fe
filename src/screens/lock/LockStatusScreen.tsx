@@ -79,8 +79,8 @@ export default function LockStatusScreen() {
       </SafeAreaView>
 
       <ScrollView contentInsetAdjustmentBehavior="automatic" contentContainerStyle={styles.content}>
-        {/* 잠근 앱이 있을 때만 제한 시간 요약과 변경 버튼을 보여준다. */}
-        {lockedApps.length > 0 ? (
+        {/* 잠근 앱이 있고 제한 시간이 정해졌을 때만 제한 시간 요약과 변경 버튼을 보여준다. */}
+        {lockedApps.length > 0 && targetMinutes !== null ? (
           <Pressable
             style={styles.summaryRow}
             onPress={() =>
@@ -127,11 +127,13 @@ export default function LockStatusScreen() {
                   }
                 >
                   {token ? (
-                    <ScreenTimeReportView
-                      selectionTokens={[token]}
-                      reportStyle="appRow"
-                      style={styles.appRowView}
-                    />
+                    <View pointerEvents="none">
+                      <ScreenTimeReportView
+                        selectionTokens={[token]}
+                        reportStyle="appRow"
+                        style={styles.appRowView}
+                      />
+                    </View>
                   ) : null}
                   {/* 앱 이름 아래 자리는 메인 앱의 네이티브 행이 비워둔다 — 그 위에 얹는다. */}
                   <Text style={styles.appUnlockCount} pointerEvents="none">

@@ -350,7 +350,7 @@ export default function FriendsScreen() {
 function FriendsContent() {
   const { search } = useLocalSearchParams<{ search?: string }>();
   const shouldAutoFocusSearchInput = search === '1';
-  const { share, sharing, inviteUrl, preparing } = useShareFriendInvite();
+  const { share, sharing, inviteLabel, preparing } = useShareFriendInvite();
   const {
     refreshing,
     error,
@@ -443,8 +443,8 @@ function FriendsContent() {
             <Avatar small />
             <View style={styles.inviteLabel}>
               <Text style={styles.inviteTitle}>친구 초대</Text>
-              <Text style={styles.inviteSubtitle}>
-                {inviteUrl ||
+              <Text style={styles.inviteSubtitle} numberOfLines={1}>
+                {inviteLabel ||
                   (preparing
                     ? '초대 링크를 준비하고 있어요'
                     : '눌러서 초대 링크를 다시 준비해보세요')}

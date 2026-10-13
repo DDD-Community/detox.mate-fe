@@ -3,8 +3,8 @@ import { Suspense, useRef } from 'react';
 import { ActivityIndicator, Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
-import { ErrorBoundary } from '@/components/AppErrorBoundary/AppErrorBoundary';
 import { Icon, LoggingButton, LoggingPage } from '@/components';
+import { ErrorBoundary } from '@/components/AppErrorBoundary/AppErrorBoundary';
 import { goBackOrReplace } from '@/lib/navigation';
 import { primitiveColors, spacing, typography } from '@/lib/token';
 import { ProfileAvatar } from '../components/ProfileAvatar';
@@ -77,22 +77,21 @@ function ProfileEditContent() {
       </View>
 
       <View style={styles.avatarArea}>
-        <View>
-          <ProfileAvatar uri={editor.previewImageUri} size={AVATAR_SIZE} />
-          <LoggingButton
-            eventName="My Profile Photo Edit Clicked"
-            properties={{ pageName: 'MyProfileEdit', buttonName: '카메라 아이콘' }}
+        <LoggingButton
+          eventName="My Profile Photo Edit Clicked"
+          properties={{ pageName: 'MyProfileEdit', buttonName: '카메라 아이콘' }}
+        >
+          <Pressable
+            onPress={editor.openPhotoDialog}
+            accessibilityRole="button"
+            accessibilityLabel="프로필 사진 변경"
           >
-            <Pressable
-              onPress={editor.openPhotoDialog}
-              style={styles.cameraBadge}
-              accessibilityRole="button"
-              accessibilityLabel="프로필 사진 변경"
-            >
+            <ProfileAvatar uri={editor.previewImageUri} size={AVATAR_SIZE} />
+            <View style={styles.cameraBadge} pointerEvents="none">
               <Icon name="camera" size={24} color={gray[800]} />
-            </Pressable>
-          </LoggingButton>
-        </View>
+            </View>
+          </Pressable>
+        </LoggingButton>
       </View>
 
       <View style={styles.fields}>
