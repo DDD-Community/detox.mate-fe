@@ -48,6 +48,9 @@ public class ScreenTimeReportModule: Module {
       Prop("reportStyle") { (view: ScreenTimeReportNativeView, style: String) in
         view.reportStyle = ReportStyle(rawValue: style) ?? .total
       }
+      OnViewDidUpdateProps { (view: ScreenTimeReportNativeView) in
+        view.updateReport()
+      }
     }
 
     // 해제 시간 설정 화면에서 스테퍼 값이 바뀌었음을 리포트 확장에 알린다(값 자체는 JS가 앱 그룹
