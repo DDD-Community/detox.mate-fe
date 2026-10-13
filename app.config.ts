@@ -49,21 +49,30 @@ const config: ExpoConfig = {
   icon: './assets/icon.png',
   userInterfaceStyle: 'light',
   splash: {
-    image: './assets/splash_logo.png',
+    image: './assets/onboarding/splash.png',
     resizeMode: 'contain',
-    backgroundColor: '#1D9E75',
-    imageWidth: 152,
+    backgroundColor: '#5A8974',
+    imageWidth: 179,
   },
   ios: {
-    bundleIdentifier: isProduction ? 'com.detoxmate.app' : 'com.detoxmate.app.dev',
+    bundleIdentifier: isProduction ? 'com.detoxmate.app' : 'com.detoxmate.app.dev2',
+    // @bacons/apple-targets(react-native-device-activity 익스텐션 타겟 생성기)가
+    // 익스텐션의 DEVELOPMENT_TEAM을 채우는 데 최상위 ios.appleTeamId를 요구한다.
+    ...(isProduction ? {} : { appleTeamId: 'V4328A485M' }),
     googleServicesFile: iosGoogleServicesFile,
     supportsTablet: false,
-    associatedDomains: ['applinks:detoxmate.airbridge.io'],
+    associatedDomains: ['applinks:detoxmate.airbridge.io', 'applinks:detoxmate.abr.ge'],
     entitlements: {
       'aps-environment': 'production',
       'com.apple.developer.applesignin': ['Default'],
+      // 앱 잠금(Screen Time API). 이 선언이 빠지면 EAS가 빌드/credentials 실행 시
+      // App ID의 FAMILY_CONTROLS capability를 지우고, 프로비저닝 프로파일에서도 빠진다.
+      // 한 번 지워지면 App Store Connect API로는 되살릴 수 없어 포털 수동 작업이 필요하다.
+      // 운영 App ID(com.detoxmate.app)는 아직 엔타이틀먼트 미승인이라 dev에만 켠다.
+      ...(isProduction ? {} : { 'com.apple.developer.family-controls': true }),
     },
     infoPlist: {
+      ...(isProduction ? {} : { CFBundleDisplayName: 'DetoxMate Dev' }),
       LSApplicationQueriesSchemes: ['kakaokompassauth', 'storykompassauth', 'kakaolink'],
       ITSAppUsesNonExemptEncryption: false,
       UIBackgroundModes: ['remote-notification'],
@@ -76,6 +85,26 @@ const config: ExpoConfig = {
     },
     predictiveBackGestureEnabled: false,
     package: 'com.detoxmate.fe',
+    intentFilters: [
+      {
+        action: 'VIEW',
+        autoVerify: true,
+        category: ['BROWSABLE', 'DEFAULT'],
+        data: [
+          { scheme: 'http', host: 'detoxmate.airbridge.io' },
+          { scheme: 'https', host: 'detoxmate.airbridge.io' },
+        ],
+      },
+      {
+        action: 'VIEW',
+        autoVerify: true,
+        category: ['BROWSABLE', 'DEFAULT'],
+        data: [
+          { scheme: 'http', host: 'detoxmate.abr.ge' },
+          { scheme: 'https', host: 'detoxmate.abr.ge' },
+        ],
+      },
+    ],
     ...(existsSync(androidGoogleServicesFile)
       ? { googleServicesFile: androidGoogleServicesFile }
       : {}),
@@ -114,6 +143,7 @@ const config: ExpoConfig = {
         ios: {
           useFrameworks: 'static',
           forceStaticLinking: ['RNFBApp', 'RNFBMessaging'],
+          deploymentTarget: '15.1',
         },
       },
     ],
@@ -122,16 +152,25 @@ const config: ExpoConfig = {
     'expo-notifications',
     '@react-native-community/datetimepicker',
     'expo-font',
+    'expo-image',
     [
       'expo-splash-screen',
       {
-        image: './assets/splash_logo.png',
+        image: './assets/onboarding/splash.png',
         resizeMode: 'contain',
-        backgroundColor: '#1D9E75',
-        imageWidth: 152,
+        backgroundColor: '#5A8974',
+        imageWidth: 179,
       },
     ],
     './plugins/with-sdk55-app-delegate-fixes',
+    './plugins/with-extension-embed-order',
+    [
+      'react-native-device-activity',
+      {
+        appleTeamId: 'V4328A485M',
+        appGroup: 'group.com.detoxmate.app.dev2',
+      },
+    ],
   ],
   extra: {
     appEnv,

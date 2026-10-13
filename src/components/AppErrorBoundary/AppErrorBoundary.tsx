@@ -7,40 +7,55 @@ import { primitiveColors, radius, spacing, typography } from '@/lib/token';
 
 type ErrorBoundaryProps = {
   children: ReactNode;
-  onReset: () => void;
+  onReset: () => void | Promise<void>;
+  // Return undefined to use the common fallback; null intentionally renders nothing.
+  fallback?: (error: Error, onRetry: () => void) => ReactNode;
+  shouldLogError?: (error: Error) => boolean;
 };
 
 type ErrorBoundaryState = {
   error: Error | null;
 };
 
-class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundaryState> {
+export class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundaryState> {
   state: ErrorBoundaryState = { error: null };
+  private retrying = false;
 
   static getDerivedStateFromError(error: Error): ErrorBoundaryState {
     return { error };
   }
 
   componentDidCatch(error: Error, errorInfo: ErrorInfo) {
+    if (this.props.shouldLogError?.(error) === false) return;
     logError(normalizeError(error), {
       scope: 'render',
       componentStack: errorInfo.componentStack,
     });
   }
 
-  handleRetry = () => {
-    this.setState({ error: null });
-    this.props.onReset();
+  handleRetry = async () => {
+    if (this.retrying) return;
+    this.retrying = true;
+    try {
+      await this.props.onReset();
+      this.setState({ error: null });
+    } catch (error) {
+      logError(normalizeError(error), { scope: 'api', operation: 'resetErrorBoundary' });
+    } finally {
+      this.retrying = false;
+    }
   };
 
   handleGoHome = () => {
-    this.handleRetry();
+    void this.handleRetry();
     router.replace('/');
   };
 
   render() {
     if (!this.state.error) return this.props.children;
 
+    const fallback = this.props.fallback?.(this.state.error, this.handleRetry);
+    if (fallback !== undefined) return fallback;
     return <FallbackScreen onRetry={this.handleRetry} onGoHome={this.handleGoHome} />;
   }
 }

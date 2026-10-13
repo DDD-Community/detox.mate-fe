@@ -1,0 +1,7 @@
+interface:
+  display_name: 'Frontend Remote'
+  short_description: 'Orval 생성 코드와 React Query로 서버 상태와 도메인 캐시 정책을 구성합니다'
+  default_prompt: '$frontend-remote 스킬로 이 기능의 API 조회·변경과 서버 상태 관리를 구현하거나 리뷰해 주세요.'
+
+policy:
+  allow_implicit_invocation: true

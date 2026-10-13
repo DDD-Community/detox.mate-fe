@@ -9,7 +9,7 @@ import {
   getUserUsageGoalTime,
   type GroupMemberProfileResponse,
   type GroupResponse,
-  type MyProfileResponse,
+  type MyPageResponse,
 } from '@/api';
 import type { MyPageParams } from './useMyPageParams';
 
@@ -23,7 +23,7 @@ export function useMyPageData({ params, onProfileImageUriChange }: UseMyPageData
   const memberId = isFriend ? params.memberId : undefined;
   const friendGroupId = isFriend ? params.friendGroupId : undefined;
 
-  const [profile, setProfile] = useState<MyProfileResponse | null>(null);
+  const [profile, setProfile] = useState<MyPageResponse | null>(null);
   const [hasGoalSet, setHasGoalSet] = useState(false);
   const [groups, setGroups] = useState<GroupResponse[]>([]);
   const [memberProfile, setMemberProfile] = useState<GroupMemberProfileResponse | null>(null);

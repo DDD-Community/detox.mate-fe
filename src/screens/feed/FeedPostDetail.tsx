@@ -306,7 +306,7 @@ export default function FeedPostDetail() {
     const info = memberStore.get(Number(userId));
     if (!info) return;
     router.push({
-      pathname: '/(group)/mypage',
+      pathname: '/(group)/friend-profile',
       params: {
         memberId: String(info.groupMemberId),
         friendName: info.displayName,
@@ -319,7 +319,7 @@ export default function FeedPostDetail() {
 
   const handleProfilePress = () => {
     if (feedItem.isMe) {
-      router.push('/(group)/mypage');
+      router.push('/(tabs)/mypage');
       return;
     }
     navigateToProfile(feedItem.id);

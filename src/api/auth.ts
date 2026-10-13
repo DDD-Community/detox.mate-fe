@@ -1,9 +1,16 @@
+import { CanceledError, isCancel } from 'axios';
 import { KakaoOAuthToken, login } from '@react-native-seoul/kakao-login';
 import * as AppleAuthentication from 'expo-apple-authentication';
 import { sha256 } from '@noble/hashes/sha256';
 import { bytesToHex } from '@noble/hashes/utils';
 import * as SecureStore from 'expo-secure-store';
-import apiClient from './client';
+import { create } from 'zustand';
+import { queryClient } from '../lib/query/queryClient';
+import apiClient, {
+  cancelAuthenticatedRequests,
+  getAuthenticatedRequestSignal,
+  resumeAuthenticatedRequests,
+} from './client';
 import { AppError, normalizeError } from './errors';
 import { getDevAuth } from './generated/dev-auth/dev-auth';
 import type { AuthLoginResponse } from './generated/model';
@@ -11,6 +18,28 @@ import type { AuthLoginResponse } from './generated/model';
 // 현재 세션이 (앱스토어 심사용) 테스트 계정 로그인인지 기록하는 키.
 // 토큰과 같은 SecureStore에 두어 앱 재시작 후에도 세션과 수명을 함께한다.
 const IS_TEST_ACCOUNT_KEY = 'isTestAccount';
+let pendingSessionCleanup: Promise<void> | undefined;
+
+type AuthStatus = 'restoring' | 'signedIn' | 'signedOut';
+
+// 로컬 세션의 존재 여부다. 서버에서 계정이 유효한지는 AuthGuard의 내 정보 조회로 확인한다.
+const useAuthState = create<{ status: AuthStatus }>(() => ({ status: 'restoring' }));
+
+export function useAuthStatus(): AuthStatus {
+  return useAuthState((state) => state.status);
+}
+
+export function getAuthStatus(): AuthStatus {
+  return useAuthState.getState().status;
+}
+
+export async function restoreAuthSession(): Promise<void> {
+  if (getAuthStatus() !== 'restoring') return;
+  const token = await SecureStore.getItemAsync('accessTokenKey');
+  // 복원 중 로그인/로그아웃이 일어났다면 오래된 저장소 응답을 적용하지 않는다.
+  if (getAuthStatus() !== 'restoring') return;
+  useAuthState.setState({ status: token ? 'signedIn' : 'signedOut' });
+}
 
 export type OAuthLoginResponse = {
   id: number;
@@ -38,6 +67,10 @@ const persistLoginResponse = async (
     throw new Error('로그인 응답이 올바르지 않습니다.');
   }
 
+  // Guard가 로그인 화면을 즉시 열어도 이전 토큰 정리가 끝난 뒤 새 세션을 저장한다.
+  await pendingSessionCleanup;
+  cancelAuthenticatedRequests();
+  queryClient.clear();
   await SecureStore.setItemAsync('accessTokenKey', data.accessToken);
   await SecureStore.setItemAsync('refreshTokenKey', data.refreshToken);
   await SecureStore.setItemAsync('currentUserId', String(data.id));
@@ -49,6 +82,10 @@ const persistLoginResponse = async (
   } else {
     await SecureStore.deleteItemAsync(IS_TEST_ACCOUNT_KEY);
   }
+
+  queryClient.clear();
+  resumeAuthenticatedRequests();
+  useAuthState.setState({ status: 'signedIn' });
 
   return {
     id: data.id,
@@ -127,7 +164,13 @@ export async function loginWithTestUser(testUserKey: string): Promise<OAuthLogin
 }
 
 export async function refreshAccessToken(): Promise<ServerResponseTokens> {
+  const signal = getAuthenticatedRequestSignal();
+  const assertCurrentSession = () => {
+    if (signal.aborted) throw new CanceledError('The authentication session ended.');
+  };
+  assertCurrentSession();
   const refreshToken = await SecureStore.getItemAsync('refreshTokenKey');
+  assertCurrentSession();
   if (!refreshToken) {
     await clearAuthSession();
     throw AppError({ type: 'auth', message: '다시 로그인해 주세요.' });
@@ -142,19 +185,26 @@ export async function refreshAccessToken(): Promise<ServerResponseTokens> {
       {
         skipAuth: true,
         skipAuthRefresh: true,
+        signal,
       }
     );
 
+    assertCurrentSession();
     const { accessToken, refreshToken: updatedRefreshToken } = data;
     if (!accessToken || !updatedRefreshToken) {
       throw AppError({ type: 'auth', message: '토큰 재발급 응답이 올바르지 않습니다.' });
     }
 
     await SecureStore.setItemAsync('accessTokenKey', accessToken);
+    assertCurrentSession();
     await SecureStore.setItemAsync('refreshTokenKey', updatedRefreshToken);
+    assertCurrentSession();
 
     return data;
   } catch (error) {
+    if (isCancel(error) || signal.aborted) {
+      throw new CanceledError('The authentication session ended.');
+    }
     await clearAuthSession();
     const appError = normalizeError(error);
     throw AppError({
@@ -165,11 +215,28 @@ export async function refreshAccessToken(): Promise<ServerResponseTokens> {
   }
 }
 
-export async function clearAuthSession(): Promise<void> {
-  await SecureStore.deleteItemAsync('refreshTokenKey');
-  await SecureStore.deleteItemAsync('accessTokenKey');
-  await SecureStore.deleteItemAsync('currentUserId');
-  await SecureStore.deleteItemAsync(IS_TEST_ACCOUNT_KEY);
+export function clearAuthSession(): Promise<void> {
+  if (pendingSessionCleanup) return pendingSessionCleanup;
+  useAuthState.setState({ status: 'signedOut' });
+  cancelAuthenticatedRequests();
+  const endedSignal = getAuthenticatedRequestSignal();
+  queryClient.clear();
+  pendingSessionCleanup = Promise.allSettled([
+    SecureStore.deleteItemAsync('refreshTokenKey'),
+    SecureStore.deleteItemAsync('accessTokenKey'),
+    SecureStore.deleteItemAsync('currentUserId'),
+    SecureStore.deleteItemAsync(IS_TEST_ACCOUNT_KEY),
+  ])
+    .then((results) => {
+      const failure = results.find((result) => result.status === 'rejected');
+      if (failure) throw failure.reason;
+    })
+    .finally(() => {
+      // 비동기 토큰 삭제 중 다시 시작된 조회도 이전 세션 캐시에 남기지 않는다.
+      if (endedSignal === getAuthenticatedRequestSignal()) queryClient.clear();
+      pendingSessionCleanup = undefined;
+    });
+  return pendingSessionCleanup;
 }
 
 // 현재 로그인 세션이 테스트 계정인지 여부. 스크린타임 OCR 검증 우회 등
@@ -180,9 +247,13 @@ export async function isTestAccountSession(): Promise<boolean> {
 }
 
 export async function logout(): Promise<void> {
-  const refreshToken = await SecureStore.getItemAsync('refreshTokenKey');
-
+  useAuthState.setState({ status: 'signedOut' });
+  cancelAuthenticatedRequests();
+  const endedSignal = getAuthenticatedRequestSignal();
+  queryClient.clear();
   try {
+    const refreshToken = await SecureStore.getItemAsync('refreshTokenKey');
+    if (endedSignal !== getAuthenticatedRequestSignal()) return;
     if (refreshToken) {
       await apiClient.post(
         '/auth/logout',
@@ -196,8 +267,8 @@ export async function logout(): Promise<void> {
       );
     }
   } catch {
-    // 서버 로그아웃 실패와 무관하게 기기 내 세션은 정리한다.
+    // 토큰 조회·서버 로그아웃 실패와 무관하게 기기 내 세션은 정리한다.
   } finally {
-    await clearAuthSession();
+    if (endedSignal === getAuthenticatedRequestSignal()) await clearAuthSession();
   }
 }

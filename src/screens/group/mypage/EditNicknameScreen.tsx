@@ -24,7 +24,7 @@ export default function EditNicknameScreen() {
   };
 
   const handleBack = () => {
-    goBackOrReplace('/(group)/mypage');
+    goBackOrReplace('/(tabs)/mypage');
   };
 
   const handleSubmit = async () => {
@@ -32,7 +32,7 @@ export default function EditNicknameScreen() {
     setIsSubmitting(true);
     try {
       await getUser().updateMe({ displayName: nickname });
-      goBackOrReplace('/(group)/mypage');
+      goBackOrReplace('/(tabs)/mypage');
     } finally {
       setIsSubmitting(false);
     }

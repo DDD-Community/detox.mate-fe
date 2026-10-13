@@ -8,4 +8,5 @@ export * from './Icon';
 export * from './LoggingButton';
 export * from './LoggingPage';
 export * from './NetworkErrorToast';
+export * from './SwimTurtle';
 export * from './Toast';

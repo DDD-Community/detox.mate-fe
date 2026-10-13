@@ -1,5 +1,13 @@
 import type { ReactNode } from 'react';
-import { Pressable, StyleSheet, Text, View, type StyleProp, type ViewStyle } from 'react-native';
+import {
+  Pressable,
+  StyleSheet,
+  Text,
+  View,
+  type StyleProp,
+  type ViewStyle,
+  type TextStyle,
+} from 'react-native';
 
 import { primitiveColors, radius, spacing, typography } from '../../lib/token';
 
@@ -12,6 +20,7 @@ export interface CheckboxProps {
   disabled?: boolean;
   checkIcon?: ReactNode;
   style?: StyleProp<ViewStyle>;
+  labelStyle?: StyleProp<TextStyle>;
 }
 
 interface BoxColors {
@@ -38,6 +47,7 @@ export function Checkbox({
   disabled = false,
   checkIcon,
   style,
+  labelStyle,
 }: CheckboxProps) {
   const box = getBoxColors(checked, disabled);
 
@@ -55,7 +65,10 @@ export function Checkbox({
           : null}
       </View>
       {label ? (
-        <Text style={[styles.label, { color: getLabelColor(disabled) }]} numberOfLines={1}>
+        <Text
+          style={[styles.label, { color: getLabelColor(disabled) }, labelStyle]}
+          numberOfLines={1}
+        >
           {label}
         </Text>
       ) : null}

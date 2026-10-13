@@ -1,0 +1,7 @@
+interface:
+  display_name: 'Frontend Component'
+  short_description: '컴포넌트 책임 분리와 이벤트 예외, 렌더 오류·로딩 경계를 적용합니다'
+  default_prompt: '$frontend-component 스킬로 이 컴포넌트의 구조와 에러·로딩 처리를 구현하거나 리뷰해 주세요.'
+
+policy:
+  allow_implicit_invocation: true

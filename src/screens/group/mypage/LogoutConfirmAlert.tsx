@@ -1,13 +1,14 @@
 import { Modal, Pressable, StyleSheet, Text, View } from 'react-native';
 
 import { LoggingButton } from '@/components';
-import { primitiveColors, spacing, typography } from '@/lib/token';
+import { fontFamily, primitiveColors, spacing, typography } from '@/lib/token';
 
 const { gray, green } = primitiveColors;
 
 interface LogoutConfirmAlertProps {
   visible: boolean;
   onClose: () => void;
+  onDismiss?: () => void;
   onConfirm: () => void;
   loading?: boolean;
 }
@@ -15,19 +16,25 @@ interface LogoutConfirmAlertProps {
 export function LogoutConfirmAlert({
   visible,
   onClose,
+  onDismiss,
   onConfirm,
   loading,
 }: LogoutConfirmAlertProps) {
   return (
     <Modal
       visible={visible}
+      onDismiss={onDismiss}
       transparent
       animationType="fade"
       onRequestClose={onClose}
       statusBarTranslucent
     >
-      <Pressable style={styles.backdrop} onPress={loading ? undefined : onClose}>
-        <Pressable onPress={(event) => event.stopPropagation()} style={styles.card}>
+      <Pressable accessible={false} style={styles.backdrop} onPress={loading ? undefined : onClose}>
+        <Pressable
+          accessible={false}
+          onPress={(event) => event.stopPropagation()}
+          style={styles.card}
+        >
           <Text style={styles.title}>로그아웃 하시겠어요?</Text>
 
           <View style={styles.actions}>
@@ -36,6 +43,7 @@ export function LogoutConfirmAlert({
               properties={{ pageName: 'LogoutConfirmAlert', buttonName: '취소' }}
             >
               <Pressable
+                accessibilityRole="button"
                 onPress={onClose}
                 disabled={loading}
                 style={({ pressed }) => [
@@ -51,6 +59,7 @@ export function LogoutConfirmAlert({
               properties={{ pageName: 'LogoutConfirmAlert', buttonName: '로그아웃' }}
             >
               <Pressable
+                accessibilityRole="button"
                 onPress={onConfirm}
                 disabled={loading}
                 style={({ pressed }) => [
@@ -87,7 +96,7 @@ const styles = StyleSheet.create({
     gap: spacing[40],
   },
   title: {
-    fontFamily: typography.primary.title1B.fontFamily,
+    fontFamily: fontFamily.primary.extraBold,
     fontSize: 20,
     fontWeight: '800',
     lineHeight: 30,
