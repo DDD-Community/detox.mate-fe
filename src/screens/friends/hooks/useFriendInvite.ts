@@ -4,7 +4,7 @@ import { useEffect, useRef, useState } from 'react';
 
 import { AppError, getUserErrorMessage, logError, normalizeError } from '../../../api/errors';
 import {
-  getGetInviteeSuspenseQueryOptions,
+  getSearchByUserCodeSuspenseQueryOptions,
   useSendRequest,
 } from '../../../api/query-generated/friend';
 import { FriendRelationshipStatus } from '../../../api/query-generated/model';
@@ -15,7 +15,8 @@ import { requireId } from '../utils/friendsListData';
 
 export function useFriendInvite(code: string) {
   const client = useQueryClient();
-  const options = getGetInviteeSuspenseQueryOptions(code);
+  // 링크의 코드는 5자 공개 초대 코드이므로 공개 코드 조회 API로 초대한 사람을 찾는다.
+  const options = getSearchByUserCodeSuspenseQueryOptions({ userCode: code });
   const result = useSuspenseQuery(options);
   const { mutateAsync } = useSendRequest();
   const lock = useRef(false);

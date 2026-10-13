@@ -1,6 +1,6 @@
 import { useQuery } from '@tanstack/react-query';
 import { useEffect, useRef, useState } from 'react';
-import { Alert, Platform, Share } from 'react-native';
+import { Alert, Share } from 'react-native';
 
 import { getAuthenticatedRequestSignal } from '../../../api/client';
 import { getUserErrorMessage, logError, normalizeError } from '../../../api/errors';
@@ -14,7 +14,7 @@ async function prepareShareContent(signal: AbortSignal) {
   if (signal.aborted || authSignal.aborted) throw new Error('Invitation preparation canceled.');
   let url: string;
   try {
-    url = createFriendInviteShareUrl(invite.code);
+    url = createFriendInviteShareUrl(invite.userCode);
   } catch (failure) {
     const error = normalizeError(failure);
     if (!signal.aborted && !authSignal.aborted) {
@@ -28,7 +28,8 @@ async function prepareShareContent(signal: AbortSignal) {
     `초대 코드: ${invite.userCode}`,
     '링크가 열리지 않으면 친구 목록 검색창에 초대 코드를 입력해주세요.',
   ].join('\n');
-  return { url, message };
+  // 카드에는 전체 URL 대신 Figma의 `detoxmate/{invite_code}` 형태로 보여준다.
+  return { url, message, label: `detoxmate/${invite.userCode}` };
 }
 
 function logShareClick(pageName: string) {
@@ -83,8 +84,8 @@ export function useShareFriendInvite({
         Alert.alert('친구 초대 공유', getUserErrorMessage(normalizeError(prepared.error)));
         return;
       }
-      const { message, url } = prepared.data;
-      await Share.share(Platform.OS === 'ios' ? { message, url } : { message });
+      // 링크는 message 안에 이미 있다. iOS에서 url을 따로 넘기면 공유 대상에 링크가 두 번 붙는다.
+      await Share.share({ message: prepared.data.message });
     } catch (failure) {
       if (!active()) return;
       const error = normalizeError(failure);
@@ -96,5 +97,11 @@ export function useShareFriendInvite({
     }
   };
 
-  return { share, sharing, inviteUrl: content.data?.url, preparing: content.isFetching };
+  return {
+    share,
+    sharing,
+    inviteUrl: content.data?.url,
+    inviteLabel: content.data?.label,
+    preparing: content.isFetching,
+  };
 }

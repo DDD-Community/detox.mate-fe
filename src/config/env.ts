@@ -55,5 +55,4 @@ export const env = {
   sentryDsn: sentryDsn ?? null,
   apiBaseUrl,
   amplitudeApiKey,
-  friendInviteBaseUrl: process.env.EXPO_PUBLIC_AIRBRIDGE_FRIEND_INVITE_URL,
 } as const;
