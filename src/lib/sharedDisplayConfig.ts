@@ -43,3 +43,14 @@ export const syncUnlockNoticeNames = (names: string[]) => {
     // 네이티브 모듈이 없는 환경에선 안내가 비어 보일 뿐이다.
   }
 };
+
+/** 앱 그룹 UserDefaults에 써둔 표시용 값을 모두 지운다(탈퇴 등). */
+export const clearSharedDisplayConfig = () => {
+  try {
+    ReactNativeDeviceActivity.userDefaultsRemove(TARGET_MINUTES_KEY);
+    ReactNativeDeviceActivity.userDefaultsRemove(USAGE_BAR_EXTRA_MINUTES_KEY);
+    ReactNativeDeviceActivity.userDefaultsRemove(UNLOCK_NOTICE_NAMES_KEY);
+  } catch {
+    // 네이티브 모듈이 없는 환경에선 지울 값도 없다.
+  }
+};

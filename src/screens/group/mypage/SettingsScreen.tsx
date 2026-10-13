@@ -7,6 +7,7 @@ import { AppState, Pressable, StyleSheet, Switch, Text, View } from 'react-nativ
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { clearAuthSession, logout } from '@/api/auth';
+import { clearLocalUserData } from '@/lib/clearLocalUserData';
 import { getUser } from '@/api';
 import { logError, normalizeError } from '@/api/errors';
 import {
@@ -299,6 +300,7 @@ export default function SettingsScreen() {
         // ignore
       }
       await getUser().withdraw();
+      await clearLocalUserData();
       await clearAuthSession();
       await SecureStore.deleteItemAsync('isNewUser');
       await SecureStore.deleteItemAsync(TERMS_ACCEPTED_KEY);

@@ -2,6 +2,7 @@ import {
   Identify,
   identify as amplitudeIdentify,
   init,
+  reset,
   setUserId,
   track,
   Types,
@@ -208,6 +209,12 @@ export function initAnalytics() {
   });
 
   initialized = true;
+}
+
+/** 로그인 사용자 식별을 끊는다(탈퇴 등). 다음 로그인 전까지 이전 계정 ID로 이벤트가 쌓이지 않게 한다. */
+export function resetAnalyticsUser() {
+  if (!initialized) return;
+  reset();
 }
 
 export function setAnalyticsUserId(userId: number | string) {
