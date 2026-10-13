@@ -330,9 +330,8 @@ function FriendSearchResults({
       )}
       empty={
         <View style={styles.searchEmpty}>
-          <Text style={styles.emptyTitle}>일치하는 초대코드가 없어요.</Text>
-          <Text style={styles.emptyDescription}>프로필을 공유해서 초대해보세요.</Text>
-          <ShareButton onPress={onShare} sharing={sharing} />
+          <Text style={styles.emptyTitle}>일치하는 친구가 없어요.</Text>
+          <Text style={styles.emptyDescription}>초대 코드를 다시 확인해 주세요.</Text>
         </View>
       }
     />

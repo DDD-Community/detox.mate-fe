@@ -102,16 +102,20 @@ const newClient = () =>
 describe('초대코드 검색 실패의 정상 화면 복구', () => {
   it.each([
     ['검색 없음', false],
+    ['잘못된 코드', false],
     ['서버 오류', false],
     ['검색 없음', true],
   ] as const)(
     '초기 %s 뒤 같은 초대코드에 다시 진입하면 새 결과로 복구한다 (StrictMode: %s)',
     async (outcome, strict) => {
       const client = newClient();
+      const expectedEmpty = outcome !== '서버 오류';
       const missing =
-        outcome === '검색 없음'
-          ? AppError({ type: 'notFound', status: 404, code: 'NOT_FOUND' })
-          : AppError({ type: 'server', status: 500 });
+        outcome === '잘못된 코드'
+          ? AppError({ type: 'validation', status: 400, code: 'INVALID_USER_CODE' })
+          : outcome === '검색 없음'
+            ? AppError({ type: 'notFound', status: 404, code: 'NOT_FOUND' })
+            : AppError({ type: 'server', status: 500 });
       const first = deferred<unknown>();
       mocks.search.mockReturnValue(first.promise);
       const options = getSearchByUserCodeSuspenseQueryOptions({ userCode: 'ABCDE' });
@@ -124,11 +128,11 @@ describe('초대코드 검색 실패의 정상 화면 복구', () => {
       await vi.waitFor(async () => {
         await act(async () => {});
         expect(screen.element.textContent).toContain(
-          outcome === '검색 없음' ? '일치하는 초대코드가 없어요.' : '다시 시도'
+          expectedEmpty ? '일치하는 초대코드가 없어요.' : '다시 시도'
         );
       });
       expect(screen.caught).toHaveBeenCalled();
-      expect(logErrorMock).toHaveBeenCalledTimes(outcome === '검색 없음' ? 0 : 1);
+      expect(logErrorMock).toHaveBeenCalledTimes(expectedEmpty ? 0 : 1);
       expect(client.getQueryState(options.queryKey)?.error).toBe(missing);
 
       // 실패 캐시가 남아 있어도 검색에 다시 진입하면 새 조회를 기다린다.
@@ -147,7 +151,7 @@ describe('초대코드 검색 실패의 정상 화면 복구', () => {
       });
       expect(reentered.element.querySelector('[role="status"]')).toBeNull();
       expect(reentered.caught).not.toHaveBeenCalled();
-      expect(logErrorMock).toHaveBeenCalledTimes(outcome === '검색 없음' ? 0 : 1);
+      expect(logErrorMock).toHaveBeenCalledTimes(expectedEmpty ? 0 : 1);
     }
   );
 
