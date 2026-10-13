@@ -113,6 +113,7 @@ export const ANALYTICS_EVENT_NAMES = [
   'Profile Image Bottom Sheet Profile Image Default Select Clicked',
   'Profile Image Bottom Sheet Profile Image Gallery Select Clicked',
   'Settings Back Clicked',
+  'Settings Screen Time Permission Open Clicked',
   'Settings Contact Open Clicked',
   'Settings Terms Open Clicked',
   'Settings Privacy Open Clicked',

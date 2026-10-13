@@ -103,9 +103,15 @@ export async function unregisterDevicePushToken(): Promise<void> {
   try {
     await getFcmToken().remove({ token });
   } finally {
-    await SecureStore.deleteItemAsync(STORED_TOKEN_KEY);
-    await SecureStore.deleteItemAsync(STORED_TOKEN_PROVIDER_KEY);
+    await clearStoredDevicePushToken();
   }
+}
+
+export async function clearStoredDevicePushToken(): Promise<void> {
+  await Promise.all([
+    SecureStore.deleteItemAsync(STORED_TOKEN_KEY),
+    SecureStore.deleteItemAsync(STORED_TOKEN_PROVIDER_KEY),
+  ]);
 }
 
 /**

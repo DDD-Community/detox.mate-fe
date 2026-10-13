@@ -128,6 +128,7 @@
 | `ProfileImageBottomSheet`     | 기본 이미지                 | `기본 이미지`                 | `Profile Image Bottom Sheet Profile Image Default Select Clicked` | `event_type`, `page_name`, `button_name`                  |
 | `ProfileImageBottomSheet`     | 갤러리에서 선택             | `갤러리에서 선택`             | `Profile Image Bottom Sheet Profile Image Gallery Select Clicked` | `event_type`, `page_name`, `button_name`                  |
 | `Settings`                    | 뒤로가기                    | `뒤로가기`                    | `Settings Back Clicked`                                           | `event_type`, `page_name`, `button_name`                  |
+| `Settings`                    | 스크린타임 권한             | `스크린타임 권한`             | `Settings Screen Time Permission Open Clicked`                    | `event_type`, `page_name`, `button_name`                  |
 | `Settings`                    | 문의하기                    | `문의하기`                    | `Settings Contact Open Clicked`                                   | `event_type`, `page_name`, `button_name`                  |
 | `Settings`                    | 서비스 이용 약관            | `서비스 이용 약관`            | `Settings Terms Open Clicked`                                     | `event_type`, `page_name`, `button_name`                  |
 | `Settings`                    | 개인정보 처리방침           | `개인정보 처리방침`           | `Settings Privacy Open Clicked`                                   | `event_type`, `page_name`, `button_name`                  |

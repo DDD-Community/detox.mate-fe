@@ -10,6 +10,7 @@ const RED_10 = system.red.opacity10;
 interface WithdrawConfirmAlertProps {
   visible: boolean;
   onClose: () => void;
+  onDismiss?: () => void;
   onConfirm: () => void;
   loading?: boolean;
 }
@@ -17,28 +18,34 @@ interface WithdrawConfirmAlertProps {
 export function WithdrawConfirmAlert({
   visible,
   onClose,
+  onDismiss,
   onConfirm,
   loading,
 }: WithdrawConfirmAlertProps) {
   return (
     <Modal
       visible={visible}
+      onDismiss={onDismiss}
       transparent
       animationType="fade"
       onRequestClose={onClose}
       statusBarTranslucent
     >
-      <Pressable style={styles.backdrop} onPress={loading ? undefined : onClose}>
-        <Pressable onPress={(event) => event.stopPropagation()} style={styles.card}>
+      <Pressable accessible={false} style={styles.backdrop} onPress={loading ? undefined : onClose}>
+        <Pressable
+          accessible={false}
+          onPress={(event) => event.stopPropagation()}
+          style={styles.card}
+        >
           <View style={styles.topSection}>
             <Text style={styles.title}>정말 탈퇴하시겠어요?</Text>
             <View style={styles.descBlock}>
               <Text style={styles.descText}>
-                탈퇴 시 저장된 히스토리와 챌린지 참여 기록이{'\n'}모두 삭제되며 복구할 수 없어요.
+                탈퇴하면 이 계정으로 더 이상{'\n'}서비스를 이용할 수 없어요.
               </Text>
               <View style={styles.warningChip}>
                 <Icon name="info" size={16} color={RED} />
-                <Text style={styles.warningText}>삭제된 기록은 복구될 수 없어요</Text>
+                <Text style={styles.warningText}>탈퇴 전 한 번 더 확인해 주세요</Text>
               </View>
             </View>
           </View>
@@ -49,6 +56,7 @@ export function WithdrawConfirmAlert({
               properties={{ pageName: 'WithdrawConfirmAlert', buttonName: '취소' }}
             >
               <Pressable
+                accessibilityRole="button"
                 onPress={onClose}
                 disabled={loading}
                 style={({ pressed }) => [
@@ -64,6 +72,7 @@ export function WithdrawConfirmAlert({
               properties={{ pageName: 'WithdrawConfirmAlert', buttonName: '탈퇴하기' }}
             >
               <Pressable
+                accessibilityRole="button"
                 onPress={onConfirm}
                 disabled={loading}
                 style={({ pressed }) => [
