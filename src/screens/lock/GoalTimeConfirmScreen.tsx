@@ -1,11 +1,9 @@
 import { useLocalSearchParams, useRouter } from 'expo-router';
-import { useState } from 'react';
 import { StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { useSaveGoalTime } from './useSaveGoalTime';
 import { spacing } from '../../lib/token';
-import { pickRandomFriendNames } from './mockLockApps';
 import { SentenceTypingChallengeScreen } from './SentenceTypingChallengeScreen';
 import { TenSecondCountdownScreen } from './TenSecondCountdownScreen';
 
@@ -20,8 +18,6 @@ import { TenSecondCountdownScreen } from './TenSecondCountdownScreen';
 export default function GoalTimeConfirmScreen() {
   const router = useRouter();
   const { hours, mode } = useLocalSearchParams<{ hours: string; mode?: string }>();
-  const [notifiedFriends] = useState(() => pickRandomFriendNames(3));
-
   const { save, errorMessage } = useSaveGoalTime(mode ?? 'setup');
 
   const handleConfirm = async () => {
@@ -52,7 +48,6 @@ export default function GoalTimeConfirmScreen() {
         {errorMessage && <Text accessibilityRole="alert">{errorMessage}</Text>}
         <TenSecondCountdownScreen
           title="이번 목표 꼭 지켜봐요."
-          notifiedFriends={notifiedFriends}
           cancelLabel="확인"
           onCancel={handleConfirm}
           onComplete={handleConfirm}

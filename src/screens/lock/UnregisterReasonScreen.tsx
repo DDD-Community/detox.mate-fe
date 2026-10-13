@@ -18,7 +18,10 @@ const { gray, green } = primitiveColors;
  */
 export default function UnregisterReasonScreen() {
   const router = useRouter();
-  const { appId } = useLocalSearchParams<{ appId: string }>();
+  const { appId, recipientUserIds } = useLocalSearchParams<{
+    appId: string;
+    recipientUserIds?: string;
+  }>();
   const { lockedApps, familyActivitySelectionsByAppId } = useLockStore();
   const [selectedReason, setSelectedReason] = useState<string | null>(null);
 
@@ -28,7 +31,8 @@ export default function UnregisterReasonScreen() {
   const handleConfirm = () => {
     router.dismissTo({
       pathname: '/(lock)/app-detail',
-      params: { appId, showUnregisterConfirm: '1' },
+      // 타이머 화면에서 보여 준 친구를 최종 확인 모달까지 그대로 전달한다.
+      params: { appId, showUnregisterConfirm: '1', recipientUserIds },
     });
   };
 

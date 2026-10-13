@@ -5,12 +5,14 @@ import * as ReactNativeDeviceActivity from 'react-native-device-activity';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { ScreenTimeReportView } from '../../../modules/screen-time-report';
+import { getAppLockNotification } from '../../api';
 import { Button } from '../../components/Button';
 import { Icon } from '../../components/Icon';
 import { fontFamily, primitiveColors, radius, spacing, typography } from '../../lib/token';
 import { scheduleRelockWarning } from '../../lib/relockWarning';
-import { syncUsageBarExtraMinutes } from '../../lib/sharedDisplayConfig';
+import { readOverLimitExceeded, syncUsageBarExtraMinutes } from '../../lib/sharedDisplayConfig';
 import { useLockStore } from '../../stores/lockStore';
+import { parseRecipientUserIds } from './recipientUserIds';
 
 const { gray, green } = primitiveColors;
 
@@ -128,7 +130,10 @@ const unlockAppForMinutes = (token: string, minutes: number) => {
 export default function UnlockDurationScreen() {
   const router = useRouter();
   // 쉴드 알림에서 넘어온, 지금 해제하려는 등록 앱의 id.
-  const { appId } = useLocalSearchParams<{ appId?: string }>();
+  const { appId, recipientUserIds } = useLocalSearchParams<{
+    appId?: string;
+    recipientUserIds?: string;
+  }>();
   const { lockedApps, extendUsage, familyActivitySelectionsByAppId } = useLockStore();
   // appId를 모르는 경로(프로토타입 쉴드 등)는 등록 앱이 하나뿐일 때만 그 앱으로 본다 —
   // 여러 개인데 첫 번째로 가정하면 엉뚱한 앱이 풀린다.
@@ -159,6 +164,16 @@ export default function UnlockDurationScreen() {
     setStepperMinutes((prev) => Math.min(prev + STEP_MINUTES, MAX_MINUTES));
   };
 
+  // 제한 시간을 넘긴 채 해제하는 경우에만, 타이머 화면에서 보여 준 친구에게 그대로 알린다.
+  // 알림 실패가 해제를 막지 않는다. 네트워크 실패는 전역 토스트가 안내한다.
+  const notifyFriendsOfUnlock = () => {
+    const recipients = parseRecipientUserIds(recipientUserIds);
+    if (recipients.length === 0 || !readOverLimitExceeded()) return;
+    getAppLockNotification()
+      .confirmRemoval({ recipientUserIds: recipients })
+      .catch(() => {});
+  };
+
   const handleConfirm = () => {
     if (isStarted) return;
     if (app) {
@@ -167,6 +182,7 @@ export default function UnlockDurationScreen() {
       const token = familyActivitySelectionsByAppId[app.id];
       if (token && stepperMinutes > 0) {
         unlockAppForMinutes(token, stepperMinutes);
+        notifyFriendsOfUnlock();
         // 다시 잠기기 1분 전에 "곧 잠겨요" 알림을 보낸다.
         scheduleRelockWarning(app.id, new Date(Date.now() + stepperMinutes * 60000));
       }
