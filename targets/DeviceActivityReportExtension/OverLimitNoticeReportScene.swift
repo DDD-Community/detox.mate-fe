@@ -45,6 +45,12 @@ struct OverLimitNoticeReportScene: DeviceActivityReportScene {
   func makeConfiguration(
     representing data: DeviceActivityResults<DeviceActivityData>
   ) async -> TotalActivityData {
-    await aggregateTotalActivityData(representing: data)
+    let total = await aggregateTotalActivityData(representing: data)
+    // 앱(JS)은 사용 시간을 모르므로, 제한을 넘었는지를 앱 그룹에 써서 해제 시 친구 알림 여부를 정하게 한다.
+    let defaults = UserDefaults(suiteName: noticeAppGroup)
+    let target = defaults?.integer(forKey: "detox.targetMinutes") ?? 0
+    defaults?.set(target > 0 && Int(total.totalDuration / 60) > target, forKey: "detox.overLimitExceeded")
+    defaults?.synchronize()
+    return total
   }
 }

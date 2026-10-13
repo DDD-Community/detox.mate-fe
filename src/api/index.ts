@@ -1,4 +1,5 @@
 export * from './generated/activity-record/activity-record';
+export * from './generated/app-lock-notification/app-lock-notification';
 export * from './generated/app-unlock-notification/app-unlock-notification';
 export * from './generated/feed/feed';
 export * from './generated/friend-profile/friend-profile';

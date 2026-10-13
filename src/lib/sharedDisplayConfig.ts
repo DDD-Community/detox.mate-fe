@@ -31,6 +31,27 @@ export const syncUsageBarExtraMinutes = (minutes: number) => {
 };
 
 const UNLOCK_NOTICE_NAMES_KEY = 'detox.unlockNoticeNames';
+// 리포트 확장이 "오늘 사용 시간이 제한 시간을 넘었는지"를 써 주는 값. 키 이름은
+// targets/DeviceActivityReportExtension/OverLimitNoticeReportScene.swift와 같아야 한다.
+const OVER_LIMIT_EXCEEDED_KEY = 'detox.overLimitExceeded';
+
+/** 이전 해제 흐름의 값이 남아 있지 않도록, 해제 10초 타이머에 들어올 때 지운다. */
+export const resetOverLimitExceeded = () => {
+  try {
+    ReactNativeDeviceActivity.userDefaultsSet(OVER_LIMIT_EXCEEDED_KEY, false);
+  } catch {
+    // 네이티브 모듈이 없는 환경에선 넘겼다고 보지 않는다.
+  }
+};
+
+/** 확장이 써 준 값을 읽는다. 읽을 수 없으면 넘기지 않은 것으로 본다(친구에게 잘못 알리지 않는다). */
+export const readOverLimitExceeded = (): boolean => {
+  try {
+    return ReactNativeDeviceActivity.userDefaultsGet<boolean>(OVER_LIMIT_EXCEEDED_KEY) === true;
+  } catch {
+    return false;
+  }
+};
 
 /** 해제 10초 타이머의 "{친구}에게 알림이 가요." 안내에 쓸 이름들을 리포트 확장이 읽을 수 있게 써둔다. */
 export const syncUnlockNoticeNames = (names: string[]) => {

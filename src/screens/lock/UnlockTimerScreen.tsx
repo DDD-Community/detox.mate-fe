@@ -4,10 +4,10 @@ import { ActivityIndicator, StyleSheet, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { minimizeApp, ScreenTimeReportView } from '../../../modules/screen-time-report';
-import { syncUnlockNoticeNames } from '../../lib/sharedDisplayConfig';
+import { getAppLockNotification } from '../../api';
+import { resetOverLimitExceeded, syncUnlockNoticeNames } from '../../lib/sharedDisplayConfig';
 import { useLockStore } from '../../stores/lockStore';
 import { spacing } from '../../lib/token';
-import { pickRandomFriendNames } from './mockLockApps';
 import { TenSecondCountdownScreen } from './TenSecondCountdownScreen';
 
 /**
@@ -18,7 +18,8 @@ import { TenSecondCountdownScreen } from './TenSecondCountdownScreen';
 export default function UnlockTimerScreen() {
   const router = useRouter();
   const { appId } = useLocalSearchParams<{ appId?: string }>();
-  const [notifiedFriends] = useState(() => pickRandomFriendNames(3));
+  // 이 화면에 들어올 때마다 서버가 새로 뽑은 친구 이름. 조회 전이나 실패 시에는 비어 있다.
+  const [recipients, setRecipients] = useState<{ userId: number; displayName: string }[]>([]);
   const { lockedApps, familyActivitySelectionsByAppId } = useLockStore();
   const [hydrated, setHydrated] = useState(useLockStore.persist.hasHydrated);
   const allSelectionTokens = Object.values(familyActivitySelectionsByAppId);
@@ -32,8 +33,34 @@ export default function UnlockTimerScreen() {
   // 친구 알림 안내는 제한 시간을 넘긴 경우에만 보여 준다. 사용 시간은 리포트 확장만 알아서, 이름만
   // 앱 그룹에 써두고 넘겼는지 판단과 문구 표시는 확장이 한다.
   useEffect(() => {
-    syncUnlockNoticeNames(notifiedFriends);
-  }, [notifiedFriends]);
+    syncUnlockNoticeNames(recipients.map((recipient) => recipient.displayName));
+  }, [recipients]);
+
+  // 이전 해제 흐름에서 남은 "제한 초과" 값을 지운다. 이번 흐름의 값은 리포트 확장이 다시 써 준다.
+  useEffect(() => {
+    resetOverLimitExceeded();
+  }, []);
+
+  useEffect(() => {
+    let active = true;
+    getAppLockNotification()
+      .previewRemovalRecipients()
+      .then((response) => {
+        if (!active) return;
+        setRecipients(
+          (response.recipients ?? []).flatMap((recipient) =>
+            recipient.userId !== undefined && recipient.displayName
+              ? [{ userId: recipient.userId, displayName: recipient.displayName }]
+              : []
+          )
+        );
+      })
+      // 네트워크 실패는 전역 토스트가 안내한다. 이름을 모르면 안내를 숨기고 진행한다.
+      .catch(() => {});
+    return () => {
+      active = false;
+    };
+  }, []);
 
   if (!hydrated) return <ActivityIndicator accessibilityLabel="제한 앱 불러오는 중" />;
   if (!appId || !lockedApps.some((app) => app.id === appId)) {
@@ -59,7 +86,8 @@ export default function UnlockTimerScreen() {
           onComplete={() =>
             router.replace({
               pathname: '/(lock)/unlock-duration',
-              params: { appId },
+              // 화면에 보여 준 친구를 해제 확정 단계까지 그대로 전달한다.
+              params: { appId, recipientUserIds: recipients.map((r) => r.userId).join(',') },
             })
           }
         />

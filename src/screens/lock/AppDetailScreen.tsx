@@ -4,12 +4,14 @@ import { Modal, Pressable, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { ScreenTimeReportView } from '../../../modules/screen-time-report';
 import { Icon } from '../../components/Icon';
+import { getAppLockNotification } from '../../api';
 import { releaseAppLock } from '../../lib/lockRegistration';
 import { getSevenDayAverageMinutes } from '../../lib/screenTimeHistory';
 import { syncTargetMinutes } from '../../lib/sharedDisplayConfig';
 import { unregisterAppShield } from '../../lib/shieldConfig';
 import { primitiveColors, radius, spacing, typography } from '../../lib/token';
 import { useLockStore } from '../../stores/lockStore';
+import { parseRecipientUserIds } from './recipientUserIds';
 
 const { gray, brown, system, green } = primitiveColors;
 
@@ -25,9 +27,10 @@ const formatDuration = (minutes: number) => {
 
 export default function AppDetailScreen() {
   const router = useRouter();
-  const { appId, showUnregisterConfirm } = useLocalSearchParams<{
+  const { appId, showUnregisterConfirm, recipientUserIds } = useLocalSearchParams<{
     appId: string;
     showUnregisterConfirm?: string;
+    recipientUserIds?: string;
   }>();
   const { lockedApps, targetMinutes, unregisterApp, familyActivitySelectionsByAppId } =
     useLockStore();
@@ -64,6 +67,15 @@ export default function AppDetailScreen() {
 
   const handleConfirmUnregister = () => {
     if (!app) return;
+
+    // 등록 해제를 확정하는 지금만 친구에게 알린다. 10초 타이머 화면에서 보여 준 친구에게 그대로 보낸다.
+    const recipients = parseRecipientUserIds(recipientUserIds);
+    if (recipients.length > 0) {
+      // 알림 실패가 등록 해제를 막지 않는다. 네트워크 실패는 전역 토스트가 안내한다.
+      getAppLockNotification()
+        .confirmRemoval({ recipientUserIds: recipients })
+        .catch(() => {});
+    }
 
     // 이 앱만 골라서 받아둔 토큰이 있으면 그 앱만 진짜로 해제한다. mock 시드 앱(토큰 없음)은
     // 애초에 실제로 잠긴 적이 없어서 건너뛴다.
