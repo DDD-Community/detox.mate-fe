@@ -14,8 +14,8 @@ export default function SelectAppsScreen() {
   const handleDone = () => {
     const result = selection.saveSelection();
     if (!result) return;
-    if (result.addedAppCount > 0) router.replace('/(lock)/goal-time');
-    else router.back();
+    // 목표 제한 시간은 온보딩에서만 정한다. 앱을 추가한 뒤에는 바로 제한된 앱 현황으로 돌아간다.
+    router.back();
   };
 
   return (
