@@ -158,3 +158,32 @@ it('권한 거부 후 설정에서 허용해 돌아와도 서버 수신 동의�
   expect(screen.state.enabled).toBe(false);
   expect(mocks.ensure).not.toHaveBeenCalled();
 });
+
+it('최초 알림 요청을 거절하면 수신 동의와 토큰을 저장하지 않고 재시도할 수 있다', async () => {
+  mocks.permission.mockResolvedValue({ status: 'undetermined', canAskAgain: true });
+  mocks.request.mockResolvedValue({ status: 'denied', canAskAgain: false });
+  const screen = await setup(false);
+  await act(() => screen.state.toggle(true));
+  expect(screen.permissionRequired).toHaveBeenCalledOnce();
+  expect(screen.state.enabled).toBe(false);
+  expect(screen.state.pending).toBe(false);
+  expect(mocks.update).not.toHaveBeenCalled();
+  expect(mocks.register).not.toHaveBeenCalled();
+
+  mocks.permission.mockResolvedValue({ status: 'granted', canAskAgain: false });
+  await act(() => screen.state.toggle(true));
+  expect(screen.state.enabled).toBe(true);
+  expect(mocks.update).toHaveBeenCalledWith({ pushNotificationEnabled: true });
+  expect(mocks.register).toHaveBeenCalledOnce();
+});
+
+it('앱 수신 동의가 켜진 상태에서는 OS 권한 허용 후 복귀하면 토글과 토큰을 복구한다', async () => {
+  mocks.permission.mockResolvedValue({ status: 'denied', canAskAgain: false });
+  const screen = await setup(true);
+  expect(screen.state.enabled).toBe(false);
+  mocks.permission.mockResolvedValue({ status: 'granted', canAskAgain: false });
+  await act(() => mocks.listener?.('active'));
+  expect(screen.state.enabled).toBe(true);
+  expect(mocks.ensure).toHaveBeenCalledOnce();
+  expect(mocks.update).not.toHaveBeenCalled();
+});

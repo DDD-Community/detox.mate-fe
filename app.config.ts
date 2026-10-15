@@ -154,6 +154,13 @@ const config: ExpoConfig = {
     'expo-font',
     'expo-image',
     [
+      'expo-image-picker',
+      {
+        photosPermission:
+          '프로필 사진을 등록할 때 사진 보관함에서 사진을 선택합니다. 선택한 사진은 친구와 디톡스메이트 검색 결과에 표시됩니다.',
+      },
+    ],
+    [
       'expo-splash-screen',
       {
         image: './assets/onboarding/splash.png',

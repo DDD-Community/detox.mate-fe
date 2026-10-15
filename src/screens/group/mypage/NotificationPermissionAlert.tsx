@@ -34,9 +34,9 @@ export function NotificationPermissionAlert({
           style={styles.card}
         >
           <View style={styles.topSection}>
-            <Text style={styles.title}>알림 권한 허용이 필요해요</Text>
+            <Text style={styles.title}>알림 권한 허용이 필요해요.</Text>
             <Text style={styles.description}>
-              알림을 받으려면 기기 설정에서 알림을 허용해 주세요.
+              앱 잠금 해제 시, 디톡스메이트로 돌아오기 위해{'\n'}허용이 필요해요.
             </Text>
           </View>
 
@@ -90,23 +90,22 @@ const styles = StyleSheet.create({
     borderRadius: 24,
     paddingHorizontal: spacing[24],
     paddingVertical: spacing[32],
-    gap: spacing[40],
+    gap: spacing[32],
   },
   topSection: {
     width: '100%',
-    gap: spacing[20],
+    gap: spacing[16],
   },
   title: {
-    fontFamily: fontFamily.primary.extraBold,
+    fontFamily: fontFamily.primary.semibold,
     fontSize: 20,
-    fontWeight: '800',
     lineHeight: 30,
-    color: '#0A0A0A',
+    color: gray[900],
     textAlign: 'center',
   },
   description: {
     ...typography.primary.body2R,
-    color: '#4A5565',
+    color: gray[500],
     textAlign: 'center',
   },
   actions: {
@@ -115,7 +114,7 @@ const styles = StyleSheet.create({
   },
   primaryButton: {
     height: 44,
-    borderRadius: 18,
+    borderRadius: 22,
     backgroundColor: green[300],
     alignItems: 'center',
     justifyContent: 'center',
@@ -125,11 +124,13 @@ const styles = StyleSheet.create({
   },
   primaryText: {
     ...typography.primary.body2B,
+    fontFamily: fontFamily.primary.semibold,
+    fontWeight: '600',
     color: '#FFFFFF',
   },
   secondaryButton: {
     height: 44,
-    borderRadius: 18,
+    borderRadius: 22,
     backgroundColor: gray[50],
     alignItems: 'center',
     justifyContent: 'center',
@@ -139,6 +140,8 @@ const styles = StyleSheet.create({
   },
   secondaryText: {
     ...typography.primary.body2B,
+    fontFamily: fontFamily.primary.semibold,
+    fontWeight: '600',
     color: gray[800],
   },
 });
