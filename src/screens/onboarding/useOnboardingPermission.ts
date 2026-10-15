@@ -7,13 +7,21 @@ import { registerDevicePushToken } from '@/lib/fcmToken';
 
 export type OnboardingPermission = 'screen-time' | 'notifications';
 
-export function useOnboardingPermission(permission: OnboardingPermission, onGranted: () => void) {
+export function useOnboardingPermission(permission: OnboardingPermission, onComplete: () => void) {
   const [pending, setPending] = useState(false);
+  const [notificationDenied, setNotificationDenied] = useState(false);
   const busy = useRef(false);
   const active = useRef(true);
   const completed = useRef(false);
-  const granted = useRef(onGranted);
-  granted.current = onGranted;
+  const onCompleteRef = useRef(onComplete);
+  onCompleteRef.current = onComplete;
+
+  const complete = useCallback(() => {
+    if (active.current && !completed.current) {
+      completed.current = true;
+      onCompleteRef.current();
+    }
+  }, []);
 
   const proceed = useCallback(async () => {
     if (permission === 'notifications') {
@@ -26,18 +34,20 @@ export function useOnboardingPermission(permission: OnboardingPermission, onGran
         });
       }
     }
-    if (active.current && !completed.current) {
-      completed.current = true;
-      granted.current();
+    complete();
+  }, [permission, complete]);
+  const isGranted = useCallback(async () => {
+    if (permission === 'screen-time') {
+      return (
+        DeviceActivity.getAuthorizationStatus() === DeviceActivity.AuthorizationStatus.approved
+      );
     }
+    const result = await Notifications.getPermissionsAsync();
+    if (active.current) {
+      setNotificationDenied(!result.granted && (result.status === 'denied' || !result.canAskAgain));
+    }
+    return result.granted;
   }, [permission]);
-  const isGranted = useCallback(
-    async () =>
-      permission === 'screen-time'
-        ? DeviceActivity.getAuthorizationStatus() === DeviceActivity.AuthorizationStatus.approved
-        : (await Notifications.getPermissionsAsync()).granted,
-    [permission]
-  );
 
   useEffect(() => {
     active.current = true;
@@ -96,13 +106,20 @@ export function useOnboardingPermission(permission: OnboardingPermission, onGran
           return;
         }
         await DeviceActivity.requestAuthorization('individual');
-      } else if ((await Notifications.getPermissionsAsync()).canAskAgain)
+      } else {
+        if (!(await Notifications.getPermissionsAsync()).canAskAgain) {
+          await Linking.openSettings();
+          return;
+        }
         await Notifications.requestPermissionsAsync();
+      }
       if (await isGranted()) {
         await proceed();
         return;
       }
-      showSettings();
+      if (permission === 'notifications') {
+        if (active.current) setNotificationDenied(true);
+      } else showSettings();
     } catch (error) {
       if (
         permission === 'screen-time' &&
@@ -115,5 +132,8 @@ export function useOnboardingPermission(permission: OnboardingPermission, onGran
       if (active.current) setPending(false);
     }
   };
-  return { pending, request };
+  const skip = () => {
+    if (permission === 'notifications' && !busy.current) complete();
+  };
+  return { pending, request, notificationDenied, skip };
 }

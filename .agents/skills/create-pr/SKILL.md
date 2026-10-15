@@ -68,10 +68,9 @@ gh pr list --head <current-branch> --json number,title,body,url
    - `github_actions`: CI/CD changes
 4. PR 제목: conventional commit 형식, 커밋이 한국어면 한국어로
 5. 리뷰어 결정:
-   a. `.Codex/skills/shared/config/discord-members.json` 읽기 (key = GitHub username)
+   a. 팀원은 `euijinkk`, `Clt689` 두 명이다.
    b. `gh api user --jq '.login'`으로 현재 사용자 확인
-   c. **본인 제외한 멤버 목록**을 보여주고 리뷰어 선택 요청 (AskUserQuestion)
-   d. 리뷰어가 결정되지 않으면 반드시 질문
+   c. 본인을 제외한 팀원 한 명을 리뷰어로 자동 지정한다 (`euijinkk` → `Clt689`, `Clt689` → `euijinkk`). 리뷰어 선택을 다시 묻지 않는다.
 6. `git push -u origin <branch>`
 7. `gh pr create --base main --title "..." --body "$(cat <<'EOF' ... EOF)"`
 8. `gh pr edit <number> --add-label <label> --add-assignee <username> --add-reviewer <reviewer>`
