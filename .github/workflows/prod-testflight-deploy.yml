@@ -90,11 +90,6 @@ jobs:
             exit 1
           fi
 
-          if [ "$VERSION_BUMP" = "custom" ] && [ "$app_version" = "$previous_version" ]; then
-            echo "::error::custom_app_version must be different from the previous PRD version"
-            exit 1
-          fi
-
           release_tag="prod-tf-v${app_version}-${GITHUB_RUN_NUMBER}"
           release_title="Prod TestFlight v${app_version} #${GITHUB_RUN_NUMBER}"
 
