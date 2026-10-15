@@ -2,6 +2,7 @@ import { useRouter } from 'expo-router';
 import { useState } from 'react';
 import { LoggingPage } from '@/components';
 import { PermissionGuide } from '../onboarding/PermissionGuide';
+import { NotificationDeniedGuide } from '../onboarding/NotificationDeniedGuide';
 import {
   useOnboardingPermission,
   type OnboardingPermission,
@@ -28,26 +29,35 @@ function PermissionStep({
   permission: OnboardingPermission;
   onGranted: () => void;
 }) {
-  const { pending, request } = useOnboardingPermission(permission, onGranted);
+  const { pending, request, notificationDenied, skip } = useOnboardingPermission(
+    permission,
+    onGranted
+  );
   const notification = permission === 'notifications';
   return (
     <LoggingPage
       eventName="Onboarding Viewed"
       properties={{ pageName: 'Onboarding', step: permission }}
     >
-      <PermissionGuide
-        title={
-          notification ? '잠긴 앱을 풀기 위해 꼭 필요해요.' : '스크린타임 관리를 위해 꼭 필요해요.'
-        }
-        image={
-          notification
-            ? require('@assets/onboarding/notifications.png')
-            : require('@assets/onboarding/screen-time.png')
-        }
-        notification={notification}
-        pending={pending}
-        onContinue={request}
-      />
+      {notificationDenied ? (
+        <NotificationDeniedGuide pending={pending} onAllow={request} onSkip={skip} />
+      ) : (
+        <PermissionGuide
+          title={
+            notification
+              ? '알림으로 편리하게 이용해 보세요.'
+              : '스크린타임 관리를 위해 꼭 필요해요.'
+          }
+          image={
+            notification
+              ? require('@assets/onboarding/notifications.png')
+              : require('@assets/onboarding/screen-time.png')
+          }
+          notification={notification}
+          pending={pending}
+          onContinue={request}
+        />
+      )}
     </LoggingPage>
   );
 }
