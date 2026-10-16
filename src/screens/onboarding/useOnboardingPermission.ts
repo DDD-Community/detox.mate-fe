@@ -43,9 +43,6 @@ export function useOnboardingPermission(permission: OnboardingPermission, onComp
       );
     }
     const result = await Notifications.getPermissionsAsync();
-    if (active.current) {
-      setNotificationDenied(!result.granted && (result.status === 'denied' || !result.canAskAgain));
-    }
     return result.granted;
   }, [permission]);
 
@@ -108,7 +105,8 @@ export function useOnboardingPermission(permission: OnboardingPermission, onComp
         await DeviceActivity.requestAuthorization('individual');
       } else {
         if (!(await Notifications.getPermissionsAsync()).canAskAgain) {
-          await Linking.openSettings();
+          if (notificationDenied) await Linking.openSettings();
+          else if (active.current) setNotificationDenied(true);
           return;
         }
         await Notifications.requestPermissionsAsync();
