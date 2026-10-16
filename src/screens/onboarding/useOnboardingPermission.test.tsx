@@ -77,6 +77,11 @@ async function setup(permission: 'screen-time' | 'notifications' = 'notification
 }
 it('알림 거절 시 선택 가능한 안내를 보여주고 설정 복귀로 허용하면 등록 실패에도 한 번만 진행한다', async () => {
   const screen = await setup();
+  expect(screen.state.notificationDenied).toBe(false);
+  expect(mocks.request).not.toHaveBeenCalled();
+  mocks.request.mockImplementation(async () => {
+    mocks.canAskAgain = false;
+  });
   await act(() => screen.state.request());
   expect(screen.next).not.toHaveBeenCalled();
   expect(screen.state.notificationDenied).toBe(true);
@@ -85,6 +90,20 @@ it('알림 거절 시 선택 가능한 안내를 보여주고 설정 복귀로 �
   mocks.push.mockRejectedValue(new Error('토큰 등록 실패'));
   await act(() => mocks.listener?.('active'));
   await act(() => mocks.listener?.('active'));
+  expect(screen.next).toHaveBeenCalledTimes(1);
+});
+it('알림을 처음 요청하는 사용자는 안내에서 시작한 뒤 허용하면 미동의 안내 없이 진행한다', async () => {
+  const screen = await setup();
+  expect(screen.state.notificationDenied).toBe(false);
+  expect(mocks.request).not.toHaveBeenCalled();
+  expect(screen.next).not.toHaveBeenCalled();
+  mocks.request.mockImplementation(async () => {
+    mocks.granted = true;
+  });
+  await act(() => screen.state.request());
+  expect(mocks.request).toHaveBeenCalledTimes(1);
+  expect(screen.state.notificationDenied).toBe(false);
+  expect(mocks.push).toHaveBeenCalledTimes(1);
   expect(screen.next).toHaveBeenCalledTimes(1);
 });
 it('시스템 요청과 복귀 이벤트가 겹쳐도 요청과 이동이 중복되지 않는다', async () => {
@@ -125,10 +144,16 @@ it('알림을 거절한 뒤 나중에 하기를 누르면 권한 요청과 토�
   expect(mocks.push).not.toHaveBeenCalled();
 });
 
-it('이미 거절한 알림은 안내에서 설정을 열고 미허용으로 돌아와도 나중에 진행할 수 있다', async () => {
+it('이미 거절했어도 최초 안내를 유지하고 시작한 뒤 미동의 안내에서 설정 또는 나중에 하기를 선택한다', async () => {
   mocks.canAskAgain = false;
   const screen = await setup();
+  expect(screen.state.notificationDenied).toBe(false);
+  await act(() => mocks.listener?.('active'));
+  expect(screen.state.notificationDenied).toBe(false);
+  await act(() => screen.state.request());
   expect(screen.state.notificationDenied).toBe(true);
+  expect(mocks.openSettings).not.toHaveBeenCalled();
+  expect(screen.next).not.toHaveBeenCalled();
   await act(() => screen.state.request());
   expect(mocks.openSettings).toHaveBeenCalledTimes(1);
   expect(mocks.request).not.toHaveBeenCalled();
@@ -143,6 +168,7 @@ it('설정 열기에 실패해도 알림 미동의 안내에서 나중에 진행
   mocks.canAskAgain = false;
   mocks.openSettings.mockRejectedValue(new Error('설정 열기 실패'));
   const screen = await setup();
+  await act(() => screen.state.request());
   await act(() => screen.state.request());
   expect(screen.state.pending).toBe(false);
   expect(screen.state.notificationDenied).toBe(true);
