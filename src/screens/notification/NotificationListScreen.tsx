@@ -130,7 +130,7 @@ function NotificationList() {
               }}
               style={({ pressed }) => [styles.row, pressed && styles.rowPressed]}
             >
-              <ProfileAvatar size={48} />
+              <ProfileAvatar uri={item.senderProfileImageUrl} size={48} />
               <View style={styles.rowBody}>
                 <Text style={styles.message}>{item.message}</Text>
                 <Text style={styles.timeLabel}>
