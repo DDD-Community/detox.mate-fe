@@ -370,14 +370,8 @@ function FriendsContent() {
   const { search } = useLocalSearchParams<{ search?: string }>();
   const shouldAutoFocusSearchInput = search === '1';
   const { share, sharing, inviteLabel, preparing } = useShareFriendInvite();
-  const {
-    error,
-    pendingActionId,
-    refresh,
-    acceptRequest,
-    rejectRequest,
-    deleteFriend,
-  } = useFriendsListController();
+  const { error, pendingActionId, refresh, acceptRequest, rejectRequest, deleteFriend } =
+    useFriendsListController();
   const insets = useSafeAreaInsets();
   const [query, setQuery] = useState('');
   const [deleteTarget, setDeleteTarget] = useState<FriendsListItem | null>(null);
