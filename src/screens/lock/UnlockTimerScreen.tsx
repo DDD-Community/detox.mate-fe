@@ -67,8 +67,21 @@ export default function UnlockTimerScreen() {
     return <Redirect href="/(tabs)/restricted-apps" />;
   }
 
+  const currentSelectionToken = familyActivitySelectionsByAppId[appId];
+
   return (
     <View style={styles.root}>
+      {currentSelectionToken ? (
+        // 다음 화면(해제 시간 설정)의 사용 시간 막대는 리포트 익스텐션이 계산해서 처음 뜰 때 느리다.
+        // 10초 동안 같은 앱의 막대를 보이지 않게 미리 그려 익스텐션을 먼저 깨워 둔다.
+        <View pointerEvents="none" style={styles.usageBarWarmup}>
+          <ScreenTimeReportView
+            selectionTokens={[currentSelectionToken]}
+            reportStyle="usageBar"
+            style={styles.usageBarWarmupView}
+          />
+        </View>
+      ) : null}
       <SafeAreaView style={styles.safeArea}>
         <TenSecondCountdownScreen
           title="10초 동안 다시 생각해볼까요?"
@@ -97,6 +110,19 @@ export default function UnlockTimerScreen() {
 }
 
 const styles = StyleSheet.create({
+  // 화면에는 거의 안 보이되(opacity 0), 윈도우 안에 있어야 iOS가 렌더링한다.
+  usageBarWarmup: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    width: 200,
+    height: 36,
+    opacity: 0.01,
+  },
+  usageBarWarmupView: {
+    width: 200,
+    height: 36,
+  },
   overLimitNotice: {
     height: 16,
   },
