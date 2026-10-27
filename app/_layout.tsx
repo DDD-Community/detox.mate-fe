@@ -19,6 +19,7 @@ import { syncScreenTimeHistory } from '../src/lib/screenTimeHistory';
 import { syncTimeLimitFromServer } from '../src/lib/timeLimitSync';
 import { syncTargetMinutes } from '../src/lib/sharedDisplayConfig';
 import { restoreAuthSession, useAuthStatus } from '../src/api/auth';
+import { UsageReportWarmup } from '../src/screens/lock/UsageReportWarmup';
 import { useLockStore } from '../src/stores/lockStore';
 import { fontSources } from '../src/lib/token/primitive/fonts';
 import { NetworkErrorToast } from '../src/components/NetworkErrorToast';
@@ -147,16 +148,19 @@ function RootNavigator() {
   if (status === 'restoring') return null;
 
   return (
-    <Stack screenOptions={{ headerShown: false }}>
-      <Stack.Screen name="index" />
-      <Stack.Screen name="(auth)" />
-      <Stack.Screen name="friend-invite" />
-      <Stack.Protected guard={status === 'signedIn'}>
-        <Stack.Screen name="(tabs)" />
-        <Stack.Screen name="(group)" />
-        <Stack.Screen name="(feed)" />
-        <Stack.Screen name="(lock)" />
-      </Stack.Protected>
-    </Stack>
+    <>
+      <Stack screenOptions={{ headerShown: false }}>
+        <Stack.Screen name="index" />
+        <Stack.Screen name="(auth)" />
+        <Stack.Screen name="friend-invite" />
+        <Stack.Protected guard={status === 'signedIn'}>
+          <Stack.Screen name="(tabs)" />
+          <Stack.Screen name="(group)" />
+          <Stack.Screen name="(feed)" />
+          <Stack.Screen name="(lock)" />
+        </Stack.Protected>
+      </Stack>
+      {status === 'signedIn' && Platform.OS === 'ios' ? <UsageReportWarmup /> : null}
+    </>
   );
 }
