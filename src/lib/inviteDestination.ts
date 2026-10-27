@@ -9,7 +9,13 @@ import { getNotificationPath } from './notificationDestination';
 
 type Destination = Parameters<typeof router.replace>[0];
 
-export const AIRBRIDGE_HOSTS = new Set(['detoxmate.airbridge.io', 'detoxmate.abr.ge']);
+// 이전 Airbridge 앱(detoxmate)으로 공유된 링크도 계속 받는다.
+export const AIRBRIDGE_HOSTS = new Set([
+  'detoxmatedev.airbridge.io',
+  'detoxmatedev.abr.ge',
+  'detoxmate.airbridge.io',
+  'detoxmate.abr.ge',
+]);
 
 export function parseInviteDeeplink(path: string): PendingInvite | null {
   let url: URL;

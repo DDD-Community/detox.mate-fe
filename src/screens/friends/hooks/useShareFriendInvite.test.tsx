@@ -35,7 +35,7 @@ vi.mock('../../../lib/analytics');
 // airbridge.ts는 expo-router와 네이티브 SDK를 끌어오므로 링크 만드는 함수만 실제 구현을 쓴다.
 vi.mock('../../../lib/airbridge', () => ({
   getFriendInviteShareUrl: (code: string) =>
-    `https://detoxmate.airbridge.io/friend-invite?code=${encodeURIComponent(code)}`,
+    `https://detoxmatedev.airbridge.io/friend-invite?code=${encodeURIComponent(code)}`,
 }));
 
 Object.assign(globalThis, { IS_REACT_ACT_ENVIRONMENT: true });
@@ -103,7 +103,7 @@ describe('친구 초대 공유의 비동기 보호', () => {
       const content = actions.share.mock.calls[0][0];
       expect(content.message).toContain('초대 코드: ABCDE');
       expect(content.message).not.toContain('my-invite');
-      expect(content.message).toContain('https://detoxmate.airbridge.io/friend-invite?code=ABCDE');
+      expect(content.message).toContain('https://detoxmatedev.airbridge.io/friend-invite?code=ABCDE');
       expect(content.message).toContain('친구 목록 검색창에 초대 코드를 입력해주세요.');
       expect(content.message).not.toContain('이메일');
       expect(content.message).not.toContain('my@example.com');

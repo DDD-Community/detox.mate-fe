@@ -259,4 +259,18 @@ describe('네이티브 링크와 SDK 전달의 초대 분류', () => {
       code: 'ABCDE',
     });
   });
+
+  it('현재 Airbridge 앱(detoxmatedev) 링크와 이전 앱 링크를 모두 받는다', () => {
+    expect(
+      parseInviteDeeplink('https://detoxmatedev.airbridge.io/friend-invite?code=ABCDE')
+    ).toEqual({ kind: 'friend', code: 'ABCDE' });
+    expect(parseInviteDeeplink('https://detoxmatedev.abr.ge/?invite_code=ABCDE')).toEqual({
+      kind: 'group',
+      code: 'ABCDE',
+    });
+    expect(parseInviteDeeplink('https://detoxmate.airbridge.io/friend-invite?code=ABCDE')).toEqual({
+      kind: 'friend',
+      code: 'ABCDE',
+    });
+  });
 });
