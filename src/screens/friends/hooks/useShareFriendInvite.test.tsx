@@ -32,6 +32,11 @@ vi.mock('../../../api/friendMutator', () => ({
 }));
 
 vi.mock('../../../lib/analytics');
+// airbridge.ts는 expo-router와 네이티브 SDK를 끌어오므로 링크 만드는 함수만 실제 구현을 쓴다.
+vi.mock('../../../lib/airbridge', () => ({
+  getFriendInviteShareUrl: (code: string) =>
+    `https://detoxmate.airbridge.io/friend-invite?code=${encodeURIComponent(code)}`,
+}));
 
 Object.assign(globalThis, { IS_REACT_ACT_ENVIRONMENT: true });
 const cleanups: (() => void)[] = [];
@@ -83,7 +88,7 @@ async function setup(options?: Parameters<typeof useShareFriendInvite>[0]) {
 
 describe('친구 초대 공유의 비동기 보호', () => {
   it.each(['ios', 'android'])(
-    '%s에서 링크 없이 사용자 코드만 전달하고 내부 초대 토큰과 이메일은 제외한다',
+    '%s에서 사용자 코드와 Airbridge 링크를 전달하고 내부 초대 토큰과 이메일은 제외한다',
     async (os) => {
       actions.platform.OS = os;
       actions.request.mockResolvedValue({
@@ -98,12 +103,11 @@ describe('친구 초대 공유의 비동기 보호', () => {
       const content = actions.share.mock.calls[0][0];
       expect(content.message).toContain('초대 코드: ABCDE');
       expect(content.message).not.toContain('my-invite');
+      expect(content.message).toContain('https://detoxmate.airbridge.io/friend-invite?code=ABCDE');
       expect(content.message).toContain('친구 목록 검색창에 초대 코드를 입력해주세요.');
       expect(content.message).not.toContain('이메일');
       expect(content.message).not.toContain('my@example.com');
       expect(content).not.toHaveProperty('url');
-      expect(content.message).not.toMatch(/https?:\/\//);
-      expect(content.message).not.toContain('초대 링크');
     }
   );
 

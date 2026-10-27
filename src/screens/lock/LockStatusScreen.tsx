@@ -1,5 +1,5 @@
-import { useLocalSearchParams, useRouter } from 'expo-router';
-import { useEffect } from 'react';
+import { useFocusEffect, useLocalSearchParams, useRouter } from 'expo-router';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { ScreenTimeReportView } from '../../../modules/screen-time-report';
@@ -32,6 +32,20 @@ export default function LockStatusScreen() {
   const unlockedToast = useToastVisibility(UNLOCKED_TOAST_MS);
   const { targetMinutes, lockedApps, familyActivitySelectionsByAppId } = useLockStore();
   const allSelectionTokens = Object.values(familyActivitySelectionsByAppId);
+
+  // 탭 화면은 계속 살아 있어서 사용 시간 리포트가 처음 한 번만 계산된다. 앱을 켠 직후엔 애플 집계가
+  // 비어 있어 "기록 없음"으로 굳으므로, 탭으로 돌아올 때마다 리포트를 새로 만들어 다시 읽게 한다.
+  const [reportRefreshKey, setReportRefreshKey] = useState(0);
+  const firstFocus = useRef(true);
+  useFocusEffect(
+    useCallback(() => {
+      if (firstFocus.current) {
+        firstFocus.current = false;
+        return;
+      }
+      setReportRefreshKey((key) => key + 1);
+    }, [])
+  );
 
   // 제한 시간 변경을 마치고 돌아오면 한 번만 완료 토스트를 띄우고, 파라미터는 지운다.
   useEffect(() => {
@@ -99,6 +113,7 @@ export default function LockStatusScreen() {
 
         {allSelectionTokens.length > 0 ? (
           <ScreenTimeReportView
+            key={`summary-${reportRefreshKey}`}
             selectionTokens={allSelectionTokens}
             reportStyle="summary"
             style={styles.usageSummaryView}
@@ -129,6 +144,7 @@ export default function LockStatusScreen() {
                   {token ? (
                     <View pointerEvents="none">
                       <ScreenTimeReportView
+                        key={`row-${reportRefreshKey}`}
                         selectionTokens={[token]}
                         reportStyle="appRow"
                         style={styles.appRowView}
