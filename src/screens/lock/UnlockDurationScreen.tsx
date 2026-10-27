@@ -213,11 +213,15 @@ export default function UnlockDurationScreen() {
 
           {selectionToken ? (
             // 이 앱의 오늘 사용 시간은 리포트 익스텐션만 알고 있어서, 막대와 라벨을 거기서 그린다.
-            <ScreenTimeReportView
-              selectionTokens={[selectionToken]}
-              reportStyle="usageBar"
-              style={styles.usageBarView}
-            />
+            // 익스텐션이 계산을 마칠 때까지 뒤에 회색 막대를 깔아 둔다. 완성된 막대가 그 위에 그려진다.
+            <View style={styles.usageBarSlot}>
+              <View style={styles.usageBarSkeletonTrack} />
+              <ScreenTimeReportView
+                selectionTokens={[selectionToken]}
+                reportStyle="usageBar"
+                style={styles.usageBarView}
+              />
+            </View>
           ) : null}
         </View>
 
@@ -284,9 +288,20 @@ const styles = StyleSheet.create({
     color: gray[800],
     textAlign: 'left',
   },
-  usageBarView: {
+  usageBarSlot: {
     height: 36,
     marginTop: spacing[24],
+  },
+  usageBarView: {
+    height: 36,
+  },
+  // 완성된 막대의 트랙(높이 11)과 같은 자리에 깔아, 겹쳐도 어색하지 않게 아주 연한 색을 쓴다.
+  usageBarSkeletonTrack: {
+    ...StyleSheet.absoluteFillObject,
+    bottom: undefined,
+    height: 11,
+    borderRadius: radius.full,
+    backgroundColor: gray[50],
   },
   stepperRow: {
     flex: 1,
