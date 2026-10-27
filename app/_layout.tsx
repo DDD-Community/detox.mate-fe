@@ -3,7 +3,7 @@ import { useFonts } from 'expo-font';
 import * as Notifications from 'expo-notifications';
 import { router, Stack } from 'expo-router';
 import * as SplashScreen from 'expo-splash-screen';
-import { useEffect, useState, type ComponentType } from 'react';
+import { useEffect, useRef, useState, type ComponentType } from 'react';
 import { Platform } from 'react-native';
 import { OverlayProvider } from 'overlay-kit';
 import * as ReactNativeDeviceActivity from 'react-native-device-activity';
@@ -38,6 +38,7 @@ if (__DEV__ && process.env.EXPO_PUBLIC_MSW_ENABLED === 'true') {
 initSentry();
 SplashScreen.preventAutoHideAsync();
 
+const DUPLICATE_NOTIFICATION_WINDOW_MS = 3000;
 const STORYBOOK_ENABLED = process.env.EXPO_PUBLIC_STORYBOOK === 'true';
 const StorybookUIRoot = STORYBOOK_ENABLED
   ? (require('../.storybook').default as ComponentType)
@@ -47,6 +48,7 @@ export default function RootLayout() {
   const [fontsLoaded, fontError] = useFonts(fontSources);
   const authStatus = useAuthStatus();
   const isAuthReady = authStatus !== 'restoring';
+  const lastHandledNotification = useRef<{ id: string; at: number } | null>(null);
 
   useEffect(() => {
     initAnalytics();
@@ -95,6 +97,14 @@ export default function RootLayout() {
         response.actionIdentifier === Notifications.DEFAULT_ACTION_IDENTIFIER &&
         getNotificationPath(response.notification.request.content.data)
       ) {
+        // 같은 탭이 리스너와 getLastNotificationResponse로 두 번 들어오면, 두 번째 replace('/')가
+        // 이미 소비된 알림 기록 때문에 기본 탭으로 가 버려 타이머 화면이 사라진다. 짧은 시간 안의
+        // 같은 알림은 한 번만 처리한다(같은 id로 다시 탭하는 경우를 막지 않도록 시간 창을 둔다).
+        const id = response.notification.request.identifier;
+        const now = Date.now();
+        const last = lastHandledNotification.current;
+        if (last && last.id === id && now - last.at < DUPLICATE_NOTIFICATION_WINDOW_MS) return;
+        lastHandledNotification.current = { id, at: now };
         // 인증 진입점에서 응답을 소비한다. 열린 친구 화면의 검색·스크롤도 초기화된다.
         router.replace('/');
       }
