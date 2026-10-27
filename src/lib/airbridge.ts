@@ -4,7 +4,7 @@ import { logError, normalizeError } from '../api/errors';
 import { parseInviteDeeplink } from './inviteDestination';
 import { setPendingInvite, type PendingInvite } from './pendingInvite';
 
-const APP_NAME = 'detoxmate';
+const APP_NAME = 'detoxmatedev';
 let nativeDelivery: PendingInvite | null = null;
 
 // Expo의 native-intent와 SDK가 같은 네이티브 링크를 전달해도 SDK가 화면을 재시작하지 않는다.

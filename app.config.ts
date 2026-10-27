@@ -61,7 +61,13 @@ const config: ExpoConfig = {
     ...(isProduction ? {} : { appleTeamId: 'V4328A485M' }),
     googleServicesFile: iosGoogleServicesFile,
     supportsTablet: false,
-    associatedDomains: ['applinks:detoxmate.airbridge.io', 'applinks:detoxmate.abr.ge'],
+    associatedDomains: [
+      'applinks:detoxmatedev.airbridge.io',
+      'applinks:detoxmatedev.abr.ge',
+      // 이전 Airbridge 앱(detoxmate)으로 이미 공유된 링크도 계속 열리게 남겨 둔다.
+      'applinks:detoxmate.airbridge.io',
+      'applinks:detoxmate.abr.ge',
+    ],
     entitlements: {
       'aps-environment': 'production',
       'com.apple.developer.applesignin': ['Default'],
@@ -91,6 +97,8 @@ const config: ExpoConfig = {
         autoVerify: true,
         category: ['BROWSABLE', 'DEFAULT'],
         data: [
+          { scheme: 'http', host: 'detoxmatedev.airbridge.io' },
+          { scheme: 'https', host: 'detoxmatedev.airbridge.io' },
           { scheme: 'http', host: 'detoxmate.airbridge.io' },
           { scheme: 'https', host: 'detoxmate.airbridge.io' },
         ],
@@ -100,6 +108,8 @@ const config: ExpoConfig = {
         autoVerify: true,
         category: ['BROWSABLE', 'DEFAULT'],
         data: [
+          { scheme: 'http', host: 'detoxmatedev.abr.ge' },
+          { scheme: 'https', host: 'detoxmatedev.abr.ge' },
           { scheme: 'http', host: 'detoxmate.abr.ge' },
           { scheme: 'https', host: 'detoxmate.abr.ge' },
         ],
@@ -117,8 +127,8 @@ const config: ExpoConfig = {
     [
       'airbridge-expo-sdk',
       {
-        appName: 'detoxmate',
-        appToken: 'de33f6fd010d4db794542d3a0c05b7a4',
+        appName: 'detoxmatedev',
+        appToken: '72ae8dd872124744abb286a1b56ea1d3',
       },
     ],
     [
