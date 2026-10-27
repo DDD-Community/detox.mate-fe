@@ -36,3 +36,8 @@ export async function handleInviteDeeplink(deeplink: string) {
 export function getInviteShareUrl(inviteCode: string): string {
   return `https://${APP_NAME}.airbridge.io/?invite_code=${inviteCode}`;
 }
+
+// 친구 초대 코드(userCode)용 링크. 받는 쪽은 parseInviteDeeplink가 /friend-invite?code=를 읽는다.
+export function getFriendInviteShareUrl(userCode: string): string {
+  return `https://${APP_NAME}.airbridge.io/friend-invite?code=${encodeURIComponent(userCode)}`;
+}

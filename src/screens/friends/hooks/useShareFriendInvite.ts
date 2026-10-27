@@ -5,6 +5,7 @@ import { Alert, Share } from 'react-native';
 import { getAuthenticatedRequestSignal } from '../../../api/client';
 import { AppError, getUserErrorMessage, logError, normalizeError } from '../../../api/errors';
 import { getMyInvite } from '../../../api/query-generated/friend';
+import { getFriendInviteShareUrl } from '../../../lib/airbridge';
 import { trackEvent } from '../../../lib/analytics';
 
 async function prepareShareContent(signal: AbortSignal) {
@@ -18,11 +19,12 @@ async function prepareShareContent(signal: AbortSignal) {
     }
     throw error;
   }
-  // 링크 없이 초대 코드만 공유한다. 받는 사람은 친구 목록 검색창에 코드를 입력한다.
+  // Airbridge 링크를 같이 보낸다. 링크를 못 여는 환경에서는 코드를 검색창에 직접 입력하면 된다.
   const message = [
     '디톡스메이트에서 함께 스크린타임을 줄여봐요.',
     `초대 코드: ${invite.userCode}`,
-    '친구 목록 검색창에 초대 코드를 입력해주세요.',
+    getFriendInviteShareUrl(invite.userCode),
+    '링크가 열리지 않으면 친구 목록 검색창에 초대 코드를 입력해주세요.',
   ].join('\n');
   // 카드에는 Figma의 `detoxmate/{invite_code}` 형태로 보여준다.
   return { message, label: `detoxmate/${invite.userCode}` };
