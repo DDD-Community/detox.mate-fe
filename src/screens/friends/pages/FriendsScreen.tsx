@@ -1,4 +1,4 @@
-import { useLocalSearchParams } from 'expo-router';
+import { router, useLocalSearchParams } from 'expo-router';
 import { QueryErrorResetBoundary, useSuspenseQuery } from '@tanstack/react-query';
 import { Image } from 'expo-image';
 import { Suspense, useEffect, useState } from 'react';
@@ -89,6 +89,20 @@ function UserLabel({ user }: { user: FriendsListItem['user'] }) {
       ) : null}
     </View>
   );
+}
+
+function openFriendPage(friend: FriendsListItem) {
+  const { user, friendshipId } = friend;
+  router.push({
+    pathname: '/(group)/friend-page',
+    params: {
+      userId: String(user.userId),
+      displayName: user.displayName,
+      ...(user.profileImageUrl ? { profileImageUrl: user.profileImageUrl } : {}),
+      friendshipId: String(friendshipId),
+      relationshipStatus: 'FRIEND',
+    },
+  });
 }
 
 function CloseButton({
@@ -236,8 +250,15 @@ function FriendsSection({
           <View style={styles.rows}>
             {filteredFriends.map((friend) => (
               <View key={friend.friendshipId} style={styles.row}>
-                <Avatar uri={friend.user.profileImageUrl} />
-                <UserLabel user={friend.user} />
+                <Pressable
+                  accessibilityRole="button"
+                  accessibilityLabel={`${friend.user.displayName} 마이페이지 보기`}
+                  onPress={() => openFriendPage(friend)}
+                  style={styles.friendProfile}
+                >
+                  <Avatar uri={friend.user.profileImageUrl} />
+                  <UserLabel user={friend.user} />
+                </Pressable>
                 <CloseButton
                   label={`${friend.user.displayName} 친구 삭제`}
                   disabled={busy}
@@ -350,7 +371,6 @@ function FriendsContent() {
   const shouldAutoFocusSearchInput = search === '1';
   const { share, sharing, inviteLabel, preparing } = useShareFriendInvite();
   const {
-    refreshing,
     error,
     pendingActionId,
     refresh,
@@ -361,6 +381,9 @@ function FriendsContent() {
   const insets = useSafeAreaInsets();
   const [query, setQuery] = useState('');
   const [deleteTarget, setDeleteTarget] = useState<FriendsListItem | null>(null);
+  // 탭에 들어올 때마다 일어나는 백그라운드 재조회에는 당겨서 새로고침 표시를 띄우지 않는다.
+  // 사용자가 직접 당긴 동안만 표시한다.
+  const [pulling, setPulling] = useState(false);
   const searching = query.trim().length > 0;
   const busy = pendingActionId !== null;
   const deleting =
@@ -407,9 +430,10 @@ function FriendsContent() {
         keyboardDismissMode="on-drag"
         refreshControl={
           <RefreshControl
-            refreshing={refreshing}
+            refreshing={pulling}
             onRefresh={() => {
-              void refresh();
+              setPulling(true);
+              void refresh().finally(() => setPulling(false));
             }}
             tintColor={green}
           />
@@ -639,6 +663,7 @@ const styles = StyleSheet.create({
   },
   rows: { gap: 15 },
   row: { minHeight: 60, marginHorizontal: 16, flexDirection: 'row', alignItems: 'center', gap: 8 },
+  friendProfile: { flex: 1, minWidth: 0, flexDirection: 'row', alignItems: 'center', gap: 8 },
   userLabel: { flex: 1, minWidth: 0 },
   userName: { fontFamily: medium, fontSize: 16, lineHeight: 26, color: '#2b2f38' },
   userCode: { fontFamily: regular, fontSize: 16, lineHeight: 26, color: '#989fad', marginTop: -4 },
