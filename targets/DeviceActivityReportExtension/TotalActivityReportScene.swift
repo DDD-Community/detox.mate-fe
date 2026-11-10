@@ -8,6 +8,42 @@ import FamilyControls
 import ManagedSettings
 import SwiftUI
 
+// 앱 그룹에 "앱별 오늘 사용 시간"을 남겨 두면, 메인 앱이 리포트가 그려지기 전에 직전 값을 먼저 보여 준다.
+// 키 구조와 날짜 형식은 modules/screen-time-report/ios/ScreenTimeReportView.swift의 읽는 쪽과 같아야 한다.
+private let usageCacheAppGroup = "group.com.detoxmate.app.dev2"
+private let usageCacheKey = "detox.usageCache"
+private let usageCacheUpdatedNotification = "detox.usageCache.updated"
+
+private func usageCacheDayKey(_ date: Date) -> String {
+  let parts = Calendar.current.dateComponents([.year, .month, .day], from: date)
+  return String(format: "%04d-%02d-%02d", parts.year ?? 0, parts.month ?? 0, parts.day ?? 0)
+}
+
+private func usageCacheTokenKey(_ token: ApplicationToken) -> String? {
+  guard let data = try? JSONEncoder().encode(token) else { return nil }
+  var hash: UInt64 = 5381
+  for byte in data { hash = (hash &* 33) &+ UInt64(byte) }
+  return String(hash, radix: 16)
+}
+
+private func writeUsageCache(_ durations: [ApplicationToken: TimeInterval]) {
+  guard !durations.isEmpty, let defaults = UserDefaults(suiteName: usageCacheAppGroup) else { return }
+  let day = usageCacheDayKey(Date())
+  let now = Date().timeIntervalSince1970
+  var cache = defaults.dictionary(forKey: usageCacheKey) ?? [:]
+  for (token, duration) in durations {
+    guard let key = usageCacheTokenKey(token) else { continue }
+    cache[key] = ["seconds": duration, "day": day, "writtenAt": now]
+  }
+  defaults.set(cache, forKey: usageCacheKey)
+  defaults.synchronize()
+  CFNotificationCenterPostNotification(
+    CFNotificationCenterGetDarwinNotifyCenter(),
+    CFNotificationName(usageCacheUpdatedNotification as CFString),
+    nil, nil, true
+  )
+}
+
 struct AppUsage: Identifiable {
   let id: ApplicationToken
   let duration: TimeInterval
@@ -61,6 +97,8 @@ func aggregateTotalActivityData(
   // segment.totalActivityDuration은 앱 필터와 무관하게 "그 시간대 전체"라서(선택한 앱이 12분이어도
   // 기기 전체 2시간 38분이 나왔다) 쓰지 않고, 필터에 걸린 앱들의 사용 시간을 직접 합산한다.
   let totalDuration = apps.reduce(0) { $0 + $1.duration }
+
+  writeUsageCache(appDurations)
 
   return TotalActivityData(totalDuration: totalDuration, apps: apps)
 }
