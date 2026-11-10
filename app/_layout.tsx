@@ -15,6 +15,7 @@ import {
 } from '../src/lib/shieldConfig';
 import { getNotificationPath } from '../src/lib/notificationDestination';
 import { startDailyUnlockCountReset } from '../src/lib/dailyUnlockReset';
+import { reconcileBlocksWithRegisteredApps } from '../src/lib/reconcileBlocks';
 import { ensureDailyUsageMonitoring } from '../src/lib/screenTimeMonitoring';
 import { syncScreenTimeHistory } from '../src/lib/screenTimeHistory';
 import { syncTimeLimitFromServer } from '../src/lib/timeLimitSync';
@@ -72,7 +73,12 @@ export default function RootLayout() {
     syncScreenTimeHistory(lockedApps.map((app) => app.id));
 
     if (Platform.OS !== 'ios') return;
-    return startDailyUnlockCountReset();
+    const stopReconcile = reconcileBlocksWithRegisteredApps();
+    const stopUnlockCountReset = startDailyUnlockCountReset();
+    return () => {
+      stopReconcile();
+      stopUnlockCountReset();
+    };
   }, []);
 
   useEffect(() => {
