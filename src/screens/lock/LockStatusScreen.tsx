@@ -16,6 +16,8 @@ const { gray, green } = primitiveColors;
 const UNLOCKED_TOAST_MS = 2000;
 // 토스트를 화면 아래 끝에서 이만큼 띄운다(홈 인디케이터와 겹치지 않게 위로 올림).
 const TOAST_BOTTOM_OFFSET = 96;
+// 탭에 돌아올 때 리포트를 새로 만드는 최소 간격. 짧은 간격으로 탭을 오갈 때마다 익스텐션에 다시 요청하지 않는다.
+const REPORT_REFRESH_INTERVAL_MS = 60000;
 
 const formatTodayLabel = () => {
   const now = new Date();
@@ -37,12 +39,15 @@ export default function LockStatusScreen() {
   // 비어 있어 "기록 없음"으로 굳으므로, 탭으로 돌아올 때마다 리포트를 새로 만들어 다시 읽게 한다.
   const [reportRefreshKey, setReportRefreshKey] = useState(0);
   const firstFocus = useRef(true);
+  const lastRefreshAt = useRef(Date.now());
   useFocusEffect(
     useCallback(() => {
       if (firstFocus.current) {
         firstFocus.current = false;
         return;
       }
+      if (Date.now() - lastRefreshAt.current < REPORT_REFRESH_INTERVAL_MS) return;
+      lastRefreshAt.current = Date.now();
       setReportRefreshKey((key) => key + 1);
     }, [])
   );
