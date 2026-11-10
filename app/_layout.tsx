@@ -14,6 +14,7 @@ import {
   SHIELD_CONFIGURATION,
 } from '../src/lib/shieldConfig';
 import { getNotificationPath } from '../src/lib/notificationDestination';
+import { startDailyUnlockCountReset } from '../src/lib/dailyUnlockReset';
 import { ensureDailyUsageMonitoring } from '../src/lib/screenTimeMonitoring';
 import { syncScreenTimeHistory } from '../src/lib/screenTimeHistory';
 import { syncTimeLimitFromServer } from '../src/lib/timeLimitSync';
@@ -69,6 +70,9 @@ export default function RootLayout() {
     }
     ensureDailyUsageMonitoring(lockedApps, familyActivitySelectionsByAppId);
     syncScreenTimeHistory(lockedApps.map((app) => app.id));
+
+    if (Platform.OS !== 'ios') return;
+    return startDailyUnlockCountReset();
   }, []);
 
   useEffect(() => {
