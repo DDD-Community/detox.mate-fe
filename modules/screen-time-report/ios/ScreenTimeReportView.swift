@@ -77,6 +77,129 @@ private func decodeSelection(from tokens: [String]) -> FamilyActivitySelection {
   return combined
 }
 
+// 리포트 익스텐션이 앱 그룹에 남긴 "앱별 오늘 사용 시간"을 읽어, 익스텐션이 그리기 전까지 직전 값을
+// 먼저 보여 준다. 쓰는 쪽은 targets/DeviceActivityReportExtension/TotalActivityReportScene.swift이고
+// 키 구조와 날짜 형식이 같아야 한다. 값이 없거나 오늘 것이 아니면 아무것도 덮지 않는다.
+private let usageCacheKey = "detox.usageCache"
+private let usageCacheUpdatedNotification = "detox.usageCache.updated"
+// 익스텐션이 값을 못 써 주는 환경에서도 직전 값이 실제 리포트를 가리지 않도록 덮는 최대 시간.
+private let usageCacheMaxCoverSeconds: UInt64 = 4
+
+private func usageCacheDayKey(_ date: Date) -> String {
+  let parts = Calendar.current.dateComponents([.year, .month, .day], from: date)
+  return String(format: "%04d-%02d-%02d", parts.year ?? 0, parts.month ?? 0, parts.day ?? 0)
+}
+
+@available(iOS 15.0, *)
+private func usageCacheKeys(for selection: FamilyActivitySelection) -> [String] {
+  selection.applicationTokens.compactMap { token in
+    guard let data = try? JSONEncoder().encode(token) else { return nil }
+    var hash: UInt64 = 5381
+    for byte in data { hash = (hash &* 33) &+ UInt64(byte) }
+    return String(hash, radix: 16)
+  }
+}
+
+private func readUsageCache(keys: [String]) -> (seconds: TimeInterval, writtenAt: TimeInterval)? {
+  guard
+    let group = Bundle.main.object(forInfoDictionaryKey: "REACT_NATIVE_DEVICE_ACTIVITY_APP_GROUP")
+      as? String,
+    let cache = UserDefaults(suiteName: group)?.dictionary(forKey: usageCacheKey)
+  else { return nil }
+  let today = usageCacheDayKey(Date())
+  var seconds: TimeInterval = 0
+  var latestWrite: TimeInterval = 0
+  var found = false
+  for key in keys {
+    guard let entry = cache[key] as? [String: Any], entry["day"] as? String == today,
+      let value = entry["seconds"] as? Double
+    else { continue }
+    seconds += value
+    latestWrite = max(latestWrite, entry["writtenAt"] as? Double ?? 0)
+    found = true
+  }
+  return found ? (seconds, latestWrite) : nil
+}
+
+private func cachedDurationText(_ seconds: TimeInterval, summary: Bool) -> String {
+  let totalMinutes = Int(seconds / 60)
+  let hours = totalMinutes / 60
+  let minutes = totalMinutes % 60
+  let duration: String
+  if hours == 0 {
+    duration = "\(minutes)분"
+  } else if minutes == 0 {
+    duration = "\(hours)시간"
+  } else {
+    duration = "\(hours)시간 \(minutes)분"
+  }
+  return "\(duration) 사용"
+}
+
+/// 익스텐션이 값을 새로 써 줬다는 Darwin 알림을 받아 뷰를 갱신한다.
+private final class UsageCacheObserver: ObservableObject {
+  @Published var tick = 0
+
+  init() {
+    CFNotificationCenterAddObserver(
+      CFNotificationCenterGetDarwinNotifyCenter(),
+      Unmanaged.passUnretained(self).toOpaque(),
+      { _, observer, _, _, _ in
+        guard let observer else { return }
+        let me = Unmanaged<UsageCacheObserver>.fromOpaque(observer).takeUnretainedValue()
+        DispatchQueue.main.async { me.tick += 1 }
+      },
+      usageCacheUpdatedNotification as CFString,
+      nil,
+      .deliverImmediately
+    )
+  }
+
+  deinit {
+    CFNotificationCenterRemoveObserver(
+      CFNotificationCenterGetDarwinNotifyCenter(),
+      Unmanaged.passUnretained(self).toOpaque(),
+      CFNotificationName(usageCacheUpdatedNotification as CFString),
+      nil
+    )
+  }
+}
+
+/// 실제 리포트 위에 직전 사용 시간을 하얀 배경으로 덮어 두었다가, 익스텐션이 새 값을 쓰면 걷어낸다.
+@available(iOS 16.0, *)
+private struct CachedUsageOverlay: View {
+  let keys: [String]
+  let fontSize: CGFloat
+  let weight: Font.Weight
+  let color: Color
+  let alignment: Alignment
+
+  @StateObject private var observer = UsageCacheObserver()
+  @State private var appearedAt = Date().timeIntervalSince1970
+  @State private var dismissed = false
+
+  var body: some View {
+    Group {
+      if !dismissed, let cached = readUsageCache(keys: keys) {
+        Text(cachedDurationText(cached.seconds, summary: false))
+          .font(.system(size: fontSize, weight: weight))
+          .foregroundColor(color)
+          .lineLimit(1)
+          .minimumScaleFactor(0.8)
+          .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: alignment)
+          .background(Color.white)
+      }
+    }
+    .onChange(of: observer.tick) { _ in
+      if let cached = readUsageCache(keys: keys), cached.writtenAt >= appearedAt { dismissed = true }
+    }
+    .task {
+      try? await Task.sleep(nanoseconds: usageCacheMaxCoverSeconds * 1_000_000_000)
+      dismissed = true
+    }
+  }
+}
+
 /// 선택 토큰으로 앱 정보를 표시한다. 사용 기록의 유무와 집계를 기다리지 않는다.
 @available(iOS 16.0, *)
 private struct SelectedActivityLabel: View {
@@ -132,6 +255,10 @@ private struct ScreenTimeContentView: View {
         Spacer(minLength: 0)
         DeviceActivityReport(.appRow, filter: filter)
           .frame(width: 120, height: 22)
+          .overlay(
+            CachedUsageOverlay(
+              keys: usageCacheKeys(for: selection), fontSize: 16, weight: .regular,
+              color: gray800, alignment: .trailing))
         Image(systemName: "chevron.right")
           .font(.system(size: 14, weight: .semibold))
           .foregroundColor(Color(red: 0x3C / 255, green: 0x3C / 255, blue: 0x43 / 255).opacity(0.3))
@@ -172,6 +299,14 @@ private struct ScreenTimeContentView: View {
     default:
       if let context = reportStyle.context {
         DeviceActivityReport(context, filter: filter)
+          .overlay(
+            Group {
+              if reportStyle == .summary {
+                CachedUsageOverlay(
+                  keys: usageCacheKeys(for: selection), fontSize: 24, weight: .medium,
+                  color: .black, alignment: .leading)
+              }
+            })
       }
     }
   }
